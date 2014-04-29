@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -71,6 +87,53 @@ static void sort_hosts(memcached_st *ptr)
   }
 }
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+/** Prune the redundant or not-available servers */
+static void prune_hosts(memcached_st *ptr, bool all_flag)
+{
+  int i;
+  int cursor = 0;
+  int server_count = memcached_server_count(ptr);
+
+  if (!server_count) return;
+
+  if (all_flag) {
+    memcached_servers_reset(ptr);
+    server_count = 0;
+  }
+
+  for (i=0; i<server_count; i++) {
+    if (ptr->servers[i].options.is_dead || all_flag) {
+      /* free the dead servers. */
+      //memcached_server_free(&ptr->servers[i]);
+      __server_free(&ptr->servers[i]);
+    } else {
+      /* If this server is not dead and there's free space ahead,
+       * move it there. */
+      if (cursor < i) {
+        /* !!! Need to adjust read_ptr !!! */
+        int offset = -1;
+        if (ptr->servers[i].read_ptr) {
+            offset = ptr->servers[i].read_ptr - ptr->servers[i].read_buffer;
+        }
+        ptr->servers[cursor] = ptr->servers[i];
+        if (offset == -1) {
+            ptr->servers[cursor].read_ptr = NULL;  
+        } else {
+            ptr->servers[cursor].read_ptr = &ptr->servers[cursor].read_buffer[offset];
+        }
+      }
+      cursor++;
+    }
+  }
+
+  /* Change the number of hosts. */
+  for (i=0; i<cursor; i++) {
+    ptr->servers[i].number_of_hosts = cursor;
+  }
+  ptr->number_of_hosts = cursor;
+}
+#endif
 
 memcached_return_t run_distribution(memcached_st *ptr)
 {
@@ -241,6 +304,15 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         char sort_host[MEMCACHED_MAX_HOST_SORT_LENGTH]= "";
         int sort_host_length;
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+        // Spymemcached ketema key format is: hostname/ip:port-index
+        // If hostname is not available then: ip:port-index
+        sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
+                                   "%s:%u-%u",
+                                   list[host_index].hostname,
+                                   (uint32_t)list[host_index].port,
+                                   pointer_index);
+#else
         // Spymemcached ketema key format is: hostname/ip:port-index
         // If hostname is not available then: /ip:port-index
         sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
@@ -248,6 +320,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
                                    list[host_index].hostname,
                                    (uint32_t)list[host_index].port,
                                    pointer_index);
+#endif
 
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
@@ -451,6 +524,33 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
 
   return run_distribution(ptr);
 }
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+memcached_return_t memcached_server_push_with_prune(memcached_st *ptr, const memcached_server_list_st list,
+                                                    bool prune_flag)
+{
+  if (list) {
+    if (prune_flag)
+      prune_hosts(ptr, false);
+    return memcached_server_push(ptr, list);
+  } else {
+    if (prune_flag) {
+      prune_hosts(ptr, false);
+      return run_distribution(ptr);
+    } else {
+      /* This case cannot be occurred */
+      return MEMCACHED_SUCCESS;
+    }
+  }
+}
+
+memcached_return_t memcached_server_redistribute_with_prune(memcached_st *ptr)
+{
+  bool prune_all_hosts = true;
+  prune_hosts(ptr, prune_all_hosts);
+  return run_distribution(ptr);
+}
+#endif
 
 memcached_return_t memcached_server_add_unix_socket(memcached_st *ptr,
                                                     const char *filename)

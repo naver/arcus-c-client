@@ -1,4 +1,5 @@
 AX_WITH_PROG(MEMCACHED_SASL_BINARY,memcached_sasl)
+$ac_cv_path_MEMCACHED_SASL_BINARY=$MEMCACHED_SASL_BINARY
 AS_IF([test -f "$ac_cv_path_MEMCACHED_SASL_BINARY"],
       [
         AC_DEFINE([HAVE_MEMCACHED_SASL_BINARY], [1], [Name of the memcached_sasl binary used in make test])

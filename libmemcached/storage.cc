@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /* LibMemcached
  * Copyright (C) 2006-2009 Brian Aker
  * All rights reserved.
@@ -10,6 +26,7 @@
  */
 
 #include <libmemcached/common.h>
+#include "libmemcached/arcus_priv.h"
 
 enum memcached_storage_action_t {
   SET_OP,
@@ -235,11 +252,11 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
   {
     int check_length;
     check_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                           "%s %.*s%.*s %u %llu %lu %llu%s\r\n",
+                           "%s %.*s%.*s %u %lld %lu %llu%s\r\n",
                            storage_op_string(verb),
                            memcached_print_array(ptr->_namespace),
                            (int)key_length, key, flags,
-                           (unsigned long long)expiration, (unsigned long)value_length,
+                           (long long)expiration, (unsigned long)value_length,
                            (unsigned long long)cas,
                            (ptr->flags.no_reply) ? " noreply" : "");
     if (check_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || check_length < 0)
@@ -272,9 +289,9 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
 
     write_length= (size_t)(buffer_ptr - buffer);
     int check_length= snprintf(buffer_ptr, MEMCACHED_DEFAULT_COMMAND_SIZE -(size_t)(buffer_ptr - buffer),
-                               "%u %llu %lu%s\r\n",
+                               "%u %lld %lu%s\r\n",
                                flags,
-                               (unsigned long long)expiration, (unsigned long)value_length,
+                               (long long)expiration, (unsigned long)value_length,
                                ptr->flags.no_reply ? " noreply" : "");
     if ((size_t)check_length >= MEMCACHED_DEFAULT_COMMAND_SIZE -size_t(buffer_ptr - buffer) || check_length < 0)
     {
@@ -359,6 +376,8 @@ static inline memcached_return_t memcached_send(memcached_st *ptr,
                                                 uint64_t cas,
                                                 memcached_storage_action_t verb)
 {
+  arcus_server_check_for_update(ptr);
+
   memcached_return_t rc;
   if (memcached_failed(rc= initialize_query(ptr)))
   {

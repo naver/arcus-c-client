@@ -87,6 +87,7 @@ static void *world_create(server_startup_st& servers, test_return_t& error)
     }
   }
 
+#if 0
   if (servers.socket())
   {
     if (servers.sasl())
@@ -108,7 +109,7 @@ static void *world_create(server_startup_st& servers, test_return_t& error)
       }
     }
   }
-
+#endif
 
   libmemcached_test_container_st *global_container= new libmemcached_test_container_st(servers);
   if (global_container == NULL)

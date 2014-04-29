@@ -1,0 +1,25 @@
+# vim:ft=automake
+# included from Top Level Makefile.am
+# All paths should be given relative to the root
+
+ARCUS_LDADD= \
+	libmemcached/libmemcached.la \
+	libmemcached/libmemcachedutil.la 
+
+# Multi-Threaded Example
+
+noinst_PROGRAMS+= arcus/multi_threaded
+arcus_multi_threaded_SOURCES= arcus/multi_threaded.c
+				 
+arcus_multi_threaded_LDFLAGS= -g -O0
+arcus_multi_threaded_LDADD= $(ARCUS_LDADD)
+arcus_multi_threaded_DEPENDENCIES= $(ARCUS_LDADD)
+
+# Multi-Process Example
+
+noinst_PROGRAMS+= arcus/multi_process
+arcus_multi_process_SOURCES= arcus/multi_process.c
+				 
+arcus_multi_process_LDFLAGS= -g -O0
+arcus_multi_process_LDADD= $(ARCUS_LDADD)
+arcus_multi_process_DEPENDENCIES= $(ARCUS_LDADD)

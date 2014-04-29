@@ -12,6 +12,7 @@ EXTRA_DIST+= \
 	     libmemcached/memcached/README.txt
 
 noinst_HEADERS+= \
+		 libmemcached/arcus_priv.h \
 		 libmemcached/assert.hpp \
 		 libmemcached/backtrace.hpp \
 		 libmemcached/byteorder.h \
@@ -40,10 +41,13 @@ nobase_include_HEADERS+= \
 			 libmemcached/allocators.h \
 			 libmemcached/analyze.h \
 			 libmemcached/array.h \
+			 libmemcached/arcus.h \
 			 libmemcached/auto.h \
 			 libmemcached/basic_string.h \
 			 libmemcached/behavior.h \
 			 libmemcached/callback.h \
+			 libmemcached/collection.h \
+			 libmemcached/collection_result.h \
 			 libmemcached/configure.h \
 			 libmemcached/constants.h \
 			 libmemcached/delete.h \
@@ -98,6 +102,8 @@ libmemcached_libmemcached_la_SOURCES+= \
 				       libmemcached/behavior.cc \
 				       libmemcached/byteorder.cc \
 				       libmemcached/callback.cc \
+				       libmemcached/collection.cc \
+				       libmemcached/collection_result.cc \
 				       libmemcached/connect.cc \
 				       libmemcached/delete.cc \
 				       libmemcached/do.cc \
@@ -130,6 +136,10 @@ libmemcached_libmemcached_la_SOURCES+= \
 				       libmemcached/verbosity.cc \
 				       libmemcached/version.cc \
 				       libmemcached/virtual_bucket.c
+
+if BUILD_ARCUS_ZK_INTEGRATION
+libmemcached_libmemcached_la_SOURCES += libmemcached/arcus.cc
+endif
 
 libmemcached/options.cc: libmemcached/csl/parser.h
 

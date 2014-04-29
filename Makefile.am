@@ -43,6 +43,10 @@ include support/include.am
 include tests/include.am
 include util/include.am
 include win32/include.am
+if BUILD_ARCUS_ZK_INTEGRATION
+# Samples that use arcus cluster API
+include arcus/include.am
+endif
 
 docs: html man
 

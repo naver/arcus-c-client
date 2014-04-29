@@ -29,7 +29,7 @@ AC_DEFUN([PANDORA_TEST_VC_DIR],[
 
   if test -d ".git" ; then
     pandora_building_from_git=yes
-    pandora_building_from_vc=yes
+    pandora_building_from_vc=no
   else
     pandora_building_from_git=no
   fi

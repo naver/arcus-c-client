@@ -2,6 +2,7 @@
  * 
  *  libtest
  *
+ *  Copyright 2010-2014 NAVER Corp.
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
  *
  *  This library is free software; you can redistribute it and/or
@@ -299,7 +300,8 @@ bool Memcached::build(int argc, const char *argv[])
   }
 
   arg_buffer << " -l 127.0.0.1 ";
-  arg_buffer << " -m 128 ";
+  arg_buffer << " -m 512 ";
+  arg_buffer << " -g 1 ";
   arg_buffer << " -M ";
 
   if (sasl())
@@ -311,6 +313,8 @@ bool Memcached::build(int argc, const char *argv[])
   {
     arg_buffer << " " << argv[x] << " ";
   }
+
+  arg_buffer << "-E " << MEMCACHED_ENGINE << " ";
 
   set_extra_args(arg_buffer.str());
 

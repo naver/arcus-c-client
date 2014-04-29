@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -36,6 +52,7 @@
  */
 
 #include <libmemcached/common.h>
+#include "libmemcached/arcus_priv.h"
 
 /*
   What happens if no servers exist?
@@ -66,6 +83,8 @@ char *memcached_get_by_key(memcached_st *ptr,
                            uint32_t *flags,
                            memcached_return_t *error)
 {
+  arcus_server_check_for_update(ptr);
+
   memcached_return_t unused;
   if (error == NULL)
     error= &unused;
@@ -86,8 +105,8 @@ char *memcached_get_by_key(memcached_st *ptr,
   *error= memcached_mget_by_key_real(ptr, group_key, group_key_length,
                                      (const char * const *)&key, &key_length, 
                                      1, false);
-  assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
-
+  assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
+  //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
   if (memcached_failed(*error))
   {
@@ -104,7 +123,8 @@ char *memcached_get_by_key(memcached_st *ptr,
 
   char *value= memcached_fetch(ptr, NULL, NULL,
                                value_length, flags, error);
-  assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
+  assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
+  //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
   /* This is for historical reasons */
   if (*error == MEMCACHED_END)
@@ -156,7 +176,8 @@ char *memcached_get_by_key(memcached_st *ptr,
         }
       }
     }
-    assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
+    assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
+    //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
     return NULL;
   }
@@ -170,7 +191,8 @@ char *memcached_get_by_key(memcached_st *ptr,
                                      &dummy_error);
   assert_msg(dummy_value == 0, "memcached_fetch() returned additional values beyond the single get it expected");
   assert_msg(dummy_length == 0, "memcached_fetch() returned additional values beyond the single get it expected");
-  assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
+  assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
+  //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
   return value;
 }
@@ -390,6 +412,8 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
                                          const size_t *key_length,
                                          size_t number_of_keys)
 {
+  arcus_server_check_for_update(ptr);
+
   return memcached_mget_by_key_real(ptr, group_key, group_key_length, keys,
                                     key_length, number_of_keys, true);
 }
@@ -445,6 +469,8 @@ static memcached_return_t simple_binary_mget(memcached_st *ptr,
   memcached_return_t rc= MEMCACHED_NOTFOUND;
 
   bool flush= (number_of_keys == 1);
+
+  arcus_server_check_for_update(ptr);
 
   /*
     If a server fails we warn about errors and start all over with sending keys
@@ -570,6 +596,8 @@ static memcached_return_t replication_binary_mget(memcached_st *ptr,
   memcached_return_t rc= MEMCACHED_NOTFOUND;
   uint32_t start= 0;
   uint64_t randomize_read= memcached_behavior_get(ptr, MEMCACHED_BEHAVIOR_RANDOMIZE_REPLICA_READ);
+
+  arcus_server_check_for_update(ptr);
 
   if (randomize_read)
     start= (uint32_t)random() % (uint32_t)(ptr->number_of_replicas + 1);

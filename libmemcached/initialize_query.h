@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -45,6 +61,12 @@ LIBMEMCACHED_LOCAL
 
 LIBMEMCACHED_LOCAL
 memcached_return_t initialize_const_query(const memcached_st *self);
+
+LIBMEMCACHED_LOCAL
+memcached_return_t before_query(memcached_st *self,
+                                const char * const *keys,
+                                const size_t *key_length,
+                                size_t number_of_keys);
 
 #ifdef __cplusplus
 } // extern "C"

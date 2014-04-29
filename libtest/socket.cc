@@ -2,6 +2,7 @@
  * 
  *  libtest
  *
+ *  Copyright 2010-2014 NAVER Corp.
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
  *
  *  This library is free software; you can redistribute it and/or
@@ -21,13 +22,16 @@
 
 #include <libtest/common.h>
 
-static char global_socket[1024];
+static char global_socket[1024] = { 0 };
 
 namespace libtest {
 
 const char *default_socket()
 {
-  assert(global_socket[0]);
+  if (global_socket[0] == 0)
+  {
+    return NULL;
+  }
   return global_socket;
 }
 

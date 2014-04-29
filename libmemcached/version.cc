@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -35,6 +51,7 @@
  *
  */
 #include <libmemcached/common.h>
+#include "libmemcached/arcus_priv.h"
 
 const char * memcached_lib_version(void) 
 {
@@ -50,6 +67,8 @@ memcached_return_t memcached_version(memcached_st *ptr)
     return MEMCACHED_NOT_SUPPORTED;
 
   memcached_return_t rc;
+
+  arcus_server_check_for_update(ptr);
 
   if (ptr->flags.binary_protocol)
     rc= memcached_version_binary(ptr);
@@ -99,6 +118,13 @@ static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
     /* Find the space, and then move one past it to copy version */
     response_ptr= index(buffer, ' ');
     response_ptr++;
+
+    // UNKNOWN
+    if (*response_ptr == 'U')
+    {
+      instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+      continue;
+    }
 
     instance->major_version= (uint8_t)strtol(response_ptr, (char **)NULL, 10);
     if (errno == ERANGE)

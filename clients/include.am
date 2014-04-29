@@ -4,7 +4,8 @@
 
 CLIENTS_LDADDS= \
 		clients/libutilities.la \
-		libmemcached/libmemcached.la
+		libmemcached/libmemcached.la \
+		libmemcached/libmemcachedutil.la
 
 if HAVE_SASL
 CLIENTS_LDADDS+= $(LIBSASL)

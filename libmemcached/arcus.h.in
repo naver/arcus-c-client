@@ -1,0 +1,155 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef __LIBMEMCACHED_ARCUS_H__
+#define __LIBMEMCACHED_ARCUS_H__
+
+@ARCUS_CLUSTER_API_ENABLED@
+
+#include <libmemcached/memcached.h>
+#include <libmemcached/memcached_util.h>
+
+/**
+ * Function return code.  The names are self descriptive.
+ * In case of an error (non-success), most functions leave log messages.
+ * So, please check the log to figure out the cause.
+ */
+typedef enum arcus_return_t
+{
+  ARCUS_SUCCESS,
+  ARCUS_ERROR,
+  ARCUS_ALREADY_INITIATED
+} arcus_return_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef ARCUS_CLUSTER_API_ENABLED
+
+/**
+ * Connect the client to ZooKeeper and initialize Arcus cluster.
+ * @param mc  memcached handle.
+ * @param pool  set this to NULL.
+ * @param ensemble_list  ZooKeeper ensemble address.
+ * @param svc_code  service code.
+ */
+LIBMEMCACHED_API
+arcus_return_t arcus_connect(memcached_st *mc, memcached_pool_st *pool, const char *ensemble_list, const char *svc_code);
+
+/**
+ * Disconnect from ZooKeeper.
+ * @param mc  memcached handle.
+ */
+LIBMEMCACHED_API
+arcus_return_t arcus_close(memcached_st *mc);
+
+/**
+ * For a common multi-threaded application, use pool.
+ *
+ * The main thread creates a pool (see util/pool.h), and then calls
+ * arcus_pool_connect.  Each worker thread uses the pool API (util/pool.h)
+ * to check out/in a memcached client.
+ *
+ * See arcus/multi_threaded.c for an example.
+ */
+
+/**
+ * Connect the pool to ZooKeeper and initialize Arcus cluster.
+ * @param pool  memcached pool handle.
+ * @param ensemble_list  ZooKeeper ensemble address.
+ * @param svc_code  service code.
+ */
+LIBMEMCACHED_API
+arcus_return_t arcus_pool_connect(memcached_pool_st *pool, const char *ensemble_list, const char *svc_code);
+
+/**
+ * Disconnect from ZooKeeper associated with the pool. The main thread should
+ * call this function to close ZooKeeper session before destroying the pool.
+ * @param pool  memcached pool handle.
+ */
+LIBMEMCACHED_API
+arcus_return_t arcus_pool_close(memcached_pool_st *pool);
+
+/**
+ * For a common multi-process application, use proxy.
+ *
+ * The main process usually performs various initialization tasks and forks
+ * children processes.  The main process calls arcus_proxy_create.  It contacts
+ * ZooKeeper, creates a session, and read Arcus cluster information.  Then it
+ * acts as the proxy for ZooKeeper.  A child process calls arcus_proxy_connect
+ * to connect to the proxy.  The proxy first notices changes in clusters and
+ * then propagates them to children.
+ *
+ * Using proxy, only the main process creates ZooKeeper session.  Without
+ * proxy, every process has to create ZooKeeper session and become a ZooKeeper
+ * client.  This is inefficient and adds heavy overhead on ZooKeeper.
+ *
+ * See arcus/multi_process.c for an example.
+ *
+ * It is possible to use proxy and pool at the same time.
+ */
+
+/**
+ * Connect the client to ZooKeeper, initialize Arcus cluster, and turn the
+ * client into proxy.
+ * @param mc  memcached handle.
+ * @param ensemble_list  ZooKeeper ensemble address.
+ * @param svc_code  service code.
+ */
+LIBMEMCACHED_API
+arcus_return_t arcus_proxy_create(memcached_st *mc, const char *ensemble_list, const char *svc_code);
+
+/**
+ * Connect the given memcached to the proxy.
+ * @param mc  memcached handle.
+ * @param pool  memcached pool handle. NULL if there are no pools.
+ * @param proxy  handle to the memcached with the proxy.
+ */
+LIBMEMCACHED_API
+arcus_return_t arcus_proxy_connect(memcached_st *mc, memcached_pool_st *pool, memcached_st *proxy);
+
+/**
+ * Close the proxy. The child process calls this to disconnect from the proxy.
+ * The main/parent process calls this to disconnect from ZooKeeper.
+ * @param mc memcached handle.
+ */
+LIBMEMCACHED_API
+arcus_return_t arcus_proxy_close(memcached_st *mc);
+
+/**
+ * Get the human readable description for the given error code.
+ * @param rc  return code.
+ * @return description string.
+ */
+LIBMEMCACHED_API
+const char *arcus_strerror(arcus_return_t rc);
+
+/**
+ * Set the log output file.
+ * @param mc  memcached handle.
+ * @param logfile  pointer to FILE where log messages are written.
+ */
+LIBMEMCACHED_API
+void arcus_set_log_stream(memcached_st *mc, FILE *logfile);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __LIBMEMCACHED_ARCUS_H__ */

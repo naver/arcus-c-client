@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -181,9 +197,120 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
 
   case MEMCACHED_IN_PROGRESS:
     return "OPERATION IN PROCESS";
-
+    
   case MEMCACHED_SERVER_TEMPORARILY_DISABLED:
     return "SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY";
+
+  case MEMCACHED_ATTR:
+    return "ATTR VALUE";
+
+  case MEMCACHED_ATTR_ERROR_NOT_FOUND:
+    return "ATTR ERROR not found";
+
+  case MEMCACHED_ATTR_ERROR_BAD_VALUE:
+    return "ATTR ERROR bad value";
+
+  case MEMCACHED_COUNT:
+	  return "ITEMS COUNT";
+
+  case MEMCACHED_ATTR_MISMATCH:
+      return "ATTR MISMATCH";
+
+  case MEMCACHED_BKEY_MISMATCH:
+	  return "BKEY MISMATCH";
+
+  case MEMCACHED_EFLAG_MISMATCH:
+    return "EFLAG MISMATCH";
+
+  case MEMCACHED_UNREADABLE:
+	  return "KEY UNREADABLE";
+
+  case MEMCACHED_TRIMMED:
+	  return "TRIMMED";
+
+  case MEMCACHED_DELETED_TRIMMED:
+	  return "DELETED TRIMMED";
+
+  case MEMCACHED_DUPLICATED:
+	  return "DUPLICATED";
+
+  case MEMCACHED_DUPLICATED_TRIMMED:
+	  return "DUPLICATED TRIMMED";
+
+  case MEMCACHED_RESPONSE:
+	  return "NUMBER OF RESPONSE";
+
+  case MEMCACHED_UPDATED:
+	  return "UPDATED";
+
+  case MEMCACHED_NOTHING_TO_UPDATE:
+	  return "NOTHING TO UPDATE";
+
+  case MEMCACHED_CREATED:
+	  return "COLLECTION CREATED";
+
+  case MEMCACHED_EXISTS:
+	  return "COLLECTION EXISTS";
+
+  case MEMCACHED_ALL_EXIST:
+    return "PIPED SET EXIST : ALL ITEMS EXIST";
+
+  case MEMCACHED_SOME_EXIST:
+    return "PIPED SET EXIST : SOME ITEMS EXIST";
+
+  case MEMCACHED_ALL_NOT_EXIST:
+    return "PIPED SET EXIST : ALL ITEMS DO NOT EXIST";
+
+  case MEMCACHED_ALL_SUCCESS:
+    return "PIPED OPERATION : ALL SUCCESS";
+
+  case MEMCACHED_SOME_SUCCESS:
+    return "PIPED OPERATION : SOME SUCCESS";
+
+  case MEMCACHED_ALL_FAILURE:
+    return "PIPED OPERATION : ALL FAILURE";
+
+  case MEMCACHED_CREATED_STORED:
+	  return "COLLECTION CREATED AND STORED";
+
+  case MEMCACHED_ELEMENT_EXISTS:
+    return "ELEMENT EXISTS IN THE COLLECTION";
+
+  case MEMCACHED_NOTFOUND_ELEMENT:
+    return "NOT FOUND ELEMENT";
+
+  case MEMCACHED_OUT_OF_RANGE:
+    return "OUT OF RANGE";
+
+  case MEMCACHED_OVERFLOWED:
+    return "COLLECTION OVERFLOWED";
+
+  case MEMCACHED_TYPE_MISMATCH:
+    return "COLLECTION TYPE MISMATCH";
+
+  case MEMCACHED_EXIST:
+    return "COLLECTION MEMBERSHIP EXIST";
+
+  case MEMCACHED_NOT_EXIST:
+    return "COLLECTION MEMBERSHIP NOT EXIST";
+
+  case MEMCACHED_DELETED_DROPPED:
+    return "COLLECTION DELETED DROPPED";
+
+  case MEMCACHED_LENGTH_MISMATCH:
+    return "COLLECTION LENGTH MISMATCH";
+
+  case MEMCACHED_PIPE_ERROR_COMMAND_OVERFLOW:
+    return "PIPE ERROR : COMMAND OVERFLOW";
+
+  case MEMCACHED_PIPE_ERROR_MEMORY_OVERFLOW:
+    return "PIPE ERROR : MEMORY OVERFLOW";
+
+  case MEMCACHED_PIPE_ERROR_BAD_ERROR:
+    return "PIPE ERROR : BAD ERROR";
+
+  case MEMCACHED_REPLACED:
+    return "REPLACED";
 
   default:
   case MEMCACHED_MAXIMUM_RETURN:

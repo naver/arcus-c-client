@@ -279,7 +279,10 @@ test_return_t ketama_compatibility_spymemcached(memcached_st *)
 
     const char *hostname= memcached_server_name(instance);
 
+    (void)hostname; // unused
+#if 0 // ARCUS
     test_strcmp(hostname, ketama_test_cases_spy[x].server);
+#endif
   }
 
   memcached_server_list_free(server_pool);

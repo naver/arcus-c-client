@@ -1,4 +1,20 @@
 /*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/*
   We use this to dump all keys.
 
   At this point we only support a callback method. This could be optimized by first
@@ -7,10 +23,13 @@
 */
 
 #include <libmemcached/common.h>
+#include "libmemcached/arcus_priv.h"
 
 static memcached_return_t ascii_dump(memcached_st *ptr, memcached_dump_fn *callback, void *context, uint32_t number_of_callbacks)
 {
   memcached_return_t rc= MEMCACHED_SUCCESS;
+
+  arcus_server_check_for_update(ptr);
 
   for (uint32_t server_key= 0; server_key < memcached_server_count(ptr); server_key++)
   {

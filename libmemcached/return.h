@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -85,6 +101,43 @@ enum memcached_return_t {
   MEMCACHED_DEPRECATED,
   MEMCACHED_IN_PROGRESS,
   MEMCACHED_SERVER_TEMPORARILY_DISABLED,
+  MEMCACHED_ATTR,
+  MEMCACHED_ATTR_ERROR_NOT_FOUND,
+  MEMCACHED_ATTR_ERROR_BAD_VALUE,
+  MEMCACHED_COUNT,
+  MEMCACHED_ATTR_MISMATCH,
+  MEMCACHED_BKEY_MISMATCH,
+  MEMCACHED_EFLAG_MISMATCH,
+  MEMCACHED_UNREADABLE,
+  MEMCACHED_TRIMMED,
+  MEMCACHED_DELETED_TRIMMED,
+  MEMCACHED_DUPLICATED,
+  MEMCACHED_DUPLICATED_TRIMMED,
+  MEMCACHED_RESPONSE,
+  MEMCACHED_UPDATED,
+  MEMCACHED_CREATED,
+  MEMCACHED_NOTHING_TO_UPDATE,
+  MEMCACHED_EXISTS,
+  MEMCACHED_ALL_EXIST,
+  MEMCACHED_SOME_EXIST,
+  MEMCACHED_ALL_NOT_EXIST,
+  MEMCACHED_ALL_SUCCESS,
+  MEMCACHED_SOME_SUCCESS,
+  MEMCACHED_ALL_FAILURE,
+  MEMCACHED_CREATED_STORED,
+  MEMCACHED_ELEMENT_EXISTS,
+  MEMCACHED_NOTFOUND_ELEMENT,
+  MEMCACHED_OUT_OF_RANGE,
+  MEMCACHED_OVERFLOWED,
+  MEMCACHED_TYPE_MISMATCH,
+  MEMCACHED_EXIST,
+  MEMCACHED_NOT_EXIST,
+  MEMCACHED_DELETED_DROPPED,
+  MEMCACHED_LENGTH_MISMATCH,
+  MEMCACHED_PIPE_ERROR_COMMAND_OVERFLOW,
+  MEMCACHED_PIPE_ERROR_MEMORY_OVERFLOW,
+  MEMCACHED_PIPE_ERROR_BAD_ERROR,
+  MEMCACHED_REPLACED,
   MEMCACHED_MAXIMUM_RETURN /* Always add new error code before */
 };
 

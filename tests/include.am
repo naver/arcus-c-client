@@ -241,15 +241,17 @@ noinst_PROGRAMS+= tests/memdump
  
 # Test linking with C application
 tests_c_test_SOURCES= tests/c_test.c
-tests_c_test_LDADD= libmemcached/libmemcached.la
-tests_c_test_DEPENDENCIES= libmemcached/libmemcached.la
+tests_c_test_CFLAGS= ${PTHREAD_CFLAGS}
+tests_c_test_LDADD= libmemcached/libmemcached.la libmemcached/libmemcachedutil.la ${PTHREAD_LIBS}
+tests_c_test_DEPENDENCIES= libmemcached/libmemcached.la libmemcached/libmemcachedutil.la ${PTHREAD_LIBS}
 check_PROGRAMS+=tests/c_test
 noinst_PROGRAMS+=tests/c_test
 
 # Test linking with C application/SASL include
 tests_c_sasl_test_SOURCES= tests/c_sasl_test.c
-tests_c_sasl_test_LDADD= libmemcached/libmemcached.la
-tests_c_sasl_test_DEPENDENCIES= libmemcached/libmemcached.la
+tests_c_sasl_test_CFLAGS= $(PTHREAD_CFLAGS)
+tests_c_sasl_test_LDADD= libmemcached/libmemcached.la libmemcached/libmemcachedutil.la $(PTHREAD_LIBS)
+tests_c_sasl_test_DEPENDENCIES= libmemcached/libmemcached.la libmemcached/libmemcachedutil.la $(PTHREAD_LIBS)
 check_PROGRAMS+=tests/c_sasl_test
 noinst_PROGRAMS+=tests/c_sasl_test
 

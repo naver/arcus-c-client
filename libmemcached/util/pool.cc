@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -68,7 +84,7 @@ struct memcached_pool_st
   {
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
-    _timeout.tv_sec= 5;
+    _timeout.tv_sec= 1;
     _timeout.tv_nsec= 0;
   }
 
@@ -483,3 +499,70 @@ memcached_return_t memcached_pool_behavior_get(memcached_pool_st *pool,
 
   return MEMCACHED_SUCCESS;
 }
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+/**
+ * Returns the pool's master
+ */
+memcached_st *memcached_pool_get_master(memcached_pool_st* pool)
+{
+  memcached_st *master;
+
+  if (pthread_mutex_lock(&pool->mutex))
+  {
+    return NULL;
+  }
+
+  master = pool->master;
+
+  (void)pthread_mutex_unlock(&pool->mutex);
+
+  return master;
+}
+
+/**
+ * Repopulates the pool based on the master.
+ */
+memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
+{
+  if (pool == NULL)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  if (pthread_mutex_lock(&pool->mutex))
+  {
+    return MEMCACHED_IN_PROGRESS;
+  }
+
+  pool->increment_version();
+
+  /* update the clones */
+  for (int xx= 0; xx <= pool->firstfree; ++xx)
+  {
+    memcached_st *memc;
+    if ((memc= memcached_clone(NULL, pool->master)))
+    {
+      memcached_free(pool->server_pool[xx]);
+      pool->server_pool[xx]= memc;
+      /* I'm not sure what to do in this case.. this would happen
+        if we fail to push the server list inside the client..
+        I should add a testcase for this, but I believe the following
+        would work, except that you would add a hole in the pool list..
+        in theory you could end up with an empty pool....
+      */
+    }
+  }
+
+  (void)pthread_mutex_unlock(&pool->mutex);
+
+  return MEMCACHED_SUCCESS;
+}
+
+uint16_t get_memcached_pool_size(memcached_pool_st* pool) 
+{
+  if (pool == NULL) return 1;
+  return pool->size;
+}
+
+#endif

@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -39,6 +55,7 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <sys/types.h>
 
 
@@ -84,6 +101,16 @@
 #include <libmemcached/verbosity.h>
 #include <libmemcached/version.h>
 #include <libmemcached/sasl.h>
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+#ifdef TARGET_OS_LINUX
+#include <linux/limits.h>
+#endif
+#ifndef PATH_MAX
+#define PATH_MAX        4096  /* # chars in a path name including nul */
+#endif
+#endif
+#include <libmemcached/collection.h>
+#include <libmemcached/collection_result.h>
 
 struct memcached_st {
   /**
@@ -103,6 +130,7 @@ struct memcached_st {
     bool hash_with_namespace:1;
     bool no_block:1; // Don't block
     bool no_reply:1;
+    bool piped:1;
     bool randomize_replica_read:1;
     bool support_cas:1;
     bool tcp_nodelay:1;
@@ -136,6 +164,14 @@ struct memcached_st {
   uint64_t query_id;
   uint32_t number_of_replicas;
   memcached_result_st result;
+  memcached_coll_result_st collection_result;
+  memcached_coll_smget_result_st smget_result;
+
+  char pipe_buffer[MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE];
+  size_t pipe_buffer_pos;
+  memcached_return_t *pipe_responses;
+  size_t pipe_responses_length;
+  memcached_return_t pipe_return_code;
 
   struct {
     bool weighted;
@@ -166,7 +202,12 @@ struct memcached_st {
   struct {
     bool is_allocated:1;
   } options;
-
+  const char *last_op_code;
+  memcached_return_t last_response_code;
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  void *server_manager;
+  FILE *logfile;
+#endif
 };
 
 #ifdef __cplusplus
@@ -211,6 +252,20 @@ uint32_t memcached_server_count(const memcached_st *);
 
 LIBMEMCACHED_API
 uint64_t memcached_query_id(const memcached_st *);
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+LIBMEMCACHED_API
+void *memcached_get_server_manager(memcached_st *ptr);
+
+LIBMEMCACHED_API
+void memcached_set_server_manager(memcached_st *ptr, void *server_manager);
+#endif
+
+LIBMEMCACHED_API
+memcached_return_t memcached_get_last_response_code(memcached_st *ptr);
+
+LIBMEMCACHED_API
+void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc);
 
 #ifdef __cplusplus
 } // extern "C"

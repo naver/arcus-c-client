@@ -1812,12 +1812,12 @@ YY_RULE_SETUP
 case 46:
 YY_RULE_SETUP
 #line 141 "libmemcached/csl/scanner.l"
-{ return yyextra->previous_token= TRUE; }
+{ return yyextra->previous_token= MC_TRUE; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
 #line 142 "libmemcached/csl/scanner.l"
-{ return yyextra->previous_token= FALSE; }
+{ return yyextra->previous_token= MC_FALSE; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP

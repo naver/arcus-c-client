@@ -126,9 +126,12 @@ you will need to install %{name}-devel.
 %{_includedir}/libmemcached/analyze.h
 %{_includedir}/libmemcached/array.h
 %{_includedir}/libmemcached/auto.h
+%{_includedir}/libmemcached/arcus.h
 %{_includedir}/libmemcached/basic_string.h
 %{_includedir}/libmemcached/behavior.h
 %{_includedir}/libmemcached/callback.h
+%{_includedir}/libmemcached/collection.h
+%{_includedir}/libmemcached/collection_result.h
 %{_includedir}/libmemcached/configure.h
 %{_includedir}/libmemcached/constants.h
 %{_includedir}/libmemcached/delete.h

@@ -1,4 +1,5 @@
 AX_WITH_PROG(MEMCACHED_BINARY,memcached)
+ac_cv_path_MEMCACHED_BINARY=$MEMCACHED_BINARY
 AS_IF([test -f "$ac_cv_path_MEMCACHED_BINARY"],
       [
         AC_DEFINE([HAVE_MEMCACHED_BINARY], [1], [If Memcached binary is available])

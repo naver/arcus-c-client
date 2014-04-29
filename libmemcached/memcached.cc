@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -39,30 +55,9 @@
 
 #include <libmemcached/options.hpp>
 #include <libmemcached/virtual_bucket.h>
-
-#if 0
-static const memcached_st global_copy= {
-  .state= {
-    .is_purging= false, // .is_purging
-    .is_processing_input= false, // is_processing_input
-    .is_time_for_rebuild= false,
-  },
-  .flags= {
-    .auto_eject_hosts= false,
-    .binary_protocol= false,
-    .buffer_requests= false,
-    .hash_with_namespace= false,
-    .no_block= false,
-    .no_reply= false,
-    .randomize_replica_read= false,
-    .support_cas= false,
-    .tcp_nodelay= false,
-    .use_sort_hosts= false,
-    .use_udp= false,
-    .verify_key= false,
-    .tcp_keepalive= false,
-  },
-};
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+#include "libmemcached/arcus.h"
+#include "libmemcached/arcus_priv.h"
 #endif
 
 static inline bool _memcached_init(memcached_st *self)
@@ -145,6 +140,17 @@ static inline bool _memcached_init(memcached_st *self)
   self->configure.version= -1;
   self->configure.filename= NULL;
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  self->flags.piped= false;
+  self->server_manager= NULL;
+  self->logfile= NULL;
+#endif
+
+  memcached_coll_result_create(self, &self->collection_result);
+  memcached_coll_smget_result_create(self, &self->smget_result);
+  self->pipe_buffer_pos= 0;
+  self->pipe_responses_length= 0;
+
   return true;
 }
 
@@ -175,6 +181,9 @@ static void _free(memcached_st *ptr, bool release_st)
   {
     memcached_destroy_sasl_auth_data(ptr);
   }
+
+  memcached_coll_result_free(&ptr->collection_result);
+  memcached_coll_smget_result_free(&ptr->smget_result);
 
   if (release_st)
   {
@@ -341,6 +350,11 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
   new_clone->connect_timeout= source->connect_timeout;
   new_clone->retry_timeout= source->retry_timeout;
   new_clone->distribution= source->distribution;
+  new_clone->ketama.weighted= source->ketama.weighted;
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  new_clone->server_manager= source->server_manager;
+  ((arcus_st *)new_clone)->proxy= ((arcus_st *)source)->proxy;
+#endif
 
   if (not hashkit_clone(&new_clone->hashkit, &source->hashkit))
   {
@@ -382,6 +396,7 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
 
   new_clone->_namespace= memcached_array_clone(new_clone, source->_namespace);
   new_clone->configure.filename= memcached_array_clone(new_clone, source->_namespace);
+  new_clone->configure.version= source->configure.version;
 
   if (LIBMEMCACHED_WITH_SASL_SUPPORT and source->sasl.callbacks)
   {
@@ -441,4 +456,24 @@ uint64_t memcached_query_id(const memcached_st *self)
     return 0;
 
   return self->query_id;
+}
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+void *memcached_get_server_manager(memcached_st *ptr) {
+  return ptr->server_manager;
+}
+
+void memcached_set_server_manager(memcached_st *ptr, void *server_manager) {
+  ptr->server_manager= server_manager;
+}
+#endif
+
+memcached_return_t memcached_get_last_response_code(memcached_st *ptr)
+{
+  return ptr->last_response_code;
+}
+
+void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc)
+{
+  ptr->last_response_code= rc;
 }

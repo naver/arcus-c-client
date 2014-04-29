@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2010-2014 NAVER Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -35,15 +51,61 @@
  */
 
 #include <libmemcached/common.h>
+#include "libmemcached/arcus_priv.h"
 
 static memcached_return_t memcached_flush_binary(memcached_st *ptr, 
                                                  time_t expiration);
+
 static memcached_return_t memcached_flush_textual(memcached_st *ptr, 
+                                                  const char *prefix,
                                                   time_t expiration);
 
+memcached_return_t memcached_flush_by_prefix(memcached_st *ptr,
+                                             const char *prefix,
+                                             size_t prefix_length,
+                                             time_t expiration)
+{
+  memcached_return_t rc;
+
+  arcus_server_check_for_update(ptr);
+
+  if (memcached_failed(rc= initialize_query(ptr)))
+  {
+    return rc;
+  }
+
+  if (not prefix)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS,
+           MEMCACHED_AT,
+           memcached_literal_param("given prefix is null"));
+  }
+
+  if (prefix_length == 0)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS,
+           MEMCACHED_AT,
+           memcached_literal_param("given prefix length == 0"));
+  }
+
+  LIBMEMCACHED_MEMCACHED_FLUSH_START();
+  if (ptr->flags.binary_protocol)
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS,
+           MEMCACHED_AT,
+           memcached_literal_param("Binary protocol is not supported yet"));
+  else
+    rc= memcached_flush_textual(ptr, prefix, expiration);
+
+  LIBMEMCACHED_MEMCACHED_FLUSH_END();
+  return rc;
+}
+ 
 memcached_return_t memcached_flush(memcached_st *ptr, time_t expiration)
 {
   memcached_return_t rc;
+
+  arcus_server_check_for_update(ptr);
+
   if (memcached_failed(rc= initialize_query(ptr)))
   {
     return rc;
@@ -53,12 +115,14 @@ memcached_return_t memcached_flush(memcached_st *ptr, time_t expiration)
   if (ptr->flags.binary_protocol)
     rc= memcached_flush_binary(ptr, expiration);
   else
-    rc= memcached_flush_textual(ptr, expiration);
+    rc= memcached_flush_textual(ptr, NULL, expiration);
+
   LIBMEMCACHED_MEMCACHED_FLUSH_END();
   return rc;
 }
 
 static memcached_return_t memcached_flush_textual(memcached_st *ptr, 
+                                                  const char *prefix,
                                                   time_t expiration)
 {
   unlikely (memcached_server_count(ptr) == 0)
@@ -77,13 +141,22 @@ static memcached_return_t memcached_flush_textual(memcached_st *ptr,
     if (expiration)
     {
       send_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, 
-                            "flush_all %llu%s\r\n",
+                            "%s%s%s%s%llu%s\r\n",
+                            prefix ? "flush_prefix" : "flush_all",
+                            prefix ? " " : "",
+                            prefix ? prefix : "",
+                            prefix ? " " : "",
                             (unsigned long long)expiration, no_reply ? " noreply" : "");
     }
     else
     {
       send_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, 
-                            "flush_all%s\r\n", no_reply ? " noreply" : "");
+                            "%s%s%s%s%s\r\n", 
+                            prefix ? "flush_prefix" : "flush_all",
+                            prefix ? " " : "",
+                            prefix ? prefix : "",
+                            prefix ? " " : "",
+                            no_reply ? " noreply" : "");
     }
 
     if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)

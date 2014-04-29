@@ -1,3 +1,106 @@
+README
+Hi!
+
+So what is this? It is a library in C for connecting to memcached servers
+(http://danga.com/memcached/). It is also a collection of utilities designed
+to work with memcached.
+
+memcat - Copy the value of a key to standard output
+memflush - Flush the contents of your servers.
+memrm - Remove a key(s) from the server.
+memstat - Dump the stats of your servers to standard output
+memslap - Load generation utility (benchmark!)
+
+The library is in production in many locations (upwards to 1000+ nodes).
+
+The project has information here: http://libmemcached.org/
+
+Documentation can be found here: http://docs.libmemcached.org/
+
+Want to contribute? If you write more then three good patches, then I will
+just ask you to commit directly to the tree. I am happy to have additional
+people work on this project. Please checkout README.FIRST. 
+
+You will need a C99 compiler in order to compile this library. Currently we
+actively support Linux, MacOSX, FreeBSD, and Solaris. A Windows port is
+currently not supported, but one is listed on the homepage that is supported
+by someone in the community.
+
+If you are looking for answers to your questions please check out the
+mailing list at:
+http://lists.libmemcached.org/  
+
+Subscription information for the libmemcached mailing list can be found there.
+
+Please report bugs here:
+https://bugs.launchpad.net/libmemcached/
+
+You can purchase support from:
+http://datadifferential.com/
+
+
+Cheers,
+  -Brian Aker
+   Seattle, WA.
+README.FIRST
+Hi!
+
+If you are getting this code from http://launchpad.net/libmemcached then
+continue reading. Otherwise these directions are not for you (well maybe...).
+
+To obtain code from http://bazaar.launchpad.net/libmemcached you will need to
+issue the following command:
+
+bzr branch lp:libmemcached
+
+Once the tree is cloned you will need to build the "configure" script. You
+can do this by running the script:
+
+./config/autorun.sh
+
+It will set up all of the files you need to build libmemcached. At that
+point it is just the typical "./configure; make; make test; make install"
+
+For a tarball release do a "make dist" and for an RPM type "make rpm".
+
+For patches, we prefer you push a branch to launchpad and then submit that 
+branch to be merged. For more information, see:
+
+https://help.launchpad.net/Code/UploadingABranch
+https://help.launchpad.net/Code/Review
+
+Thanks and keep hacking!
+
+Cheers,
+  -Brian
+  Seattle, WA.
+README.win32
+Hi, 
+
+So you want to know how to build libmemcached on Windows? In order to
+have a single build environment you need to install mingw to get a
+"unix environment" to run the configure script.
+
+An easy way to get started is to install the msysgit fullinstall
+package from: http://code.google.com/p/msysgit/downloads/list
+
+msysgit does not contain the "autotools" needed to generate a
+configure script, so you need to generate that on another box (this
+should not be a problem if you're trying to build from a tar archive).
+
+msysgit does not contain the tools to build the documentation, so you
+need to add --without-docs to configure.
+
+I'm normally building libmemcached with:
+
+Ex:
+$ ./configure --without-docs --with-memcached=../memcached/memcached.exe
+$ make all install
+
+Happy hacking,
+
+Trond Norbye
+ChangeLog
 0.53 Mon Sep 26 20:50:33 PDT 2011
   * Fix for FreeBSD/OpenBSD and -lm
   * Added memcached_exist()
@@ -407,3 +510,44 @@
 0.2 Thu Sep 27 03:46:57 PDT 2007
   * First public version
 
+TODO
+- Write a shell application (?)
+- Fix version in command line tools
+- Write (more) test cases for all command line tools (!!!)
+- Write some sort of "default" options bit for tools
+- More examples using libraries
+- Doxygen?
+- implement more connection/hash algo
+- implement compression
+- Revisit get() code (look for performance enhancements)
+- Add support for managing servers for clusters.
+- Build embedded version
+NEWS
+See Changelog
+THANKS
+(This is not complete, please send email if I have missed someone.)
+Eirik A. Nygaard - IO Patch
+Cal Heldenbrand - Awesome feedback on performance
+Dustin Sallings - Insight into protocol
+Tobias Luetke - Performance Feedback
+Andre Cruz - Help with getting the CRC Hash function to match other connectors
+Brian Pontz - Hsieh hash
+Tim Bunce - Perl Driver work and feedback on API
+Kevin Dalley - Bug Fixes
+Patrick Galbraith - work on C++ interface
+Ross McFarland - Idea for sorting servers.
+Marcelo Fernandez - TCP/IP timeout pieces
+Yin Chen - Ketama support/weighted support
+Monty Taylor - Debian Packages, Cleanup work for configure
+AUTHORS
+Brian Aker, brian@tangent.org -- Client Library, Tools
+Mark Atwood, -- Tools, Docs
+Patrick Galbraith, -- C++ Interface
+Padraig O'Sullivan, -- C++ Interface (current one)
+Tim Bunce, -- Docs
+Trond Norbye, trond.norbye@gmail.com -- Binary protocol, Misc
+Yin Chen, -- Ketama Work
+Toru Maesaka, dev@torum.net -- Stats analysis
+Eric Lambert, -- UDP work
+Monty Taylor, -- Build Releated (Pandora)
+Mingqiang Zhuang, Schooner Information Technology, Inc. -- Rewrite of memslap
