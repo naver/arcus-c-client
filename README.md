@@ -1,5 +1,3 @@
-## arcus-c-client: Arcus C Client
-
 This is an experimental C client library for Arcus memcached with
 replication support.  Replication takes place at the server side using
 a master-slave approach.  It is transparent to the client.  There are
@@ -13,6 +11,8 @@ appropriately.
 
 Below is the original README.md from the master branch.  Everything
 still applies.
+
+## arcus-c-client: Arcus C Client
 
 This is the C client library for Arcus memcached.  It is based on
 libmemcached 0.53.  Extensive changes are made to support Arcus
