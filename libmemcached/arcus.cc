@@ -21,6 +21,7 @@
 #include <pthread.h>
 
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
+#define ARCUS_1_7_ZK_CACHE_LIST               "/arcus_1_7/cache_list"
 #define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
 #define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
 #define ARCUS_ZK_ADDING_CLEINT_INFO           1
@@ -76,6 +77,7 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, watc
  */
 static inline void do_arcus_update_cachelist(memcached_st *mc, struct memcached_server_info *serverinfo, uint32_t servercount);
 static inline void do_add_server_to_cachelist(struct memcached_server_info *serverinfo, char *hostport);
+static void do_add_server_to_cachelist_1_7(struct memcached_server_info *serverinfo, uint32_t *count, char *nodename);
 
 
 pthread_mutex_t lock_arcus = PTHREAD_MUTEX_INITIALIZER;
@@ -718,6 +720,7 @@ static inline void do_add_server_to_cachelist(struct memcached_server_info *serv
   char *word;
   char seps[]= ":-";
 
+  serverinfo->groupname = NULL;
   /* expected = <IP>:<PORT>-<HOSTNAME>
    *      e.g.  10.64.179.212:11212-localhost */
   for (word= strtok_r(hostport, seps, &buffer);
@@ -740,6 +743,89 @@ static inline void do_add_server_to_cachelist(struct memcached_server_info *serv
     }
   }
   serverinfo->exist= false;
+}
+
+/* For 1.7 clusters, we use this function to set up server_info.
+ * Do not use server_to_cachelist above.
+ */
+static void
+do_add_server_to_cachelist_1_7(struct memcached_server_info *serverinfo,
+                               uint32_t *count, char *nodename)
+{
+  char *c, *substr[3], *ip, *port;
+  uint32_t i;
+  struct memcached_server_info *info;
+
+  /* groupname^{M,S}^ip:port-hostname
+   * Break up the sting into three pieces.
+   */
+  c = nodename;
+  for (i = 0; i < 3; i++) {
+    substr[i] = c;
+    while (*c != '\0') {
+      if (*c == '^') {
+        *c++ = '\0';
+        break;
+      }
+      c++;
+    }
+  }
+  if (strlen(substr[0]) == 0 || strlen(substr[1]) != 1 ||
+    strlen(substr[2]) == 0 || (*substr[1] != 'M' && *substr[1] != 'S')) {
+    ZOO_LOG_WARN(("Error while parsing the server name. 1st=%s 2nd=%s 3rd=%d",
+        substr[0], substr[1], substr[2]));
+    return;
+  }
+  /* Break up ip:port-hostname */
+  c = substr[2];
+  ip = c;
+  while (*c != '\0') {
+    if (*c == ':') {
+      *c++ = '\0';
+      break;
+    }
+    c++;
+  }
+  port = c;
+  while (*c != '\0') {
+    if (*c == '-') {
+      *c++ = '\0';
+      break;
+    }
+    c++;
+  }
+  if (strlen(ip) == 0 || strlen(port) == 0) {
+    ZOO_LOG_WARN(("Error while parsing the server name. ip=%s port=%s",
+        ip, port));
+    return;
+  }
+
+  /* See if the list already has the same group. */
+  info = NULL;
+  for (i = 0; i < *count; i++) {
+    if (0 == strcmp(serverinfo[i].groupname, substr[0])) {
+      info = &serverinfo[i];
+      break;
+    }
+  }
+
+  /* Then either add a new server_info or update the existing server_info's
+   * hostname with the current (master's) address.
+   */
+  if (info == NULL) {
+    info = &serverinfo[*count];
+    *count = *count + 1;
+    info->exist = false;
+    info->groupname = substr[0];
+    info->hostname = "invalid";
+    info->port = 0;
+    /* "invalid" indicates no masters. */
+  }
+  /* If the server is the master, update the hostname with a valid ip. */
+  if (*substr[1] == 'M') {
+    info->hostname = ip;
+    info->port = atoi(port);
+  }
 }
 
 static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
@@ -826,8 +912,16 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
           continue;
         }
 
-        if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
-            mc->servers[x].port == serverinfo[y].port)
+        if (arcus->zk.is_1_7) {
+          if (strcmp(mc->servers[x].groupname, serverinfo[y].groupname) == 0 &&
+              strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 &&
+              mc->servers[x].port == serverinfo[y].port) {
+            serverinfo[y].exist = true;
+            break;
+          }
+        }
+        else if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
+                 mc->servers[x].port == serverinfo[y].port)
         {
            serverinfo[y].exist= true;
            break;
@@ -845,8 +939,14 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
     {
       if (serverinfo[x].exist == false)
       {
-        new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
-                                                serverinfo[x].port, &error);
+        if (arcus->zk.is_1_7) {
+          new_hosts= memcached_server_list_append_with_group(servers, serverinfo[x].groupname,
+                                                             serverinfo[x].hostname, serverinfo[x].port, &error);
+          ZOO_LOG_WARN(("1.7: append with group"));
+        }
+        else
+          new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
+                                                  serverinfo[x].port, &error);
         if (new_hosts != NULL)
         {
           servers= new_hosts;
@@ -935,6 +1035,7 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
   struct memcached_server_info *serverinfo;
   char buffer[ARCUS_MAX_PROXY_FILE_LENGTH];
   serverinfo = static_cast<memcached_server_info *>(libmemcached_malloc(mc, sizeof(memcached_server_info)*(size+1)));
+  arcus_st *arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
 
   if (not serverinfo)
   {
@@ -954,7 +1055,10 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
          token;
          token= strtok_r(NULL,   ",", &buf))
     {
-      do_add_server_to_cachelist(&serverinfo[servercount++], token);
+      if (arcus->zk.is_1_7)
+        do_add_server_to_cachelist_1_7(serverinfo, &servercount, token);
+      else
+        do_add_server_to_cachelist(&serverinfo[servercount++], token);
     }
   }
 
@@ -1001,8 +1105,13 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc,
     }
 
     for (i= 0; i< strings->count; i++) {
-      do_add_server_to_cachelist(&serverinfo[i], strings->data[i]);
-      servercount++;
+      if (arcus->zk.is_1_7)
+        do_add_server_to_cachelist_1_7(serverinfo, &servercount,
+          strings->data[i]);
+      else {
+        do_add_server_to_cachelist(&serverinfo[i], strings->data[i]);
+        servercount++;
+      }
     }
 
     do_arcus_update_cachelist(mc, serverinfo, servercount);
@@ -1025,6 +1134,33 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
   {
     ZOO_LOG_ERROR(("Arcus is null"));
     return;
+  }
+  strings.count = 0;
+  strings.data = NULL;
+
+  /* Check /arucs_1_7 and /arcus to determine whether we belong to 1.7 or
+   * 1.6 cluster.
+   */
+  if (arcus->is_initializing) {
+    struct Stat stat;
+    snprintf(arcus->zk.path, sizeof(arcus->zk.path),
+      "%s/%s", ARCUS_1_7_ZK_CACHE_LIST, arcus->zk.svc_code);
+    zkrc = zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
+    if (zkrc == ZOK) {
+      ZOO_LOG_WARN(("Detected Arcus 1.7 cluster. %s exits", arcus->zk.path));
+      arcus->zk.is_1_7 = true;
+    }
+    else if (zkrc == ZNONODE) {
+      snprintf(arcus->zk.path, sizeof(arcus->zk.path),
+        "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
+      arcus->zk.is_1_7 = false;
+    }
+    else {
+      ZOO_LOG_ERROR(("zoo_exists failed while trying to"
+          " determine Arcus version. path=%s reason=%s, zookeeper=%s",
+          arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
+      return;
+    }
   }
 
   /* Make a new watch on Arcus cache list. */

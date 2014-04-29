@@ -58,6 +58,7 @@ typedef struct arcus_st {
     size_t     maxbytes;
     int        last_rc;
     struct String_vector last_strings;
+    bool       is_1_7;
   } zk;
 
   struct arcus_proxy_st
@@ -73,9 +74,15 @@ typedef struct arcus_st {
   bool is_proxy;
 } arcus_st;
 
+/* 1.7 cluster:
+ * groupname is the name of the group this server belongs to.
+ * hostname is the name of the master server.  If there are no masters, then
+ * hostname = NULL.
+ */
 struct memcached_server_info
 {
-  char           *hostname;
+  const char    *groupname;
+  const char    *hostname;
   unsigned short port;
   bool           exist;
 };

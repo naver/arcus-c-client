@@ -607,6 +607,28 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
 
   LIBMEMCACHED_MEMCACHED_CONNECT_START();
 
+  // Arcus 1.7.  The server is actually the group.
+  // The group's master server is stored in hostname.
+  // If there are no masters, it contains "invalid".
+  //
+  // When connected to a 1.6 cluster, hostname should have the valid name.
+  //
+  // We could perform this check (i.e. do we have masters?) in each memcached
+  // command function.  For example, in get, set, and so on.  But that seems
+  // like spreading the code too much.
+  //
+  // There is one problem though.  When the caller uses this function outside
+  // the context of memcached commands, it might produce unexpected failures.
+  // Currently, in behavior_get.cc, SOCKET_SEND_SIZE/SOCKET_RECV_SIZE calls
+  // this function to query socket buffer sizes.  If we don't have masters,
+  // those queries would fail.  But, no one uses it.  So do not bother...
+  // If they become a real problem, we should probably fix them, not this
+  // function.
+  //
+  if (server->is_1_7 && 0 == strcmp(server->hostname, "invalid")) {
+    return memcached_set_error(*server, MEMCACHED_NO_SERVERS, MEMCACHED_AT);
+  }
+
   bool in_timeout= false;
   memcached_return_t rc;
   if (memcached_failed(rc= backoff_handling(server, in_timeout)))

@@ -559,6 +559,35 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   return MEMCACHED_SUCCESS;
 }
 
+memcached_return_t
+memcached_pool_use_single_server(memcached_pool_st *pool, const char *host,
+  int port)
+{
+  memcached_st *mc;
+  memcached_return_t error;
+  memcached_server_list_st list;
+
+  // single-server list
+  list = memcached_server_list_append(NULL, host, port, &error);
+  if (list == NULL)
+    return MEMCACHED_FAILURE;
+
+  mc = memcached_pool_get_master(pool);
+
+  // delete all existing servers from the master
+  memcached_servers_reset(mc);
+
+  // use the new server list
+  error = memcached_server_push(mc, list);
+  if (list)
+    memcached_server_list_free(list);
+  if (error != MEMCACHED_SUCCESS)
+    return error;
+
+  // clone the master to the whole pool
+  return memcached_pool_repopulate(pool);
+}
+
 uint16_t get_memcached_pool_size(memcached_pool_st* pool) 
 {
   if (pool == NULL) return 1;

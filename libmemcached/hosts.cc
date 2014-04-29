@@ -65,6 +65,11 @@ static int compare_servers(const void *p1, const void *p2)
   memcached_server_instance_st a= (memcached_server_instance_st)p1;
   memcached_server_instance_st b= (memcached_server_instance_st)p2;
 
+  // For 1.7 servers, compare only the group names.
+  // hostname contains the group's master server, if any.
+  if (a->is_1_7)
+    return strcmp(a->groupname, b->groupname);
+
   return_value= strcmp(a->hostname, b->hostname);
 
   if (return_value == 0)
@@ -305,13 +310,23 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         int sort_host_length;
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-        // Spymemcached ketema key format is: hostname/ip:port-index
-        // If hostname is not available then: ip:port-index
-        sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
-                                   "%s:%u-%u",
-                                   list[host_index].hostname,
-                                   (uint32_t)list[host_index].port,
-                                   pointer_index);
+        if (list[host_index].is_1_7) {
+          // For 1.7 clusters, use group names, not host names, appear
+          // in the hash ring.
+          sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
+                                     "%s-%u",
+                                     list[host_index].groupname,
+                                     pointer_index);
+        }
+        else {
+          // Spymemcached ketema key format is: hostname/ip:port-index
+          // If hostname is not available then: ip:port-index
+          sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
+                                     "%s:%u-%u",
+                                     list[host_index].hostname,
+                                     (uint32_t)list[host_index].port,
+                                     pointer_index);
+        }
 #else
         // Spymemcached ketema key format is: hostname/ip:port-index
         // If hostname is not available then: /ip:port-index
@@ -352,6 +367,9 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     }
     else
     {
+      // Arcus does not use this hash.  So do not bother supporting
+      // 1.7 group names.
+
       for (uint32_t pointer_index= 1;
            pointer_index <= pointer_per_server / pointer_per_hash;
            pointer_index++)
@@ -445,7 +463,11 @@ static memcached_return_t server_add(memcached_st *ptr,
   /* TODO: Check return type */
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, memcached_server_count(ptr));
 
-  if (not __server_create_with(ptr, instance, hostname, port, weight, type))
+  /* Arcus (both 1.6 and 1.7) does not use this function.  So, use a fake
+   * groupname.
+   */
+  memcached_string_t groupname= { memcached_string_make_from_cstr("invalid") };
+  if (not __server_create_with(ptr, instance, groupname, hostname, port, weight, type, false))
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
   }
@@ -500,9 +522,12 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
     WATCHPOINT_ASSERT(instance);
 
     memcached_string_t hostname= { memcached_string_make_from_cstr(list[x].hostname) };
+    memcached_string_t groupname= { memcached_string_make_from_cstr(list[x].groupname) };
     if (__server_create_with(ptr, instance, 
+                             groupname,
                              hostname,
-                             list[x].port, list[x].weight, list[x].type) == NULL)
+                             list[x].port, list[x].weight, list[x].type,
+                             list[x].is_1_7) == NULL)
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     }

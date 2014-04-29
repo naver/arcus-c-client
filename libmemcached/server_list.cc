@@ -82,8 +82,12 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
   }
 
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
+  /* Arcus 1.6 cluster uses this path.  Set groupname="invalid".
+   * The 1.7 cluster uses append_with_group.
+   */
+  memcached_string_t _groupname= { memcached_string_make_from_cstr("invalid") };
   /* @todo Check return type */
-  if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight, port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
+  if (not __server_create_with(NULL, &new_host_list[count-1], _groupname, _hostname, port, weight, port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET, false))
   {
     *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     return NULL;
@@ -107,6 +111,53 @@ memcached_server_list_append(memcached_server_list_st ptr,
                              memcached_return_t *error)
 {
   return memcached_server_list_append_with_weight(ptr, hostname, port, 0, error);
+}
+
+/* Arcus 1.7 cluster.  Use this function to add servers to memcached_st,
+ * instead of server_list_append above.
+ */
+memcached_server_list_st
+memcached_server_list_append_with_group(memcached_server_list_st ptr,
+  const char *groupname, const char *hostname, in_port_t port,
+  memcached_return_t *error)
+{
+  /* Modified version of append_with_weight */
+
+  uint32_t count;
+  memcached_server_list_st new_host_list;
+  memcached_return_t unused;
+
+  if (error == NULL)
+    error= &unused;
+
+  /* Increment count for hosts */
+  count = 1;
+  if (ptr != NULL) {
+    count+= memcached_server_list_count(ptr);
+  }
+
+  new_host_list= (memcached_server_write_instance_st)realloc(ptr,
+    sizeof(memcached_server_st) * count);
+  if (not new_host_list) {
+    *error= memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE,
+      MEMCACHED_AT);
+    return NULL;
+  }
+
+  memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
+  memcached_string_t _groupname= { memcached_string_make_from_cstr(groupname) };
+  if (not __server_create_with(NULL, &new_host_list[count-1], _groupname,
+      _hostname, port, 0, MEMCACHED_CONNECTION_TCP, true)) {
+    *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE,
+      MEMCACHED_AT);
+    return NULL;
+  }
+
+  /* Backwards compatibility hack */
+  memcached_servers_set_count(new_host_list, count);
+
+  *error= MEMCACHED_SUCCESS;
+  return new_host_list;
 }
 
 uint32_t memcached_server_list_count(const memcached_server_list_st self)
