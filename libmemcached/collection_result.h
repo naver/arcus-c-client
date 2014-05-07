@@ -17,6 +17,17 @@
 #ifndef __LIBMEMCACHED_COLLECTION_RESULT_H__
 #define __LIBMEMCACHED_COLLECTION_RESULT_H__
 
+/**
+ * Most collection API functions utilize "result" structures.
+ * The result contains one or more values, return codes, and
+ * other pieces of information from the server.
+ * Use the functions listed in this header to retrieve data
+ * from the result structure.
+ */
+
+/**
+ * Result structure for collection operations.
+ */
 struct memcached_coll_result_st {
   char item_key[MEMCACHED_MAX_KEY];
   size_t key_length;
@@ -37,6 +48,9 @@ struct memcached_coll_result_st {
   /* Add result callback function */
 };
 
+/**
+ * Result structure specifically for b+tree smget operations.
+ */
 struct memcached_coll_smget_result_st {
   const memcached_st *root;
   memcached_coll_type_t type;
@@ -73,90 +87,232 @@ struct memcached_coll_smget_result_st {
 extern "C" {
 #endif
 
-/* Result Struct */
+/**
+ * Free allocated memory within the result and the result itself, if it is allocated by the library.
+ * @param result  collection result structure
+ */
 LIBMEMCACHED_API
 void memcached_coll_result_free(memcached_coll_result_st *result);
 
+/**
+ * Re-initialize the result, freeing allocated memory within the result.
+ * @param result  collection result structure
+ */
 LIBMEMCACHED_API
-void memcached_coll_result_reset(memcached_coll_result_st *ptr);
+void memcached_coll_result_reset(memcached_coll_result_st *result);
 
+/**
+ * Create and initialize the result.
+ * @param ptr  memcached handle
+ * @param result  optional caller-allocated collection result structure. The library allocates the result if NULL.
+ * @return collection result structure.
+ */
 LIBMEMCACHED_API
 memcached_coll_result_st *memcached_coll_result_create(const memcached_st *ptr,
                                                        memcached_coll_result_st *result);
 
+/**
+ * Get the collection item's key.
+ * @param result  collection result structure
+ * @return collection item's key.
+ */
 LIBMEMCACHED_API
 const char *memcached_coll_result_get_key(memcached_coll_result_st* result);
 
+/**
+ * Get the collection item's key length.
+ * @param result  collection result structure
+ * @return collection item's key length.
+ */
 LIBMEMCACHED_API
 size_t memcached_coll_result_get_key_length(memcached_coll_result_st* result);
 
+/**
+ * Get the collection item's type (b+tree, list, set).
+ * @param result  collection result structure
+ * @return collection item's type.
+ */
 LIBMEMCACHED_API
 memcached_coll_type_t memcached_coll_result_get_type(memcached_coll_result_st *result);
 
+/**
+ * Get the number of elements in the result.
+ * @param result  collection result structure
+ * @return number of elements.
+ */
 LIBMEMCACHED_API
 size_t memcached_coll_result_get_count(memcached_coll_result_st *result);
 
+/**
+ * Get the collection item's flags.
+ * @param result  collection result structure
+ * @return item flags.
+ */
 LIBMEMCACHED_API
 uint32_t memcached_coll_result_get_flags(memcached_coll_result_st *result);
 
+/**
+ * Get the b+tree element's bkey.
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's bkey.
+ */
 LIBMEMCACHED_API
 uint64_t memcached_coll_result_get_bkey(memcached_coll_result_st *result, size_t idx);
 
+/**
+ * Get the b+tree element's byte-array type bkey.
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's byte-array type bkey.
+ */
 LIBMEMCACHED_API
 memcached_hexadecimal_st *memcached_coll_result_get_bkey_ext(memcached_coll_result_st *result, size_t idx);
 
+/**
+ * Get the b+tree element's flags (eflag).
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's flags.
+ */
 LIBMEMCACHED_API
 memcached_hexadecimal_st *memcached_coll_result_get_eflag(memcached_coll_result_st *result, size_t idx);
 
+/**
+ * Get the element's value.
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's value.
+ */
 LIBMEMCACHED_API
 const char *memcached_coll_result_get_value(memcached_coll_result_st *result, size_t idx);
 
+/**
+ * Get the element's value length.
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's value length.
+ */
 LIBMEMCACHED_API
 size_t memcached_coll_result_get_value_length(memcached_coll_result_st *result, size_t idx);
 
 
+/**
+ * Free allocated memory within the smget result and the result itself, if it is allocated by the library.
+ * @param result  smget result structure
+ */
 LIBMEMCACHED_API
 void memcached_coll_smget_result_free(memcached_coll_smget_result_st *result);
 
+/**
+ * Re-initialize the smget result, freeing allocated memory within the result.
+ * @param result  smget result structure
+ */
 LIBMEMCACHED_API
-void memcached_coll_smget_result_reset(memcached_coll_smget_result_st *ptr);
+void memcached_coll_smget_result_reset(memcached_coll_smget_result_st *result);
 
-LIBMEMCACHED_API
-void memcached_coll_smget_result_free_container_only(memcached_coll_smget_result_st *ptr);
-
+/**
+ * Get the collection item's type. Currently it can only be b+tree.
+ * @param result  smget result structure
+ * @return collection item's type.
+ */
 LIBMEMCACHED_API
 memcached_coll_type_t memcached_coll_smget_result_get_type(memcached_coll_smget_result_st *result);
 
+/**
+ * Get the number of elements in the result.
+ * @param result  smget result structure
+ * @return number of elements.
+ */
 LIBMEMCACHED_API
 size_t memcached_coll_smget_result_get_count(memcached_coll_smget_result_st *result);
 
+/**
+ * Get the key of the b+tree item that contains the given element.
+ * @param result  smget result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return b+tree item's key.
+ */
 LIBMEMCACHED_API
 const char *memcached_coll_smget_result_get_key(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Get the bkey of the given element.
+ * @param result  smget result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's bkey.
+ */
 LIBMEMCACHED_API
 uint64_t memcached_coll_smget_result_get_bkey(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Get the byte-array type bkey of the given element.
+ * @param result  smget result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's byte-array type bkey.
+ */
 LIBMEMCACHED_API
 memcached_hexadecimal_st *memcached_coll_smget_result_get_bkey_ext(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Get the eflag of the given element.
+ * @param result  smget result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's eflag.
+ */
 LIBMEMCACHED_API
 memcached_hexadecimal_st *memcached_coll_smget_result_get_eflag(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Get the value of the given element.
+ * @param result  smget result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's value.
+ */
 LIBMEMCACHED_API
 const char *memcached_coll_smget_result_get_value(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Get the value length of the given element.
+ * @param result  smget result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's value length.
+ */
 LIBMEMCACHED_API
 size_t memcached_coll_smget_result_get_value_length(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Get the number of missed keys in the result.
+ * @param result  smget result structure
+ * @return number of missed keys.
+ */
 LIBMEMCACHED_API
 size_t memcached_coll_smget_result_get_missed_key_count(memcached_coll_smget_result_st *result);
 
+/**
+ * Get the individual missed key.
+ * @param result  smget result structure
+ * @param idx  missed key's index (0th key, 1st key, and so on).
+ * @return missed key.
+ */
 LIBMEMCACHED_API
 const char *memcached_coll_smget_result_get_missed_key(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Get the length of the individual missed key.
+ * @param result  smget result structure
+ * @param idx  missed key's index (0th key, 1st key, and so on).
+ * @return missed key's length.
+ */
 LIBMEMCACHED_API
 size_t memcached_coll_smget_result_get_missed_key_length(memcached_coll_smget_result_st *result, size_t idx);
 
+/**
+ * Create and initialize the smget result.
+ * @param ptr  memcached handle
+ * @param result  optional caller-allocated smget result structure. The library allocates the result if NULL.
+ * @return smget result structure.
+ */
 LIBMEMCACHED_API
 memcached_coll_smget_result_st *memcached_coll_smget_result_create(const memcached_st *ptr,
                                                                    memcached_coll_smget_result_st *result);

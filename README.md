@@ -33,33 +33,11 @@ Make sure to install auto tools such as autoheader.
     make
     make install
 
-The use of ZooKeeper based clustering is optional.  To enable it, use
---enable-zk-integration along with --with-zookeeper when running configure.
-Make sure to use the ZooKeeper library with Arcus modifications.
-
-## Test cases
-
-libmemcached includes a number of test cases in the tests directory.  Arcus
-specific test cases have been added to tests/mem_functions.cc.  To run test
-cases, specify the memcached binary and the engine.  Here is an example.
-
-    ./configure --prefix=/home1/hyongyoub_kim/openarcus \
-                --with-memcached=/home1/openarcus/bin/memcached \
-                --with-memcached_engine=/home1/openarcus/lib/default_engine.so
-    make
-    make test
-    
-    [...]
-    PASS: tests/c_sasl_test
-    ===================
-    All 23 tests passed
-    ===================
-    Tests completed
-
 ## ZooKeeper-based clustering
 
-Make sure to install the ZooKeeper C library from arcus-zookeeper.  Then,
-compile this Arcus C library using --enable-zk-integration and --with-zookeeper.
+The use of ZooKeeper based clustering is optional.  To enable it, use
+--enable-zk-integration along with --with-zookeeper when running configure.
+Make sure to install the ZooKeeper C library from arcus-zookeeper.
 
 Set up a ZooKeeper ensemble and a directory structure for memcached
 instances.  For instance, the following shows the configuration for
@@ -75,7 +53,7 @@ initLimit=10
 # sending a request and getting an acknowledgement
 syncLimit=5
 # the directory where the snapshot is stored.
-dataDir=/home1/openarcus/zookeeper_data
+dataDir=/home1/arcus/zookeeper_data
 # the port at which the clients will connect
 clientPort=2181
 maxClientCnxns=200
@@ -111,6 +89,90 @@ arcus/multi_process.c:
 arcus_proxy_create(proxy_mc, "localhost:2181", "test");
 ```
 
+## Quick start helloworld example
+
+The following example code (arcus/sample.c) uses one memcached instance running on the local machine at port 11211.
+It simply creates a b+tree key, insert an element, and then retrieves it from the server.
+
+```
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "libmemcached/memcached.h"
+
+/* No error checking/handling to minimize clutter. */
+
+int
+main(int argc, char *argv[])
+{
+  memcached_st *mc;
+  memcached_coll_create_attrs_st attr;
+  const char *key = "this_is_key";
+  size_t key_length = strlen(key);
+  const uint64_t bkey = 123; /* b+tree element's key */
+  const char *value = "helloworld";
+  memcached_coll_result_st result;
+
+  /* Create the memcached object */
+  if (NULL == (mc = memcached_create(NULL)))
+    return -1;
+
+  /* Add the server's address */
+  if (MEMCACHED_SUCCESS != memcached_server_add(mc, "127.0.0.1", 11211))
+    return -1;
+
+  /* Create a b+tree key and then insert an element in one call. */
+  memcached_coll_create_attrs_init(&attr, 20 /* flags */, 100 /* exptime */,
+    4000 /* maxcount */);
+  if (MEMCACHED_SUCCESS != memcached_bop_insert(mc, key, key_length,
+      bkey,
+      NULL /* eflag */, 0 /* eflag length */,
+      (const char*)value, (size_t)strlen(value)+1 /* include NULL */,
+      &attr /* automatically create the b+tree key */))
+    return -1;
+  printf("Created a b+tree key and inserted an element.\n");
+
+  /* Get the element */
+  if (NULL == memcached_coll_result_create(mc, &result))
+    return -1;
+  if (MEMCACHED_SUCCESS != memcached_bop_get(mc, key, key_length, bkey,
+      NULL /* no eflags filters */,
+      false /* do not delete the element */,
+      false /* do not delete the empty key */,
+      &result))
+    return -1;
+  
+  /* Print */
+  printf("Retrieved the element. value=%s\n",
+    memcached_coll_result_get_value(&result, 0));
+  memcached_coll_result_free(&result);
+  
+  return 0;
+}
+```
+
+To compile, specify the include and library paths and link against this library.
+
+```
+gcc -Wall -I/install/directory/include -L/install/directory/lib -lmemcached -lmemcachedutil -o sample sample.c
+```
+
+Then start the memcached instance.
+```
+$ cd /install/directory/bin
+$ ./memcached -p 11211 -E ../lib/default_engine.so -v
+Loaded engine: Default engine v0.1
+Supplying the following features: LRU, compare and swap
+
+```
+
+Finally run the sample. Make sure to include the path to the C library in LD_LIBRARY_PATH.
+```
+$ LD_LIBRARY_PATH=/install/directory/lib ./sample
+Created a b+tree key and inserted an element.
+Retrieved the element. value=helloworld
+```
+
 ## API Documentation
 
 As is, documentation is minimal.  It definitely needs improvements.
@@ -122,8 +184,29 @@ See the following files.
 
 - libmemcached/arcus.h: ZooKeeper-based clustering
 - libmemcached/collection.h: collections API
+- libmemcached/collection_result.h: collection results API
 - libmemcached/util/pool.h: a few Arcus specific utility functions
 
+## Test cases
+
+libmemcached includes a number of test cases in the tests directory.  Arcus
+specific test cases have been added to tests/mem_functions.cc.  To run test
+cases, specify the memcached binary and the engine.  Here is an example.
+Test cases currently do not work with ZooKeeper-based clustering.  Do not
+use --enable-zk-integration when running configure.
+
+    ./configure --prefix=/home1/arcus \
+                --with-memcached=/home1/arcus/bin/memcached \
+                --with-memcached_engine=/home1/arcus/lib/default_engine.so
+    make
+    make test
+    
+    [...]
+    PASS: tests/c_sasl_test
+    ===================
+    All 23 tests passed
+    ===================
+    Tests completed
 
 ## Issues
 
