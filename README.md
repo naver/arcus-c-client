@@ -23,25 +23,6 @@ The use of ZooKeeper based clustering is optional.  To enable it, use
 --enable-zk-integration along with --with-zookeeper when running configure.
 Make sure to use the ZooKeeper library with Arcus modifications.
 
-## Test cases
-
-libmemcached includes a number of test cases in the tests directory.  Arcus
-specific test cases have been added to tests/mem_functions.cc.  To run test
-cases, specify the memcached binary and the engine.  Here is an example.
-
-    ./configure --prefix=/home1/hyongyoub_kim/openarcus \
-                --with-memcached=/home1/openarcus/bin/memcached \
-                --with-memcached_engine=/home1/openarcus/lib/default_engine.so
-    make
-    make test
-    
-    [...]
-    PASS: tests/c_sasl_test
-    ===================
-    All 23 tests passed
-    ===================
-    Tests completed
-
 ## ZooKeeper-based clustering
 
 Make sure to install the ZooKeeper C library from arcus-zookeeper.  Then,
@@ -61,7 +42,7 @@ initLimit=10
 # sending a request and getting an acknowledgement
 syncLimit=5
 # the directory where the snapshot is stored.
-dataDir=/home1/openarcus/zookeeper_data
+dataDir=/home1/arcus/zookeeper_data
 # the port at which the clients will connect
 clientPort=2181
 maxClientCnxns=200
@@ -110,6 +91,26 @@ See the following files.
 - libmemcached/collection.h: collections API
 - libmemcached/util/pool.h: a few Arcus specific utility functions
 
+## Test cases
+
+libmemcached includes a number of test cases in the tests directory.  Arcus
+specific test cases have been added to tests/mem_functions.cc.  To run test
+cases, specify the memcached binary and the engine.  Here is an example.
+Test cases currently do not work with ZooKeeper-based clustering.  Do not
+use --enable-zk-integration when running configure.
+
+    ./configure --prefix=/home1/arcus \
+                --with-memcached=/home1/arcus/bin/memcached \
+                --with-memcached_engine=/home1/arcus/lib/default_engine.so
+    make
+    make test
+    
+    [...]
+    PASS: tests/c_sasl_test
+    ===================
+    All 23 tests passed
+    ===================
+    Tests completed
 
 ## Issues
 
