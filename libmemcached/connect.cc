@@ -452,7 +452,12 @@ static memcached_return_t network_connect(memcached_server_st *server)
                             server->address_info_next->ai_socktype,
                             server->address_info_next->ai_protocol)) < 0)
     {
-      return memcached_set_errno(*server, get_socket_errno(), NULL);
+      int local_errno = get_socket_errno();
+      if (local_errno == EAFNOSUPPORT || local_errno == EPROTONOSUPPORT) {
+        server->address_info_next= server->address_info_next->ai_next;
+        continue;
+      }
+      return memcached_set_errno(*server, local_errno, NULL);
     }
 
     set_socket_options(server);
