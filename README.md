@@ -36,7 +36,7 @@ Make sure to install auto tools such as autoheader.
 ## ZooKeeper-based clustering
 
 The use of ZooKeeper based clustering is optional.  To enable it, use
---enable-zk-integration along with --with-zookeeper when running configure.
+`--enable-zk-integration` along with `--with-zookeeper` when running configure.
 Make sure to install the ZooKeeper C library from arcus-zookeeper.
 
 Set up a ZooKeeper ensemble and a directory structure for memcached
