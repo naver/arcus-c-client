@@ -44,12 +44,11 @@ extern "C" {
 /**
  * Connect the client to ZooKeeper and initialize Arcus cluster.
  * @param mc  memcached handle.
- * @param pool  set this to NULL.
  * @param ensemble_list  ZooKeeper ensemble address.
  * @param svc_code  service code.
  */
 LIBMEMCACHED_API
-arcus_return_t arcus_connect(memcached_st *mc, memcached_pool_st *pool, const char *ensemble_list, const char *svc_code);
+arcus_return_t arcus_connect(memcached_st *mc, const char *ensemble_list, const char *svc_code);
 
 /**
  * Disconnect from ZooKeeper.
