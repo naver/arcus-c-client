@@ -278,7 +278,7 @@ memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_POLL_TIMEOUT, (uint64_t)timeout);
 
 timeout 시간은 밀리초(ms) 단위이며, 기본 값은 MEMCACHED_DEFAULT_TIMEOUT (500ms) 이다.
 
-### 캐시 노드에 대한 CONNECTION TIMEOUT 지정
+#### 캐시 노드에 대한 CONNECTION TIMEOUT 지정
 
 캐시연결이 끊어진 후 재연결 요청 시의 timeout 시간을 지정할 수 있다.
 
