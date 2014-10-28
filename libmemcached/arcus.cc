@@ -41,7 +41,7 @@
 /**
  * ARCUS
  */
-static inline arcus_return_t do_arcus_connect(memcached_st *mc, memcached_pool_st *pool, const char *ensemble_list, const char *svc_code)
+static inline arcus_return_t do_arcus_connect(memcached_st *mc, memcached_pool_st *pool, const char *ensemble_list, const char *svc_code);
 static inline arcus_return_t do_arcus_init(memcached_st *mc, memcached_pool_st *pool, const char *ensemble_list, const char *svc_code);
 static inline void           do_arcus_exit(memcached_st *mc);
 
