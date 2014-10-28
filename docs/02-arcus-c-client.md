@@ -267,7 +267,7 @@ mc = memcached_create(NULL);
 arcus_set_log_stream(mc, logfile);
 ```
 
-#### 캐시 명령에 대한 TIMEOUT 지정
+#### 캐시 명령에 대한 OPERATION TIMEOUT 지정
 
 캐시 명령을 보내고 응답을 받기까지의 timeout 시간을 지정할 수 있다.
 
@@ -276,38 +276,40 @@ mc = memcached_create(NULL);
 memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_POLL_TIMEOUT, (uint64_t)timeout);
 ```
 
-timeout 시간은 밀리초(ms) 단위이며, 캐시 명령 실행 전에 지정하면 된다. 기본 값은 MEMCACHED_DEFAULT_TIMEOUT (500ms) 이다.
+timeout 시간은 밀리초(ms) 단위이며, 기본 값은 MEMCACHED_DEFAULT_TIMEOUT (500ms) 이다.
 
-### 캐시에 대한 CONNECTION TIMEOUT 지정
+### 캐시 노드에 대한 CONNECTION TIMEOUT 지정
 
-캐시연결이 끊어진 후 재연결을 시도할 때의 timeout 시간을 지정할 수 있다.
+캐시연결이 끊어진 후 재연결 요청 시의 timeout 시간을 지정할 수 있다.
 
 ``` c
 mc = memcached_create(NULL);
 memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_CONNECT_TIMEOUT, (uint64_t)timeout);
 ```
 
-timeout 시간은 밀리초(ms) 단위이며, 캐시 명령 실행 전에 지정하면 된다. 기본 값은 MEMCACHED_DEFAULT_CONNECT_TIMEOUT (1초) 이다.
+timeout 시간은 밀리초(ms) 단위이며, 기본 값은 MEMCACHED_DEFAULT_CONNECT_TIMEOUT (1000ms) 이다.
 
-#### TIMEOUT 발생 시 캐시 서버로의 재연결 설정
-
-캐시 명령 수행 시, timeout이 발생한 경우에는 MEMCACHED_SERVER_TEMPORARILY_DISABLED (“SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY”) 오류가 발생하고, RETRY_TIMEOUT 후에 해당 캐시 장비로 재연결을 시도한다. 0을 지정하면 timeout이 발생할 때마다 즉시 재연결을 시도하게 된다.
+connection timeout이 발생하면 RETRY_TIMEOUT 시간 후에 해당 캐시 노드로 재연결을 시도한다.
+RETRY_TIMEOUT이 0이면, connection timeout이 발생할 때마다 즉시 재연결을 시도한다.
+이러한 RETRY_TIMEOUT 시간을 지정할 수 있다.
 
 ``` c
 mc = memcached_create(NULL);
 memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_RETRY_TIMEOUT, (uint64_t)timeout);
 ```
+timeout 시간은 초(s) 단위이며, 기본 값은 MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT (2초) 이다.
 
-timeout 시간은 초(s) 단위이며, 캐시 명령 실행 전에 지정하면 된다. 기본 값은 MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT (2초) 이다.
+참고 사항으로, 재연결 시도는 무한히 반복한다. 만약 해당 캐시 노드가 failure 상태라면,
+ARCUS의 admin인 ZooKeeper에 의해 failed 캐시 노드로 감지되어 cache node list에서 제거되어,
+그 캐시 노드로의 재연결 요청은 중단되게 된다.
 
-libmemcached에서 timeout은 두 가지 형태의 응답코드로 나타난다.
-* MEMCACHED_TIMEOUT (“A TIMEOUT OCCURRED”) : 요청을 보내던 도중 타임아웃이 발생했다.
-* MEMCACHED_IN_PROGRESS (“OPERATION IN PROCESS”) : 요청을 성공적으로 보내고 응답을 받던 도중 타임아웃이 발생했다
-
-
+그리고, 정상적으로 연결되지 않은 캐시 노드로의 요청에 대해서는
+MEMCACHED_SERVER_TEMPORARILY_DISABLED (“SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY”) 오류가 발생한다.
+ 
 #### 캐시 API의 응답코드 확인
 
-캐시 명령을 실행한 후에 캐시 서버로부터 받은 응답 코드를 확인할 수 있다. 이 응답코드는 명령의 실행 결과에 대한 추가 정보를 제공한다.
+캐시 명령을 실행한 후에 캐시 서버로부터 받은 응답 코드를 확인할 수 있다.
+이 응답코드는 명령의 실행 결과에 대한 추가 정보를 제공한다.
 
 ``` c
 memcached_return_t res = memcached_get_last_response_code(mc);
