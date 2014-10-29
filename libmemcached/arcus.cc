@@ -23,7 +23,7 @@
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
 #define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
 #define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
-#define ARCUS_ZK_ADDING_CLEINT_INFO           1
+//#define ARCUS_ZK_ADDING_CLEINT_INFO           1
 #define ZOO_NO_FLAGS 0
 
 #ifdef ARCUS_ZK_ADDING_CLEINT_INFO 
