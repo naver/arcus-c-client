@@ -20,6 +20,7 @@
 
 @ARCUS_CLUSTER_API_ENABLED@
 
+#include <stdio.h>
 #include <libmemcached/memcached.h>
 #include <libmemcached/memcached_util.h>
 

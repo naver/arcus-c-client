@@ -27,7 +27,6 @@
 #define ZOO_NO_FLAGS 0
 
 #ifdef ARCUS_ZK_ADDING_CLEINT_INFO 
-#include <zookeeper.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -35,7 +34,6 @@
 #define ARCUS_ZK_CLIENT_INFO_NODE                   "/arcus/client_list"
 #endif
 #include <sys/file.h>
-#include "libmemcached/arcus.h"
 #include "libmemcached/arcus_priv.h"
 
 /**

@@ -24,7 +24,6 @@
 #include <sys/time.h>
 
 #include "libmemcached/memcached.h"
-#include "libmemcached/arcus.h"
 
 #define NUMBER_OF_THREADS       10
 #define STAT_INTERVAL_IN_SEC    2
