@@ -52,8 +52,8 @@ Arcus cache server에서 제공하는 failover 기능과 collection 기능 등�
   pool을 생성하여 사용할 수 있다.
 
 Arcus C client는 서비스에서 채용한 서버 모델에 따라 다양한 초기화 API를 제공한다.
-초기화 API는 Arcus admin에 접속하여 서비스가 사용할 Arcus cache server 리스트를 요청한 뒤,
-해당 서버에 접속하는 동작을 수행한다.
+초기화 API는 Arcus admin에 접속하여 주어진 서비스코드에 해당하는 Arcus cache server 리스트를 가져와서,
+consistent hashing을 위한 초기화 작업을 수행한다.
 
 초기화 API에서 공통적으로 사용되는 파라미터의 의미는 다음과 같다.
 
