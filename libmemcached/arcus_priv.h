@@ -23,8 +23,6 @@
 #define ZOOKEEPER_C_CLIENT 1
 #include <zookeeper_log.h>
 
-#include "libmemcached/memcached_util.h"
-
 #define ARCUS_MAX_PROXY_FILE_LENGTH 10240
 
 struct arcus_proc_mutex

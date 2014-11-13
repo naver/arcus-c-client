@@ -55,7 +55,6 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <sys/types.h>
 
 
@@ -109,6 +108,7 @@
 #define PATH_MAX        4096  /* # chars in a path name including nul */
 #endif
 #endif
+#include <libmemcached/arcus.h>
 #include <libmemcached/collection.h>
 #include <libmemcached/collection_result.h>
 

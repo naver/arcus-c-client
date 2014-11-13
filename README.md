@@ -175,7 +175,8 @@ Retrieved the element. value=helloworld
 
 ## API Documentation
 
-As is, documentation is minimal.  It definitely needs improvements.
+Please refer to [Arcus C Client User Guide](docs/arcus-c-client-user-guide.md)
+for the detailed usage of Arcus C client.
 
 The original libmemcached has man pages (see docs/man).  `make install` copies
 these man pages to the target directory.  Arcus APIs do not have man pages.

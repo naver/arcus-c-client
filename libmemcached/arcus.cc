@@ -24,11 +24,10 @@
 #define ARCUS_1_7_ZK_CACHE_LIST               "/arcus_1_7/cache_list"
 #define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
 #define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
-#define ARCUS_ZK_ADDING_CLEINT_INFO           1
+//#define ARCUS_ZK_ADDING_CLEINT_INFO           1
 #define ZOO_NO_FLAGS 0
 
 #ifdef ARCUS_ZK_ADDING_CLEINT_INFO 
-#include <zookeeper.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -36,12 +35,12 @@
 #define ARCUS_ZK_CLIENT_INFO_NODE                   "/arcus/client_list"
 #endif
 #include <sys/file.h>
-#include "libmemcached/arcus.h"
 #include "libmemcached/arcus_priv.h"
 
 /**
  * ARCUS
  */
+static inline arcus_return_t do_arcus_connect(memcached_st *mc, memcached_pool_st *pool, const char *ensemble_list, const char *svc_code);
 static inline arcus_return_t do_arcus_init(memcached_st *mc, memcached_pool_st *pool, const char *ensemble_list, const char *svc_code);
 static inline void           do_arcus_exit(memcached_st *mc);
 
@@ -94,65 +93,10 @@ static int proc_mutex_destroy(struct arcus_proc_mutex *m);
  * Creates the Arcus Manager and ZooKeeper client.
  */
 arcus_return_t arcus_connect(memcached_st *mc,
-                             memcached_pool_st *pool,
                              const char *ensemble_list,
                              const char *svc_code)
 {
-  arcus_st *arcus;
-  arcus_return_t rc;
-
-  /*
-   * Initiate the Arcus.
-   */
-  rc= do_arcus_init(mc, pool, ensemble_list, svc_code);
-
-  if (rc == ARCUS_ALREADY_INITIATED)
-  {
-    return ARCUS_SUCCESS;
-  }
-  else if (rc != ARCUS_SUCCESS)
-  {
-    return ARCUS_ERROR;
-  }
-
-  /*
-   * Creates a new ZooKeeper client thread.
-   */
-  rc= do_arcus_zk_connect(mc);
-
-  if (rc != ARCUS_SUCCESS)
-  {
-    return ARCUS_ERROR;
-  }
-
-  ZOO_LOG_WARN(("Waiting for the cache server list..."));
-
-  pthread_mutex_lock(&lock_arcus);
-  arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-
-  if (arcus->is_initializing)
-  {
-    struct timeval now;
-    struct timespec ts;
-
-    gettimeofday(&now, NULL);
-
-    // Wait for the cache list (timed out after 5 sec.)
-    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3);
-    ts.tv_nsec= now.tv_usec * 1000;
-
-    if (pthread_cond_timedwait(&cond_arcus, &lock_arcus, &ts))
-    {
-      ZOO_LOG_ERROR(("pthread_cond_timedwait failed. %s(%d)", strerror(errno), errno));
-      pthread_mutex_unlock(&lock_arcus);
-      return ARCUS_ERROR;
-    }
-  }
-
-  pthread_mutex_unlock(&lock_arcus);
-  ZOO_LOG_WARN(("Done"));
-
-  return ARCUS_SUCCESS;
+  return do_arcus_connect(mc, NULL, ensemble_list, svc_code);
 }
 
 /**
@@ -204,7 +148,7 @@ arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
 
   if (not arcus)
   {
-    rc= arcus_connect(memcached_pool_get_master(pool), pool, ensemble_list, svc_code);
+    rc= do_arcus_connect(memcached_pool_get_master(pool), pool, ensemble_list, svc_code);
 
     if (rc != ARCUS_SUCCESS)
     {
@@ -338,6 +282,68 @@ arcus_return_t arcus_proxy_close(memcached_st *mc)
   rc= arcus_close(mc);
 
   return rc;
+}
+
+static inline arcus_return_t do_arcus_connect(memcached_st *mc,
+                                              memcached_pool_st *pool,
+                                              const char *ensemble_list,
+                                              const char *svc_code)
+{
+  arcus_st *arcus;
+  arcus_return_t rc;
+
+  /*
+   * Initiate the Arcus.
+   */
+  rc= do_arcus_init(mc, pool, ensemble_list, svc_code);
+
+  if (rc == ARCUS_ALREADY_INITIATED)
+  {
+    return ARCUS_SUCCESS;
+  }
+  else if (rc != ARCUS_SUCCESS)
+  {
+    return ARCUS_ERROR;
+  }
+
+  /*
+   * Creates a new ZooKeeper client thread.
+   */
+  rc= do_arcus_zk_connect(mc);
+
+  if (rc != ARCUS_SUCCESS)
+  {
+    return ARCUS_ERROR;
+  }
+
+  ZOO_LOG_WARN(("Waiting for the cache server list..."));
+
+  pthread_mutex_lock(&lock_arcus);
+  arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+
+  if (arcus->is_initializing)
+  {
+    struct timeval now;
+    struct timespec ts;
+
+    gettimeofday(&now, NULL);
+
+    // Wait for the cache list (timed out after 5 sec.)
+    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3);
+    ts.tv_nsec= now.tv_usec * 1000;
+
+    if (pthread_cond_timedwait(&cond_arcus, &lock_arcus, &ts))
+    {
+      ZOO_LOG_ERROR(("pthread_cond_timedwait failed. %s(%d)", strerror(errno), errno));
+      pthread_mutex_unlock(&lock_arcus);
+      return ARCUS_ERROR;
+    }
+  }
+
+  pthread_mutex_unlock(&lock_arcus);
+  ZOO_LOG_WARN(("Done"));
+
+  return ARCUS_SUCCESS;
 }
 
 static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,

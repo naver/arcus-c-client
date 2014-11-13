@@ -56,7 +56,6 @@
 #include <libmemcached/options.hpp>
 #include <libmemcached/virtual_bucket.h>
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-#include "libmemcached/arcus.h"
 #include "libmemcached/arcus_priv.h"
 #endif
 

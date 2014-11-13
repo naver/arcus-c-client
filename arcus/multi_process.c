@@ -23,7 +23,6 @@
 #include <sys/wait.h>
 
 #include "libmemcached/memcached.h"
-#include "libmemcached/arcus.h"
 
 #define NUM_OF_CHILDREN 10
 #define NUM_OF_PIPED_ITEMS 100
