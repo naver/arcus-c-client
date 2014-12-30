@@ -1,0 +1,9 @@
+2014-11-13 [version 1.7.1]
+	* Disable registering client info in ZK ensemble.
+	* Modify the memcached.h file to include the arcus.h file.
+	* Make unit tests success in an environment that uses both IPv4 and IPv6.
+	* Revert to the orginal inteface of arcus_connect() function.   
+	* Add ARCUS C Client User Guide Document.
+
+2014-05-15 
+	* arcus-c-client 1.7.0 is opened. (Apache License 2.0)
