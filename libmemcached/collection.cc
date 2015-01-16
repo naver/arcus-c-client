@@ -567,11 +567,8 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   /* Find a memcached */
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
@@ -677,11 +674,8 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   /* Find a memcached */
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
@@ -850,15 +844,14 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
+  /* Check function arguments */
   if (not attributes)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid attributes were provided"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Invalid attributes were provided"));
   }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
@@ -1360,11 +1353,8 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
@@ -1382,11 +1372,8 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
@@ -1560,15 +1547,14 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
+  /* Check function arguments */
   if (not with_delete and drop_if_empty)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("with_delete=false, drop_if_empty=true"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("with_delete=false, drop_if_empty=true"));
   }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
@@ -1755,35 +1741,34 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, keys, key_length, number_of_keys);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
+  /* Check function arguments */
   if (not keys or not key_length)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("key (length) list is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("key (length) list is null"));
   }
-
   if (not query)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("query is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("query is null"));
   }
-
   if (number_of_keys > MEMCACHED_COLL_MAX_BOP_MGET_KEY_COUNT)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("size of key list should be <= 200"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("size of key list should be <= 200"));
   }
-
   if (query->count > MEMCACHED_COLL_MAX_BOP_MGET_ELEM_COUNT)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("count should be <= 50"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("count should be <= 50"));
   }
-
   if (memcached_server_count(ptr) > MAX_SERVERS_FOR_COLLECTION_MGET)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("memcached instances should be <= 200"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("memcached instances should be <= 200"));
   }
 
   /* Command */
@@ -1817,7 +1802,8 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     if (numkeys[i] > MEMCACHED_COLL_MAX_BOP_MGET_KEY_COUNT)
     {
       DEALLOCATE_ARRAY(ptr, key_to_serverkey);
-      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("key size for a server should be <= 200"));
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                 memcached_literal_param("key size for a server should be <= 200"));
     }
     else
     {
@@ -1869,7 +1855,8 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     }
     else
     {
-      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("unknown b+tree query type"));
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                 memcached_literal_param("unknown b+tree query type"));
     }
 
     /* 2. [<eflag_filter>] */
@@ -1889,7 +1876,8 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   else
   {
     DEALLOCATE_ARRAY(ptr, key_to_serverkey);
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("invalid opcode"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("invalid opcode"));
   }
 
   /* Send the request (buffered) */
@@ -2003,35 +1991,35 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, keys, key_length, number_of_keys);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
+  /* Check function arguments */
   if (not keys or not key_length)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("key (length) list is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("key (length) list is null"));
   }
-
   if (not query)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("query is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("query is null"));
   }
-
   if (not result)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("result is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("result is null"));
   }
-
   if (query->offset + query->count > MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("'offset + count' should be <= 1000"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("'offset + count' should be <= 1000"));
   }
 
   if (memcached_server_count(ptr) > MAX_SERVERS_FOR_BOP_SMGET)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("memcached instances should be <= 200"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("memcached instances should be <= 200"));
   }
 
   /* Command */
@@ -2068,7 +2056,8 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     if (numkeys[i] > MEMCACHED_COLL_MAX_BOP_SMGET_KEY_COUNT)
     {
       DEALLOCATE_ARRAY(ptr, key_to_serverkey);
-      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("key size for a server should be <= 2000"));
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                 memcached_literal_param("key size for a server should be <= 2000"));
     }
     else
     {
@@ -2129,7 +2118,8 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   else
   {
     DEALLOCATE_ARRAY(ptr, key_to_serverkey);
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("unknown b+tree query type"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("unknown b+tree query type"));
   }
 
   /* Filter */
@@ -2266,11 +2256,8 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
@@ -2345,11 +2332,8 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
@@ -2444,11 +2428,8 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
@@ -2604,30 +2585,29 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, keys, key_length, number_of_keys);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
+  /* Check function arguments */ 
   if (not keys or not key_length)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("key (length) list is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("key (length) list is null"));
   }
-
   if (not query)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("query is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("query is null"));
   }
-
   if (not results)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("result is null"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("result is null"));
   }
-
   if (memcached_server_count(ptr) > MAX_SERVERS_FOR_COLL_INSERT_BULK)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("memcached instances should be <= 200"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("memcached instances should be <= 200"));
   }
 
   /* Key-Server mapping */
@@ -2791,15 +2771,14 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
+  /* Check function arguments */ 
   if (not update_filter && not value)
   {
-    return memcached_set_error(*ptr, MEMCACHED_NOTHING_TO_UPDATE, MEMCACHED_AT, memcached_literal_param("Nothing to update"));
+    return memcached_set_error(*ptr, MEMCACHED_NOTHING_TO_UPDATE, MEMCACHED_AT,
+                               memcached_literal_param("Nothing to update"));
   }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
@@ -2817,7 +2796,8 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
 
   if (verb != BOP_UPDATE_OP)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Not a b+tree operation"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Not a b+tree operation"));
   }
 
   /* 1. sub key */
@@ -2927,11 +2907,8 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
@@ -2947,7 +2924,8 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   /* Query header */
   if (verb != BOP_INCR_OP && verb != BOP_DECR_OP)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Not a b+tree operation"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Not a b+tree operation"));
   }
 
   /* 1. sub key */
@@ -3036,11 +3014,8 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
-
   if (rc != MEMCACHED_SUCCESS)
-  {
     return rc;
-  }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
@@ -3056,7 +3031,8 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   /* Query header */
   if (verb != BOP_COUNT_OP)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Not a b+tree operation"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Not a b+tree operation"));
   }
 
   /* 1. sub key */
@@ -3097,7 +3073,8 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   }
   else
   {
-      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("An invalid query was provided"));
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                 memcached_literal_param("An invalid query was provided"));
   }
 
   /* 2. filter */
@@ -3476,7 +3453,8 @@ memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key
                                               memcached_coll_result_st *result)
 {
   if (not query)
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Query is null.\n"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Query is null.\n"));
 
   memcached_coll_action_t op;
 
@@ -3485,7 +3463,8 @@ memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key
   case MEMCACHED_COLL_QUERY_LOP:
   case MEMCACHED_COLL_QUERY_LOP_RANGE:
   case MEMCACHED_COLL_QUERY_SOP:
-       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid query type.\n"));
+       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                  memcached_literal_param("Invalid query type.\n"));
   case MEMCACHED_COLL_QUERY_BOP:
   case MEMCACHED_COLL_QUERY_BOP_RANGE:
   case MEMCACHED_COLL_QUERY_BOP_EXT:
@@ -3494,7 +3473,8 @@ memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key
        break;
   case MEMCACHED_COLL_QUERY_UNKNOWN:
   default:
-       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Unknown query type.\n"));
+       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                  memcached_literal_param("Unknown query type.\n"));
   }
 
   return do_coll_get(ptr, key, key_length,
