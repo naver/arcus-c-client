@@ -610,6 +610,13 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
                                   memcached_return_t *error,
                                   memcached_coll_type_t type)
 {
+#if 1 // JOON_SMGET_ERROR_HANDLING
+  memcached_return_t unused;
+  if (not error)
+    error= &unused;
+
+  assert(result != NULL);
+#else
   memcached_return_t unused;
 
   unlikely (not error)
@@ -621,13 +628,26 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
   {
     return NULL;
   }
+#endif
 
   /* 1. Fetch results from the requested servers */
   memcached_coll_smget_result_st **results_on_each_server= NULL;
   memcached_return_t *responses_on_each_server= NULL;
 
+#if 1 // JOON_SMGET_ERROR_HANDLING
+  *error= MEMCACHED_SUCCESS;
+  ALLOCATE_ARRAY_WITH_ERROR(ptr, results_on_each_server,   memcached_coll_smget_result_st *, memcached_server_count(ptr), error);
+  ALLOCATE_ARRAY_WITH_ERROR(ptr, responses_on_each_server, memcached_return_t,               memcached_server_count(ptr), error);
+  if (*error == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+  {
+    libmemcached_free(ptr, results_on_each_server);
+    libmemcached_free(ptr, responses_on_each_server);
+    return NULL;
+  }
+#else
   ALLOCATE_ARRAY_OR_RETURN_WITH_ERROR(ptr, results_on_each_server,   memcached_coll_smget_result_st *, memcached_server_count(ptr), error);
   ALLOCATE_ARRAY_OR_RETURN_WITH_ERROR(ptr, responses_on_each_server, memcached_return_t,               memcached_server_count(ptr), error);
+#endif
 
   memcached_coll_smget_result_st *each_result= NULL;
   size_t server_idx= 0;
@@ -645,7 +665,11 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
       if (not each_result)
       {
         *error= MEMCACHED_MEMORY_ALLOCATION_FAILURE;
+#if 1 // JOON_SMGET_ERROR_HANDLING
+        break;
+#else
         return NULL;
+#endif
       }
     }
 
@@ -661,6 +685,9 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
        * So, bail out.
        */
       memcached_coll_smget_result_free(each_result);
+#if 1 // JOON_SMGET_ERROR_HANDLING
+      break;
+#else
       for (int i = 0; i < (int)memcached_server_count(ptr); i++) {
         if (results_on_each_server[i])
           memcached_coll_smget_result_free(results_on_each_server[i]);
@@ -669,6 +696,7 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
       libmemcached_free(result->root, responses_on_each_server);
       memcached_set_last_response_code(ptr, *error);
       return NULL;
+#endif
     }
     else if (*error == MEMCACHED_SUCCESS)
     {
@@ -700,18 +728,33 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
       stay_on_server = true;
       continue;
     }
+#if 1 // JOON_SMGET_ERROR_HANDLING
+    else if (*error == MEMCACHED_END                or
+             *error == MEMCACHED_DUPLICATED         or
+             *error == MEMCACHED_DUPLICATED_TRIMMED or
+             *error == MEMCACHED_TRIMMED            )
+#else
     else if (*error == MEMCACHED_END                or
              *error == MEMCACHED_DUPLICATED         or
              *error == MEMCACHED_DUPLICATED_TRIMMED or
              *error == MEMCACHED_TRIMMED            or
              *error == MEMCACHED_OUT_OF_RANGE       )
+#endif
     {
       memcached_server_response_reset(server);
     }
+#if 1 // JOON_SMGET_ERROR_HANDLING
+    else /* other failures */
+    {
+      memcached_coll_smget_result_free(each_result);
+      break;
+    }
+#else
     else if (*error != MEMCACHED_NOTFOUND)
     {
       break;
     }
+#endif
 
     /* On MEMCACHED_END or something. */
     result->value_count+= each_result->value_count;
@@ -723,6 +766,75 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
     each_result= NULL;
   }
 
+#if 1 // JOON_SMGET_ERROR_HANDLING
+  if (*error == MEMCACHED_MAXIMUM_RETURN)
+  {
+    *error= MEMCACHED_NOTFOUND;
+  }
+#endif
+
+#if 1 // JOON_SMGET_ERROR_HANDLING
+  while (*error == MEMCACHED_END                or
+         *error == MEMCACHED_DUPLICATED         or
+         *error == MEMCACHED_DUPLICATED_TRIMMED or
+         *error == MEMCACHED_TRIMMED            )
+  {
+    /* Prepare the result */
+    result->type= type;
+
+    if (result->value_count > 0)
+    {
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->keys,     memcached_string_st,       result->value_count, error);
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->values,   memcached_string_st,       result->value_count, error);
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->flags,    uint32_t,                  result->value_count, error);
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->sub_keys, memcached_coll_sub_key_st, result->value_count, error);
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->eflags,   memcached_hexadecimal_st,  result->value_count, error);
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->bytes,    size_t,                    result->value_count, error);
+      if (*error == MEMCACHED_MEMORY_ALLOCATION_FAILURE) {
+        break;
+      }
+    }
+    if (result->missed_key_count > 0)
+    {
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->missed_keys, memcached_string_st, result->missed_key_count, error);
+      if (*error == MEMCACHED_MEMORY_ALLOCATION_FAILURE) {
+        break;
+      }
+    }
+
+    memcached_return_t response= merge_results(results_on_each_server, responses_on_each_server, server_idx, result);
+    memcached_set_last_response_code(ptr, response);
+    *error = MEMCACHED_SUCCESS;
+    break;
+  }
+
+  /* Free the intermediate results. */
+  for (size_t x=0; x<server_idx; x++)
+  {
+    memcached_coll_smget_result_free(results_on_each_server[x]);
+  }
+  libmemcached_free(result->root, results_on_each_server);
+  libmemcached_free(result->root, responses_on_each_server);
+
+  /* Return the result */
+  if (*error == MEMCACHED_SUCCESS)
+  {
+    return result;
+  }
+  else
+  {
+    if (memcached_is_allocated(result))
+    {
+      memcached_coll_smget_result_free(result);
+    }
+    else
+    {
+      memcached_coll_smget_result_reset(result);
+    }
+    memcached_set_last_response_code(ptr, *error);
+    return NULL;
+  }
+#else
   /* 2. Prepare the result */
   result->type= type;
 
@@ -778,4 +890,5 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
   }
 
   return NULL;
+#endif
 }
