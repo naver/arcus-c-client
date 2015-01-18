@@ -559,7 +559,7 @@ merge_results(memcached_coll_smget_result_st **results,
 
   /* 2. Merge missed keys */
 
-  memset(result_idx, 0, 256);
+  memset(result_idx, 0, 256*sizeof(size_t));
 
   for (size_t i=0; i<merged->missed_key_count; i++)
   {
