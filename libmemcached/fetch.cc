@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -53,8 +53,8 @@
 
 #include <libmemcached/common.h>
 
-char *memcached_fetch(memcached_st *ptr, char *key, size_t *key_length, 
-                      size_t *value_length, 
+char *memcached_fetch(memcached_st *ptr, char *key, size_t *key_length,
+                      size_t *value_length,
                       uint32_t *flags,
                       memcached_return_t *error)
 {
@@ -237,7 +237,7 @@ memcached_result_st *memcached_fetch_result(memcached_st *ptr,
   return NULL;
 }
 
-memcached_return_t memcached_fetch_execute(memcached_st *ptr, 
+memcached_return_t memcached_fetch_execute(memcached_st *ptr,
                                            memcached_execute_fn *callback,
                                            void *context,
                                            uint32_t number_of_callbacks)
@@ -317,12 +317,12 @@ memcached_coll_fetch_result(memcached_st *ptr,
   }
   else if (not memcached_is_initialized(result))
   {
-    memcached_coll_result_create(ptr, result); 
+    memcached_coll_result_create(ptr, result);
   }
 
   // Set the collection type
   result->type= find_collection_type_by_opcode(ptr->last_op_code);
-  
+
   *error= MEMCACHED_MAXIMUM_RETURN; // We use this to see if we ever go into the loop
   memcached_server_st *server;
   while ((server= memcached_io_get_readable_server(ptr)))
@@ -347,9 +347,9 @@ memcached_coll_fetch_result(memcached_st *ptr,
     }
     else if (MEMCACHED_OPCODE_IS_MGET(ptr))
     {
-      return result; 
+      return result;
     }
-    else if (*error != MEMCACHED_NOTFOUND         and 
+    else if (*error != MEMCACHED_NOTFOUND         and
              *error != MEMCACHED_NOTFOUND_ELEMENT )
     {
       break;
@@ -381,10 +381,10 @@ memcached_coll_fetch_result(memcached_st *ptr,
     *error= MEMCACHED_END;
   }
   else if (*error != MEMCACHED_END              and
-           *error != MEMCACHED_UNREADABLE       and 
+           *error != MEMCACHED_UNREADABLE       and
            *error != MEMCACHED_OUT_OF_RANGE     and
-           *error != MEMCACHED_NOTFOUND_ELEMENT and 
-           *error != MEMCACHED_TYPE_MISMATCH    and 
+           *error != MEMCACHED_NOTFOUND_ELEMENT and
+           *error != MEMCACHED_TYPE_MISMATCH    and
            *error != MEMCACHED_BKEY_MISMATCH    )
   {
     *error= MEMCACHED_NOTFOUND;
@@ -485,9 +485,9 @@ merge_results(memcached_coll_smget_result_st **results,
     {
       // merge
       merged->keys  [merged_count]= results[smallest_result_idx]->keys  [result_idx[smallest_result_idx]];
-      merged->values[merged_count]= results[smallest_result_idx]->values[result_idx[smallest_result_idx]]; 
+      merged->values[merged_count]= results[smallest_result_idx]->values[result_idx[smallest_result_idx]];
       merged->flags [merged_count]= results[smallest_result_idx]->flags [result_idx[smallest_result_idx]];
-      merged->eflags[merged_count]= results[smallest_result_idx]->eflags[result_idx[smallest_result_idx]]; 
+      merged->eflags[merged_count]= results[smallest_result_idx]->eflags[result_idx[smallest_result_idx]];
       merged->bytes [merged_count]= results[smallest_result_idx]->bytes [result_idx[smallest_result_idx]];
 
       if (MEMCACHED_COLL_QUERY_BOP_EXT       == results[smallest_result_idx]->sub_key_type or
@@ -495,7 +495,7 @@ merge_results(memcached_coll_smget_result_st **results,
       {
         merged->sub_keys[merged_count].bkey_ext= results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey_ext;
 
-        if (merged_count > 0 and 
+        if (merged_count > 0 and
             memcached_compare_two_hexadecimal(&merged->sub_keys[merged_count  ].bkey_ext,
                                               &merged->sub_keys[merged_count-1].bkey_ext) == 0)
         {
@@ -504,7 +504,7 @@ merge_results(memcached_coll_smget_result_st **results,
       }
       else
       {
-        merged->sub_keys[merged_count].bkey = results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey; 
+        merged->sub_keys[merged_count].bkey = results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey;
 
         if (merged_count > 0 and
             merged->sub_keys[merged_count].bkey == merged->sub_keys[merged_count -1].bkey)
@@ -592,7 +592,7 @@ merge_results(memcached_coll_smget_result_st **results,
       found_smallest_element = true;
     }
 
-    merged->missed_keys[i]= results[smallest_result_idx]->missed_keys[result_idx[smallest_result_idx]]; 
+    merged->missed_keys[i]= results[smallest_result_idx]->missed_keys[result_idx[smallest_result_idx]];
 
     // no more elements in this result.
     if (++result_idx[smallest_result_idx] >= results[smallest_result_idx]->missed_key_count)
@@ -635,7 +635,7 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
   *error= MEMCACHED_MAXIMUM_RETURN; // We use this to see if we ever go into the loop
   memcached_server_st *server = NULL; // Avoid compiler warning (-Wuninitialized)
   bool stay_on_server = false;
-  while (stay_on_server || (server= memcached_io_get_readable_server(ptr)) != NULL) 
+  while (stay_on_server || (server= memcached_io_get_readable_server(ptr)) != NULL)
   {
     stay_on_server = false;
     if (each_result == NULL)

@@ -26,7 +26,7 @@
 //#define ARCUS_ZK_ADDING_CLEINT_INFO           1
 #define ZOO_NO_FLAGS 0
 
-#ifdef ARCUS_ZK_ADDING_CLEINT_INFO 
+#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -214,19 +214,19 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
   {
     return ARCUS_ERROR;
   }
- 
+
   arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
   if (arcus->is_initializing)
   {
     struct timeval now;
-    struct timespec ts; 
+    struct timespec ts;
 
     gettimeofday(&now, NULL);
 
     ZOO_LOG_WARN(("Waiting for the cache server list..."));
 
     // Wait for the cache list (timed out after 5 sec.)
-    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3); 
+    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3);
     ts.tv_nsec= now.tv_usec * 1000;
 
     pthread_mutex_lock(&lock_arcus);
@@ -235,7 +235,7 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
       ZOO_LOG_ERROR(("pthread_cond_timedwait failed. %s(%d)", strerror(errno), errno));
       pthread_mutex_unlock(&lock_arcus);
       return ARCUS_ERROR;
-    } 
+    }
     pthread_mutex_unlock(&lock_arcus);
 
     ZOO_LOG_WARN(("Done"));
@@ -459,7 +459,7 @@ void arcus_set_log_stream(memcached_st *mc,
 /**
  * Initialize the Arcus.
  */
-static inline arcus_return_t do_arcus_init(memcached_st *mc, 
+static inline arcus_return_t do_arcus_init(memcached_st *mc,
                                            memcached_pool_st *pool,
                                            const char *ensemble_list,
                                            const char *svc_code)
@@ -549,7 +549,7 @@ static inline void do_arcus_exit(memcached_st *mc)
   exit(1);
 }
 
-#ifdef ARCUS_ZK_ADDING_CLEINT_INFO 
+#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
 static inline void do_add_client_info(arcus_st *arcus)
 {
   int result;
@@ -566,7 +566,7 @@ static inline void do_add_client_info(arcus_st *arcus)
 
   // create the ephemeral znode "/arcus/client_list/{service_code}/{client hostname}_{ip address}_{pool count}_{client language}_{client version}_{YYYYMMDDHHIISS}_{zk session id}"
   // it means administrator has to create the {service_code} node before using.
-  snprintf(path, sizeof(path), "%s/%s/%s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx", 
+  snprintf(path, sizeof(path), "%s/%s/%s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx",
                               ARCUS_ZK_CLIENT_INFO_NODE,
                               arcus->zk.svc_code,
                               hostname,
@@ -701,14 +701,14 @@ void arcus_server_check_for_update(memcached_st *ptr)
         memcached_st *master = memcached_pool_get_master(arcus->pool);
         // update the master just once
         if (master && master->configure.version == ptr->configure.version) {
-          do_arcus_zk_update_cachelist_by_string(master, arcus->proxy.data->serverlist, size); 
+          do_arcus_zk_update_cachelist_by_string(master, arcus->proxy.data->serverlist, size);
         }
       }
 
-      do_arcus_zk_update_cachelist_by_string(ptr, arcus->proxy.data->serverlist, size); 
+      do_arcus_zk_update_cachelist_by_string(ptr, arcus->proxy.data->serverlist, size);
       arcus->proxy.current_version= version;
     }
-    proc_mutex_unlock(&arcus->proxy.data->mutex); 
+    proc_mutex_unlock(&arcus->proxy.data->mutex);
   }
 }
 
@@ -756,7 +756,7 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
   bool is_empty= false;
 
   /* Lock the data mutex */
-  proc_mutex_lock(&arcus->proxy.data->mutex); 
+  proc_mutex_lock(&arcus->proxy.data->mutex);
 
   if (strings->count)
   {
@@ -785,7 +785,7 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
   ZOO_LOG_WARN(("proxy : data updated (version=%d) : %s", arcus->proxy.data->version, (is_empty)?"NO CACHE SERVERS":arcus->proxy.data->serverlist));
 
   /* Unlock the data mutex */
-  proc_mutex_unlock(&arcus->proxy.data->mutex); 
+  proc_mutex_unlock(&arcus->proxy.data->mutex);
 
   unlikely (arcus->is_initializing)
   {
@@ -925,7 +925,7 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
                   arcus->zk.ensemble_list, mc->number_of_hosts, msec));
   }
   else
-  {  
+  {
     ZOO_LOG_WARN(("CACHE_LIST=UPDATE_FAIL in %d ms", msec));
   }
 }
@@ -1107,7 +1107,7 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
       ZOO_LOG_DEBUG(("Current sessionid  : 0x%llx", (long long) arcus->zk.myid.client_id));
     }
 
-#ifdef ARCUS_ZK_ADDING_CLEINT_INFO 
+#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
     do_add_client_info(arcus);
 #endif
 

@@ -2588,7 +2588,7 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
-  /* Check function arguments */ 
+  /* Check function arguments */
   if (not keys or not key_length)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
@@ -2774,7 +2774,7 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
-  /* Check function arguments */ 
+  /* Check function arguments */
   if (not update_filter && not value)
   {
     return memcached_set_error(*ptr, MEMCACHED_NOTHING_TO_UPDATE, MEMCACHED_AT,
@@ -2949,7 +2949,7 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   /* 3. options */
   buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                     "%s", (ptr->flags.no_reply)? " noreply":"");
-  
+
   if (buffer_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
@@ -2987,7 +2987,7 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
 
       if (rc == MEMCACHED_NOTFOUND
           || rc == MEMCACHED_NOTFOUND_ELEMENT
-          || rc == MEMCACHED_CLIENT_ERROR 
+          || rc == MEMCACHED_CLIENT_ERROR
           || rc == MEMCACHED_TYPE_MISMATCH
           || rc == MEMCACHED_BKEY_MISMATCH
           || rc == MEMCACHED_SERVER_ERROR)
@@ -3002,7 +3002,7 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
     }
   }
 
-  return rc; 
+  return rc;
 }
 
 static memcached_return_t do_coll_count(memcached_st *ptr,

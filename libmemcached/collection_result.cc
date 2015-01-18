@@ -41,7 +41,7 @@ memcached_coll_result_st *memcached_coll_result_create(const memcached_st *memc,
   else
   {
     ptr= static_cast<memcached_coll_result_st*>(libmemcached_malloc(memc, sizeof(memcached_coll_result_st)));
-    
+
     if (not ptr) return NULL;
 
     ptr->options.is_allocated= true;
@@ -75,7 +75,7 @@ void memcached_coll_result_reset(memcached_coll_result_st *ptr)
       {
         libmemcached_free(ptr->root, ptr->sub_keys[i].bkey_ext.array);
         ptr->sub_keys[i].bkey_ext.array= NULL;
-        ptr->sub_keys[i].bkey_ext.length= 0; 
+        ptr->sub_keys[i].bkey_ext.length= 0;
       }
       ptr->sub_key_type= MEMCACHED_COLL_QUERY_UNKNOWN;
     }
@@ -89,7 +89,7 @@ void memcached_coll_result_reset(memcached_coll_result_st *ptr)
     {
       libmemcached_free(ptr->root, ptr->eflags[i].array);
       ptr->eflags[i].array = NULL;
-      ptr->eflags[i].length = 0; 
+      ptr->eflags[i].length = 0;
     }
 
     libmemcached_free(ptr->root, ptr->eflags);
@@ -266,7 +266,7 @@ void memcached_coll_smget_result_reset(memcached_coll_smget_result_st *ptr)
       {
         libmemcached_free(ptr->root, ptr->sub_keys[i].bkey_ext.array);
         ptr->sub_keys[i].bkey_ext.array = NULL;
-        ptr->sub_keys[i].bkey_ext.length = 0; 
+        ptr->sub_keys[i].bkey_ext.length = 0;
       }
       ptr->sub_key_type= MEMCACHED_COLL_QUERY_UNKNOWN;
     }
@@ -281,7 +281,7 @@ void memcached_coll_smget_result_reset(memcached_coll_smget_result_st *ptr)
     {
       libmemcached_free(ptr->root, ptr->eflags[i].array);
       ptr->eflags[i].array = NULL;
-      ptr->eflags[i].length = 0; 
+      ptr->eflags[i].length = 0;
     }
 
     libmemcached_free(ptr->root, ptr->eflags);
