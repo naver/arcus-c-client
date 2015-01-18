@@ -410,7 +410,7 @@ merge_results(memcached_coll_smget_result_st **results,
 {
   memcached_return_t rc= MEMCACHED_END;
   size_t result_idx[256];
-  memset(result_idx, 0, 256);
+  memset(result_idx, 0, 256*sizeof(size_t));
 
   int merged_count= 0;
   int last_merged_index= 0;
