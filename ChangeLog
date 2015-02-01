@@ -1,3 +1,7 @@
+2015-02-01 [version 1.7.2]
+	* Fix smget error handling bug.
+	* Fix result_idx initialization bug in merge_results()
+
 2014-11-13 [version 1.7.1]
 	* Disable registering client info in ZK ensemble.
 	* Modify the memcached.h file to include the arcus.h file.
