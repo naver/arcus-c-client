@@ -2238,11 +2238,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   if (success_happened)
   {
     result = memcached_coll_smget_fetch_result(ptr, result, &rc, type);
-#if 1 // JOON_SMGET_ERROR_HANDLING
     return rc;
-#else
-    return MEMCACHED_SUCCESS;
-#endif
   }
   else
   {
