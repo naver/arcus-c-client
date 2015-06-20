@@ -24,6 +24,9 @@
 
 #include "libmemcached/memcached.h"
 
+static const char *zkadmin_addr = "127.0.0.1:2181";
+static const char *service_code = "test";
+
 #define NUM_OF_CHILDREN 10
 #define NUM_OF_PIPED_ITEMS 100
 
@@ -224,7 +227,7 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
   int i;
 
   proxy_mc = memcached_create(NULL);
-  rc = arcus_proxy_create(proxy_mc, "127.0.0.1:2181", "test");
+  rc = arcus_proxy_create(proxy_mc, zkadmin_addr, service_code);
 
   if (rc != ARCUS_SUCCESS) {
     goto RELEASE;
