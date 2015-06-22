@@ -261,11 +261,9 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   }
 
   uint64_t total_weight= 0;
-#if 1 // CHECK_ALL_WEIGHTS_ARE_SAME
   uint32_t total_server= 0;
   uint32_t first_weight;
   bool all_weights_same= true;
-#endif
   if (is_ketama_weighted)
   {
     for (uint32_t host_index = 0; host_index < memcached_server_count(ptr); ++host_index)
@@ -273,15 +271,13 @@ static memcached_return_t update_continuum(memcached_st *ptr)
       if (is_auto_ejecting == false or list[host_index].next_retry <= now.tv_sec)
       {
         total_weight += list[host_index].weight;
-#if 1 // CHECK_ALL_WEIGHTS_ARE_SAME
-        /* check if all weights are same */
+        /* Check if all weights are same */
         if ((++total_server) == 1) {
           first_weight = list[host_index].weight;
         } else {
           if (first_weight != list[host_index].weight)
             all_weights_same= false;
         }
-#endif
       }
     }
   }
@@ -295,16 +291,12 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
     if (is_ketama_weighted)
     {
-#if 1 // CHECK_ALL_WEIGHTS_ARE_SAME
         if (all_weights_same) {
           pointer_per_server= MEMCACHED_POINTS_PER_SERVER_KETAMA;
         } else {
-#endif
           float pct= (float)list[host_index].weight / (float)total_weight;
           pointer_per_server= (uint32_t) ((floor((float) (pct * MEMCACHED_POINTS_PER_SERVER_KETAMA / 4 * (float)live_servers + 0.0000000001))) * 4);
-#if 1 // CHECK_ALL_WEIGHTS_ARE_SAME
         }
-#endif
         pointer_per_hash= 4;
         if (DEBUG)
         {
