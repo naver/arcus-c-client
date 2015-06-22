@@ -437,6 +437,27 @@ static memcached_return_t update_continuum(memcached_st *ptr)
       WATCHPOINT_ASSERT(ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index + 1].value);
     }
   }
+#if 0 /* Print hash continuum */
+  if (1) {
+    uint32_t pointer_index;
+    fprintf(stderr, "update_continuum: node_count=%d hash_count=%d\n",
+            live_servers, ptr->ketama.continuum_points_counter);
+    for (pointer_index= 0; pointer_index < ptr->ketama.continuum_points_counter; pointer_index++) {
+      if (pointer_index > 0 &&
+          ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index - 1].value) {
+          break;
+      }
+      fprintf(stderr, "continuum[%d]: hash=%08x, server=%s:%d\n",
+              pointer_index, ptr->ketama.continuum[pointer_index].value,
+              list[ptr->ketama.continuum[pointer_index].index].hostname,
+              list[ptr->ketama.continuum[pointer_index].index].port);
+    }
+    if (pointer_index < ptr->ketama.continuum_points_counter)
+        fprintf(stderr, "update_continuum fails.n");
+    else
+        fprintf(stderr, "update_continuum success.\n");
+  }
+#endif
 
   return MEMCACHED_SUCCESS;
 }
