@@ -1,3 +1,7 @@
+2015-06-22 [version 1.7.3]
+	* Change default poll timeout: 500 => 700 ms.
+	* Use 160 hash points per server when all servers have the same weight.
+
 2015-02-01 [version 1.7.2]
 	* Fix smget error handling bug.
 	* Fix result_idx initialization bug in merge_results()
