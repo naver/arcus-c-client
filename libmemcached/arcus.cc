@@ -1040,6 +1040,7 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
   if (zkrc == ZOK)
   {
     do_arcus_zk_update_cachelist(mc, &strings);
+    deallocate_String_vector(&strings);
   }
   else
   {
