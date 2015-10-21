@@ -1,3 +1,6 @@
+2015-10-21 [version 1.7.4]
+	* Fix memory leak by deallcating a string vector gotten from ZK.
+
 2015-06-22 [version 1.7.3]
 	* Change default poll timeout: 500 => 700 ms.
 	* Use 160 hash points per server when all servers have the same weight.
