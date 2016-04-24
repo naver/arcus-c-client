@@ -3,6 +3,8 @@
 *.o
 *.pop
 *TAGS
+*.trs
+*.log
 *~
 .deps
 .dirstamp
@@ -15,6 +17,7 @@ aclocal.m4
 autom4te.cache
 arcus/multi_process
 arcus/multi_threaded
+arcus/sample
 clients/memcapable
 clients/memcat
 clients/memcp
@@ -42,7 +45,9 @@ config/missing
 config/pandora_vc_revinfo
 config/plugin.ac
 config/top.h
+config/test-driver
 configure
+cscope.*
 docs/*.[13]
 docs/*.html
 docs/conf.py
@@ -62,10 +67,10 @@ libtest/version.h
 libtest/wait
 libtool
 libtool.m4
-ltoptions.m4
-ltsugar.m4
-ltversion.m4
-lt~obsolete.m4
+m4/ltoptions.m4
+m4/ltsugar.m4
+m4/ltversion.m4
+m4/lt~obsolete.m4
 m4/version.m4
 stamp-h1
 support/libmemcached-fc.spec
