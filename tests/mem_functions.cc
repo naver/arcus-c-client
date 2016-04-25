@@ -4428,29 +4428,32 @@ struct test_pool_context_st {
   volatile memcached_return_t rc;
   memcached_pool_st* pool;
   memcached_st* mmc;
-  sem_t _lock;
+  sem_t* _lock;
 
   test_pool_context_st(memcached_pool_st *pool_arg, memcached_st *memc_arg):
     rc(MEMCACHED_FAILURE),
     pool(pool_arg),
     mmc(memc_arg)
   {
-    sem_init(&_lock, 0, 0);
+    // try to unlink first so than we can open semaphore surely.
+    sem_unlink("/_lock");
+    _lock = sem_open("/_lock", O_CREAT|O_EXCL, 0644, 0);
   }
 
   void wait()
   {
-    sem_wait(&_lock);
+    sem_wait(_lock);
   }
 
   void release()
   {
-    sem_post(&_lock);
+    sem_post(_lock);
   }
 
   ~test_pool_context_st()
   {
-    sem_destroy(&_lock);
+    sem_close(_lock);
+    sem_unlink("/_lock");
   }
 };
 
