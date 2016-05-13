@@ -1338,7 +1338,7 @@ static test_return_t increment_test(memcached_st *memc)
 
 static test_return_t increment_with_initial_test(memcached_st *memc)
 {
-  test_skip(true, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL));
+  //test_skip(true, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL));
 
   uint64_t new_number;
   uint64_t initial= 0;
@@ -6202,7 +6202,11 @@ test_st replication_tests[]= {
   {"mget", false, (test_callback_fn*)replication_mget_test },
   {"delete", true, (test_callback_fn*)replication_delete_test },
   {"rand_mget", false, (test_callback_fn*)replication_randomize_mget_test },
-  {"fail", false, (test_callback_fn*)replication_randomize_mget_fail_test },
+  /* TODO : uncomment this when we support binary protocol fully.
+   * Now ARCUS does not support binary protocol. (arcus-memcached version 1.9.4 and
+   * C Client version 1.7.4)
+   */
+  //  {"fail", false, (test_callback_fn*)replication_randomize_mget_fail_test },
   {0, 0, (test_callback_fn*)0}
 };
 

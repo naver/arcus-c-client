@@ -348,7 +348,10 @@ memcached_return_t memcached_increment_with_initial_by_key(memcached_st *ptr,
   LIBMEMCACHED_MEMCACHED_INCREMENT_WITH_INITIAL_START();
 
   if (ptr->flags.binary_protocol)
-    rc= MEMCACHED_PROTOCOL_ERROR;
+    //rc= MEMCACHED_PROTOCOL_ERROR;
+    rc= binary_incr_decr(ptr, PROTOCOL_BINARY_CMD_INCREMENT,
+                         group_key, group_key_length, key, key_length,
+                         offset, initial, expiration, value); 
   else
     rc= text_incr_decr(ptr, "incr", group_key, group_key_length, key, key_length, offset, true, initial, flags, expiration, value);
 
@@ -404,7 +407,10 @@ memcached_return_t memcached_decrement_with_initial_by_key(memcached_st *ptr,
 
   LIBMEMCACHED_MEMCACHED_INCREMENT_WITH_INITIAL_START();
   if (ptr->flags.binary_protocol)
-    rc= MEMCACHED_PROTOCOL_ERROR;
+    //rc= MEMCACHED_PROTOCOL_ERROR;
+    rc= binary_incr_decr(ptr, PROTOCOL_BINARY_CMD_DECREMENT,
+                         group_key, group_key_length, key, key_length,
+                         offset, initial, expiration, value); 
   else
     rc= text_incr_decr(ptr, "decr", group_key, group_key_length, key, key_length, offset, true, initial, flags, expiration, value);
 
