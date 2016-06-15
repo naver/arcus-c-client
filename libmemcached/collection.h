@@ -1330,6 +1330,37 @@ memcached_return_t memcached_bop_smget(memcached_st *ptr,
                                        memcached_bop_query_st *query,
                                        memcached_coll_smget_result_st *result);
 
+/**
+ * Get position of item in b+tree
+ * @param ptr  memcached handle.
+ * @param key  array of item keys.
+ * @param key_length  array of item key lengths (number of bytes).
+ * @param bkey  bkey of itme
+ * @param order_asc order
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
+                                     const uint64_t bkey,
+                                     bool order_asc,
+                                     size_t *position);
+
+/**
+ * Get position of item in b+tree
+ * @param ptr  memcached handle.
+ * @param key  array of item keys.
+ * @param key_length  array of item key lengths (number of bytes).
+ * @param bkey  bkey of itme
+ * @param bkey_length array of item bkey lengths (number of bytes).
+ * @param order_asc order
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
+                                              const unsigned char *bkey, size_t bkey_length,
+                                              bool order_asc,
+                                              size_t *position);
+
 /* Used within the library. Do not call this from the application. */
 LIBMEMCACHED_LOCAL
 memcached_coll_smget_result_st *memcached_coll_smget_fetch_result(memcached_st *ptr,
