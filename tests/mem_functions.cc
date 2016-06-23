@@ -52,6 +52,7 @@
 #include <cassert>
 #include <cerrno>
 #include <memory>
+#include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
