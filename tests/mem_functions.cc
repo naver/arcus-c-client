@@ -53,8 +53,9 @@
 #include <cerrno>
 #include <memory>
 #include <pthread.h>
-#include <semaphore.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <semaphore.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
