@@ -266,6 +266,9 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   }
 
   uint64_t total_weight= 0;
+  uint32_t total_server= 0;
+  uint32_t first_weight;
+  bool all_weights_same= true;
   if (is_ketama_weighted)
   {
     for (uint32_t host_index = 0; host_index < memcached_server_count(ptr); ++host_index)
@@ -273,6 +276,13 @@ static memcached_return_t update_continuum(memcached_st *ptr)
       if (is_auto_ejecting == false or list[host_index].next_retry <= now.tv_sec)
       {
         total_weight += list[host_index].weight;
+        /* Check if all weights are same */
+        if ((++total_server) == 1) {
+          first_weight = list[host_index].weight;
+        } else {
+          if (first_weight != list[host_index].weight)
+            all_weights_same= false;
+        }
       }
     }
   }
@@ -286,8 +296,12 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
     if (is_ketama_weighted)
     {
-        float pct= (float)list[host_index].weight / (float)total_weight;
-        pointer_per_server= (uint32_t) ((floor((float) (pct * MEMCACHED_POINTS_PER_SERVER_KETAMA / 4 * (float)live_servers + 0.0000000001))) * 4);
+        if (all_weights_same) {
+          pointer_per_server= MEMCACHED_POINTS_PER_SERVER_KETAMA;
+        } else {
+          float pct= (float)list[host_index].weight / (float)total_weight;
+          pointer_per_server= (uint32_t) ((floor((float) (pct * MEMCACHED_POINTS_PER_SERVER_KETAMA / 4 * (float)live_servers + 0.0000000001))) * 4);
+        }
         pointer_per_hash= 4;
         if (DEBUG)
         {
@@ -433,6 +447,27 @@ static memcached_return_t update_continuum(memcached_st *ptr)
       WATCHPOINT_ASSERT(ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index + 1].value);
     }
   }
+#if 0 /* Print hash continuum */
+  if (1) {
+    uint32_t pointer_index;
+    fprintf(stderr, "update_continuum: node_count=%d hash_count=%d\n",
+            live_servers, ptr->ketama.continuum_points_counter);
+    for (pointer_index= 0; pointer_index < ptr->ketama.continuum_points_counter; pointer_index++) {
+      if (pointer_index > 0 &&
+          ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index - 1].value) {
+          break;
+      }
+      fprintf(stderr, "continuum[%d]: hash=%08x, server=%s:%d\n",
+              pointer_index, ptr->ketama.continuum[pointer_index].value,
+              list[ptr->ketama.continuum[pointer_index].index].hostname,
+              list[ptr->ketama.continuum[pointer_index].index].port);
+    }
+    if (pointer_index < ptr->ketama.continuum_points_counter)
+        fprintf(stderr, "update_continuum fails.n");
+    else
+        fprintf(stderr, "update_continuum success.\n");
+  }
+#endif
 
   return MEMCACHED_SUCCESS;
 }

@@ -25,6 +25,9 @@
 
 #include "libmemcached/memcached.h"
 
+static const char *zkadmin_addr = "127.0.0.1:2181";
+static const char *service_code = "test";
+
 #define NUMBER_OF_THREADS       10
 #define STAT_INTERVAL_IN_SEC    2
 
@@ -281,7 +284,7 @@ main(int argc __attribute__((unused)), char** argv __attribute__((unused)))
     return 1;
   }
 
-  arcus_return_t arc = arcus_pool_connect(pool, "127.0.0.1:2181", "test");
+  arcus_return_t arc = arcus_pool_connect(pool, zkadmin_addr, service_code);
 
   if (arc != ARCUS_SUCCESS) {
     fprintf(stderr, "arcus_connect() failed, reason=%s\n", arcus_strerror(arc));

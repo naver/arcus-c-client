@@ -63,7 +63,11 @@
 #define MEMCACHED_POINTS_PER_SERVER_KETAMA 160
 #define MEMCACHED_CONTINUUM_SIZE MEMCACHED_POINTS_PER_SERVER*100 /* This would then set max hosts to 100 */
 #define MEMCACHED_STRIDE 4
-#define MEMCACHED_DEFAULT_TIMEOUT 500
+/* poll timeout (or operation timeout): 700ms
+ * It avoids the occurence of operation timeout
+ * even if two packet retransmissions exist in linux.
+ */
+#define MEMCACHED_DEFAULT_TIMEOUT 700
 #define MEMCACHED_DEFAULT_CONNECT_TIMEOUT 1000
 #define MEMCACHED_CONTINUUM_ADDITION 10 /* How many extra slots we should build for in the continuum */
 #define MEMCACHED_PREFIX_KEY_MAX_SIZE 128

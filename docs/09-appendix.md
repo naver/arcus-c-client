@@ -14,10 +14,10 @@ GCC3, GCC4가 함께 설치된 환경에서는 ./configure 옵션에 다음을 �
 CC=gcc4 CXX=g++4
 ```
 
-멀티프로세스 샘플($SRC/arcus/multi_process)이 "Cannot create proxy lock : No space left on device" 메시지와 함께 실행되지 않는다면 다음 명령을 실행한다.
+멀티프로세스 샘플($SRC/arcus/multi_process)이 "Cannot create proxy lock : No space left on device" 메시지와 함께 실행되지 않는다면 다음 명령을 실행한다. USERID는 사용자 계정으로 대치한다.
 
 ```
-$ for i in `ipcs -s | awk '/irteam/ {print $2}'`; do (ipcrm -s $i); done
+$ for i in `ipcs -s | awk '/USERID/ {print $2}'`; do (ipcrm -s $i); done
 ```
 
 ### 설치 확인 : 샘플 프로그램을 정적 링크하기

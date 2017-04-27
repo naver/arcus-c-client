@@ -1,0 +1,20 @@
+2015-10-21 [version 1.7.4]
+	* Fix memory leak by deallcating a string vector gotten from ZK.
+
+2015-06-22 [version 1.7.3]
+	* Change default poll timeout: 500 => 700 ms.
+	* Use 160 hash points per server when all servers have the same weight.
+
+2015-02-01 [version 1.7.2]
+	* Fix smget error handling bug.
+	* Fix result_idx initialization bug in merge_results()
+
+2014-11-13 [version 1.7.1]
+	* Disable registering client info in ZK ensemble.
+	* Modify the memcached.h file to include the arcus.h file.
+	* Make unit tests success in an environment that uses both IPv4 and IPv6.
+	* Revert to the orginal inteface of arcus_connect() function.   
+	* Add ARCUS C Client User Guide Document.
+
+2014-05-15 
+	* arcus-c-client 1.7.0 is opened. (Apache License 2.0)

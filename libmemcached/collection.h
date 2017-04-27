@@ -53,13 +53,10 @@
           if (not ptr) return MEMCACHED_MEMORY_ALLOCATION_FAILURE; \
         }
 
-#define ALLOCATE_ARRAY_OR_RETURN_WITH_ERROR(root, ptr, type, count, error) \
+#define ALLOCATE_ARRAY_WITH_ERROR(root, ptr, type, count, error) \
         if (not ptr) { \
           ptr= static_cast<type*>(libmemcached_calloc(root, count, sizeof(type))); \
-          if (not ptr) { \
-            *error= MEMCACHED_MEMORY_ALLOCATION_FAILURE; \
-            return NULL; \
-          } \
+          if (not ptr) *error= MEMCACHED_MEMORY_ALLOCATION_FAILURE; \
         }
 
 #define DEALLOCATE_ARRAY(root, ptr) \

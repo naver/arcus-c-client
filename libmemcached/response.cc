@@ -141,9 +141,18 @@ static memcached_return_t fetch_value_header(memcached_server_write_instance_st 
       if (string[i] == '\r')
       {
         rc= memcached_io_read(ptr, string+i, 1, &read_length); // search for '\n'
-        if (rc != MEMCACHED_SUCCESS or string[i] != '\n')
+        if (memcached_failed(rc) and rc == MEMCACHED_IN_PROGRESS)
         {
-          return MEMCACHED_FAILURE;
+          memcached_quit_server(ptr, true);
+          return memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
+        }
+        else if (memcached_failed(rc))
+        {
+          return rc;
+        }
+        if (string[i] != '\n')
+        {
+          return MEMCACHED_PROTOCOL_ERROR;
         }
       }
       string[i] = '\0';
@@ -152,7 +161,7 @@ static memcached_return_t fetch_value_header(memcached_server_write_instance_st 
     }
   }
 
-  return MEMCACHED_FAILURE;
+  return MEMCACHED_PROTOCOL_ERROR;
 }
 
 static memcached_return_t fetch_value_header_with(char *buffer,
@@ -174,7 +183,7 @@ static memcached_return_t fetch_value_header_with(char *buffer,
         string[i]= buffer[i+1]; // search for '\n'
         if (string[i] != '\n')
         {
-          return MEMCACHED_FAILURE;
+          return MEMCACHED_PROTOCOL_ERROR;
         }
       }
       string[i] = '\0';
@@ -183,7 +192,7 @@ static memcached_return_t fetch_value_header_with(char *buffer,
     }
   }
 
-  return MEMCACHED_FAILURE;
+  return MEMCACHED_PROTOCOL_ERROR;
 }
 
 memcached_return_t memcached_read_one_response(memcached_server_write_instance_st ptr,
@@ -961,7 +970,7 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   if (not parse_response_header(buffer, "RESPONSE", 8, count, 1))
   {
     memcached_io_reset(ptr);
-    return MEMCACHED_FAILURE;
+    return MEMCACHED_PARTIAL_READ;
   }
 
   ptr->root->flags.piped= true;
@@ -1136,7 +1145,7 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
       not header_params[PARAM_COUNT] )
   {
     memcached_io_reset(ptr);
-    return MEMCACHED_FAILURE;
+    return MEMCACHED_PARTIAL_READ;
   }
 
   result->collection_flags= header_params[PARAM_FLAGS];
@@ -1627,7 +1636,7 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
   if (not parse_response_header(buffer, "VALUE", 5, header_params, 1))
   {
     memcached_io_reset(ptr);
-    return MEMCACHED_FAILURE;
+    return MEMCACHED_PARTIAL_READ;
   }
 
   size_t count= header_params[PARAM_COUNT];
@@ -1810,7 +1819,7 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
   if (not parse_response_header(buffer, "MISSED_KEYS", 11, header_params, 1))
   {
     memcached_io_reset(ptr);
-    return MEMCACHED_FAILURE;
+    return MEMCACHED_PARTIAL_READ;
   }
 
   size_t count= header_params[PARAM_COUNT];
@@ -1828,10 +1837,10 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
 
   for (size_t i=0; i<count; i++)
   {
-    char to_read_string[MEMCACHED_MAX_KEY+1];
+    char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
 
     size_t total_read= 0;
-    rrc= memcached_io_readline(ptr, to_read_string, MEMCACHED_MAX_KEY, total_read);
+    rrc= memcached_io_readline(ptr, to_read_string, MEMCACHED_MAX_KEY+2, total_read);
 
     if (rrc != MEMCACHED_SUCCESS)
     {
@@ -1877,8 +1886,15 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
 {
   size_t total_read;
   memcached_return_t rc= memcached_io_readline(ptr, buffer, buffer_length, total_read);
-  if (rc != MEMCACHED_SUCCESS)
+  if (rc != MEMCACHED_SUCCESS) {
+    /* rc == MEMCACHED_CONNECTION_FAILURE or
+     * rc == MEMCACHED_UNKNOWN_READ_FAILURE or
+     * rc == MEMCACHED_IN_PROGRESS or
+     * rc == MEMCACHED_ERRNO : get_socket_errno() or
+     * rc == MEMCACHED_PROTOCOL_ERROR
+     */
     return rc;
+  }
 
   switch(buffer[0])
   {
@@ -1906,10 +1922,20 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
     /* We add back in one because we will need to search for MISSED_KEYS */
     memcached_server_response_increment(ptr);
     return textual_coll_smget_value_fetch(ptr, buffer, result);
+    /* rc == MEMCACHED_SUCCESS or
+     * rc == MEMCACHED_PARTIAL_READ or
+     * rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE or
+     * rc == one of return values of memcached_io_readline()
+     */
   case 'M': /* MISSED_KEYS */
     /* We add back in one because we will need to search for END */
     memcached_server_response_increment(ptr);
     return textual_coll_smget_missed_key_fetch(ptr, buffer, result);
+    /* rc == MEMCACHED_SUCCESS or
+     * rc == MEMCACHED_PARTIAL_READ or
+     * rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE or
+     * rc == one of return values of memcached_io_readline()
+     */
   case 'E': /* PROTOCOL ERROR or END */
     {
       if (buffer[1] == 'N')
@@ -1980,6 +2006,8 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
     return MEMCACHED_ITEM;
   case 'C': /* CLIENT ERROR */
     return MEMCACHED_CLIENT_ERROR;
+  case 'S': /* SERVER ERROR */
+    return MEMCACHED_SERVER_ERROR;
   default:
     {
       unsigned long long auto_return_value;
