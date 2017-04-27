@@ -1024,7 +1024,7 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
                                                           watcher_fn watcher)
 {
   int zkrc;
-  struct String_vector strings;
+  struct String_vector strings = { 0, NULL };
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
 
   if (not arcus)
