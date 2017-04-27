@@ -103,3 +103,4 @@ tests/memslap
 tests/memstat
 tests/sasl
 unittests/unittests
+devtools/*
