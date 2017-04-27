@@ -509,7 +509,7 @@ static memcached_return_t server_add(memcached_st *ptr,
   memcached_string_t groupname= { memcached_string_make_from_cstr("invalid") };
   if (not __server_create_with(ptr, instance, groupname, hostname, port, weight, type, false))
 #else
-  if (not __server_create_with(ptr, instance, hostname, port, weight, type, false))
+  if (not __server_create_with(ptr, instance, hostname, port, weight, type))
 #endif
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
@@ -567,7 +567,7 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
     memcached_string_t hostname= { memcached_string_make_from_cstr(list[x].hostname) };
 #ifdef ENABLE_REPLICATION
     memcached_string_t groupname= { memcached_string_make_from_cstr(list[x].groupname) };
-    if (__server_create_with(ptr, instance, 
+    if (__server_create_with(ptr, instance,
                              groupname, hostname,
                              list[x].port, list[x].weight, list[x].type,
                              list[x].is_1_7) == NULL)

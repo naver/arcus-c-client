@@ -133,7 +133,7 @@ memcached_server_st *__server_create_with(memcached_st *memc,
                                           const memcached_string_t& groupname,
                                           const memcached_string_t& hostname,
                                           const in_port_t port,
-                                          uint32_t weight, 
+                                          uint32_t weight,
                                           const memcached_connection_t type,
                                           bool is_1_7)
 #else

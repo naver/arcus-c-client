@@ -84,9 +84,9 @@ typedef struct arcus_st {
 struct memcached_server_info
 {
 #ifdef ENABLE_REPLICATION
-  const char     *groupname;
+  char           *groupname;
 #endif
-  const char     *hostname;
+  char           *hostname;
   unsigned short port;
   bool           exist;
 };

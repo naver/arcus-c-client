@@ -77,8 +77,8 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, watc
  * UTILITIES
  */
 static inline void do_arcus_update_cachelist(memcached_st *mc, struct memcached_server_info *serverinfo, uint32_t servercount);
-#ifdef ENABLE_REPLICATION
 static inline void do_add_server_to_cachelist(struct memcached_server_info *serverinfo, char *hostport);
+#ifdef ENABLE_REPLICATION
 static void do_add_server_to_cachelist_1_7(struct memcached_server_info *serverinfo, uint32_t *count, char *nodename);
 #endif
 
