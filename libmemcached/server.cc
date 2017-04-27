@@ -46,7 +46,7 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
                                 const memcached_string_t& hostname,
                                 in_port_t port,
                                 uint32_t weight, memcached_connection_t type,
-                                bool is_1_7)
+                                bool is_repl_enabled)
 #else
 static inline void _server_init(memcached_server_st *self, memcached_st *root,
                                 const memcached_string_t& hostname,
@@ -55,7 +55,7 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
 #endif
 {
 #ifdef ENABLE_REPLICATION
-  self->is_1_7 = is_1_7;
+  self->is_repl_enabled = is_repl_enabled;
 #endif
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
@@ -135,7 +135,7 @@ memcached_server_st *__server_create_with(memcached_st *memc,
                                           const in_port_t port,
                                           uint32_t weight,
                                           const memcached_connection_t type,
-                                          bool is_1_7)
+                                          bool is_repl_enabled)
 #else
 memcached_server_st *__server_create_with(memcached_st *memc,
                                           memcached_server_write_instance_st self,
@@ -147,7 +147,7 @@ memcached_server_st *__server_create_with(memcached_st *memc,
 {
 #ifdef ENABLE_REPLICATION
   // This function simply checks the string length.
-  // In 1.7, hostname is "invalid" if there are no masters.  So, hostname is
+  // In replication, hostname is "invalid" if there are no masters.  So, hostname is
   // never empty.
 #endif
   if (memcached_is_valid_servername(hostname) == false)
@@ -164,7 +164,8 @@ memcached_server_st *__server_create_with(memcached_st *memc,
   }
 
 #ifdef ENABLE_REPLICATION
-  _server_init(self, const_cast<memcached_st *>(memc), groupname, hostname, port, weight, type, is_1_7);
+  _server_init(self, const_cast<memcached_st *>(memc), groupname, hostname, port, weight, type,
+               is_repl_enabled);
 #else
   _server_init(self, const_cast<memcached_st *>(memc), hostname, port, weight, type);
 #endif
@@ -236,7 +237,7 @@ memcached_server_st *memcached_server_clone(memcached_server_st *destination,
                                     hostname,
                                     source->port, source->weight,
                                     source->type,
-                                    source->is_1_7);
+                                    source->is_repl_enabled);
 #else
   destination= __server_create_with(source->root, destination,
                                     hostname,
@@ -250,7 +251,7 @@ memcached_server_st *memcached_server_clone(memcached_server_st *destination,
       destination->error_messages= memcached_error_copy(*source);
     }
 #ifdef ENABLE_REPLICATION
-    destination->is_1_7 = source->is_1_7;
+    destination->is_repl_enabled = source->is_repl_enabled;
 #endif
   }
 

@@ -22,7 +22,7 @@
 
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
 #ifdef ENABLE_REPLICATION
-#define ARCUS_1_7_ZK_CACHE_LIST               "/arcus_1_7/cache_list"
+#define ARCUS_REPL_ZK_CACHE_LIST              "/arcus_repl/cache_list"
 #endif
 #define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
 #define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
@@ -79,7 +79,7 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, watc
 static inline void do_arcus_update_cachelist(memcached_st *mc, struct memcached_server_info *serverinfo, uint32_t servercount);
 static inline void do_add_server_to_cachelist(struct memcached_server_info *serverinfo, char *hostport);
 #ifdef ENABLE_REPLICATION
-static void do_add_server_to_cachelist_1_7(struct memcached_server_info *serverinfo, uint32_t *count, char *nodename);
+static void do_add_server_to_grouplist(struct memcached_server_info *serverinfo, uint32_t *count, char *nodename);
 #endif
 
 
@@ -758,12 +758,12 @@ static inline void do_add_server_to_cachelist(struct memcached_server_info *serv
 }
 
 #ifdef ENABLE_REPLICATION
-/* For 1.7 clusters, we use this function to set up server_info.
+/* For replication clusters, we use this function to set up server_info.
  * Do not use server_to_cachelist above.
  */
 static void
-do_add_server_to_cachelist_1_7(struct memcached_server_info *serverinfo,
-                               uint32_t *count, char *nodename)
+do_add_server_to_grouplist(struct memcached_server_info *serverinfo,
+                           uint32_t *count, char *nodename)
 {
   char *c, *substr[3], *ip, *port;
   uint32_t i;
@@ -927,7 +927,7 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
         }
 
 #ifdef ENABLE_REPLICATION
-        if (arcus->zk.is_1_7) {
+        if (arcus->zk.is_repl_enabled) {
           if (strcmp(mc->servers[x].groupname, serverinfo[y].groupname) == 0 &&
               strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 &&
               mc->servers[x].port == serverinfo[y].port) {
@@ -957,11 +957,9 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
       if (serverinfo[x].exist == false)
       {
 #ifdef ENABLE_REPLICATION
-        if (arcus->zk.is_1_7) {
+        if (arcus->zk.is_repl_enabled)
           new_hosts= memcached_server_list_append_with_group(servers, serverinfo[x].groupname,
                                                              serverinfo[x].hostname, serverinfo[x].port, &error);
-          ZOO_LOG_WARN(("1.7: append with group"));
-        }
         else
 #endif
         new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
@@ -1050,13 +1048,13 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
                                                           char *serverlist,
                                                           const size_t size)
 {
+#ifdef ENABLE_REPLICATION
+  arcus_st *arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
+#endif
   uint32_t servercount= 0;
   struct memcached_server_info *serverinfo;
   char buffer[ARCUS_MAX_PROXY_FILE_LENGTH];
   serverinfo = static_cast<memcached_server_info *>(libmemcached_malloc(mc, sizeof(memcached_server_info)*(size+1)));
-#ifdef ENABLE_REPLICATION
-  arcus_st *arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
-#endif
 
   if (not serverinfo)
   {
@@ -1077,8 +1075,8 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
          token= strtok_r(NULL,   ",", &buf))
     {
 #ifdef ENABLE_REPLICATION
-      if (arcus->zk.is_1_7)
-        do_add_server_to_cachelist_1_7(serverinfo, &servercount, token);
+      if (arcus->zk.is_repl_enabled)
+        do_add_server_to_grouplist(serverinfo, &servercount, token);
       else
 #endif
       do_add_server_to_cachelist(&serverinfo[servercount++], token);
@@ -1129,9 +1127,8 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc,
 
     for (i= 0; i< strings->count; i++) {
 #ifdef ENABLE_REPLICATION
-      if (arcus->zk.is_1_7) {
-        do_add_server_to_cachelist_1_7(serverinfo, &servercount,
-          strings->data[i]);
+      if (arcus->zk.is_repl_enabled) {
+        do_add_server_to_grouplist(serverinfo, &servercount, strings->data[i]);
         continue;
       }
 #endif
@@ -1164,22 +1161,22 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
   strings.count = 0;
   strings.data = NULL;
 
-  /* Check /arucs_1_7 and /arcus to determine whether we belong to 1.7 or
-   * 1.6 cluster.
+  /* Check /arucs_repl and /arcus to determine whether we belong to replication
+   * or base(non-repl) cluster.
    */
   if (arcus->is_initializing) {
     struct Stat stat;
     snprintf(arcus->zk.path, sizeof(arcus->zk.path),
-      "%s/%s", ARCUS_1_7_ZK_CACHE_LIST, arcus->zk.svc_code);
+      "%s/%s", ARCUS_REPL_ZK_CACHE_LIST, arcus->zk.svc_code);
     zkrc = zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
     if (zkrc == ZOK) {
-      ZOO_LOG_WARN(("Detected Arcus 1.7 cluster. %s exits", arcus->zk.path));
-      arcus->zk.is_1_7 = true;
+      ZOO_LOG_WARN(("Detected Arcus replication cluster. %s exits", arcus->zk.path));
+      arcus->zk.is_repl_enabled = true;
     }
     else if (zkrc == ZNONODE) {
       snprintf(arcus->zk.path, sizeof(arcus->zk.path),
         "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
-      arcus->zk.is_1_7 = false;
+      arcus->zk.is_repl_enabled = false;
     }
     else {
       ZOO_LOG_ERROR(("zoo_exists failed while trying to"

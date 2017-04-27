@@ -561,8 +561,8 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 
 #ifdef ENABLE_REPLICATION
 memcached_return_t
-memcached_pool_use_single_server(memcached_pool_st *pool, const char *host,
-  int port)
+memcached_pool_use_single_server(memcached_pool_st *pool,
+                                 const char *host, int port)
 {
   memcached_st *mc;
   memcached_return_t error;

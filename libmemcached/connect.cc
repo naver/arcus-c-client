@@ -613,11 +613,12 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
   LIBMEMCACHED_MEMCACHED_CONNECT_START();
 
 #ifdef ENABLE_REPLICATION
-  // Arcus 1.7.  The server is actually the group.
+  // Arcus replication.  The server is actually the group.
   // The group's master server is stored in hostname.
   // If there are no masters, it contains "invalid".
   //
-  // When connected to a 1.6 cluster, hostname should have the valid name.
+  // When connected to a base(nor-repl) cluster,
+  // hostname should have the valid name.
   //
   // We could perform this check (i.e. do we have masters?) in each memcached
   // command function.  For example, in get, set, and so on.  But that seems
@@ -631,7 +632,7 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
   // If they become a real problem, we should probably fix them, not this
   // function.
   //
-  if (server->is_1_7 && 0 == strcmp(server->hostname, "invalid")) {
+  if (server->is_repl_enabled && 0 == strcmp(server->hostname, "invalid")) {
     return memcached_set_error(*server, MEMCACHED_NO_SERVERS, MEMCACHED_AT);
   }
 #endif

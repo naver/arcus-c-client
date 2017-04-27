@@ -63,7 +63,7 @@ enum memcached_server_state_t {
 #endif
 struct memcached_server_st {
 #ifdef ENABLE_REPLICATION
-  bool is_1_7;
+  bool is_repl_enabled;
 #endif
   struct {
     bool is_allocated:1;
@@ -104,9 +104,9 @@ struct memcached_server_st {
   char hostname[MEMCACHED_NI_MAXHOST];
 #ifdef ENABLE_REPLICATION
   char groupname[MEMCACHED_NI_MAXHOST];
-  // In 1.7, a group may have one master and one slave.
+  // In replication, a group may have one master and one slave.
   // If the group has no masters, hostname is "invalid".
-  // In 1.6 cluster, groupname == hostname.
+  // In previous(non-replication) cluster, groupname == hostname.
 #endif
 };
 

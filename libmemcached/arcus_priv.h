@@ -57,7 +57,7 @@ typedef struct arcus_st {
     int        last_rc;
     struct String_vector last_strings;
 #ifdef ENABLE_REPLICATION
-    bool       is_1_7;
+    bool       is_repl_enabled;
 #endif
   } zk;
 
@@ -75,10 +75,10 @@ typedef struct arcus_st {
 } arcus_st;
 
 #ifdef ENABLE_REPLICATION
-/* 1.7 cluster:
+/* replication cluster:
  * groupname is the name of the group this server belongs to.
- * hostname is the name of the master server.  If there are no masters, then
- * hostname = NULL.
+ * hostname is the name of the master server. 
+ * If there are no masters, then hostname = NULL.
  */
 #endif
 struct memcached_server_info

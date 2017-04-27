@@ -66,9 +66,9 @@ static int compare_servers(const void *p1, const void *p2)
   memcached_server_instance_st b= (memcached_server_instance_st)p2;
 
 #ifdef ENABLE_REPLICATION
-  // For 1.7 servers, compare only the group names.
+  // For replication servers, compare only the group names.
   // hostname contains the group's master server, if any.
-  if (a->is_1_7)
+  if (a->is_repl_enabled)
     return strcmp(a->groupname, b->groupname);
 #endif
 
@@ -327,9 +327,9 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 #ifdef ENABLE_REPLICATION
-        if (list[host_index].is_1_7) {
-          // For 1.7 clusters, use group names, not host names, appear
-          // in the hash ring.
+        if (list[host_index].is_repl_enabled) {
+          // For replication clusters, use group names, not host names,
+          // appear in the hash ring.
           sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
                                      "%s-%u",
                                      list[host_index].groupname,
@@ -386,7 +386,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     {
 #ifdef ENABLE_REPLICATION
       // Arcus does not use this hash.  So do not bother supporting
-      // 1.7 group names.
+      // replication group names.
 #endif
       for (uint32_t pointer_index= 1;
            pointer_index <= pointer_per_server / pointer_per_hash;
@@ -503,8 +503,8 @@ static memcached_return_t server_add(memcached_st *ptr,
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, memcached_server_count(ptr));
 
 #ifdef ENABLE_REPLICATION
-  /* Arcus (both 1.6 and 1.7) does not use this function.  So, use a fake
-   * groupname.
+  /* Arcus (both non-repl and repl) does not use this function.
+   * So, use a fake groupname.
    */
   memcached_string_t groupname= { memcached_string_make_from_cstr("invalid") };
   if (not __server_create_with(ptr, instance, groupname, hostname, port, weight, type, false))
@@ -570,7 +570,7 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
     if (__server_create_with(ptr, instance,
                              groupname, hostname,
                              list[x].port, list[x].weight, list[x].type,
-                             list[x].is_1_7) == NULL)
+                             list[x].is_repl_enabled) == NULL)
 #else
     if (__server_create_with(ptr, instance, 
                              hostname,

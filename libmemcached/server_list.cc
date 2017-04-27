@@ -83,8 +83,8 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
 
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
 #ifdef ENABLE_REPLICATION
-  /* Arcus 1.6 cluster uses this path.  Set groupname="invalid".
-   * The 1.7 cluster uses append_with_group.
+  /* Arcus base cluster uses this path.  Set groupname="invalid".
+   * The replication cluster uses append_with_group.
    */
   memcached_string_t _groupname= { memcached_string_make_from_cstr("invalid") };
 #endif
@@ -120,13 +120,15 @@ memcached_server_list_append(memcached_server_list_st ptr,
 }
 
 #ifdef ENABLE_REPLICATION
-/* Arcus 1.7 cluster.  Use this function to add servers to memcached_st,
+/* Arcus replication cluster.
+ * Use this function to add servers to memcached_st,
  * instead of server_list_append above.
  */
 memcached_server_list_st
 memcached_server_list_append_with_group(memcached_server_list_st ptr,
-  const char *groupname, const char *hostname, in_port_t port,
-  memcached_return_t *error)
+                                        const char *groupname,
+                                        const char *hostname, in_port_t port,
+                                        memcached_return_t *error)
 {
   /* Modified version of append_with_weight */
 

@@ -127,7 +127,7 @@ memcached_server_st *__server_create_with(memcached_st *memc,
                                           const in_port_t port,
                                           uint32_t weight,
                                           const memcached_connection_t type,
-                                          bool is_1_7);
+                                          bool is_repl_enabled);
 #else
 LIBMEMCACHED_LOCAL
   memcached_server_st *__server_create_with(memcached_st *memc,
