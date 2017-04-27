@@ -82,12 +82,18 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
   }
 
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
+#ifdef ENABLE_REPLICATION
   /* Arcus 1.6 cluster uses this path.  Set groupname="invalid".
    * The 1.7 cluster uses append_with_group.
    */
   memcached_string_t _groupname= { memcached_string_make_from_cstr("invalid") };
+#endif
   /* @todo Check return type */
+#ifdef ENABLE_REPLICATION
   if (not __server_create_with(NULL, &new_host_list[count-1], _groupname, _hostname, port, weight, port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET, false))
+#else
+  if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight, port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
+#endif
   {
     *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     return NULL;
@@ -113,6 +119,7 @@ memcached_server_list_append(memcached_server_list_st ptr,
   return memcached_server_list_append_with_weight(ptr, hostname, port, 0, error);
 }
 
+#ifdef ENABLE_REPLICATION
 /* Arcus 1.7 cluster.  Use this function to add servers to memcached_st,
  * instead of server_list_append above.
  */
@@ -159,6 +166,7 @@ memcached_server_list_append_with_group(memcached_server_list_st ptr,
   *error= MEMCACHED_SUCCESS;
   return new_host_list;
 }
+#endif
 
 uint32_t memcached_server_list_count(const memcached_server_list_st self)
 {

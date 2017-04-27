@@ -40,14 +40,23 @@
 */
 #include <libmemcached/common.h>
 
+#ifdef ENABLE_REPLICATION
 static inline void _server_init(memcached_server_st *self, memcached_st *root,
                                 const memcached_string_t& groupname,
                                 const memcached_string_t& hostname,
                                 in_port_t port,
                                 uint32_t weight, memcached_connection_t type,
                                 bool is_1_7)
+#else
+static inline void _server_init(memcached_server_st *self, memcached_st *root,
+                                const memcached_string_t& hostname,
+                                in_port_t port,
+                                uint32_t weight, memcached_connection_t type)
+#endif
 {
+#ifdef ENABLE_REPLICATION
   self->is_1_7 = is_1_7;
+#endif
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
   self->number_of_hosts= 0;
@@ -88,9 +97,11 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   memcpy(self->hostname, hostname.c_str, hostname.size);
   self->hostname[hostname.size]= 0;
 
+#ifdef ENABLE_REPLICATION
   // Copy the group name too
   memcpy(self->groupname, groupname.c_str, groupname.size);
   self->groupname[groupname.size]= 0;
+#endif
 }
 
 static memcached_server_st *_server_create(memcached_server_st *self, const memcached_st *memc)
@@ -116,6 +127,7 @@ static memcached_server_st *_server_create(memcached_server_st *self, const memc
   return self;
 }
 
+#ifdef ENABLE_REPLICATION
 memcached_server_st *__server_create_with(memcached_st *memc,
                                           memcached_server_write_instance_st self,
                                           const memcached_string_t& groupname,
@@ -124,10 +136,20 @@ memcached_server_st *__server_create_with(memcached_st *memc,
                                           uint32_t weight, 
                                           const memcached_connection_t type,
                                           bool is_1_7)
+#else
+memcached_server_st *__server_create_with(memcached_st *memc,
+                                          memcached_server_write_instance_st self,
+                                          const memcached_string_t& hostname,
+                                          const in_port_t port,
+                                          uint32_t weight, 
+                                          const memcached_connection_t type)
+#endif
 {
+#ifdef ENABLE_REPLICATION
   // This function simply checks the string length.
   // In 1.7, hostname is "invalid" if there are no masters.  So, hostname is
   // never empty.
+#endif
   if (memcached_is_valid_servername(hostname) == false)
   {
     memcached_set_error(*memc, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid hostname provided"));
@@ -141,7 +163,11 @@ memcached_server_st *__server_create_with(memcached_st *memc,
     return NULL;
   }
 
+#ifdef ENABLE_REPLICATION
   _server_init(self, const_cast<memcached_st *>(memc), groupname, hostname, port, weight, type, is_1_7);
+#else
+  _server_init(self, const_cast<memcached_st *>(memc), hostname, port, weight, type);
+#endif
 
 
   if (type == MEMCACHED_CONNECTION_UDP)
@@ -203,6 +229,7 @@ memcached_server_st *memcached_server_clone(memcached_server_st *destination,
   }
 
   memcached_string_t hostname= { memcached_string_make_from_cstr(source->hostname) };
+#ifdef ENABLE_REPLICATION
   memcached_string_t groupname= { memcached_string_make_from_cstr(source->groupname) };
   destination= __server_create_with(source->root, destination,
                                     groupname,
@@ -210,13 +237,21 @@ memcached_server_st *memcached_server_clone(memcached_server_st *destination,
                                     source->port, source->weight,
                                     source->type,
                                     source->is_1_7);
+#else
+  destination= __server_create_with(source->root, destination,
+                                    hostname,
+                                    source->port, source->weight,
+                                    source->type);
+#endif
   if (destination)
   {
     if (source->error_messages)
     {
       destination->error_messages= memcached_error_copy(*source);
     }
+#ifdef ENABLE_REPLICATION
     destination->is_1_7 = source->is_1_7;
+#endif
   }
 
   return destination;

@@ -77,11 +77,13 @@ LIBMEMCACHED_API
                                                                     uint32_t weight,
                                                                     memcached_return_t *error);
 
+#ifdef ENABLE_REPLICATION
 // Arcus 1.7 cluster uses this function instead of server_list_append.
 LIBMEMCACHED_API
 memcached_server_list_st memcached_server_list_append_with_group(
   memcached_server_list_st ptr, const char *groupname,
   const char *hostname, in_port_t port, memcached_return_t *error);
+#endif
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 LIBMEMCACHED_API

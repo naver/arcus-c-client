@@ -118,6 +118,7 @@ static inline void memcached_mark_server_for_timeout(memcached_server_write_inst
   }
 }
 
+#ifdef ENABLE_REPLICATION
 LIBMEMCACHED_LOCAL
   memcached_server_st *__server_create_with(memcached_st *memc,
                                             memcached_server_write_instance_st host,
@@ -127,3 +128,12 @@ LIBMEMCACHED_LOCAL
                                             uint32_t weight,
                                             const memcached_connection_t type,
                                             bool is_1_7);
+#else
+LIBMEMCACHED_LOCAL
+  memcached_server_st *__server_create_with(memcached_st *memc,
+                                            memcached_server_write_instance_st host,
+                                            const memcached_string_t& hostname,
+                                            const in_port_t port,
+                                            uint32_t weight,
+                                            const memcached_connection_t type)
+#endif

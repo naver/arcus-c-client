@@ -56,11 +56,15 @@ enum memcached_server_state_t {
   MEMCACHED_SERVER_STATE_IN_TIMEOUT
 };
 
+#ifdef ENABLE_REPLICATION
 /* This now represents both the replication group and
  * its current master server.
  */
+#endif
 struct memcached_server_st {
+#ifdef ENABLE_REPLICATION
   bool is_1_7;
+#endif
   struct {
     bool is_allocated:1;
     bool is_initialized:1;
@@ -98,10 +102,12 @@ struct memcached_server_st {
   char read_buffer[MEMCACHED_MAX_BUFFER];
   char write_buffer[MEMCACHED_MAX_BUFFER];
   char hostname[MEMCACHED_NI_MAXHOST];
+#ifdef ENABLE_REPLICATION
   char groupname[MEMCACHED_NI_MAXHOST];
   // In 1.7, a group may have one master and one slave.
   // If the group has no masters, hostname is "invalid".
   // In 1.6 cluster, groupname == hostname.
+#endif
 };
 
 

@@ -559,6 +559,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   return MEMCACHED_SUCCESS;
 }
 
+#ifdef ENABLE_REPLICATION
 memcached_return_t
 memcached_pool_use_single_server(memcached_pool_st *pool, const char *host,
   int port)
@@ -587,6 +588,7 @@ memcached_pool_use_single_server(memcached_pool_st *pool, const char *host,
   // clone the master to the whole pool
   return memcached_pool_repopulate(pool);
 }
+#endif
 
 uint16_t get_memcached_pool_size(memcached_pool_st* pool) 
 {
