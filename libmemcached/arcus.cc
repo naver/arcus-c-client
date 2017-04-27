@@ -1157,10 +1157,8 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
     ZOO_LOG_ERROR(("Arcus is null"));
     return;
   }
-#ifdef ENABLE_REPLICATION
-  strings.count = 0;
-  strings.data = NULL;
 
+#ifdef ENABLE_REPLICATION
   /* Check /arucs_repl and /arcus to determine whether we belong to replication
    * or base(non-repl) cluster.
    */
