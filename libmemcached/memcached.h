@@ -62,7 +62,7 @@
 # include <stdbool.h>
 #endif
 
-#define ENABLE_REPLICATION 1
+//#define ENABLE_REPLICATION 1
 
 #include <libmemcached/visibility.h>
 #include <libmemcached/configure.h>
