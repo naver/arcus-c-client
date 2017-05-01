@@ -35,8 +35,6 @@
  *
  */
 
-
-
 #include <libmemcached/common.h>
 
 memcached_server_list_st 
@@ -52,31 +50,24 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
   if (error == NULL)
     error= &unused;
 
-  if (hostname == NULL)
-  {
+  if (hostname == NULL) {
     hostname= "localhost";
   }
-
-  if (hostname[0] == '/')
-  {
+  if (hostname[0] == '/') {
     port = 0;
   }
-  else if (not port)
-  {
+  else if (not port) {
     port= MEMCACHED_DEFAULT_PORT;
   }
 
-
   /* Increment count for hosts */
   count= 1;
-  if (ptr != NULL)
-  {
+  if (ptr != NULL) {
     count+= memcached_server_list_count(ptr);
   }
 
   new_host_list= (memcached_server_write_instance_st)realloc(ptr, sizeof(memcached_server_st) * count);
-  if (not new_host_list)
-  {
+  if (not new_host_list) {
     *error= memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     return NULL;
   }
@@ -90,9 +81,11 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
 #endif
   /* @todo Check return type */
 #ifdef ENABLE_REPLICATION
-  if (not __server_create_with(NULL, &new_host_list[count-1], _groupname, _hostname, port, weight, port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET, false))
+  if (not __server_create_with(NULL, &new_host_list[count-1], _groupname, _hostname, port, weight,
+                               port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET, false))
 #else
-  if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight, port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
+  if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight,
+                               port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
 #endif
   {
     *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
@@ -146,19 +139,17 @@ memcached_server_list_append_with_group(memcached_server_list_st ptr,
   }
 
   new_host_list= (memcached_server_write_instance_st)realloc(ptr,
-    sizeof(memcached_server_st) * count);
+                             sizeof(memcached_server_st) * count);
   if (not new_host_list) {
-    *error= memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE,
-      MEMCACHED_AT);
+    *error= memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     return NULL;
   }
 
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
   memcached_string_t _groupname= { memcached_string_make_from_cstr(groupname) };
-  if (not __server_create_with(NULL, &new_host_list[count-1], _groupname,
-      _hostname, port, 0, MEMCACHED_CONNECTION_TCP, true)) {
-    *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE,
-      MEMCACHED_AT);
+  if (not __server_create_with(NULL, &new_host_list[count-1], _groupname, _hostname, port, 0,
+                               MEMCACHED_CONNECTION_TCP, true)) {
+    *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     return NULL;
   }
 
@@ -179,11 +170,9 @@ uint32_t memcached_server_list_count(const memcached_server_list_st self)
 
 memcached_server_st *memcached_server_list(const memcached_st *self)
 {
-  if (self)
-  {
+  if (self) {
     return self->servers;
   }
-
   return NULL;
 }
 
@@ -199,7 +188,9 @@ void memcached_server_list_free(memcached_server_list_st self)
 
   for (uint32_t x= 0; x < memcached_server_list_count(self); x++)
   {
-    assert_msg(not memcached_is_allocated(&self[x]), "You have called memcached_server_list_free(), but you did not pass it a valid memcached_server_list_st");
+    assert_msg(not memcached_is_allocated(&self[x]),
+               "You have called memcached_server_list_free(), "
+               "but you did not pass it a valid memcached_server_list_st");
     __server_free(&self[x]);
   }
 

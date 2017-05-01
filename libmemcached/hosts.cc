@@ -68,17 +68,15 @@ static int compare_servers(const void *p1, const void *p2)
 #ifdef ENABLE_REPLICATION
   // For replication servers, compare only the group names.
   // hostname contains the group's master server, if any.
-  if (a->is_repl_enabled)
+  if (a->is_repl_enabled) {
     return strcmp(a->groupname, b->groupname);
+  }
 #endif
 
   return_value= strcmp(a->hostname, b->hostname);
-
-  if (return_value == 0)
-  {
+  if (return_value == 0) {
     return_value= (int) (a->port - b->port);
   }
-
   return return_value;
 }
 
@@ -88,7 +86,8 @@ static void sort_hosts(memcached_st *ptr)
   {
     memcached_server_write_instance_st instance;
 
-    qsort(memcached_server_list(ptr), memcached_server_count(ptr), sizeof(memcached_server_st), compare_servers);
+    qsort(memcached_server_list(ptr), memcached_server_count(ptr),
+          sizeof(memcached_server_st), compare_servers);
     instance= memcached_server_instance_fetch(ptr, 0);
     instance->number_of_hosts= memcached_server_count(ptr);
   }
@@ -98,19 +97,18 @@ static void sort_hosts(memcached_st *ptr)
 /** Prune the redundant or not-available servers */
 static void prune_hosts(memcached_st *ptr, bool all_flag)
 {
-  int i;
-  int cursor = 0;
+  int i, cursor = 0;
   int server_count = memcached_server_count(ptr);
 
   if (!server_count) return;
 
   if (all_flag) {
     memcached_servers_reset(ptr);
-    server_count = 0;
+    return;
   }
 
   for (i=0; i<server_count; i++) {
-    if (ptr->servers[i].options.is_dead || all_flag) {
+    if (ptr->servers[i].options.is_dead) {
       /* free the dead servers. */
       //memcached_server_free(&ptr->servers[i]);
       __server_free(&ptr->servers[i]);
@@ -178,11 +176,10 @@ static uint32_t ketama_server_hash(const char *key, size_t key_length, uint32_t 
   unsigned char results[16];
 
   libhashkit_md5_signature((unsigned char*)key, key_length, results);
-
   return ((uint32_t) (results[3 + alignment * 4] & 0xFF) << 24)
-    | ((uint32_t) (results[2 + alignment * 4] & 0xFF) << 16)
-    | ((uint32_t) (results[1 + alignment * 4] & 0xFF) << 8)
-    | (results[0 + alignment * 4] & 0xFF);
+       | ((uint32_t) (results[2 + alignment * 4] & 0xFF) << 16)
+       | ((uint32_t) (results[1 + alignment * 4] & 0xFF) << 8)
+       |             (results[0 + alignment * 4] & 0xFF);
 }
 
 static int continuum_item_cmp(const void *t1, const void *t2)
@@ -194,7 +191,7 @@ static int continuum_item_cmp(const void *t1, const void *t2)
   WATCHPOINT_ASSERT(ct1->value != 153);
   if (ct1->value == ct2->value)
     return 0;
-  else if (ct1->value > ct2->value)
+  if (ct1->value > ct2->value)
     return 1;
   else
     return -1;
@@ -231,7 +228,8 @@ static memcached_return_t update_continuum(memcached_st *ptr)
       }
       else
       {
-        if (ptr->ketama.next_distribution_rebuild == 0 or list[host_index].next_retry < ptr->ketama.next_distribution_rebuild)
+        if (ptr->ketama.next_distribution_rebuild == 0 or
+            list[host_index].next_retry < ptr->ketama.next_distribution_rebuild)
         {
           ptr->ketama.next_distribution_rebuild= list[host_index].next_retry;
         }
@@ -244,7 +242,8 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   }
 
   uint64_t is_ketama_weighted= memcached_behavior_get(ptr, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
-  uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA : MEMCACHED_POINTS_PER_SERVER);
+  uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
+                                                             : MEMCACHED_POINTS_PER_SERVER);
 
   if (not live_servers)
   {
@@ -419,8 +418,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
         if (is_ketama_weighted)
         {
-          for (uint32_t x = 0; x < pointer_per_hash; x++)
-          {
+          for (uint32_t x = 0; x < pointer_per_hash; x++) {
             uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
             ptr->ketama.continuum[continuum_index].index= host_index;
             ptr->ketama.continuum[continuum_index++].value= value;
@@ -442,13 +440,16 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   WATCHPOINT_ASSERT(ptr->ketama.continuum);
   WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
   ptr->ketama.continuum_points_counter= pointer_counter;
-  qsort(ptr->ketama.continuum, ptr->ketama.continuum_points_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
+  qsort(ptr->ketama.continuum, ptr->ketama.continuum_points_counter,
+        sizeof(memcached_continuum_item_st), continuum_item_cmp);
 
   if (DEBUG)
   {
-    for (uint32_t pointer_index= 0; memcached_server_count(ptr) && pointer_index < ((live_servers * MEMCACHED_POINTS_PER_SERVER) - 1); pointer_index++)
+    for (uint32_t pointer_index= 0;
+         pointer_index < ((live_servers * MEMCACHED_POINTS_PER_SERVER) - 1) && memcached_server_count(ptr);
+         pointer_index++)
     {
-      WATCHPOINT_ASSERT(ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index + 1].value);
+      WATCHPOINT_ASSERT(ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index+1].value);
     }
   }
 #if 0 /* Print hash continuum */
@@ -489,9 +490,9 @@ static memcached_return_t server_add(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_HOST_PROTOCOL, MEMCACHED_AT);
   }
 
-  memcached_server_st *new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
-                                                                                             sizeof(memcached_server_st) * (ptr->number_of_hosts + 1)));
-
+  memcached_server_st *new_host_list;
+  new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
+                                                   sizeof(memcached_server_st) * (ptr->number_of_hosts + 1)));
   if (not new_host_list)
   {
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
@@ -500,7 +501,8 @@ static memcached_return_t server_add(memcached_st *ptr,
   memcached_server_list_set(ptr, new_host_list);
 
   /* TODO: Check return type */
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, memcached_server_count(ptr));
+  memcached_server_write_instance_st instance;
+  instance= memcached_server_instance_fetch(ptr, memcached_server_count(ptr));
 
 #ifdef ENABLE_REPLICATION
   /* Arcus (both non-repl and repl) does not use this function.
@@ -599,12 +601,14 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
 }
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-memcached_return_t memcached_server_push_with_prune(memcached_st *ptr, const memcached_server_list_st list,
+memcached_return_t memcached_server_push_with_prune(memcached_st *ptr,
+                                                    const memcached_server_list_st list,
                                                     bool prune_flag)
 {
   if (list) {
-    if (prune_flag)
+    if (prune_flag) {
       prune_hosts(ptr, false);
+    }
     return memcached_server_push(ptr, list);
   } else {
     if (prune_flag) {
@@ -643,7 +647,8 @@ memcached_return_t memcached_server_add_unix_socket_with_weight(memcached_st *pt
   memcached_string_t _filename= { memcached_string_make_from_cstr(filename) };
   if (memcached_is_valid_servername(_filename) == false)
   {
-    memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid filename for socket provided"));
+    memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                        memcached_literal_param("Invalid filename for socket provided"));
   }
 
   return server_add(ptr, _filename, 0, weight, MEMCACHED_CONNECTION_UNIX_SOCKET);
@@ -679,7 +684,8 @@ memcached_return_t memcached_server_add_udp_with_weight(memcached_st *ptr,
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
   if (memcached_is_valid_servername(_hostname) == false)
   {
-    memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid hostname provided"));
+    memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                        memcached_literal_param("Invalid hostname provided"));
   }
 
   return server_add(ptr, _hostname, port, weight, MEMCACHED_CONNECTION_UDP);
@@ -718,10 +724,13 @@ memcached_return_t memcached_server_add_with_weight(memcached_st *ptr,
 
   if (memcached_is_valid_servername(_hostname) == false)
   {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid hostname provided"));
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Invalid hostname provided"));
   }
 
-  return server_add(ptr, _hostname, port, weight, _hostname.c_str[0] == '/' ? MEMCACHED_CONNECTION_UNIX_SOCKET  : MEMCACHED_CONNECTION_TCP);
+  return server_add(ptr, _hostname, port, weight,
+                    _hostname.c_str[0] == '/' ? MEMCACHED_CONNECTION_UNIX_SOCKET 
+                                              : MEMCACHED_CONNECTION_TCP);
 }
 
 memcached_return_t memcached_server_add_parsed(memcached_st *ptr,
