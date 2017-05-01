@@ -81,7 +81,7 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, watc
 static inline void do_arcus_update_cachelist(memcached_st *mc, struct memcached_server_info *serverinfo, uint32_t servercount);
 static inline void do_add_server_to_cachelist(struct memcached_server_info *serverinfo, char *hostport);
 #ifdef ENABLE_REPLICATION
-static void do_add_server_to_grouplist(struct memcached_server_info *serverinfo, uint32_t *count, char *nodename);
+static inline void do_add_server_to_grouplist(struct memcached_server_info *serverinfo, uint32_t *count, char *nodename);
 #endif
 
 
@@ -138,11 +138,10 @@ arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
                                   const char *ensemble_list,
                                   const char *svc_code)
 {
-  memcached_st *mc;
+  memcached_st *mc= memcached_pool_get_master(pool);
   arcus_st *arcus;
   arcus_return_t rc;
 
-  mc= memcached_pool_get_master(pool);
   arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
   if (not arcus) {
     rc= do_arcus_connect(memcached_pool_get_master(pool), pool, ensemble_list, svc_code);
@@ -156,8 +155,7 @@ arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
     if (error != MEMCACHED_SUCCESS) {
       ZOO_LOG_WARN(("failed to repopulate the pool!"));
     }
-  }
-  else {
+  } else {
     ZOO_LOG_WARN(("arcus is already initiated"));
   }
 
@@ -215,13 +213,12 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
       rc= ARCUS_ERROR;
     }
     pthread_mutex_unlock(&lock_arcus);
-    if (rc != ARCUS_SUCCESS) {
-      return ARCUS_ERROR;
-    }
 
-    ZOO_LOG_WARN(("Done"));
+    if (rc == ARCUS_SUCCESS) {
+      ZOO_LOG_WARN(("Done"));
+    }
   }
-  return ARCUS_SUCCESS;
+  return rc;
 }
 
 arcus_return_t arcus_proxy_connect(memcached_st *mc,
@@ -341,8 +338,8 @@ static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
 
   if (0 != proc_mutex_create(&arcus->proxy.data->mutex, ap_lock_fname)) {
     ZOO_LOG_ERROR(("Cannot create the proxy lock file. You might have to"
-        " delete the lock file manually. file=%s error=%s(%d)",
-        ap_lock_fname, strerror(errno), errno));
+            " delete the lock file manually. file=%s error=%s(%d)",
+            ap_lock_fname, strerror(errno), errno));
     return ARCUS_ERROR;
   }
 
@@ -684,7 +681,7 @@ static inline void do_add_server_to_cachelist(struct memcached_server_info *serv
 /* For replication clusters, we use this function to set up server_info.
  * Do not use server_to_cachelist above.
  */
-static void
+static inline void
 do_add_server_to_grouplist(struct memcached_server_info *serverinfo,
                            uint32_t *count, char *nodename)
 {
@@ -769,7 +766,6 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
                                                    const struct String_vector *strings)
 {
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-  bool is_empty= false;
 
   /* Lock the data mutex */
   proc_mutex_lock(&arcus->proxy.data->mutex);
@@ -787,13 +783,13 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
     } else { /* Empty string */
       arcus->proxy.data->serverlist[0]= '\0';
       arcus->proxy.data->size= 0;
-      is_empty= true;
     }
     /* Increase the data version */
     arcus->proxy.data->version++;
     ZOO_LOG_WARN(("proxy : data updated (version=%d) : %s",
                  arcus->proxy.data->version,
-                 (is_empty) ? "NO CACHE SERVERS" : arcus->proxy.data->serverlist));
+                 (arcus->proxy.data->size == 0) ? "NO CACHE SERVERS"
+                                                : arcus->proxy.data->serverlist));
   }
   /* Unlock the data mutex */
   proc_mutex_unlock(&arcus->proxy.data->mutex);
@@ -833,9 +829,9 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
     for (x= 0; x< memcached_server_count(mc); x++)
     {
       for (y= 0; y< servercount; y++) {
-        if (serverinfo[y].exist) {
+        if (serverinfo[y].exist)
           continue;
-        }
+
 #ifdef ENABLE_REPLICATION
         if (arcus->zk.is_repl_enabled) {
           if (strcmp(mc->servers[x].groupname, serverinfo[y].groupname) == 0 &&
@@ -869,11 +865,10 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
 #endif
         new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
                                                 serverinfo[x].port, &error);
-        if (new_hosts != NULL) {
-          servers= new_hosts;
-        } else {
+        if (new_hosts == NULL)
           break;
-        }
+
+        servers= new_hosts;
       }
     }
 
@@ -885,13 +880,11 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
         pthread_cond_broadcast(&cond_arcus);
       }
     } else { /* memcached_server_list_append FAIL */
-      if (prune_flag == true) {
+      if (prune_flag) {
         for (x= 0; x< memcached_server_count(mc); x++) {
-          if (mc->servers[x].options.is_dead == true) {
+          if (mc->servers[x].options.is_dead == true)
             mc->servers[x].options.is_dead= false;
-          }
         }
-        prune_flag = false;
       }
     }
     if (servers) {
@@ -1003,13 +996,11 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc,
       }
       for (int i= 0; i< strings->count; i++) {
 #ifdef ENABLE_REPLICATION
-        if (arcus->zk.is_repl_enabled) {
+        if (arcus->zk.is_repl_enabled)
           do_add_server_to_grouplist(serverinfo, &servercount, strings->data[i]);
-          continue;
-        }
+        else
 #endif
-        do_add_server_to_cachelist(&serverinfo[i], strings->data[i]);
-        servercount++;
+        do_add_server_to_cachelist(&serverinfo[servercount++], strings->data[i]);
       }
       do_arcus_update_cachelist(mc, serverinfo, servercount);
       libmemcached_free(mc, serverinfo);
