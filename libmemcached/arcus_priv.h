@@ -32,6 +32,23 @@ struct arcus_proc_mutex
   char *fname;
 };
 
+struct arcus_zk_st
+{
+  zhandle_t  *handle;
+  clientid_t myid;
+  char       ensemble_list[1024];
+  char       svc_code[256];
+  char       path[256];
+  uint32_t   port;
+  uint32_t   session_timeout;
+  size_t     maxbytes;
+  int        last_rc;
+  struct String_vector last_strings;
+#ifdef ENABLE_REPLICATION
+  bool       is_repl_enabled;
+#endif
+};
+
 typedef struct arcus_proxy_data_st
 {
   struct arcus_proc_mutex mutex;
@@ -44,22 +61,7 @@ typedef struct arcus_st {
   /**
    * @note zookeeper configurations
    */
-  struct arcus_zk_st
-  {
-    zhandle_t  *handle;
-    clientid_t myid;
-    char       ensemble_list[1024];
-    char       svc_code[256];
-    char       path[256];
-    uint32_t   port;
-    uint32_t   session_timeout;
-    size_t     maxbytes;
-    int        last_rc;
-    struct String_vector last_strings;
-#ifdef ENABLE_REPLICATION
-    bool       is_repl_enabled;
-#endif
-  } zk;
+  struct arcus_zk_st zk;
 
   struct arcus_proxy_st
   {
@@ -88,6 +90,9 @@ struct memcached_server_info
 #endif
   char           *hostname;
   unsigned short port;
+#ifdef ENABLE_REPLICATION
+  bool           master;
+#endif
   bool           exist;
 };
 

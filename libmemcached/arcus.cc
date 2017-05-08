@@ -78,10 +78,16 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, watc
 /**
  * UTILITIES
  */
-static inline void do_arcus_update_cachelist(memcached_st *mc, struct memcached_server_info *serverinfo, uint32_t servercount);
-static inline void do_add_server_to_cachelist(struct memcached_server_info *serverinfo, char *hostport);
+static inline void do_arcus_update_cachelist(memcached_st *mc,
+                                             struct memcached_server_info *serverinfo,
+                                             uint32_t servercount);
+static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *nodename,
+                                             struct memcached_server_info *serverinfo);
+#if 0 // JOON_REPL_OLD_CODE
 #ifdef ENABLE_REPLICATION
-static inline void do_add_server_to_grouplist(struct memcached_server_info *serverinfo, uint32_t *count, char *nodename);
+static inline void do_add_server_to_grouplist(struct memcached_server_info *serverinfo,
+                                              uint32_t *count, char *nodename);
+#endif
 #endif
 
 
@@ -644,17 +650,50 @@ void arcus_server_check_for_update(memcached_st *ptr)
  * Add a server to the cache server list with a given host:port string.
  * @note servers parameter must be freed.
  */
-static inline void do_add_server_to_cachelist(struct memcached_server_info *serverinfo,
-                                              char *hostport)
+static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *nodename,
+                                             struct memcached_server_info *serverinfo)
 {
   int c= 0;
+  char *hostport= nodename;
   char *buffer;
   char *word;
   char seps[]= ":-";
 
 #ifdef ENABLE_REPLICATION
-  serverinfo->groupname = NULL;
+  if (zkinfo->is_repl_enabled) {
+    for (word= strtok_r(nodename, "^", &buffer);
+         word;
+         word= strtok_r(NULL,     "^", &buffer), c++)
+    {
+      if (c == 0) /* groupname */
+      {
+        serverinfo->groupname= word;
+      }
+      else if (c == 1) /* role : M or S */
+      {
+        if (strlen(word) != 1 || (word[0] != 'M' && word[0] != 'S'))
+          break; /* invalid znode name */
+        serverinfo->master= (word[0] == 'M' ? true : false);
+      }
+      else /* hostport */
+      {
+        hostport= word;
+        break;
+      }
+    }
+    if (c < 2) {
+      return -1; /* invalid znode name */
+    }
+    if (serverinfo->master == false) {
+      return -1; /* exclude slave node */
+    }
+    c= 0;
+  } else {
+    serverinfo->groupname= NULL;
+    serverinfo->master= false;
+  }
 #endif
+
   /* expected = <IP>:<PORT>-<HOSTNAME>
    *      e.g.  10.64.179.212:11212-localhost */
   for (word= strtok_r(hostport, seps, &buffer);
@@ -674,9 +713,14 @@ static inline void do_add_server_to_cachelist(struct memcached_server_info *serv
       break;
     }
   }
+  if (c < 1 || serverinfo->port == 0) {
+    return -1; /* invalid znode name */
+  }
   serverinfo->exist= false;
+  return 0;
 }
 
+#if 0 // JOON_REPL_OLD_CODE
 #ifdef ENABLE_REPLICATION
 /* For replication clusters, we use this function to set up server_info.
  * Do not use server_to_cachelist above.
@@ -760,6 +804,7 @@ do_add_server_to_grouplist(struct memcached_server_info *serverinfo,
     info->port = atoi(port);
   }
 }
+#endif
 #endif
 
 static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
@@ -951,12 +996,10 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
          token;
          token= strtok_r(NULL,   ",", &buf))
     {
-#ifdef ENABLE_REPLICATION
-      if (arcus->zk.is_repl_enabled)
-        do_add_server_to_grouplist(serverinfo, &servercount, token);
-      else
-#endif
-      do_add_server_to_cachelist(&serverinfo[servercount++], token);
+      if (do_add_server_to_cachelist(&arcus->zk, token,
+                                     &serverinfo[servercount]) == 0) {
+        servercount++; /* valid znode name */
+      }
     }
   }
 
@@ -995,12 +1038,10 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc,
         break;
       }
       for (int i= 0; i< strings->count; i++) {
-#ifdef ENABLE_REPLICATION
-        if (arcus->zk.is_repl_enabled)
-          do_add_server_to_grouplist(serverinfo, &servercount, strings->data[i]);
-        else
-#endif
-        do_add_server_to_cachelist(&serverinfo[servercount++], strings->data[i]);
+        if (do_add_server_to_cachelist(&arcus->zk, strings->data[i],
+                                       &serverinfo[servercount]) == 0) {
+          servercount++; /* valid znode name */
+        }
       }
       do_arcus_update_cachelist(mc, serverinfo, servercount);
       libmemcached_free(mc, serverinfo);
