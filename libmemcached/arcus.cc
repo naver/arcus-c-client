@@ -846,6 +846,80 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
   }
 }
 
+static inline memcached_return_t
+__do_arcus_update_cachelist(memcached_st *mc,
+                            struct memcached_server_info *serverinfo,
+                            uint32_t servercount)
+{
+#ifdef ENABLE_REPLICATION
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+#endif
+  memcached_return_t error= MEMCACHED_SUCCESS;
+  uint32_t x, y;
+  memcached_server_st *servers= NULL;
+  memcached_server_st *new_hosts;
+  bool prune_flag= false;
+
+  for (x= 0; x< memcached_server_count(mc); x++)
+  {
+    for (y= 0; y< servercount; y++) {
+      if (serverinfo[y].exist)
+        continue;
+
+#ifdef ENABLE_REPLICATION
+      if (arcus->zk.is_repl_enabled) {
+        if (strcmp(mc->servers[x].groupname, serverinfo[y].groupname) == 0 &&
+            strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 &&
+            mc->servers[x].port == serverinfo[y].port) {
+          serverinfo[y].exist = true; break;
+        }
+      }
+      else
+#endif
+      if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
+          mc->servers[x].port == serverinfo[y].port) {
+         serverinfo[y].exist= true; break;
+      }
+    }
+    if (y == servercount) { /* NOT found */
+      mc->servers[x].options.is_dead= true;
+      prune_flag= true;
+    }
+  }
+  for (x= 0; x< servercount; x++)
+  {
+    if (serverinfo[x].exist == false) {
+#ifdef ENABLE_REPLICATION
+      if (arcus->zk.is_repl_enabled)
+        new_hosts= memcached_server_list_append_with_group(servers, serverinfo[x].groupname,
+                                                           serverinfo[x].hostname,
+                                                           serverinfo[x].port, &error);
+      else
+#endif
+      new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
+                                              serverinfo[x].port, &error);
+      if (new_hosts == NULL)
+        break;
+      servers= new_hosts;
+    }
+  }
+
+  if (error == MEMCACHED_SUCCESS) {
+    memcached_server_push_with_prune(mc, servers, prune_flag);
+  } else { /* memcached_server_list_append FAIL */
+    if (prune_flag) {
+      for (x= 0; x< memcached_server_count(mc); x++) {
+        if (mc->servers[x].options.is_dead == true)
+          mc->servers[x].options.is_dead= false;
+      }
+    }
+  }
+  if (servers) {
+    memcached_server_list_free(servers);
+  }
+  return error;
+}
+
 static inline void do_arcus_update_cachelist(memcached_st *mc,
                                              struct memcached_server_info *serverinfo,
                                              uint32_t servercount)
@@ -863,78 +937,9 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   if (servercount == 0) {
     /* If there's no available servers, delete all managed servers. */
     memcached_server_redistribute_with_prune(mc);
-  }
-  else {
+  } else {
     /* Push the new server list. */
-    uint32_t x, y;
-    memcached_server_st *servers= NULL;
-    memcached_server_st *new_hosts;
-    bool prune_flag= false;
-
-    for (x= 0; x< memcached_server_count(mc); x++)
-    {
-      for (y= 0; y< servercount; y++) {
-        if (serverinfo[y].exist)
-          continue;
-
-#ifdef ENABLE_REPLICATION
-        if (arcus->zk.is_repl_enabled) {
-          if (strcmp(mc->servers[x].groupname, serverinfo[y].groupname) == 0 &&
-              strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 &&
-              mc->servers[x].port == serverinfo[y].port) {
-            serverinfo[y].exist = true;
-            break;
-          }
-        }
-        else
-#endif
-        if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
-            mc->servers[x].port == serverinfo[y].port) {
-           serverinfo[y].exist= true;
-           break;
-        }
-      }
-      if (y == servercount) { /* NOT found */
-        mc->servers[x].options.is_dead= true;
-        prune_flag= true;
-      }
-    }
-    for (x= 0; x< servercount; x++)
-    {
-      if (serverinfo[x].exist == false) {
-#ifdef ENABLE_REPLICATION
-        if (arcus->zk.is_repl_enabled)
-          new_hosts= memcached_server_list_append_with_group(servers, serverinfo[x].groupname,
-                                                             serverinfo[x].hostname, serverinfo[x].port, &error);
-        else
-#endif
-        new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
-                                                serverinfo[x].port, &error);
-        if (new_hosts == NULL)
-          break;
-
-        servers= new_hosts;
-      }
-    }
-
-    if (error == MEMCACHED_SUCCESS) {
-      memcached_server_push_with_prune(mc, servers, prune_flag);
-      unlikely (arcus->is_initializing)
-      {
-        arcus->is_initializing= false;
-        pthread_cond_broadcast(&cond_arcus);
-      }
-    } else { /* memcached_server_list_append FAIL */
-      if (prune_flag) {
-        for (x= 0; x< memcached_server_count(mc); x++) {
-          if (mc->servers[x].options.is_dead == true)
-            mc->servers[x].options.is_dead= false;
-        }
-      }
-    }
-    if (servers) {
-      memcached_server_list_free(servers);
-    }
+    error= __do_arcus_update_cachelist(mc, serverinfo, servercount);
   }
 
   unlikely (arcus->is_initializing)
