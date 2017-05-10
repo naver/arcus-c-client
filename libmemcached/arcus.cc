@@ -659,6 +659,11 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
   char *word;
   char seps[]= ":-";
 
+  if (not zkinfo) {
+    ZOO_LOG_ERROR(("arcus zk is null"));
+    return -1;
+  }
+
 #ifdef ENABLE_REPLICATION
   if (zkinfo->is_repl_enabled) {
     for (word= strtok_r(nodename, "^", &buffer);
@@ -977,9 +982,7 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
                                                           char *serverlist,
                                                           const size_t size)
 {
-#ifdef ENABLE_REPLICATION
   arcus_st *arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
-#endif
   uint32_t servercount= 0;
   struct memcached_server_info *serverinfo;
   char buffer[ARCUS_MAX_PROXY_FILE_LENGTH];
