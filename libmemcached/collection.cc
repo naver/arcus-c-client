@@ -2350,8 +2350,8 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
     requested_items++;
 
     /* Get piped responses */
-    unlikely ((requested_items == MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) or
-              (requested_items == number_of_piped_items))
+    if ((requested_items == MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) or
+        (i+1 == number_of_piped_items))
     {
       ptr->flags.piped= false;
       offset= i - requested_items + 1;
