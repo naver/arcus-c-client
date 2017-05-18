@@ -1,6 +1,7 @@
 /*
  * arcus-c-client : Arcus C client
  * Copyright 2010-2014 NAVER Corp.
+ * Copyright 2017 JaM2in Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -570,10 +571,6 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
-  /* Find a memcached */
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
-
   /* Command */
   const char *command= coll_op_string(SETATTRS_OP);
   uint8_t command_length= coll_op_length(SETATTRS_OP);
@@ -617,45 +614,43 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
 
   if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
   {
-    rc= memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
-                            memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
-  else
+
+  bool to_write= not ptr->flags.buffer_requests;
+
+  struct libmemcached_io_vector_st vector[]=
   {
-    bool to_write = false;
-    struct libmemcached_io_vector_st vector[]=
-    {
-      { command_length, command },
-      { key_length, key },
-      { write_length, buffer },
-      { 2, "\r\n" }
-    };
+    { command_length, command },
+    { key_length, key },
+    { write_length, buffer },
+    { 2, "\r\n" }
+  };
 
-    if (ptr->flags.buffer_requests)
-      to_write= false;
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
+  /* Send command header */
+  rc= memcached_vdo(instance, vector, 4, to_write);
+
+  WATCHPOINT_IFERROR(rc);
+
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    if (to_write == false)
+    {
+      rc= MEMCACHED_BUFFERED;
+    }
+    else if (ptr->flags.no_reply)
+    {
+      rc= MEMCACHED_SUCCESS;
+    }
     else
-      to_write= true;
-
-    /* Send command header */
-    rc=  memcached_vdo(instance, vector, 4, to_write);
-
-    WATCHPOINT_IFERROR(rc);
-
-    if (rc == MEMCACHED_SUCCESS)
     {
-      if (to_write == false)
-      {
-        rc= MEMCACHED_BUFFERED;
-      }
-      else if (ptr->flags.no_reply)
-      {
-        rc= MEMCACHED_SUCCESS;
-      }
-      else
-      {
-        // expecting OK (MEMCACHED_SUCCESS)
-        rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-      }
+      // expecting OK (MEMCACHED_SUCCESS)
+      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
     }
   }
 
@@ -677,10 +672,6 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
-  /* Find a memcached */
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
-
   /* Command */
   const char *command= coll_op_string(GETATTRS_OP);
   uint8_t command_length= coll_op_length(GETATTRS_OP);
@@ -691,6 +682,10 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
     { key_length, key },
     { 2, "\r\n" }
   };
+
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
   /* Request */
   rc= memcached_vdo(instance, vector, 3, true);
@@ -854,9 +849,6 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
                                memcached_literal_param("Invalid attributes were provided"));
   }
 
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
-
   /* Command */
   const char *command= coll_op_string(verb);
   uint8_t command_length= coll_op_length(verb);
@@ -895,6 +887,10 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
     { 2, "\r\n" }
   };
 
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
   rc= memcached_vdo(instance, vector, 4, to_write);
 
   if (rc == MEMCACHED_SUCCESS)
@@ -923,144 +919,6 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
   {
     memcached_io_reset(instance);
   }
-
-  return rc;
-}
-
-static memcached_return_t internal_coll_insert(memcached_st *ptr,
-                                               memcached_server_write_instance_st instance,
-                                               const char *key, size_t key_length,
-                                               memcached_coll_query_st *query,
-                                               memcached_hexadecimal_st *eflag,
-                                               memcached_coll_create_attrs_st *attributes,
-                                               memcached_coll_action_t verb)
-{
-  /* Already called before_operation(). */
-
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-
-  if (not instance)
-  {
-    return MEMCACHED_INVALID_ARGUMENTS;
-  }
-
-  /* Command */
-  const char *command= coll_op_string(verb);
-  uint8_t command_length= coll_op_length(verb);
-  ptr->last_op_code= command;
-
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t write_length= 0;
-
-  /* Query header */
-
-  /* 1. sub key */
-  if (verb == LOP_INSERT_OP)
-  {
-    write_length= (size_t) snprintf(buffer, 30, " %d", query->sub_key.index);
-  }
-  else if (verb == SOP_INSERT_OP)
-  {
-    /* no sub key */
-  }
-  else if (verb == BOP_INSERT_OP || verb == BOP_UPSERT_OP)
-  {
-    if (MEMCACHED_COLL_QUERY_BOP == query->type)
-    {
-      write_length= (size_t) snprintf(buffer, 30, " %llu", (unsigned long long) query->sub_key.bkey);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-    {
-      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
-                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, " 0x%s", bkey_str);
-    }
-
-    if (eflag && eflag->array)
-    {
-      char eflag_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(ptr, eflag,
-                                eflag_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                       " 0x%s", eflag_str);
-    }
-  }
-  else
-  {
-    return MEMCACHED_INVALID_ARGUMENTS;
-  }
-
-  /* 2. value length */
-  write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                   " %u", (int)query->value_length);
-
-  /* 3. creation attributes */
-  if (attributes)
-  {
-    bool set_overflowaction= verb != SOP_INSERT_OP
-                                  && attributes->overflowaction
-                                  && attributes->overflowaction != OVERFLOWACTION_NONE;
-
-    write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " create %u %d %u%s%s%s%s",
-                                     attributes->flags, attributes->expiretime, attributes->maxcount,
-                                     (set_overflowaction)? " " : "",
-                                     (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
-                                     (attributes->is_unreadable)? " unreadable" : "",
-                                     (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
-  }
-
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
-  {
-    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
-                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
-  }
-
-  bool to_write= not ptr->flags.buffer_requests;
-
-  struct libmemcached_io_vector_st vector[]=
-  {
-    { command_length, command },
-    { key_length, key },
-    { write_length, buffer },
-    { 2, "\r\n" },
-    { query->value_length, query->value },
-    { 2, "\r\n" }
-  };
-
-  /* Send command header */
-  rc= memcached_vdo(instance, vector, 6, to_write);
-
-  if (rc == MEMCACHED_SUCCESS)
-  {
-    if (to_write == false)
-    {
-      rc= MEMCACHED_BUFFERED;
-    }
-    else if (ptr->flags.no_reply or ptr->flags.piped)
-    {
-      rc= MEMCACHED_SUCCESS;
-    }
-    else
-    {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-      memcached_set_last_response_code(ptr, rc);
-
-      if (rc == MEMCACHED_STORED || rc == MEMCACHED_CREATED_STORED)
-      {
-        rc= MEMCACHED_SUCCESS;
-      }
-      else if (rc == MEMCACHED_REPLACED && verb == BOP_UPSERT_OP)
-      {
-        /* bop upsert returns REPLACED if the same bkey element is replaced. */
-        rc= MEMCACHED_SUCCESS;
-      }
-    }
-  }
-
-  if (rc == MEMCACHED_WRITE_FAILURE)
-    memcached_io_reset(instance);
 
   return rc;
 }
@@ -1356,10 +1214,129 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
+  /* Command */
+  const char *command= coll_op_string(verb);
+  uint8_t command_length= coll_op_length(verb);
+  ptr->last_op_code= command;
+
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  size_t write_length= 0;
+
+  /* Query header */
+
+  /* 1. sub key */
+  if (verb == LOP_INSERT_OP)
+  {
+    write_length= (size_t) snprintf(buffer, 30, " %d", query->sub_key.index);
+  }
+  else if (verb == SOP_INSERT_OP)
+  {
+    /* no sub key */
+  }
+  else if (verb == BOP_INSERT_OP || verb == BOP_UPSERT_OP)
+  {
+    if (MEMCACHED_COLL_QUERY_BOP == query->type)
+    {
+      write_length= (size_t) snprintf(buffer, 30, " %llu", (unsigned long long) query->sub_key.bkey);
+    }
+    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
+    {
+      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
+                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+      write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, " 0x%s", bkey_str);
+    }
+
+    if (eflag && eflag->array)
+    {
+      char eflag_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+      memcached_conv_hex_to_str(ptr, eflag,
+                                eflag_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+      write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+                                       " 0x%s", eflag_str);
+    }
+  }
+  else
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  /* 2. value length */
+  write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+                                   " %u", (int)query->value_length);
+
+  /* 3. creation attributes */
+  if (attributes)
+  {
+    bool set_overflowaction= verb != SOP_INSERT_OP
+                                  && attributes->overflowaction
+                                  && attributes->overflowaction != OVERFLOWACTION_NONE;
+
+    write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+                                     " create %u %d %u%s%s%s%s",
+                                     attributes->flags, attributes->expiretime, attributes->maxcount,
+                                     (set_overflowaction)? " " : "",
+                                     (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
+                                     (attributes->is_unreadable)? " unreadable" : "",
+                                     (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
+  }
+
+  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+  }
+
+  bool to_write= not ptr->flags.buffer_requests;
+
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { command_length, command },
+    { key_length, key },
+    { write_length, buffer },
+    { 2, "\r\n" },
+    { query->value_length, query->value },
+    { 2, "\r\n" }
+  };
+
+  /* Find a memcached */
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
-  return internal_coll_insert(ptr, instance, key, key_length, query, eflag, attributes, verb);
+  /* Send command header */
+  rc= memcached_vdo(instance, vector, 6, to_write);
+
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    if (to_write == false)
+    {
+      rc= MEMCACHED_BUFFERED;
+    }
+    else if (ptr->flags.no_reply or ptr->flags.piped)
+    {
+      rc= MEMCACHED_SUCCESS;
+    }
+    else
+    {
+      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      memcached_set_last_response_code(ptr, rc);
+
+      if (rc == MEMCACHED_STORED || rc == MEMCACHED_CREATED_STORED)
+      {
+        rc= MEMCACHED_SUCCESS;
+      }
+      else if (rc == MEMCACHED_REPLACED && verb == BOP_UPSERT_OP)
+      {
+        /* bop upsert returns REPLACED if the same bkey element is replaced. */
+        rc= MEMCACHED_SUCCESS;
+      }
+    }
+  }
+
+  if (rc == MEMCACHED_WRITE_FAILURE)
+    memcached_io_reset(instance);
+
+  return rc;
 }
 
 static memcached_return_t do_coll_delete(memcached_st *ptr,
@@ -1374,9 +1351,6 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
-
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
   /* Command */
   const char *command= coll_op_string(verb);
@@ -1480,31 +1454,34 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
 
+  struct libmemcached_io_vector_st vector[5];
+  size_t veclen;
+
   if (SOP_DELETE_OP == verb)
   {
     /* delete by value */
-    struct libmemcached_io_vector_st vector[]=
-    {
-      { command_length, command },
-      { key_length, key },
-      { write_length, buffer },
-      { query->value_length, query->value },
-      { 2, "\r\n" }
-    };
-    rc=  memcached_vdo(instance, vector, 5, to_write);
+    vector[0].length= command_length; vector[0].buffer= command;
+    vector[1].length= key_length;     vector[1].buffer= key;
+    vector[2].length= write_length;   vector[2].buffer= buffer;
+    vector[3].length= query->value_length; vector[3].buffer= query->value;
+    vector[4].length= 2;              vector[4].buffer= "\r\n";
+    veclen= 5;
   }
   else
   {
     /* delete by sub key(index or bkey) */
-    struct libmemcached_io_vector_st vector[]=
-    {
-      { command_length, command },
-      { key_length, key },
-      { write_length, buffer },
-      { 2, "\r\n" }
-    };
-    rc=  memcached_vdo(instance, vector, 4, to_write);
+    vector[0].length= command_length; vector[0].buffer= command;
+    vector[1].length= key_length;     vector[1].buffer= key;
+    vector[2].length= write_length;   vector[2].buffer= buffer;
+    vector[3].length= 2;              vector[3].buffer= "\r\n";
+    veclen= 4;
   }
+
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
+  rc=  memcached_vdo(instance, vector, veclen, to_write);
 
   if (rc == MEMCACHED_SUCCESS)
   {
@@ -1556,9 +1533,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("with_delete=false, drop_if_empty=true"));
   }
-
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
   /* Command */
   const char *command= coll_op_string(verb);
@@ -1686,6 +1660,10 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     { buffer_length, buffer },
     { 2, "\r\n" }
   };
+
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
   rc= memcached_vdo(instance, vector, 4, to_write);
 
@@ -2259,9 +2237,6 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
-
   /* Command */
   const char *command= coll_op_string(verb);
   uint8_t command_length= coll_op_length(verb);
@@ -2292,6 +2267,11 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
     { value_length, value },
     { 2, "\r\n" }
   };
+
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
   rc= memcached_vdo(instance, vector, 5, to_write);
 
   if (rc == MEMCACHED_SUCCESS)
@@ -2781,9 +2761,6 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
                                memcached_literal_param("Nothing to update"));
   }
 
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
-
   /* Command */
   const char *command= coll_op_string(verb);
   uint8_t command_length= coll_op_length(verb);
@@ -2838,34 +2815,35 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
 
+  struct libmemcached_io_vector_st vector[6];
+  size_t veclen;
+
   if (value_length < 0)
   {
     /* update without value */
-    struct libmemcached_io_vector_st vector[]=
-    {
-      { command_length, command },
-      { key_length, key },
-      { buffer_length, buffer },
-      { 2, "\r\n" }
-    };
-
-    rc= memcached_vdo(instance, vector, 4, to_write);
+    vector[0].length= command_length; vector[0].buffer= command;
+    vector[1].length= key_length;     vector[1].buffer= key;
+    vector[2].length= buffer_length;  vector[2].buffer= buffer;
+    vector[3].length= 2;              vector[3].buffer= "\r\n";
+    veclen= 4;
   }
   else
   {
     /* update with value */
-    struct libmemcached_io_vector_st vector[]=
-    {
-      { command_length, command },
-      { key_length, key },
-      { buffer_length, buffer },
-      { 2, "\r\n" },
-      { value_length, value },
-      { 2, "\r\n" }
-    };
-
-    rc= memcached_vdo(instance, vector, 6, to_write);
+    vector[0].length= command_length; vector[0].buffer= command;
+    vector[1].length= key_length;     vector[1].buffer= key;
+    vector[2].length= buffer_length;  vector[2].buffer= buffer;
+    vector[3].length= 2;              vector[3].buffer= "\r\n";
+    vector[4].length= value_length;   vector[4].buffer= value;
+    vector[5].length= 2;              vector[5].buffer= "\r\n";
+    veclen= 6;
   }
+
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
+  rc= memcached_vdo(instance, vector, veclen, to_write);
 
   if (rc == MEMCACHED_SUCCESS)
   {
@@ -2909,9 +2887,6 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
-
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
   /* Command */
   const char *command= coll_op_string(verb);
@@ -2968,6 +2943,10 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
     { 2, "\r\n" }
   };
 
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
   rc= memcached_vdo(instance, vector, 4, to_write);
 
   if (rc == MEMCACHED_SUCCESS)
@@ -3016,9 +2995,6 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
-
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
   /* Command */
   const char *command= coll_op_string(BOP_COUNT_OP);
@@ -3108,6 +3084,10 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     { buffer_length, buffer },
     { 2, "\r\n" }
   };
+
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
   rc= memcached_vdo(instance, vector, 4, to_write);
 

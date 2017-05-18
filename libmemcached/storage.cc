@@ -1,6 +1,7 @@
 /*
  * arcus-c-client : Arcus C client
  * Copyright 2010-2014 NAVER Corp.
+ * Copyright 2017 JaM2in Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,8 +122,8 @@ static inline uint8_t get_com_code(memcached_storage_action_t verb, bool noreply
 }
 
 static memcached_return_t memcached_send_binary(memcached_st *ptr,
-                                                memcached_server_write_instance_st server,
-                                                uint32_t server_key,
+                                                const char *group_key,
+                                                size_t group_key_length,
                                                 const char *key,
                                                 size_t key_length,
                                                 const char *value,
@@ -136,7 +137,7 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
   protocol_binary_request_set request= {};
   size_t send_length= sizeof(request.bytes);
 
-  bool noreply= server->root->flags.no_reply;
+  bool noreply= ptr->flags.no_reply;
 
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
   request.message.header.request.opcode= get_com_code(verb, noreply);
@@ -161,9 +162,23 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
     request.message.header.request.cas= memcached_htonll(cas);
   }
 
-  flush= (bool) ((server->root->flags.buffer_requests && verb == SET_OP) ? 0 : 1);
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { send_length, request.bytes },
+    { memcached_array_size(ptr->_namespace), memcached_array_string(ptr->_namespace) },
+    { key_length, key },
+    { value_length, value }
+  };
 
-  if (server->root->flags.use_udp && ! flush)
+  flush= (bool) ((ptr->flags.buffer_requests && verb == SET_OP) ? 0 : 1);
+
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
+  memcached_server_write_instance_st server= memcached_server_instance_fetch(ptr, server_key);
+
+  WATCHPOINT_SET(server->io_wait_count.read= 0);
+  WATCHPOINT_SET(server->io_wait_count.write= 0);
+
+  if (ptr->flags.use_udp && ! flush)
   {
     size_t cmd_size= send_length + key_length + value_length;
 
@@ -176,14 +191,6 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
       memcached_io_write(server, NULL, 0, true);
     }
   }
-
-  struct libmemcached_io_vector_st vector[]=
-  {
-    { send_length, request.bytes },
-    { memcached_array_size(ptr->_namespace), memcached_array_string(ptr->_namespace) },
-    { key_length, key },
-    { value_length, value }
-  };
 
   /* write the header */
   memcached_return_t rc;
@@ -233,7 +240,8 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
 }
 
 static memcached_return_t memcached_send_ascii(memcached_st *ptr,
-                                               memcached_server_write_instance_st instance,
+                                               const char *group_key,
+                                               size_t group_key_length,
                                                const char *key,
                                                size_t key_length,
                                                const char *value,
@@ -261,11 +269,8 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                            (ptr->flags.no_reply) ? " noreply" : "");
     if (check_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || check_length < 0)
     {
-      rc= memcached_set_error(*instance, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
-                              memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
-      memcached_io_reset(instance);
-
-      return rc;
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+                                 memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
     }
     write_length= check_length;
   }
@@ -295,16 +300,40 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                                ptr->flags.no_reply ? " noreply" : "");
     if ((size_t)check_length >= MEMCACHED_DEFAULT_COMMAND_SIZE -size_t(buffer_ptr - buffer) || check_length < 0)
     {
-      rc= memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
-                              memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
-      memcached_io_reset(instance);
-
-      return rc;
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+                                 memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
     }
 
     write_length+= (size_t)check_length;
     WATCHPOINT_ASSERT(write_length < MEMCACHED_DEFAULT_COMMAND_SIZE);
   }
+  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+  }
+
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { write_length, buffer },
+    { value_length, value },
+    { 2, "\r\n" }
+  };
+
+  if (ptr->flags.buffer_requests && verb == SET_OP)
+  {
+    to_write= false;
+  }
+  else
+  {
+    to_write= true;
+  }
+
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
+  WATCHPOINT_SET(instance->io_wait_count.read= 0);
+  WATCHPOINT_SET(instance->io_wait_count.write= 0);
 
   if (ptr->flags.use_udp && ptr->flags.buffer_requests)
   {
@@ -316,48 +345,24 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
       memcached_io_write(instance, NULL, 0, true);
   }
 
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  /* Send command header */
+  rc= memcached_vdo(instance, vector, 3, to_write);
+  if (rc == MEMCACHED_SUCCESS)
   {
-    rc= memcached_set_error(*ptr, MEMCACHED_WRITE_FAILURE, MEMCACHED_AT);
-  }
-  else
-  {
-    struct libmemcached_io_vector_st vector[]=
+    if (ptr->flags.no_reply)
     {
-      { write_length, buffer },
-      { value_length, value },
-      { 2, "\r\n" }
-    };
-
-    if (ptr->flags.buffer_requests && verb == SET_OP)
+      rc= (to_write == false) ? MEMCACHED_BUFFERED : MEMCACHED_SUCCESS;
+    }
+    else if (to_write == false)
     {
-      to_write= false;
+      rc= MEMCACHED_BUFFERED;
     }
     else
     {
-      to_write= true;
-    }
+      rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 
-    /* Send command header */
-    rc=  memcached_vdo(instance, vector, 3, to_write);
-    if (rc == MEMCACHED_SUCCESS)
-    {
-
-      if (ptr->flags.no_reply)
-      {
-        rc= (to_write == false) ? MEMCACHED_BUFFERED : MEMCACHED_SUCCESS;
-      }
-      else if (to_write == false)
-      {
-        rc= MEMCACHED_BUFFERED;
-      }
-      else
-      {
-        rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-
-        if (rc == MEMCACHED_STORED)
-          rc= MEMCACHED_SUCCESS;
-      }
+      if (rc == MEMCACHED_STORED)
+        rc= MEMCACHED_SUCCESS;
     }
   }
 
@@ -394,22 +399,16 @@ static inline memcached_return_t memcached_send(memcached_st *ptr,
     return MEMCACHED_BAD_KEY_PROVIDED;
   }
 
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
-
-  WATCHPOINT_SET(instance->io_wait_count.read= 0);
-  WATCHPOINT_SET(instance->io_wait_count.write= 0);
-
   if (ptr->flags.binary_protocol)
   {
-    rc= memcached_send_binary(ptr, instance, server_key,
+    rc= memcached_send_binary(ptr, group_key, group_key_length,
                               key, key_length,
                               value, value_length, expiration,
                               flags, cas, verb);
   }
   else
   {
-    rc= memcached_send_ascii(ptr, instance,
+    rc= memcached_send_ascii(ptr, group_key, group_key_length,
                              key, key_length,
                              value, value_length, expiration,
                              flags, cas, verb);

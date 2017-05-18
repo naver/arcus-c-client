@@ -1,3 +1,19 @@
+/*
+ * arcus-c-client : Arcus C client
+ * Copyright 2017 JaM2in Co., Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
  * 
  *  Libmemcached library
@@ -36,7 +52,11 @@
 
 #include <libmemcached/common.h>
 
-static memcached_return_t ascii_exist(memcached_st *memc, memcached_server_write_instance_st instance, const char *key, size_t key_length)
+static memcached_return_t ascii_exist(memcached_st *memc,
+                                      const char *group_key,
+                                      size_t group_key_length,
+                                      const char *key,
+                                      size_t key_length)
 {
   struct libmemcached_io_vector_st vector[]=
   {
@@ -49,6 +69,9 @@ static memcached_return_t ascii_exist(memcached_st *memc, memcached_server_write
     { 2, "\r\n" },
     { 2, "\r\n" }
   };
+
+  uint32_t server_key= memcached_generate_hash_with_redistribution(memc, group_key, group_key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(memc, server_key);
 
   /* Send command header */
   memcached_return_t rc=  memcached_vdo(instance, vector, 8, true);
@@ -70,7 +93,11 @@ static memcached_return_t ascii_exist(memcached_st *memc, memcached_server_write
   return rc;
 }
 
-static memcached_return_t binary_exist(memcached_st *memc, memcached_server_write_instance_st instance, const char *key, size_t key_length)
+static memcached_return_t binary_exist(memcached_st *memc,
+                                       const char *group_key,
+                                       size_t group_key_length,
+                                       const char *key,
+                                       size_t key_length)
 {
   protocol_binary_request_set request= {};
   size_t send_length= sizeof(request.bytes);
@@ -93,6 +120,9 @@ static memcached_return_t binary_exist(memcached_st *memc, memcached_server_writ
     { memcached_array_size(memc->_namespace), memcached_array_string(memc->_namespace) },
     { key_length, key }
   };
+
+  uint32_t server_key= memcached_generate_hash_with_redistribution(memc, group_key, group_key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(memc, server_key);
 
   /* write the header */
   memcached_return_t rc;
@@ -127,23 +157,19 @@ memcached_return_t memcached_exist_by_key(memcached_st *memc,
   {
     return rc;
   }
-
   if (memc->flags.use_udp)
   {
     return MEMCACHED_NOT_SUPPORTED;
   }
 
-
-  uint32_t server_key= memcached_generate_hash_with_redistribution(memc, group_key, group_key_length);
-  memcached_server_write_instance_st instance;
-  instance= memcached_server_instance_fetch(memc, server_key);
-
   if (memc->flags.binary_protocol)
   {
-    return binary_exist(memc, instance, key, key_length);
+    rc= binary_exist(memc, group_key, group_key_length, key, key_length);
   }
   else
   {
-    return ascii_exist(memc, instance, key, key_length);
+    rc= ascii_exist(memc, group_key, group_key_length, key, key_length);
   }
+
+  return rc;
 }
