@@ -1020,23 +1020,11 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
-  bool to_write= true; /* do not buffer requests internally. */
   int request_length= write_length + command_length + key_length + query->value_length + 4;
 
-  /* Buffer piped request */
-  if (ptr->flags.piped)
+  if (ptr->flags.piped &&
+      ptr->pipe_buffer_pos + request_length < MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE)
   {
-    if (ptr->pipe_buffer_pos + request_length >= MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE)
-    {
-      /* flushing */
-      struct libmemcached_io_vector_st buffered_vector[]=
-      {
-        { ptr->pipe_buffer_pos, ptr->pipe_buffer }
-      };
-      rc= memcached_vdo(instance, buffered_vector, 1, to_write);
-      ptr->pipe_buffer_pos = 0;
-    }
-
     /* buffering */
     ptr->pipe_buffer_pos += snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
                                      MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE - ptr->pipe_buffer_pos,
@@ -1045,19 +1033,13 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
     ptr->pipe_buffer_pos += query->value_length;
     ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\r';
     ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\n';
-
-    if (rc == MEMCACHED_WRITE_FAILURE)
-    {
-      memcached_io_reset(instance);
-    }
-
-    return rc;
+    return MEMCACHED_SUCCESS;
   }
 
-  /* At the end of pipe command */
+  /* flushing */
   struct libmemcached_io_vector_st vector[]=
   {
-    { ptr->pipe_buffer_pos, ptr->pipe_buffer },
+    { ptr->pipe_buffer_pos, ptr->pipe_buffer }, /* pipe_buffer_pos can be 0. */
     { command_length, command },
     { key_length, key },
     { write_length, buffer },
@@ -1065,29 +1047,28 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
     { query->value_length, query->value },
     { 2, "\r\n" }
   };
+  bool to_write= true; /* do not buffer requests internally. */
 
   rc= memcached_vdo(instance, vector, 7, to_write);
-  ptr->pipe_buffer_pos = 0;
-
   if (rc != MEMCACHED_SUCCESS)
   {
     if (rc == MEMCACHED_WRITE_FAILURE)
-    {
       memcached_io_reset(instance);
-    }
     return rc;
   }
+  ptr->pipe_buffer_pos = 0; /* reset pipe_buffer_pos */
 
-  /* Fetch responses */
-  ptr->pipe_responses= responses;
-  ptr->pipe_responses_length= responses_cursor;
-  rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-
-  *piped_rc= ptr->pipe_return_code;
-
-  if (rc == MEMCACHED_END)
+  if (! ptr->flags.piped)
   {
-    rc= MEMCACHED_SUCCESS;
+    /* Fetch responses */
+    ptr->pipe_responses= responses;
+    ptr->pipe_responses_length= responses_cursor;
+    rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    if (rc == MEMCACHED_END)
+    {
+      rc= MEMCACHED_SUCCESS;
+    }
+    *piped_rc= ptr->pipe_return_code;
   }
 
   return rc;
@@ -1129,23 +1110,11 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
-  bool to_write= true; /* do not buffer requests internally. */
   int request_length= write_length + command_length + key_length + value_length + 2;
 
-  /* Buffer piped request */
-  if (ptr->flags.piped)
+  if (ptr->flags.piped &&
+      ptr->pipe_buffer_pos + request_length < MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE)
   {
-    if (ptr->pipe_buffer_pos + request_length >= MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE)
-    {
-      /* flushing */
-      struct libmemcached_io_vector_st buffered_vector[]=
-      {
-        { ptr->pipe_buffer_pos, ptr->pipe_buffer }
-      };
-      rc= memcached_vdo(instance, buffered_vector, 1, to_write);
-      ptr->pipe_buffer_pos = 0;
-    }
-
     /* buffering */
     ptr->pipe_buffer_pos += snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
                                      MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE - ptr->pipe_buffer_pos,
@@ -1154,48 +1123,41 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
     ptr->pipe_buffer_pos += value_length;
     ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\r';
     ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\n';
-
-    if (rc == MEMCACHED_WRITE_FAILURE)
-    {
-      memcached_io_reset(instance);
-    }
-
-    return rc;
+    return MEMCACHED_SUCCESS;
   }
 
-  /* At the end of pipe command */
+  /* flushing */
   struct libmemcached_io_vector_st vector[]=
   {
-    { ptr->pipe_buffer_pos, ptr->pipe_buffer },
+    { ptr->pipe_buffer_pos, ptr->pipe_buffer }, /* pipe_buffer_pos can be 0. */
     { command_length, command },
     { key_length, key },
     { write_length, buffer },
     { value_length, value },
     { 2, "\r\n" }
   };
+  bool to_write= true; /* do not buffer requests internally. */
 
   rc= memcached_vdo(instance, vector, 6, to_write);
-  ptr->pipe_buffer_pos = 0;
-
   if (rc != MEMCACHED_SUCCESS)
   {
     if (rc == MEMCACHED_WRITE_FAILURE)
-    {
       memcached_io_reset(instance);
-    }
     return rc;
   }
-
-  /* Fetch responses */
-  ptr->pipe_responses= responses;
-  ptr->pipe_responses_length= responses_cursor;
-  rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-
-  *piped_rc= ptr->pipe_return_code;
-
-  if (rc == MEMCACHED_END || rc == MEMCACHED_EXIST)
+  ptr->pipe_buffer_pos = 0; /* reset pipe_buffer_pos */
+  
+  if (! ptr->flags.piped)
   {
-    rc= MEMCACHED_SUCCESS;
+    /* Fetch responses */
+    ptr->pipe_responses= responses;
+    ptr->pipe_responses_length= responses_cursor;
+    rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    if (rc == MEMCACHED_END || rc == MEMCACHED_EXIST)
+    {
+      rc= MEMCACHED_SUCCESS;
+    }
+    *piped_rc= ptr->pipe_return_code;
   }
 
   return rc;
