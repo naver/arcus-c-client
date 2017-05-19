@@ -1020,7 +1020,7 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
-  bool to_write = true; /* do not buffer requests internally. */
+  bool to_write= true; /* do not buffer requests internally. */
   int request_length= write_length + command_length + key_length + query->value_length + 4;
 
   /* Buffer piped request */
@@ -1129,7 +1129,7 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
-  bool to_write = true; /* do not buffer requests internally. */
+  bool to_write= true; /* do not buffer requests internally. */
   int request_length= write_length + command_length + key_length + value_length + 2;
 
   /* Buffer piped request */
@@ -2309,53 +2309,45 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
-  memcached_return_t piped_return_code, last_piped_return_code;
-  piped_return_code= last_piped_return_code= MEMCACHED_MAXIMUM_RETURN;
-
-  size_t requested_items= 0;
-  size_t offset= 0;
-  ptr->pipe_buffer_pos= 0;
-
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
+  memcached_return_t piped_return_code, last_piped_return_code;
+  piped_return_code= last_piped_return_code= MEMCACHED_MAXIMUM_RETURN;
+
+  size_t response_offset= 0;
+  ptr->pipe_buffer_pos= 0;
+
   for (size_t i= 0; i< number_of_piped_items; i++)
   {
-    requested_items++;
-
     /* Get piped responses */
-    if ((requested_items == MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) or
-        (i+1 == number_of_piped_items))
+    if (((i+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0 or
+        ((i+1) == number_of_piped_items))
     {
-      ptr->flags.piped= false;
-      offset= i - requested_items + 1;
-
       last_piped_return_code= piped_return_code;
 
+      ptr->flags.piped= false;
       rc= internal_coll_piped_exist(ptr, instance, key, key_length,
                                     values[i], values_length[i],
-                                    responses, offset, &piped_return_code,
-                                    SOP_EXIST_OP);
-
+                                    responses, response_offset,
+                                    &piped_return_code, SOP_EXIST_OP);
       if (rc != MEMCACHED_SUCCESS)
       {
         break;
       }
 
-      piped_return_code= (last_piped_return_code == MEMCACHED_MAXIMUM_RETURN)? piped_return_code :
-                         (piped_return_code == last_piped_return_code)? piped_return_code :
-                          MEMCACHED_SOME_EXIST;
+      if (i > 0 && piped_return_code != last_piped_return_code)
+        piped_return_code= MEMCACHED_SOME_SUCCESS;
 
-      requested_items= 0;
+      response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
     }
     /* Throw a piped operation */
     else
     {
       ptr->flags.piped= true;
-
       rc= internal_coll_piped_exist(ptr, instance, key, key_length,
-                                    values[i], values_length[i], NULL, 0, NULL, SOP_EXIST_OP);
-
+                                    values[i], values_length[i],
+                                    NULL, 0, NULL, SOP_EXIST_OP);
       if (rc != MEMCACHED_SUCCESS)
       {
         break;
@@ -2405,23 +2397,19 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
-  memcached_return_t piped_return_code, last_piped_return_code;
-  piped_return_code= last_piped_return_code= MEMCACHED_MAXIMUM_RETURN;
-
-  int requested_items= 0;
-  size_t offset= 0;
-  ptr->pipe_buffer_pos= 0;
-
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
+  memcached_return_t piped_return_code, last_piped_return_code;
+  piped_return_code= last_piped_return_code= MEMCACHED_MAXIMUM_RETURN;
+
+  size_t response_offset= 0;
+  ptr->pipe_buffer_pos= 0;
+
   for (size_t i=0; i<number_of_piped_items; i++)
   {
-    requested_items++;
-
     /* Prepare an eflag */
     memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
-
     if (verb == BOP_INSERT_OP and eflags and eflags_length )
     {
       eflag_hex.array = (unsigned char *)eflags[i];
@@ -2433,36 +2421,33 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
     queries[i].value_length = values_length[i];
 
     /* Get piped responses */
-    if ((requested_items == MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) or
-        (i+1 == number_of_piped_items))
+    if (((i+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0 or
+        ((i+1) == number_of_piped_items))
     {
-      ptr->flags.piped= false;
-      offset= i - requested_items + 1;
-
       last_piped_return_code= piped_return_code;
 
+      ptr->flags.piped= false;
       rc= internal_coll_piped_insert(ptr, instance, key, key_length,
-                                     &queries[i], &eflag_hex, attributes, responses, offset,
+                                     &queries[i], &eflag_hex, attributes,
+                                     responses, response_offset,
                                      &piped_return_code, verb);
-
       if (rc != MEMCACHED_SUCCESS)
       {
         break;
       }
 
-      piped_return_code= (last_piped_return_code == MEMCACHED_MAXIMUM_RETURN)? piped_return_code :
-                         (piped_return_code == last_piped_return_code)? piped_return_code :
-                          MEMCACHED_SOME_SUCCESS;
-
-      requested_items= 0;
+      if (i > 0 && piped_return_code != last_piped_return_code)
+        piped_return_code= MEMCACHED_SOME_SUCCESS;
+ 
+      response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
     }
     /* Throw a piped operation */
     else
     {
       ptr->flags.piped = true;
       rc= internal_coll_piped_insert(ptr, instance, key, key_length,
-                                     &queries[i], &eflag_hex, attributes, NULL, 0, NULL, verb);
-
+                                     &queries[i], &eflag_hex, attributes,
+                                     NULL, 0, NULL, verb);
       if (rc != MEMCACHED_SUCCESS)
       {
         break;
@@ -2628,12 +2613,11 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
 
     size_t number_of_piped_items= server_to_keys[i]->cursor;
 
-    memcached_return_t *res= NULL;
-    ALLOCATE_ARRAY_OR_RETURN(ptr, res, memcached_return_t, number_of_piped_items);
+    memcached_return_t *responses= NULL;
+    ALLOCATE_ARRAY_OR_RETURN(ptr, responses, memcached_return_t, number_of_piped_items);
 
     size_t key_index= 0;
-    int requested_items= 0;
-    size_t offset= 0;
+    size_t response_offset= 0;
     ptr->pipe_buffer_pos= 0;
 
     for (size_t j=0; j<number_of_piped_items; j++)
@@ -2643,11 +2627,8 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
       memcached_server_write_instance_st instance=
           memcached_server_instance_fetch(ptr, key_to_serverkey[key_index]);
 
-      requested_items++;
-
       /* Prepare an eflag */
       memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
-
       if (verb == BOP_INSERT_OP and eflag)
       {
         eflag_hex.array = (unsigned char *)eflag;
@@ -2655,36 +2636,32 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
       }
 
       /* Get piped responses */
-      if ((requested_items == MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) or
-          (j+1 == number_of_piped_items))
+      if (((j+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0 or
+          ((j+1) == number_of_piped_items))
       {
-        ptr->flags.piped= false;
-        offset= j - requested_items + 1;
-
         last_piped_return_code= piped_return_code;
 
+        ptr->flags.piped= false;
         rc= internal_coll_piped_insert(ptr, instance, keys[key_index], key_length[key_index],
-                                       query, &eflag_hex, attributes, res, offset,
-                                       &piped_return_code, verb);
-
+                                       query, &eflag_hex, attributes,
+                                       responses, response_offset, &piped_return_code, verb);
         if (rc != MEMCACHED_SUCCESS)
         {
           break;
         }
 
-        piped_return_code= (last_piped_return_code == MEMCACHED_MAXIMUM_RETURN)? piped_return_code :
-                           (piped_return_code == last_piped_return_code)? piped_return_code :
-                            MEMCACHED_SOME_SUCCESS;
+        if (j > 0 && piped_return_code != last_piped_return_code)
+          piped_return_code= MEMCACHED_SOME_SUCCESS;
 
-        requested_items= 0;
+        response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
       }
       /* Throw a piped operation */
       else
       {
         ptr->flags.piped = true;
         rc= internal_coll_piped_insert(ptr, instance, keys[key_index], key_length[key_index],
-                                       query, &eflag_hex, attributes, NULL, 0, NULL, verb);
-
+                                       query, &eflag_hex, attributes,
+                                       NULL, 0, NULL, verb);
         if (rc != MEMCACHED_SUCCESS)
         {
           break;
@@ -2697,13 +2674,13 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
       if (rc == MEMCACHED_STORED         or
           rc == MEMCACHED_CREATED_STORED )
       {
-        res[0]= rc;
+        responses[0]= rc;
         piped_return_code= MEMCACHED_ALL_SUCCESS;
         rc= MEMCACHED_SUCCESS;
       }
       else
       {
-        res[0]= rc;
+        responses[0]= rc;
         piped_return_code= MEMCACHED_ALL_FAILURE;
       }
     }
@@ -2713,10 +2690,10 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
     for (size_t j=0; j<number_of_piped_items; j++)
     {
       memcached_index_array_get(server_to_keys[i], j, &key_index);
-      results[key_index]= res[j];
+      results[key_index]= responses[j];
     }
 
-    DEALLOCATE_ARRAY(ptr, res);
+    DEALLOCATE_ARRAY(ptr, responses);
   }
 
   for (size_t i=0; i<memcached_server_count(ptr); i++)
