@@ -865,6 +865,13 @@ __do_arcus_update_cachelist(memcached_st *mc,
   memcached_server_st *new_hosts;
   bool prune_flag= false;
 
+  if (servercount == 0)
+  {
+    /* If there's no available servers, delete all managed servers. */
+    memcached_server_prune(mc, true); /* prune all servers */
+    return run_distribution(mc);
+  }
+
   for (x= 0; x< memcached_server_count(mc); x++)
   {
     for (y= 0; y< servercount; y++) {
@@ -910,7 +917,17 @@ __do_arcus_update_cachelist(memcached_st *mc,
   }
 
   if (error == MEMCACHED_SUCCESS) {
-    memcached_server_push_with_prune(mc, servers, prune_flag);
+    if (servers) {
+      if (prune_flag) {
+        memcached_server_prune(mc, false); /* prune dead servers only */
+      }
+      error= memcached_server_push(mc, servers);
+    } else {
+      if (prune_flag) {
+        memcached_server_prune(mc, false); /* prune dead servers only */
+        error= run_distribution(mc);
+      }
+    }
   } else { /* memcached_server_list_append FAIL */
     if (prune_flag) {
       for (x= 0; x< memcached_server_count(mc); x++) {
@@ -939,13 +956,7 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   gettimeofday(&tv_begin, 0);
 
   /* Update the server list. */
-  if (servercount == 0) {
-    /* If there's no available servers, delete all managed servers. */
-    memcached_server_redistribute_with_prune(mc);
-  } else {
-    /* Push the new server list. */
-    error= __do_arcus_update_cachelist(mc, serverinfo, servercount);
-  }
+  error= __do_arcus_update_cachelist(mc, serverinfo, servercount);
 
   unlikely (arcus->is_initializing)
   {

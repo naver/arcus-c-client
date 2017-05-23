@@ -95,7 +95,7 @@ static void sort_hosts(memcached_st *ptr)
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 /** Prune the redundant or not-available servers */
-static void prune_hosts(memcached_st *ptr, bool all_flag)
+void memcached_server_prune(memcached_st *ptr, bool all_flag)
 {
   int i, cursor = 0;
   int server_count = memcached_server_count(ptr);
@@ -599,35 +599,6 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
 
   return run_distribution(ptr);
 }
-
-#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-memcached_return_t memcached_server_push_with_prune(memcached_st *ptr,
-                                                    const memcached_server_list_st list,
-                                                    bool prune_flag)
-{
-  if (list) {
-    if (prune_flag) {
-      prune_hosts(ptr, false);
-    }
-    return memcached_server_push(ptr, list);
-  } else {
-    if (prune_flag) {
-      prune_hosts(ptr, false);
-      return run_distribution(ptr);
-    } else {
-      /* This case cannot be occurred */
-      return MEMCACHED_SUCCESS;
-    }
-  }
-}
-
-memcached_return_t memcached_server_redistribute_with_prune(memcached_st *ptr)
-{
-  bool prune_all_hosts = true;
-  prune_hosts(ptr, prune_all_hosts);
-  return run_distribution(ptr);
-}
-#endif
 
 memcached_return_t memcached_server_add_unix_socket(memcached_st *ptr,
                                                     const char *filename)

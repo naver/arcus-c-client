@@ -62,6 +62,11 @@ extern "C" {
 LIBMEMCACHED_API
   void memcached_server_list_free(memcached_server_list_st ptr);
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+LIBMEMCACHED_API
+  void memcached_server_prune(memcached_st *ptr, bool all_flag);
+#endif
+
 LIBMEMCACHED_API
   memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_server_list_st list);
 
@@ -86,15 +91,6 @@ LIBMEMCACHED_API
                                             const char *hostname,
                                             in_port_t port,
                                             memcached_return_t *error);
-#endif
-
-#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-LIBMEMCACHED_API
-  memcached_return_t memcached_server_push_with_prune(memcached_st *ptr,
-                                                      const memcached_server_list_st list, bool prune_flag);
-
-LIBMEMCACHED_API
-  memcached_return_t memcached_server_redistribute_with_prune(memcached_st *ptr);
 #endif
 
 LIBMEMCACHED_API
