@@ -203,7 +203,8 @@ static memcached_return_t binary_incr_decr(memcached_st *ptr, uint8_t cmd,
   if (no_reply)
     return MEMCACHED_SUCCESS;
 
-  return memcached_response(instance, (char*)value, sizeof(*value), NULL);
+  rc= memcached_response(instance, (char*)value, sizeof(*value), NULL);
+  return rc;
 }
 
 memcached_return_t memcached_increment(memcached_st *ptr,

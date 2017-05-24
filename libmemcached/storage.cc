@@ -236,7 +236,8 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
     return MEMCACHED_SUCCESS;
   }
 
-  return memcached_response(server, NULL, 0, NULL);
+  rc= memcached_response(server, NULL, 0, NULL);
+  return rc;
 }
 
 static memcached_return_t memcached_send_ascii(memcached_st *ptr,
