@@ -2298,8 +2298,11 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
         break;
       }
 
-      if (i > 0 && piped_return_code != last_piped_return_code)
-        piped_return_code= MEMCACHED_SOME_SUCCESS;
+      if (last_piped_return_code != MEMCACHED_MAXIMUM_RETURN &&
+          last_piped_return_code != piped_return_code)
+      {
+        piped_return_code= MEMCACHED_SOME_EXIST;
+      }
 
       response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
     }
@@ -2398,8 +2401,11 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
         break;
       }
 
-      if (i > 0 && piped_return_code != last_piped_return_code)
+      if (last_piped_return_code != MEMCACHED_MAXIMUM_RETURN &&
+          last_piped_return_code != piped_return_code)
+      {
         piped_return_code= MEMCACHED_SOME_SUCCESS;
+      }
  
       response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
     }
@@ -2612,8 +2618,11 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
           break;
         }
 
-        if (j > 0 && piped_return_code != last_piped_return_code)
+        if (last_piped_return_code != MEMCACHED_MAXIMUM_RETURN &&
+            last_piped_return_code != piped_return_code)
+        {
           piped_return_code= MEMCACHED_SOME_SUCCESS;
+        }
 
         response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
       }
