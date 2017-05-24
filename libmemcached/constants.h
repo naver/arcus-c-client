@@ -54,6 +54,10 @@
 
 #pragma once
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+//#define ENABLE_REPLICATION 1
+#endif
+
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211
 #define MEMCACHED_MAX_KEY 251 /* We add one to have it null terminated */

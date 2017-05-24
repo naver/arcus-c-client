@@ -62,10 +62,6 @@
 # include <stdbool.h>
 #endif
 
-#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-//#define ENABLE_REPLICATION 1
-#endif
-
 #include <libmemcached/visibility.h>
 #include <libmemcached/configure.h>
 #include <libmemcached/platform.h>
