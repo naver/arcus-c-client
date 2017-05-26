@@ -1353,8 +1353,13 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   }
   else if (verb == BOP_DELETE_OP)
   {
+#ifdef ENABLE_EFLAGS_FILTER
     char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
     memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+#else
+    char filter_str[MEMCACHED_COLL_ONE_FILTER_STR_LENGTH];
+    memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
+#endif
 
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
@@ -1582,8 +1587,13 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     /* Filter */
     if (query->eflag_filter)
     {
+#ifdef ENABLE_EFLAGS_FILTER
       char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
       memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+#else
+      char filter_str[MEMCACHED_COLL_ONE_FILTER_STR_LENGTH];
+      memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
+#endif
 
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                         "%s", filter_str);
@@ -1762,8 +1772,13 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     /* 2. [<eflag_filter>] */
     if (query->eflag_filter)
     {
+#ifdef ENABLE_EFLAGS_FILTER
       char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
       memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+#else
+      char filter_str[MEMCACHED_COLL_ONE_FILTER_STR_LENGTH];
+      memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
+#endif
 
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                         "%s", filter_str);
@@ -2018,8 +2033,13 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   /* Filter */
   if (query->eflag_filter)
   {
+#ifdef ENABLE_EFLAGS_FILTER
     char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
     memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+#else
+    char filter_str[MEMCACHED_COLL_ONE_FILTER_STR_LENGTH];
+    memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
+#endif
 
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                       "%s", filter_str);
@@ -2999,11 +3019,11 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   if (query->eflag_filter)
   {
 #ifdef ENABLE_EFLAGS_FILTER
-    char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_WITH_FLAGS_LENGTH];
-    memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_WITH_FLAGS_LENGTH);
-#else
     char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
     memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+#else
+    char filter_str[MEMCACHED_COLL_ONE_FILTER_STR_LENGTH];
+    memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
 #endif
 
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
