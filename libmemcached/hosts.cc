@@ -356,7 +356,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
           return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
-                                     memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+                                     memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
         }
 
         if (DEBUG)
@@ -413,7 +413,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
           return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
-                                     memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+                                     memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
         }
 
         if (is_ketama_weighted)
