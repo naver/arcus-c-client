@@ -2737,8 +2737,8 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   /* 2. update filter */
   if (update_filter)
   {
-    char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
-    memcached_coll_update_filter_to_str(update_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+    char filter_str[MEMCACHED_COLL_UPD_FILTER_STR_LENGTH];
+    memcached_coll_update_filter_to_str(update_filter, filter_str, MEMCACHED_COLL_UPD_FILTER_STR_LENGTH);
 
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                       "%s", filter_str);

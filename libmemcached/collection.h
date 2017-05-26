@@ -36,6 +36,10 @@
 #ifdef ENABLE_EFLAGS_FILTER
 #define MEMCACHED_COLL_MAX_FILTER_STR_WITH_FLAGS_LENGTH    150 + (MEMCACHED_COLL_MAX_EFLAGS_COUNT-1)*63
 #endif
+/* update filter string length: 80 = 64+16
+ * refer to the filter format: " %u %s 0x%s"
+ */
+#define MEMCACHED_COLL_UPD_FILTER_STR_LENGTH    80
 #define MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH    31  /* server maximum, not client limitation */
 #define MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH   MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH*2+1
 #define MEMCACHED_COLL_MAX_ELEMENT_SIZE         4*1024  /* server maximum, not client limitation */
