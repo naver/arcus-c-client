@@ -1319,7 +1319,11 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
+#ifdef ENABLE_EFLAGS_FILTER
+  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
+#else
   char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#endif
   size_t write_length= 0;
 
   /* Query header */
@@ -1327,7 +1331,11 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   {
     if (MEMCACHED_COLL_QUERY_LOP == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %d%s%s",
                                       query->sub_key.index,
                                       drop_if_empty ? " drop" :"",
@@ -1335,7 +1343,11 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     }
     else if (MEMCACHED_COLL_QUERY_LOP_RANGE == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %d..%d%s%s",
                                       query->sub_key.index_range[0],
                                       query->sub_key.index_range[1],
@@ -1345,7 +1357,11 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   }
   else if (verb == SOP_DELETE_OP)
   {
+#ifdef ENABLE_EFLAGS_FILTER
+    write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                     " %u%s%s\r\n",
                                     (int)query->value_length,
                                     drop_if_empty ? " drop" :"",
@@ -1363,14 +1379,22 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
 
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %llu%s",
                                       (unsigned long long)query->sub_key.bkey,
                                       filter_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %llu..%llu%s %u",
                                       (unsigned long long)query->sub_key.bkey_range[0],
                                       (unsigned long long)query->sub_key.bkey_range[1],
@@ -1383,7 +1407,11 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " 0x%s%s", bkey_str, filter_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
@@ -1396,13 +1424,21 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[1],
                                 bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " 0x%s..0x%s%s %u", bkey_str_from, bkey_str_to,
                                       filter_str, (int)count);
     }
 
     // drop & noreply
+#ifdef ENABLE_EFLAGS_FILTER
+    write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                      "%s%s",
                                      drop_if_empty ? " drop" :"",
                                      ptr->flags.no_reply ? " noreply" :"");
@@ -1412,11 +1448,19 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
+#ifdef ENABLE_EFLAGS_FILTER
+  if (write_length >= MEMCACHED_MAXIMUM_COMMAND_SIZE)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
+  }
+#else
   if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
+#endif
 
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
@@ -1508,7 +1552,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
 
   memcached_coll_type_t type = COLL_NONE;
 
+#ifdef ENABLE_EFLAGS_FILTER
+  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
+#else
   char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#endif
   size_t buffer_length= 0;
 
   /* Query header */
@@ -1519,12 +1567,20 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     type= COLL_LIST;
     if (MEMCACHED_COLL_QUERY_LOP == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                        " %d", query->sub_key.index);
     }
     else if (MEMCACHED_COLL_QUERY_LOP_RANGE == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                        " %d..%d",
                                        query->sub_key.index_range[0],
                                        query->sub_key.index_range[1]);
@@ -1537,7 +1593,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   else if (verb == SOP_GET_OP)
   {
     type= COLL_SET;
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                      " %u", (int)query->count);
   }
   else if (verb == BOP_GET_OP)
@@ -1545,13 +1605,21 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     type= COLL_BTREE;
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                        " %llu",
                                        (unsigned long long)query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                        " %llu..%llu",
                                        (unsigned long long)query->sub_key.bkey_range[0],
                                        (unsigned long long)query->sub_key.bkey_range[1]);
@@ -1562,7 +1630,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " 0x%s", bkey_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
@@ -1575,7 +1647,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[1],
                                 bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " 0x%s..0x%s",
                                       bkey_str_from, bkey_str_to);
     }
@@ -1595,12 +1671,20 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
 #endif
 
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                         "%s", filter_str);
     }
 
     /* Options */
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %u %u", (int)query->offset, (int)query->count);
   }
   else
@@ -1611,16 +1695,28 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   /* 2. delete or drop */
   if (with_delete or drop_if_empty)
   {
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       "%s",
                                       (with_delete && drop_if_empty)?" drop":" delete");
   }
 
+#ifdef ENABLE_EFLAGS_FILTER
+  if (buffer_length >= MEMCACHED_MAXIMUM_COMMAND_SIZE)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
+  }
+#else
   if (buffer_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
+#endif
 
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
@@ -1723,20 +1819,32 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
 
   /* Prepare the request header */
   size_t buffer_length= 0;
+#ifdef ENABLE_EFLAGS_FILTER
+  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
+#else
   char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#endif
 
   if (verb == BOP_MGET_OP)
   {
     /* 1. <bkey or "bkey range"> */
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                         " %llu",
                                         (unsigned long long)query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
     {
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                         " %llu..%llu",
                                         (unsigned long long)query->sub_key.bkey_range[0],
                                         (unsigned long long)query->sub_key.bkey_range[1]);
@@ -1747,7 +1855,11 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                         " 0x%s", bkey_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
@@ -1759,7 +1871,11 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
                                 bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                         " 0x%s..0x%s",
                                         bkey_str_from, bkey_str_to);
     }
@@ -1780,12 +1896,20 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
 #endif
 
+#ifdef ENABLE_EFLAGS_FILTER
+      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
       buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                         "%s", filter_str);
     }
 
     /* 3. [<offset>] <count> */
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %lu %lu", (unsigned long)query->offset, (unsigned long)query->count);
   }
   else
@@ -1976,19 +2100,31 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
 
   /* Key Group & Sub key */
   size_t buffer_length= 0;
+#ifdef ENABLE_EFLAGS_FILTER
+  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
+#else
   char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#endif
 
   result->sub_key_type= query->type;
 
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %llu",
                                       (unsigned long long)query->sub_key.bkey);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
   {
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " %llu..%llu",
                                       (unsigned long long)query->sub_key.bkey_range[0],
                                       (unsigned long long)query->sub_key.bkey_range[1]);
@@ -2003,7 +2139,11 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " 0x%s", bkey_str);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
@@ -2015,7 +2155,11 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
                               bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       " 0x%s..0x%s",
                                       bkey_str_from, bkey_str_to);
 
@@ -2041,12 +2185,20 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
 #endif
 
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       "%s", filter_str);
   }
 
   /* Options */
+#ifdef ENABLE_EFLAGS_FILTER
+  buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
   buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                     " %u %u", (int)0, (int)(query->offset + query->count));
   if (result != NULL)
   {
@@ -2963,7 +3115,11 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   uint8_t command_length= coll_op_length(BOP_COUNT_OP);
   ptr->last_op_code= command;
 
+#ifdef ENABLE_EFLAGS_FILTER
+  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
+#else
   char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#endif
   size_t buffer_length= 0;
 
   /* Query header */
@@ -2976,13 +3132,21 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   /* 1. sub key */
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                      " %llu",
                                      (unsigned long long)query->sub_key.bkey);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
   {
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                      " %llu..%llu",
                                      (unsigned long long)query->sub_key.bkey_range[0],
                                      (unsigned long long)query->sub_key.bkey_range[1]);
@@ -2993,7 +3157,11 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                      " 0x%s", bkey_str);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
@@ -3005,7 +3173,11 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
                               bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                     " 0x%s..0x%s",
                                     bkey_str_from, bkey_str_to);
   }
@@ -3026,15 +3198,27 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_ONE_FILTER_STR_LENGTH);
 #endif
 
+#ifdef ENABLE_EFLAGS_FILTER
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
+#else
     buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+#endif
                                       "%s", filter_str);
   }
 
+#ifdef ENABLE_EFLAGS_FILTER
+  if (buffer_length >= MEMCACHED_MAXIMUM_COMMAND_SIZE)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
+  }
+#else
   if (buffer_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
+#endif
 
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
@@ -3833,9 +4017,7 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_
 #ifdef ENABLE_EFLAGS_FILTER
   if (fvalue_length > 0) {
     ptr->comp.count = 1;
-  }
-  else
-  {
+  } else {
     ptr->comp.count = 0;
   }
 
