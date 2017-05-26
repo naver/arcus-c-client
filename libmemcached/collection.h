@@ -23,19 +23,14 @@
  */
 
 /* Hard-coded constants */
-#define ENABLE_EFLAGS_FILTER                    1
-#ifdef ENABLE_EFLAGS_FILTER
 #define MEMCACHED_COLL_MAX_EFLAGS_COUNT         100
-#endif
 
 #include "libmemcached/memcached.h"
 /* eflag filter string length: 150 = (64*2)+22
  * refer to the filter format: " %u %s 0x%s %s 0x%s"
  */
 #define MEMCACHED_COLL_ONE_FILTER_STR_LENGTH    150 /* 64*2 + 22 */
-#ifdef ENABLE_EFLAGS_FILTER
 #define MEMCACHED_COLL_MAX_FILTER_STR_LENGTH    150 + (MEMCACHED_COLL_MAX_EFLAGS_COUNT-1)*63
-#endif
 /* update filter string length: 80 = 64+16
  * refer to the filter format: " %u %s 0x%s"
  */
@@ -565,12 +560,8 @@ struct memcached_coll_eflag_filter_st {
 
   struct {
     memcached_coll_comp_t op;
-#ifdef ENABLE_EFLAGS_FILTER
     memcached_hexadecimal_st fvalue[MEMCACHED_COLL_MAX_EFLAGS_COUNT];
     size_t count;
-#else
-    memcached_hexadecimal_st fvalue;
-#endif
   } comp;
 
   struct {
@@ -594,7 +585,6 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_
                                                     const unsigned char *fvalue, const size_t fvalue_length,
                                                     memcached_coll_comp_t comp_op);
 
-#ifdef ENABLE_EFLAGS_FILTER
 /**
  * Initialize the b+tree eflag filter using multiple comparison values.
  * For details, refer to the Arcus memcached protocol manual.
@@ -605,13 +595,13 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_
  * @param fvalue_count  number of values in the value array.
  * @param comp_op  comparison operator.
  */
+LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
                                                     const size_t fwhere,
                                                     const unsigned char *fvalues,
                                                     const size_t fvalue_length,
                                                     const size_t fvalue_count,
                                                     memcached_coll_comp_t comp_op);
-#endif
 
 /**
  * Initialize the b+tree eflag filter for bitwise operation.
