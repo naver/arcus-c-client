@@ -168,7 +168,10 @@ static memcached_return_t memcached_flush_textual(memcached_st *ptr,
     rc= memcached_do(instance, buffer, (size_t)send_length, true);
 
     if (rc == MEMCACHED_SUCCESS && !no_reply)
-      (void)memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    {
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      (void)memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    }
   }
 
   return MEMCACHED_SUCCESS;

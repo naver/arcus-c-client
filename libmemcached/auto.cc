@@ -112,7 +112,8 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
   if (no_reply or memcached_failed(rc))
     return rc;
 
-  rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
   if (rc != MEMCACHED_SUCCESS)
   {
     return memcached_set_error(*instance, rc, MEMCACHED_AT);
@@ -125,24 +126,24 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
     use it. We still called memcached_response() though since it
     worked its magic for non-blocking IO.
   */
-  if (not strncmp(buffer, memcached_literal_param("ERROR\r\n")))
+  if (not strncmp(result, memcached_literal_param("ERROR\r\n")))
   {
     *value= 0;
     rc= MEMCACHED_PROTOCOL_ERROR;
   }
-  else if (not strncmp(buffer, memcached_literal_param("CLIENT_ERROR\r\n")))
+  else if (not strncmp(result, memcached_literal_param("CLIENT_ERROR\r\n")))
   {
     *value= 0;
     rc= MEMCACHED_PROTOCOL_ERROR;
   }
-  else if (not strncmp(buffer, memcached_literal_param("NOT_FOUND\r\n")))
+  else if (not strncmp(result, memcached_literal_param("NOT_FOUND\r\n")))
   {
     *value= 0;
     rc= MEMCACHED_NOTFOUND;
   }
   else
   {
-    *value= strtoull(buffer, (char **)NULL, 10);
+    *value= strtoull(result, (char **)NULL, 10);
     rc= MEMCACHED_SUCCESS;
   }
 

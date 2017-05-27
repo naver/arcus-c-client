@@ -360,7 +360,8 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 
       if (rc == MEMCACHED_STORED)
         rc= MEMCACHED_SUCCESS;

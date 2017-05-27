@@ -626,7 +626,8 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
     else
     {
       // expecting OK (MEMCACHED_SUCCESS)
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
     }
   }
 
@@ -670,20 +671,20 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
     return rc;
 
   /* Response */
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE]; // Uninitialized... valgrind would warn about this, but that would be okay.
-  while ((rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_ATTR)
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE]; // Uninitialized... valgrind would warn about this, but that would be okay.
+  while ((rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_ATTR)
   {
     int c = 0;
     char seps[] = "=";
 
     char attr_name[32];
 
-    char *word_buffer = NULL;
+    char *word_result = NULL;
     char *word = NULL;
 
     // <NAME>=<VALUE>\r\n
-    for (word = strtok_r(buffer+5, seps, &word_buffer); word;
-         word = strtok_r(NULL, seps, &word_buffer), c++) {
+    for (word = strtok_r(result+5, seps, &word_result); word;
+         word = strtok_r(NULL, seps, &word_result), c++) {
       if (c == 0) {
         /* NAME */
         snprintf(attr_name, sizeof(attr_name), "%s", word);
@@ -881,7 +882,8 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_CREATED)
@@ -1037,9 +1039,10 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   if (! ptr->flags.piped)
   {
     /* Fetch responses */
+    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
     ptr->pipe_responses= responses;
     ptr->pipe_responses_length= responses_cursor;
-    rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
     if (rc == MEMCACHED_END)
     {
       rc= MEMCACHED_SUCCESS;
@@ -1126,9 +1129,10 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
   if (! ptr->flags.piped)
   {
     /* Fetch responses */
+    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
     ptr->pipe_responses= responses;
     ptr->pipe_responses_length= responses_cursor;
-    rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
     if (rc == MEMCACHED_END || rc == MEMCACHED_EXIST)
     {
       rc= MEMCACHED_SUCCESS;
@@ -1256,7 +1260,8 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_STORED || rc == MEMCACHED_CREATED_STORED)
@@ -1433,7 +1438,8 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_DELETED or
@@ -2218,7 +2224,8 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_EXIST)
@@ -2775,7 +2782,8 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_UPDATED)
@@ -2879,7 +2887,8 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_NOTFOUND
@@ -2894,7 +2903,7 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
       }
       else
       {
-        *value= strtoull(buffer, (char **)NULL, 10);
+        *value= strtoull(result, (char **)NULL, 10);
       }
     }
   }
@@ -3016,7 +3025,8 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     }
     else
     {
-      rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_COUNT)
@@ -3029,8 +3039,8 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
       }
 
       /* <count> */
-      char *string_ptr= buffer;
-      char *end_ptr= buffer + MEMCACHED_DEFAULT_COMMAND_SIZE;
+      char *string_ptr= result;
+      char *end_ptr= result + MEMCACHED_DEFAULT_COMMAND_SIZE;
       char *next_ptr;
 
       string_ptr+= 6; // "COUNT="

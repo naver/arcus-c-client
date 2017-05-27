@@ -329,7 +329,7 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
                                              memcached_server_write_instance_st instance,
                                              struct local_context *check)
 {
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
   protocol_binary_request_stats request= {}; // = {.bytes= {0}};
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
   request.message.header.request.opcode= PROTOCOL_BINARY_CMD_STAT;
@@ -371,7 +371,7 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
   memcached_server_response_decrement(instance);
   do
   {
-    memcached_return_t rc= memcached_response(instance, buffer, sizeof(buffer), NULL);
+    memcached_return_t rc= memcached_response(instance, result, sizeof(result), NULL);
 
     if (rc == MEMCACHED_END)
       break;
@@ -384,7 +384,7 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
 
     if (memc_stat)
     {
-      unlikely((set_data(memc_stat, buffer, buffer + strlen(buffer) + 1)) == MEMCACHED_UNKNOWN_STAT_KEY)
+      unlikely((set_data(memc_stat, result, result + strlen(result) + 1)) == MEMCACHED_UNKNOWN_STAT_KEY)
       {
         WATCHPOINT_ERROR(MEMCACHED_UNKNOWN_STAT_KEY);
         WATCHPOINT_ASSERT(0);
@@ -393,11 +393,11 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
 
     if (check && check->func)
     {
-      size_t key_length= strlen(buffer);
+      size_t key_length= strlen(result);
 
       check->func(instance,
-                  buffer, key_length,
-                  buffer+key_length+1, strlen(buffer+key_length+1),
+                  result, key_length,
+                  result+key_length+1, strlen(result+key_length+1),
                   check->context);
     }
   } while (1);
@@ -436,12 +436,13 @@ static memcached_return_t ascii_stats_fetch(memcached_stat_st *memc_stat,
   memcached_return_t rc= memcached_do(instance, buffer, (size_t)send_length, true);
   if (memcached_success(rc))
   {
-    while ((rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_STAT)
+    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+    while ((rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_STAT)
     {
       char *string_ptr, *end_ptr;
       char *key, *value;
 
-      string_ptr= buffer;
+      string_ptr= result;
       string_ptr+= 5; /* Move past STAT */
       for (end_ptr= string_ptr; isgraph(*end_ptr); end_ptr++) {};
       key= string_ptr;

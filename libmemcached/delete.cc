@@ -147,7 +147,8 @@ static inline memcached_return_t ascii_delete(memcached_st *ptr,
   }
   else if (no_reply == false)
   {
-    rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+    rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
     if (rc == MEMCACHED_DELETED)
     {
       rc= MEMCACHED_SUCCESS;
@@ -244,7 +245,8 @@ static inline memcached_return_t binary_delete(memcached_st *ptr,
   }
   else if (no_reply == false)
   {
-    rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+    rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
     if (rc == MEMCACHED_DELETED)
     {
       rc= MEMCACHED_SUCCESS;

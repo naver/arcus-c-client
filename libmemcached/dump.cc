@@ -40,6 +40,7 @@ static memcached_return_t ascii_dump(memcached_st *ptr, memcached_dump_fn *callb
     for (uint32_t x= 0; x < 256; x++)
     {
       char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       int send_length;
       send_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
                             "stats cachedump %u 0 0\r\n", x);
@@ -60,13 +61,13 @@ static memcached_return_t ascii_dump(memcached_st *ptr, memcached_dump_fn *callb
       while (1)
       {
         uint32_t callback_counter;
-        rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+        rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 
         if (rc == MEMCACHED_ITEM)
         {
           char *string_ptr, *end_ptr;
 
-          string_ptr= buffer;
+          string_ptr= result;
           string_ptr+= 5; /* Move past ITEM */
 
           for (end_ptr= string_ptr; isgraph(*end_ptr); end_ptr++) {} ;
