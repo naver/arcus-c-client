@@ -469,6 +469,12 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
       {
         return MEMCACHED_STORED;
       }
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+      else if (buffer[1] == 'W')
+      {
+        return MEMCACHED_SWITCHOVER;
+      }
+#endif
       else
       {
         WATCHPOINT_STRING(buffer);
@@ -490,6 +496,10 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
         return MEMCACHED_UNKNOWN_READ_FAILURE;
       }
     }
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  case 'R': /* REPL_SLAVE */
+    return MEMCACHED_REPL_SLAVE;
+#endif
   case 'U': /* UNREADABLE */
     return MEMCACHED_UNREADABLE;
   case 'E': /* PROTOCOL ERROR or END */
@@ -1407,6 +1417,12 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
       {
         return MEMCACHED_STORED;
       }
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+      else if (buffer[1] == 'W')
+      {
+        return MEMCACHED_SWITCHOVER;
+      }
+#endif
       else
       {
         WATCHPOINT_STRING(buffer);
@@ -1449,6 +1465,11 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
     }
   case 'R': /* RESPONSE - piped operation */
     {
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+      if (buffer[1] == 'E' && buffer[4] == '_') {
+        return MEMCACHED_REPL_SLAVE;
+      }
+#endif
       if (buffer[1] == 'E' && buffer[2] == 'P') {
         /* REPLACED in response to bop upsert. */
         return MEMCACHED_REPLACED;

@@ -73,19 +73,27 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
   }
 
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
   /* Arcus base cluster uses this path.  Set groupname="invalid".
    * The replication cluster uses append_with_group.
    */
   memcached_string_t _groupname= { memcached_string_make_from_cstr("invalid") };
 #endif
+#endif
   /* @todo Check return type */
+#if 1 // JOON_REPL_V2
+  if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight,
+                               port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
+#else
 #ifdef ENABLE_REPLICATION
   if (not __server_create_with(NULL, &new_host_list[count-1], _groupname, _hostname, port, weight,
                                port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET, false))
 #else
   if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight,
                                port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
+#endif
 #endif
   {
     *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
@@ -112,6 +120,8 @@ memcached_server_list_append(memcached_server_list_st ptr,
   return memcached_server_list_append_with_weight(ptr, hostname, port, 0, error);
 }
 
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
 /* Arcus replication cluster.
  * Use this function to add servers to memcached_st,
@@ -159,6 +169,7 @@ memcached_server_list_append_with_group(memcached_server_list_st ptr,
   *error= MEMCACHED_SUCCESS;
   return new_host_list;
 }
+#endif
 #endif
 
 uint32_t memcached_server_list_count(const memcached_server_list_st self)

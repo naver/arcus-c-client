@@ -689,9 +689,12 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
     if (c < 2) {
       return -1; /* invalid znode name */
     }
+#if 1 // JOON_REPL_V2
+#else
     if (serverinfo->master == false) {
       return -1; /* exclude slave node */
     }
+#endif
     c= 0;
   } else {
     serverinfo->groupname= NULL;
@@ -851,13 +854,90 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
   }
 }
 
+#if 1 // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
+static inline memcached_return_t
+__do_arcus_update_grouplist(memcached_st *mc,
+                            struct memcached_server_info *serverinfo,
+                            uint32_t servercount)
+{
+  struct memcached_rgroup_info *groupinfo;
+  uint32_t groupcount= 0;
+  uint32_t validcount= 0;
+  uint32_t x, y;
+  bool prune_flag= false;
+
+  if (servercount == 0) {
+    memcached_rgroup_prune(mc, true); /* prune all rgroups */
+    return run_distribution(mc);
+  }
+
+  ZOO_LOG_INFO(("__do_arcus_update_grouplist: count=%u\n", servercount));
+  for (x= 0; x < servercount; x++) {
+    ZOO_LOG_INFO(("server[%u] groupname=%s %s hostname=%s port=%u\n",
+            x, serverinfo[x].groupname, 
+            serverinfo[x].master ? "master" : "slave",
+            serverinfo[x].hostname, 
+            serverinfo[x].port));
+  }
+
+  groupinfo= memcached_rgroup_info_create(mc, serverinfo, servercount,
+                                          &groupcount, &validcount);
+  if (not groupinfo) {
+    return memcached_set_error(*mc, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("Failed to create rgroup_info"));
+  }
+
+  if (memcached_rgroup_expand(mc, groupcount, servercount) != 0) {
+    return memcached_set_error(*mc, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("Failed to expand rgroup space"));
+  }
+
+  for (x= 0; x< memcached_server_count(mc); x++) {
+    /* find replica group */
+    for (y= 0; y< groupcount; y++) {
+      if (strcmp(mc->rgroups[x].groupname, groupinfo[y].groupname) == 0)
+        break;
+    }
+    if (y < groupcount) { /* Found */
+      if (groupinfo[y].valid) {
+        memcached_rgroup_update_with_groupinfo(&mc->rgroups[x], &groupinfo[y]);
+        groupinfo[y].valid= false;
+        validcount--;
+      }
+    } else { /* Not found */
+      mc->rgroups[x].options.is_dead= true;
+      prune_flag= true;
+    }
+  }
+
+  if (prune_flag) { /* prune old dead replica groups */
+    memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
+  }
+  if (validcount > 0) { /* push new valid replica groups */
+    memcached_rgroup_push_with_groupinfo(mc, groupinfo, groupcount);
+  }
+  memcached_rgroup_info_destroy(mc, groupinfo);
+
+  if (prune_flag or validcount > 0) {
+    return run_distribution(mc);
+  } else {
+    return MEMCACHED_SUCCESS;
+  }
+}
+#endif
+#endif
+
 static inline memcached_return_t
 __do_arcus_update_cachelist(memcached_st *mc,
                             struct memcached_server_info *serverinfo,
                             uint32_t servercount)
 {
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+#endif
 #endif
   memcached_return_t error= MEMCACHED_SUCCESS;
   uint32_t x, y;
@@ -878,6 +958,8 @@ __do_arcus_update_cachelist(memcached_st *mc,
       if (serverinfo[y].exist)
         continue;
 
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
       if (arcus->zk.is_repl_enabled) {
         if (strcmp(mc->servers[x].groupname, serverinfo[y].groupname) == 0 &&
@@ -887,6 +969,7 @@ __do_arcus_update_cachelist(memcached_st *mc,
         }
       }
       else
+#endif
 #endif
       if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
           mc->servers[x].port == serverinfo[y].port) {
@@ -901,12 +984,15 @@ __do_arcus_update_cachelist(memcached_st *mc,
   for (x= 0; x< servercount; x++)
   {
     if (serverinfo[x].exist == false) {
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
       if (arcus->zk.is_repl_enabled)
         new_hosts= memcached_server_list_append_with_group(servers, serverinfo[x].groupname,
                                                            serverinfo[x].hostname,
                                                            serverinfo[x].port, &error);
       else
+#endif
 #endif
       new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
                                               serverinfo[x].port, &error);
@@ -956,6 +1042,13 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   gettimeofday(&tv_begin, 0);
 
   /* Update the server list. */
+#if 1 // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
+  if (mc->flags.repl_enabled)
+    error= __do_arcus_update_grouplist(mc, serverinfo, servercount);
+  else
+#endif
+#endif
   error= __do_arcus_update_cachelist(mc, serverinfo, servercount);
 
   unlikely (arcus->is_initializing)
@@ -1094,11 +1187,17 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
     if (zkrc == ZOK) {
       ZOO_LOG_WARN(("Detected Arcus replication cluster. %s exits", arcus->zk.path));
       arcus->zk.is_repl_enabled = true;
+#if 1 // JOON_REPL_V2
+      mc->flags.repl_enabled= true;
+#endif
     }
     else if (zkrc == ZNONODE) {
       snprintf(arcus->zk.path, sizeof(arcus->zk.path),
         "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
       arcus->zk.is_repl_enabled = false;
+#if 1 // JOON_REPL_V2
+      mc->flags.repl_enabled= false;
+#endif
     }
     else {
       ZOO_LOG_ERROR(("zoo_exists failed while trying to"

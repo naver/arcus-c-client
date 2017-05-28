@@ -312,6 +312,14 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
   case MEMCACHED_REPLACED:
     return "REPLACED";
 
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  case MEMCACHED_SWITCHOVER:
+    return "REPLICATION SWITCHOVER";
+
+  case MEMCACHED_REPL_SLAVE:
+    return "REPLICATION REPL_SLAVE";
+#endif
+
   default:
   case MEMCACHED_MAXIMUM_RETURN:
     return "INVALID memcached_return_t";

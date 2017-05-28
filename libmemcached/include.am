@@ -77,6 +77,7 @@ nobase_include_HEADERS+= \
                          libmemcached/sasl.h \
 			 libmemcached/server.h \
 			 libmemcached/server_list.h \
+			 libmemcached/rgroup.h \
 			 libmemcached/stats.h \
 			 libmemcached/storage.h \
 			 libmemcached/strerror.h \
@@ -139,6 +140,7 @@ libmemcached_libmemcached_la_SOURCES+= \
 
 if BUILD_ARCUS_ZK_INTEGRATION
 libmemcached_libmemcached_la_SOURCES += libmemcached/arcus.cc
+libmemcached_libmemcached_la_SOURCES += libmemcached/rgroup.cc
 endif
 
 libmemcached/options.cc: libmemcached/csl/parser.h

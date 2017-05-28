@@ -71,6 +71,9 @@ static inline memcached_return_t ascii_delete(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+do_action:
+#endif
   unlikely (expiration)
   {
      if ((instance->major_version == 1 &&
@@ -149,10 +152,21 @@ static inline memcached_return_t ascii_delete(memcached_st *ptr,
   {
     char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
     rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+
     if (rc == MEMCACHED_DELETED)
     {
       rc= MEMCACHED_SUCCESS;
     }
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+    else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+    {
+      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+      memcached_rgroup_switchover(ptr, instance);
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
+#endif
   }
 
   return rc;
@@ -196,6 +210,9 @@ static inline memcached_return_t binary_delete(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+do_action:
+#endif
   if (ptr->flags.use_udp && ! to_write)
   {
     size_t cmd_size= sizeof(request.bytes) + key_length;
@@ -250,6 +267,16 @@ static inline memcached_return_t binary_delete(memcached_st *ptr,
     {
       rc= MEMCACHED_SUCCESS;
     }
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+    else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+    {
+      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+      memcached_rgroup_switchover(ptr, instance);
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
+#endif
   }
 
   return rc;

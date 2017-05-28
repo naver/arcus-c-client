@@ -58,6 +58,11 @@
 
 /* Protoypes (static) */
 static memcached_return_t update_continuum(memcached_st *ptr);
+#if 1 // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
+static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr);
+#endif
+#endif
 
 static int compare_servers(const void *p1, const void *p2)
 {
@@ -65,12 +70,15 @@ static int compare_servers(const void *p1, const void *p2)
   memcached_server_instance_st a= (memcached_server_instance_st)p1;
   memcached_server_instance_st b= (memcached_server_instance_st)p2;
 
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
   // For replication servers, compare only the group names.
   // hostname contains the group's master server, if any.
   if (a->is_repl_enabled) {
     return strcmp(a->groupname, b->groupname);
   }
+#endif
 #endif
 
   return_value= strcmp(a->hostname, b->hostname);
@@ -144,6 +152,13 @@ memcached_return_t run_distribution(memcached_st *ptr)
 {
   if (ptr->flags.use_sort_hosts)
   {
+#if 1 // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
+    if (ptr->flags.repl_enabled)
+      memcached_rgroup_sort(ptr);
+    else
+#endif
+#endif
     sort_hosts(ptr);
   }
 
@@ -153,6 +168,13 @@ memcached_return_t run_distribution(memcached_st *ptr)
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED:
+#if 1 // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
+    if (ptr->flags.repl_enabled)
+      return update_continuum_based_on_rgroups(ptr);
+    else
+#endif
+#endif
     return update_continuum(ptr);
 
   case MEMCACHED_DISTRIBUTION_VIRTUAL_BUCKET:
@@ -325,6 +347,8 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         int sort_host_length;
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
         if (list[host_index].is_repl_enabled) {
           // For replication clusters, use group names, not host names,
@@ -335,6 +359,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
                                      pointer_index);
         }
         else
+#endif
 #endif
         // Spymemcached ketema key format is: hostname/ip:port-index
         // If hostname is not available then: ip:port-index
@@ -383,9 +408,12 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     }
     else
     {
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
       // Arcus does not use this hash.  So do not bother supporting
       // replication group names.
+#endif
 #endif
       for (uint32_t pointer_index= 1;
            pointer_index <= pointer_per_server / pointer_per_hash;
@@ -477,6 +505,176 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   return MEMCACHED_SUCCESS;
 }
 
+#if 1 // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
+static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
+{
+  memcached_rgroup_st *list;
+  uint32_t continuum_index= 0;
+  uint32_t pointer_counter= 0;
+  uint32_t pointer_per_server= MEMCACHED_POINTS_PER_SERVER;
+  uint32_t pointer_per_hash= 1;
+  uint32_t live_servers= 0;
+  struct timeval now;
+
+  if (gettimeofday(&now, NULL))
+  {
+    return memcached_set_errno(*ptr, errno, MEMCACHED_AT);
+  }
+
+  assert(_is_auto_eject_host(ptr) != true);
+  live_servers= memcached_server_count(ptr);
+  if (not live_servers)
+  {
+    return MEMCACHED_SUCCESS;
+  }
+  list= memcached_rgroup_list(ptr);
+
+  uint64_t is_ketama_weighted= memcached_behavior_get(ptr, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
+  uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
+                                                             : MEMCACHED_POINTS_PER_SERVER);
+
+  if (live_servers > ptr->ketama.continuum_count)
+  {
+    memcached_continuum_item_st *new_ptr;
+
+    new_ptr= static_cast<memcached_continuum_item_st*>(libmemcached_realloc(ptr, ptr->ketama.continuum,
+                         sizeof(memcached_continuum_item_st) * (live_servers + MEMCACHED_CONTINUUM_ADDITION) * points_per_server));
+
+    if (new_ptr == 0)
+    {
+      return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
+    }
+
+    ptr->ketama.continuum= new_ptr;
+    ptr->ketama.continuum_count= live_servers + MEMCACHED_CONTINUUM_ADDITION;
+  }
+
+  uint64_t total_weight= 0;
+  bool all_weights_same= true;
+  if (is_ketama_weighted)
+  {
+    for (uint32_t host_index = 0; host_index < memcached_server_count(ptr); ++host_index)
+    {
+      total_weight += list[host_index].weight;
+      /* Check if all weights are same */
+      if (host_index > 0) {
+        if (list[0].weight != list[host_index].weight)
+          all_weights_same= false;
+      }
+    }
+  }
+
+  /* Arcus uses only MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY.
+   * So, do not bother supporting other distribution strategies.
+   */
+  assert(ptr->distribution == MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY);
+
+  for (uint32_t host_index= 0; host_index < memcached_server_count(ptr); ++host_index)
+  {
+    if (is_ketama_weighted)
+    {
+        if (all_weights_same) {
+          pointer_per_server= MEMCACHED_POINTS_PER_SERVER_KETAMA;
+        } else {
+          float pct= (float)list[host_index].weight / (float)total_weight;
+          pointer_per_server= (uint32_t) ((floor((float) (pct * MEMCACHED_POINTS_PER_SERVER_KETAMA / 4 * (float)live_servers + 0.0000000001))) * 4);
+        }
+        pointer_per_hash= 4;
+        if (DEBUG)
+        {
+          printf("ketama_weighted:%s|%llu|%u\n",
+                 list[host_index].groupname,
+                 (unsigned long long)list[host_index].weight,
+                 pointer_per_server);
+        }
+    }
+
+    for (uint32_t pointer_index= 0;
+         pointer_index < pointer_per_server / pointer_per_hash;
+         pointer_index++)
+    {
+      char sort_host[MEMCACHED_MAX_HOST_SORT_LENGTH]= "";
+      int sort_host_length;
+
+      // For replication clusters, use group names, not host names,
+      // appear in the hash ring.
+      sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
+                                 "%s-%u",
+                                 list[host_index].groupname,
+                                 pointer_index);
+      if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
+      {
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                   memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
+      }
+
+      if (DEBUG)
+      {
+        fprintf(stdout, "update_continuum_based_on_rgroups: key is %s\n", sort_host);
+      }
+
+      if (is_ketama_weighted)
+      {
+        for (uint32_t x= 0; x < pointer_per_hash; x++)
+        {
+          uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
+          ptr->ketama.continuum[continuum_index].index= host_index;
+          ptr->ketama.continuum[continuum_index++].value= value;
+        }
+      }
+      else
+      {
+        uint32_t value= hashkit_digest(&ptr->hashkit, sort_host, (size_t)sort_host_length);
+        ptr->ketama.continuum[continuum_index].index= host_index;
+        ptr->ketama.continuum[continuum_index++].value= value;
+      }
+    }
+    pointer_counter+= pointer_per_server;
+  }
+
+  WATCHPOINT_ASSERT(ptr);
+  WATCHPOINT_ASSERT(ptr->ketama.continuum);
+  WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
+  ptr->ketama.continuum_points_counter= pointer_counter;
+  qsort(ptr->ketama.continuum, ptr->ketama.continuum_points_counter,
+        sizeof(memcached_continuum_item_st), continuum_item_cmp);
+
+  if (DEBUG)
+  {
+    for (uint32_t pointer_index= 0;
+         pointer_index < ((live_servers * MEMCACHED_POINTS_PER_SERVER) - 1) && memcached_server_count(ptr);
+         pointer_index++)
+    {
+      WATCHPOINT_ASSERT(ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index+1].value);
+    }
+  }
+#if 0 /* Print hash continuum */
+  if (1) {
+    uint32_t pointer_index;
+    fprintf(stderr, "update_continuum: node_count=%d hash_count=%d\n",
+            live_servers, ptr->ketama.continuum_points_counter);
+    for (pointer_index= 0; pointer_index < ptr->ketama.continuum_points_counter; pointer_index++) {
+      if (pointer_index > 0 &&
+          ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index - 1].value) {
+          break;
+      }
+      fprintf(stderr, "continuum[%d]: hash=%08x, rgroup=%s\n",
+              pointer_index, ptr->ketama.continuum[pointer_index].value,
+              list[ptr->ketama.continuum[pointer_index].index].groupname);
+    }
+    if (pointer_index < ptr->ketama.continuum_points_counter)
+        fprintf(stderr, "update_continuum fails.n");
+    else
+        fprintf(stderr, "update_continuum success.\n");
+  }
+#endif
+
+  return MEMCACHED_SUCCESS;
+}
+#endif
+#endif
+
 static memcached_return_t server_add(memcached_st *ptr, 
                                      const memcached_string_t& hostname,
                                      in_port_t port,
@@ -504,6 +702,9 @@ static memcached_return_t server_add(memcached_st *ptr,
   memcached_server_write_instance_st instance;
   instance= memcached_server_instance_fetch(ptr, memcached_server_count(ptr));
 
+#if 1 // JOON_REPL_V2
+  if (not __server_create_with(ptr, instance, hostname, port, weight, type))
+#else
 #ifdef ENABLE_REPLICATION
   /* Arcus (both non-repl and repl) does not use this function.
    * So, use a fake groupname.
@@ -512,6 +713,7 @@ static memcached_return_t server_add(memcached_st *ptr,
   if (not __server_create_with(ptr, instance, groupname, hostname, port, weight, type, false))
 #else
   if (not __server_create_with(ptr, instance, hostname, port, weight, type))
+#endif
 #endif
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
@@ -567,6 +769,11 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
     WATCHPOINT_ASSERT(instance);
 
     memcached_string_t hostname= { memcached_string_make_from_cstr(list[x].hostname) };
+#if 1 // JOON_REPL_V2
+    if (__server_create_with(ptr, instance,
+                             hostname,
+                             list[x].port, list[x].weight, list[x].type) == NULL)
+#else
 #ifdef ENABLE_REPLICATION
     memcached_string_t groupname= { memcached_string_make_from_cstr(list[x].groupname) };
     if (__server_create_with(ptr, instance,
@@ -577,6 +784,7 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
     if (__server_create_with(ptr, instance, 
                              hostname,
                              list[x].port, list[x].weight, list[x].type) == NULL)
+#endif
 #endif
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);

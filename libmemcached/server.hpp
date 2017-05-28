@@ -118,6 +118,15 @@ static inline void memcached_mark_server_for_timeout(memcached_server_write_inst
   }
 }
 
+#if 1 // JOON_REPL_V2
+LIBMEMCACHED_LOCAL
+  memcached_server_st *__server_create_with(memcached_st *memc,
+                                            memcached_server_write_instance_st host,
+                                            const memcached_string_t& hostname,
+                                            const in_port_t port,
+                                            uint32_t weight,
+                                            const memcached_connection_t type);
+#else
 #ifdef ENABLE_REPLICATION
 LIBMEMCACHED_LOCAL
 memcached_server_st *__server_create_with(memcached_st *memc,
@@ -136,4 +145,5 @@ LIBMEMCACHED_LOCAL
                                             const in_port_t port,
                                             uint32_t weight,
                                             const memcached_connection_t type);
+#endif
 #endif

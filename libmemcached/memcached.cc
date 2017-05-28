@@ -78,6 +78,9 @@ static inline bool _memcached_init(memcached_st *self)
   self->flags.use_udp= false;
   self->flags.verify_key= false;
   self->flags.tcp_keepalive= false;
+#ifdef ENABLE_REPLICATiON // JOON_REPL_V2
+  self->flags.repl_enabled= false;
+#endif
 
   self->virtual_bucket= NULL;
 
@@ -97,6 +100,12 @@ static inline bool _memcached_init(memcached_st *self)
   self->ketama.weighted= false;
 
   self->number_of_hosts= 0;
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  self->rgroup_ntotal= 0;
+  self->server_ntotal= 0;
+  self->server_navail= 0;
+  self->rgroups= NULL;
+#endif
   self->servers= NULL;
   self->last_disconnected_server= NULL;
 
@@ -157,6 +166,9 @@ static void _free(memcached_st *ptr, bool release_st)
 {
   /* If we have anything open, lets close it now */
   send_quit(ptr);
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  memcached_rgroup_list_free(ptr);
+#endif
   memcached_server_list_free(memcached_server_list(ptr));
   memcached_result_free(&ptr->result);
 
@@ -436,16 +448,34 @@ void *memcached_set_user_data(memcached_st *ptr, void *data)
 
 memcached_return_t memcached_push(memcached_st *destination, const memcached_st *source)
 {
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  if (source->flags.repl_enabled) {
+    return memcached_rgroup_push(destination, source->rgroups,
+                                              source->number_of_hosts);
+  }
+#endif
   return memcached_server_push(destination, source->servers);
 }
 
 memcached_server_write_instance_st memcached_server_instance_fetch(memcached_st *ptr, uint32_t server_key)
 {
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  if (ptr->flags.repl_enabled) {
+    /* return master server */
+    return ptr->rgroups[server_key].replicas[0];
+  }
+#endif
   return &ptr->servers[server_key];
 }
 
 memcached_server_instance_st memcached_server_instance_by_position(const memcached_st *ptr, uint32_t server_key)
 {
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  if (ptr->flags.repl_enabled) {
+    /* return master server */
+    return ptr->rgroups[server_key].replicas[0];
+  }
+#endif
   return &ptr->servers[server_key];
 }
 

@@ -82,6 +82,8 @@ LIBMEMCACHED_API
                                                                     uint32_t weight,
                                                                     memcached_return_t *error);
 
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
 // Arcus replication cluster uses this function instead of server_list_append.
 LIBMEMCACHED_API
@@ -91,6 +93,7 @@ LIBMEMCACHED_API
                                             const char *hostname,
                                             in_port_t port,
                                             memcached_return_t *error);
+#endif
 #endif
 
 LIBMEMCACHED_API

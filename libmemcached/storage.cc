@@ -175,6 +175,9 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   memcached_server_write_instance_st server= memcached_server_instance_fetch(ptr, server_key);
 
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+do_action:
+#endif
   WATCHPOINT_SET(server->io_wait_count.read= 0);
   WATCHPOINT_SET(server->io_wait_count.write= 0);
 
@@ -237,6 +240,16 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
   }
 
   rc= memcached_response(server, NULL, 0, NULL);
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+  if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  server->hostname, server->port, memcached_strerror(ptr, rc)));
+    memcached_rgroup_switchover(ptr, server);
+    server= memcached_server_instance_fetch(ptr, server_key);
+    goto do_action;
+  }
+#endif
   return rc;
 }
 
@@ -333,6 +346,9 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+do_action:
+#endif
   WATCHPOINT_SET(instance->io_wait_count.read= 0);
   WATCHPOINT_SET(instance->io_wait_count.write= 0);
 
@@ -365,6 +381,15 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
 
       if (rc == MEMCACHED_STORED)
         rc= MEMCACHED_SUCCESS;
+#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+      else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
+        ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                      instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+        memcached_rgroup_switchover(ptr, instance);
+        instance= memcached_server_instance_fetch(ptr, server_key);
+        goto do_action;
+      }
+#endif
     }
   }
 

@@ -612,6 +612,8 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
 
   LIBMEMCACHED_MEMCACHED_CONNECT_START();
 
+#if 1 // JOON_REPL_V2
+#else
 #ifdef ENABLE_REPLICATION
   // Arcus replication.  The server is actually the group.
   // The group's master server is stored in hostname.
@@ -635,6 +637,7 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
   if (server->is_repl_enabled && 0 == strcmp(server->hostname, "invalid")) {
     return memcached_set_error(*server, MEMCACHED_NO_SERVERS, MEMCACHED_AT);
   }
+#endif
 #endif
 
   bool in_timeout= false;
