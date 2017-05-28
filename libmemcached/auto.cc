@@ -108,7 +108,7 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
   server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   instance= memcached_server_instance_fetch(ptr, server_key);
 
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
 do_action:
 #endif
   memcached_return_t rc= memcached_do(instance, buffer, (size_t)send_length, true);
@@ -119,7 +119,7 @@ do_action:
   rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
   if (rc != MEMCACHED_SUCCESS)
   {
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
     if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
@@ -206,7 +206,7 @@ static memcached_return_t binary_incr_decr(memcached_st *ptr, uint8_t cmd,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
 do_action:
 #endif
   memcached_return_t rc;
@@ -220,7 +220,7 @@ do_action:
     return MEMCACHED_SUCCESS;
 
   rc= memcached_response(instance, (char*)value, sizeof(*value), NULL);
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
   if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
   {
     ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",

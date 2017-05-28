@@ -58,10 +58,8 @@
 
 /* Protoypes (static) */
 static memcached_return_t update_continuum(memcached_st *ptr);
-#if 1 // JOON_REPL_V2
 #ifdef ENABLE_REPLICATION
 static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr);
-#endif
 #endif
 
 static int compare_servers(const void *p1, const void *p2)
@@ -69,17 +67,6 @@ static int compare_servers(const void *p1, const void *p2)
   int return_value;
   memcached_server_instance_st a= (memcached_server_instance_st)p1;
   memcached_server_instance_st b= (memcached_server_instance_st)p2;
-
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-  // For replication servers, compare only the group names.
-  // hostname contains the group's master server, if any.
-  if (a->is_repl_enabled) {
-    return strcmp(a->groupname, b->groupname);
-  }
-#endif
-#endif
 
   return_value= strcmp(a->hostname, b->hostname);
   if (return_value == 0) {
@@ -152,12 +139,10 @@ memcached_return_t run_distribution(memcached_st *ptr)
 {
   if (ptr->flags.use_sort_hosts)
   {
-#if 1 // JOON_REPL_V2
 #ifdef ENABLE_REPLICATION
     if (ptr->flags.repl_enabled)
       memcached_rgroup_sort(ptr);
     else
-#endif
 #endif
     sort_hosts(ptr);
   }
@@ -168,12 +153,10 @@ memcached_return_t run_distribution(memcached_st *ptr)
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED:
-#if 1 // JOON_REPL_V2
 #ifdef ENABLE_REPLICATION
     if (ptr->flags.repl_enabled)
       return update_continuum_based_on_rgroups(ptr);
     else
-#endif
 #endif
     return update_continuum(ptr);
 
@@ -347,20 +330,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         int sort_host_length;
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-        if (list[host_index].is_repl_enabled) {
-          // For replication clusters, use group names, not host names,
-          // appear in the hash ring.
-          sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
-                                     "%s-%u",
-                                     list[host_index].groupname,
-                                     pointer_index);
-        }
-        else
-#endif
-#endif
         // Spymemcached ketema key format is: hostname/ip:port-index
         // If hostname is not available then: ip:port-index
         sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
@@ -408,13 +377,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     }
     else
     {
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-      // Arcus does not use this hash.  So do not bother supporting
-      // replication group names.
-#endif
-#endif
       for (uint32_t pointer_index= 1;
            pointer_index <= pointer_per_server / pointer_per_hash;
            pointer_index++)
@@ -505,7 +467,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   return MEMCACHED_SUCCESS;
 }
 
-#if 1 // JOON_REPL_V2
 #ifdef ENABLE_REPLICATION
 static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
 {
@@ -673,7 +634,6 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   return MEMCACHED_SUCCESS;
 }
 #endif
-#endif
 
 static memcached_return_t server_add(memcached_st *ptr, 
                                      const memcached_string_t& hostname,
@@ -702,19 +662,7 @@ static memcached_return_t server_add(memcached_st *ptr,
   memcached_server_write_instance_st instance;
   instance= memcached_server_instance_fetch(ptr, memcached_server_count(ptr));
 
-#if 1 // JOON_REPL_V2
   if (not __server_create_with(ptr, instance, hostname, port, weight, type))
-#else
-#ifdef ENABLE_REPLICATION
-  /* Arcus (both non-repl and repl) does not use this function.
-   * So, use a fake groupname.
-   */
-  memcached_string_t groupname= { memcached_string_make_from_cstr("invalid") };
-  if (not __server_create_with(ptr, instance, groupname, hostname, port, weight, type, false))
-#else
-  if (not __server_create_with(ptr, instance, hostname, port, weight, type))
-#endif
-#endif
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
   }
@@ -769,23 +717,9 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
     WATCHPOINT_ASSERT(instance);
 
     memcached_string_t hostname= { memcached_string_make_from_cstr(list[x].hostname) };
-#if 1 // JOON_REPL_V2
     if (__server_create_with(ptr, instance,
                              hostname,
                              list[x].port, list[x].weight, list[x].type) == NULL)
-#else
-#ifdef ENABLE_REPLICATION
-    memcached_string_t groupname= { memcached_string_make_from_cstr(list[x].groupname) };
-    if (__server_create_with(ptr, instance,
-                             groupname, hostname,
-                             list[x].port, list[x].weight, list[x].type,
-                             list[x].is_repl_enabled) == NULL)
-#else
-    if (__server_create_with(ptr, instance, 
-                             hostname,
-                             list[x].port, list[x].weight, list[x].type) == NULL)
-#endif
-#endif
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     }

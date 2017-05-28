@@ -95,7 +95,7 @@
 #include <libmemcached/result.h>
 #include <libmemcached/server.h>
 #include <libmemcached/server_list.h>
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
 #include <libmemcached/rgroup.h>
 #endif
 #include <libmemcached/storage.h>
@@ -141,7 +141,7 @@ struct memcached_st {
     bool use_udp:1;
     bool verify_key:1;
     bool tcp_keepalive:1;
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
     bool repl_enabled:1; /* internaly set and used */
 #endif
   } flags;
@@ -152,7 +152,7 @@ struct memcached_st {
     unsigned int version;
   } server_info;
   uint32_t number_of_hosts;
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
   uint32_t rgroup_ntotal;
   uint32_t server_ntotal;
   uint32_t server_navail;

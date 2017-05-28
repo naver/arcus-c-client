@@ -469,7 +469,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
       {
         return MEMCACHED_STORED;
       }
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
       else if (buffer[1] == 'W')
       {
         return MEMCACHED_SWITCHOVER;
@@ -496,7 +496,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
         return MEMCACHED_UNKNOWN_READ_FAILURE;
       }
     }
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
   case 'R': /* REPL_SLAVE */
     return MEMCACHED_REPL_SLAVE;
 #endif
@@ -1417,7 +1417,7 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
       {
         return MEMCACHED_STORED;
       }
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
       else if (buffer[1] == 'W')
       {
         return MEMCACHED_SWITCHOVER;
@@ -1465,7 +1465,7 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
     }
   case 'R': /* RESPONSE - piped operation */
     {
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
       if (buffer[1] == 'E' && buffer[4] == '_') {
         return MEMCACHED_REPL_SLAVE;
       }

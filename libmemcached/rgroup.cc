@@ -52,7 +52,7 @@
  */
 #include <libmemcached/common.h>
 
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
 #include "libmemcached/arcus_priv.h"
 
 /*

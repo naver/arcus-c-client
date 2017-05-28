@@ -83,13 +83,6 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
                                              uint32_t servercount);
 static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *nodename,
                                              struct memcached_server_info *serverinfo);
-#if 0 // JOON_REPL_OLD_CODE
-#ifdef ENABLE_REPLICATION
-static inline void do_add_server_to_grouplist(struct memcached_server_info *serverinfo,
-                                              uint32_t *count, char *nodename);
-#endif
-#endif
-
 
 pthread_mutex_t lock_arcus = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_arcus = PTHREAD_COND_INITIALIZER;
@@ -689,12 +682,6 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
     if (c < 2) {
       return -1; /* invalid znode name */
     }
-#if 1 // JOON_REPL_V2
-#else
-    if (serverinfo->master == false) {
-      return -1; /* exclude slave node */
-    }
-#endif
     c= 0;
   } else {
     serverinfo->groupname= NULL;
@@ -727,93 +714,6 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
   serverinfo->exist= false;
   return 0;
 }
-
-#if 0 // JOON_REPL_OLD_CODE
-#ifdef ENABLE_REPLICATION
-/* For replication clusters, we use this function to set up server_info.
- * Do not use server_to_cachelist above.
- */
-static inline void
-do_add_server_to_grouplist(struct memcached_server_info *serverinfo,
-                           uint32_t *count, char *nodename)
-{
-  char *c, *substr[3], *ip, *port;
-  uint32_t i;
-  struct memcached_server_info *info;
-
-  /* groupname^{M,S}^ip:port-hostname
-   * Break up the sting into three pieces.
-   */
-  c = nodename;
-  for (i = 0; i < 3; i++) {
-    substr[i] = c;
-    while (*c != '\0') {
-      if (*c == '^') {
-        *c++ = '\0';
-        break;
-      }
-      c++;
-    }
-  }
-  if (strlen(substr[0]) == 0 || strlen(substr[1]) != 1 ||
-    strlen(substr[2]) == 0 || (*substr[1] != 'M' && *substr[1] != 'S')) {
-    ZOO_LOG_WARN(("Error while parsing the server name. 1st=%s 2nd=%s 3rd=%d",
-        substr[0], substr[1], substr[2]));
-    return;
-  }
-  /* Break up ip:port-hostname */
-  c = substr[2];
-  ip = c;
-  while (*c != '\0') {
-    if (*c == ':') {
-      *c++ = '\0';
-      break;
-    }
-    c++;
-  }
-  port = c;
-  while (*c != '\0') {
-    if (*c == '-') {
-      *c++ = '\0';
-      break;
-    }
-    c++;
-  }
-  if (strlen(ip) == 0 || strlen(port) == 0) {
-    ZOO_LOG_WARN(("Error while parsing the server name. ip=%s port=%s",
-        ip, port));
-    return;
-  }
-
-  /* See if the list already has the same group. */
-  info = NULL;
-  for (i = 0; i < *count; i++) {
-    if (0 == strcmp(serverinfo[i].groupname, substr[0])) {
-      info = &serverinfo[i];
-      break;
-    }
-  }
-
-  /* Then either add a new server_info or update the existing server_info's
-   * hostname with the current (master's) address.
-   */
-  if (info == NULL) {
-    info = &serverinfo[*count];
-    *count = *count + 1;
-    info->exist = false;
-    info->groupname = substr[0];
-    info->hostname = "invalid";
-    info->port = 0;
-    /* "invalid" indicates no masters. */
-  }
-  /* If the server is the master, update the hostname with a valid ip. */
-  if (*substr[1] == 'M') {
-    info->hostname = ip;
-    info->port = atoi(port);
-  }
-}
-#endif
-#endif
 
 static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
                                                    const struct String_vector *strings)
@@ -854,7 +754,6 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
   }
 }
 
-#if 1 // JOON_REPL_V2
 #ifdef ENABLE_REPLICATION
 static inline memcached_return_t
 __do_arcus_update_grouplist(memcached_st *mc,
@@ -926,19 +825,12 @@ __do_arcus_update_grouplist(memcached_st *mc,
   }
 }
 #endif
-#endif
 
 static inline memcached_return_t
 __do_arcus_update_cachelist(memcached_st *mc,
                             struct memcached_server_info *serverinfo,
                             uint32_t servercount)
 {
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-#endif
-#endif
   memcached_return_t error= MEMCACHED_SUCCESS;
   uint32_t x, y;
   memcached_server_st *servers= NULL;
@@ -958,19 +850,6 @@ __do_arcus_update_cachelist(memcached_st *mc,
       if (serverinfo[y].exist)
         continue;
 
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-      if (arcus->zk.is_repl_enabled) {
-        if (strcmp(mc->servers[x].groupname, serverinfo[y].groupname) == 0 &&
-            strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 &&
-            mc->servers[x].port == serverinfo[y].port) {
-          serverinfo[y].exist = true; break;
-        }
-      }
-      else
-#endif
-#endif
       if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
           mc->servers[x].port == serverinfo[y].port) {
          serverinfo[y].exist= true; break;
@@ -984,16 +863,6 @@ __do_arcus_update_cachelist(memcached_st *mc,
   for (x= 0; x< servercount; x++)
   {
     if (serverinfo[x].exist == false) {
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-      if (arcus->zk.is_repl_enabled)
-        new_hosts= memcached_server_list_append_with_group(servers, serverinfo[x].groupname,
-                                                           serverinfo[x].hostname,
-                                                           serverinfo[x].port, &error);
-      else
-#endif
-#endif
       new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
                                               serverinfo[x].port, &error);
       if (new_hosts == NULL)
@@ -1042,12 +911,10 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   gettimeofday(&tv_begin, 0);
 
   /* Update the server list. */
-#if 1 // JOON_REPL_V2
 #ifdef ENABLE_REPLICATION
   if (mc->flags.repl_enabled)
     error= __do_arcus_update_grouplist(mc, serverinfo, servercount);
   else
-#endif
 #endif
   error= __do_arcus_update_cachelist(mc, serverinfo, servercount);
 
@@ -1187,17 +1054,13 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
     if (zkrc == ZOK) {
       ZOO_LOG_WARN(("Detected Arcus replication cluster. %s exits", arcus->zk.path));
       arcus->zk.is_repl_enabled = true;
-#if 1 // JOON_REPL_V2
       mc->flags.repl_enabled= true;
-#endif
     }
     else if (zkrc == ZNONODE) {
       snprintf(arcus->zk.path, sizeof(arcus->zk.path),
         "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
       arcus->zk.is_repl_enabled = false;
-#if 1 // JOON_REPL_V2
       mc->flags.repl_enabled= false;
-#endif
     }
     else {
       ZOO_LOG_ERROR(("zoo_exists failed while trying to"

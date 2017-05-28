@@ -40,33 +40,11 @@
 */
 #include <libmemcached/common.h>
 
-#if 1 // JOON_REPL_V2
 static inline void _server_init(memcached_server_st *self, memcached_st *root,
                                 const memcached_string_t& hostname,
                                 in_port_t port,
                                 uint32_t weight, memcached_connection_t type)
-#else
-#ifdef ENABLE_REPLICATION
-static inline void _server_init(memcached_server_st *self, memcached_st *root,
-                                const memcached_string_t& groupname,
-                                const memcached_string_t& hostname,
-                                in_port_t port,
-                                uint32_t weight, memcached_connection_t type,
-                                bool is_repl_enabled)
-#else
-static inline void _server_init(memcached_server_st *self, memcached_st *root,
-                                const memcached_string_t& hostname,
-                                in_port_t port,
-                                uint32_t weight, memcached_connection_t type)
-#endif
-#endif
 {
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-  self->is_repl_enabled = is_repl_enabled;
-#endif
-#endif
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
   self->number_of_hosts= 0;
@@ -108,15 +86,9 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   self->hostname[hostname.size]= 0;
 
 #ifdef ENABLE_REPLICATION
-#if 1 // JOON_REPL_V2
   /* Needed for replication */
   self->groupindex= -1; /* replica group index */
   self->next= NULL;     /* next server pointer */
-#else
-  // Copy the group name too
-  memcpy(self->groupname, groupname.c_str, groupname.size);
-  self->groupname[groupname.size]= 0;
-#endif
 #endif
 }
 
@@ -143,41 +115,13 @@ static memcached_server_st *_server_create(memcached_server_st *self, const memc
   return self;
 }
 
-#if 1 // JOON_REPL_V2
 memcached_server_st *__server_create_with(memcached_st *memc,
                                           memcached_server_write_instance_st self,
                                           const memcached_string_t& hostname,
                                           const in_port_t port,
                                           uint32_t weight, 
                                           const memcached_connection_t type)
-#else
-#ifdef ENABLE_REPLICATION
-memcached_server_st *__server_create_with(memcached_st *memc,
-                                          memcached_server_write_instance_st self,
-                                          const memcached_string_t& groupname,
-                                          const memcached_string_t& hostname,
-                                          const in_port_t port,
-                                          uint32_t weight,
-                                          const memcached_connection_t type,
-                                          bool is_repl_enabled)
-#else
-memcached_server_st *__server_create_with(memcached_st *memc,
-                                          memcached_server_write_instance_st self,
-                                          const memcached_string_t& hostname,
-                                          const in_port_t port,
-                                          uint32_t weight, 
-                                          const memcached_connection_t type)
-#endif
-#endif
 {
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-  // This function simply checks the string length.
-  // In replication, hostname is "invalid" if there are no masters.  So, hostname is
-  // never empty.
-#endif
-#endif
   if (memcached_is_valid_servername(hostname) == false)
   {
     memcached_set_error(*memc, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid hostname provided"));
@@ -191,17 +135,7 @@ memcached_server_st *__server_create_with(memcached_st *memc,
     return NULL;
   }
 
-#if 1 // JOON_REPL_V2
   _server_init(self, const_cast<memcached_st *>(memc), hostname, port, weight, type);
-#else
-#ifdef ENABLE_REPLICATION
-  _server_init(self, const_cast<memcached_st *>(memc), groupname, hostname, port, weight, type,
-               is_repl_enabled);
-#else
-  _server_init(self, const_cast<memcached_st *>(memc), hostname, port, weight, type);
-#endif
-#endif
-
 
   if (type == MEMCACHED_CONNECTION_UDP)
   {
@@ -262,39 +196,16 @@ memcached_server_st *memcached_server_clone(memcached_server_st *destination,
   }
 
   memcached_string_t hostname= { memcached_string_make_from_cstr(source->hostname) };
-#if 1 // JOON_REPL_V2
   destination= __server_create_with(source->root, destination,
                                     hostname,
                                     source->port, source->weight,
                                     source->type);
-#else
-#ifdef ENABLE_REPLICATION
-  memcached_string_t groupname= { memcached_string_make_from_cstr(source->groupname) };
-  destination= __server_create_with(source->root, destination,
-                                    groupname,
-                                    hostname,
-                                    source->port, source->weight,
-                                    source->type,
-                                    source->is_repl_enabled);
-#else
-  destination= __server_create_with(source->root, destination,
-                                    hostname,
-                                    source->port, source->weight,
-                                    source->type);
-#endif
-#endif
   if (destination)
   {
     if (source->error_messages)
     {
       destination->error_messages= memcached_error_copy(*source);
     }
-#if 1 // JOON_REPL_V2
-#else
-#ifdef ENABLE_REPLICATION
-    destination->is_repl_enabled = source->is_repl_enabled;
-#endif
-#endif
   }
 
   return destination;

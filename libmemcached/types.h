@@ -65,7 +65,7 @@ typedef struct memcached_error_t memcached_error_t;
 typedef struct memcached_server_st memcached_server_st;
 typedef const struct memcached_server_st *memcached_server_instance_st;
 typedef struct memcached_server_st *memcached_server_list_st;
-#ifdef ENABLE_REPLICATION // JOON_REPL_V2
+#ifdef ENABLE_REPLICATION
 typedef struct memcached_rgroup_st memcached_rgroup_st;
 #endif
 
