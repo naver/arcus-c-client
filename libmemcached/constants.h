@@ -55,7 +55,7 @@
 #pragma once
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-//#define ENABLE_REPLICATION 1
+#define ENABLE_REPLICATION 1
 #endif
 
 /* Public defines */
