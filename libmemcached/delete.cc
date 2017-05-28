@@ -166,7 +166,6 @@ static inline memcached_return_t binary_delete(memcached_st *ptr,
                                                time_t expiration)
 {
   protocol_binary_request_delete request= {};
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
   bool to_write= (ptr->flags.buffer_requests) ? false : true;
   bool no_reply= (ptr->flags.no_reply);
 
