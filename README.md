@@ -12,7 +12,7 @@ appropriately.
 Below is the original README.md from the master branch.  Everything
 still applies.
 
-## arcus-c-client: Arcus C Client
+## arcus-c-client: Arcus C Client [![Build Status](https://travis-ci.org/naver/arcus-c-client.svg?branch=master)](https://travis-ci.org/naver/arcus-c-client)
 
 This is the C client library for Arcus memcached.  It is based on
 libmemcached 0.53.  Extensive changes are made to support Arcus
