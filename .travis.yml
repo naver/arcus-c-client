@@ -1,0 +1,25 @@
+language: c
+
+compiler:
+  - gcc
+
+cache:
+  directories:
+  - $HOME/arcus-memcached
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -qq build-essential autoconf automake libtool libcppunit-dev libevent-dev libcloog-ppl0
+  - bash install-arcus-memcached.sh develop
+
+script:
+  - ./config/autorun.sh
+  - ./configure --with-memcached=$HOME/arcus-memcached/memcached --with-memcached_engine=$HOME/arcus-memcached/.libs/default_engine.so
+  - make LDFLAGS=-lpthread
+  - make test
+
+notifications:
+  email:
+    - junhyun.park@jam2in.com
+    - minkikim89@jam2in.com
+    - alsdn653@jam2in.com
