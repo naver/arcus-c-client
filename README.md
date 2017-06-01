@@ -1,17 +1,3 @@
-This is an experimental C client library for Arcus memcached with
-replication support.  Replication takes place at the server side using
-a master-slave approach.  It is transparent to the client.  There are
-no changes to the Arcus client API.
-
-However, the ZooKeeper based clustering mechanism changes somewhat.
-It uses a tree structure different from the previous Arcus version to
-expose the master servers in the cluster.  The client code needs to
-understand this new tree structure and parse information
-appropriately.
-
-Below is the original README.md from the master branch.  Everything
-still applies.
-
 ## arcus-c-client: Arcus C Client [![Build Status](https://travis-ci.org/naver/arcus-c-client.svg?branch=master)](https://travis-ci.org/naver/arcus-c-client)
 
 This is the C client library for Arcus memcached.  It is based on
