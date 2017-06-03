@@ -2597,6 +2597,14 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
                                memcached_literal_param("memcached instances should be <= 200"));
   }
 
+  /* Prepare an eflag */
+  memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
+  if (verb == BOP_INSERT_OP and eflag)
+  {
+    eflag_hex.array = (unsigned char *)eflag;
+    eflag_hex.length = eflag_length;
+  }
+
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
@@ -2642,6 +2650,8 @@ do_action:
   {
     if (numkeys[i] == 0) continue;
 
+    memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, i);
+
     size_t number_of_piped_items= server_to_keys[i]->cursor;
 
     memcached_return_t *responses= NULL;
@@ -2654,17 +2664,6 @@ do_action:
     for (size_t j=0; j<number_of_piped_items; j++)
     {
       memcached_index_array_get(server_to_keys[i], j, &key_index);
-
-      memcached_server_write_instance_st instance=
-          memcached_server_instance_fetch(ptr, key_to_serverkey[key_index]);
-
-      /* Prepare an eflag */
-      memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
-      if (verb == BOP_INSERT_OP and eflag)
-      {
-        eflag_hex.array = (unsigned char *)eflag;
-        eflag_hex.length = eflag_length;
-      }
 
       /* Get piped responses */
       if (((j+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0 or
