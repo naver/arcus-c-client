@@ -8093,53 +8093,6 @@ static test_return_t arcus_1_6_smget_with_duplicated_trimmed(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_1_6_list_piped_insert(memcached_st *memc)
-{
-  uint32_t flags= 10;
-  int32_t exptime= 600;
-  uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-  memcached_return_t rc;
-  memcached_return_t piped_rc;
-  memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  int32_t indexes[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-  char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    indexes[i] = i;
-    values[i]= (char *)malloc(sizeof(char) * 15);
-    valuelengths[i]= snprintf(values[i], 15, "value%d", i);
-  }
-
-  rc= memcached_lop_piped_insert(memc, test_literal_param("list:a_list"),
-                                 MEMCACHED_COLL_MAX_PIPED_CMD_SIZE,
-                                 indexes, values, valuelengths,
-                                 &attributes, results, &piped_rc);
-
-  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
-
-  for (size_t i=0; i<maxcount; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
-  }
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    free((void*)values[i]);
-  }
-
-  free((void*)values);
-
-  return TEST_SUCCESS;
-}
-
 static test_return_t arcus_1_6_btree_count(memcached_st *memc)
 {
   uint32_t flags= 10;
@@ -8176,58 +8129,11 @@ static test_return_t arcus_1_6_btree_count(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_1_6_list_piped_insert_one(memcached_st *memc)
+static test_return_t do_arcus_1_6_list_piped_insert_with_count(memcached_st *memc, uint32_t count)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
-  uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-  memcached_return_t rc;
-  memcached_return_t piped_rc;
-  memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  int32_t indexes[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-  char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    indexes[i] = i;
-    values[i]= (char *)malloc(sizeof(char) * 15);
-    valuelengths[i]= snprintf(values[i], 15, "value%d", i);
-  }
-
-  rc= memcached_lop_piped_insert(memc, test_literal_param("list:a_list"),
-                                 1,
-                                 indexes, values, valuelengths,
-                                 &attributes, results, &piped_rc);
-
-  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
-
-  for (size_t i=0; i<1; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
-  }
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    free((void*)values[i]);
-  }
-
-  free((void*)values);
-
-  return TEST_SUCCESS;
-}
-
-static test_return_t arcus_1_6_list_piped_insert_many(memcached_st *memc)
-{
-  uint32_t flags= 10;
-  int32_t exptime= 600;
-  uint32_t maxcount= MANY_PIPED_COUNT;
+  uint32_t maxcount= (count < 4000 ? 4000 : count);
 
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
@@ -8236,35 +8142,87 @@ static test_return_t arcus_1_6_list_piped_insert_many(memcached_st *memc)
   memcached_return_t piped_rc;
   memcached_return_t results[MANY_PIPED_COUNT];
 
+  uint32_t i;
   int32_t indexes[MANY_PIPED_COUNT];
-  char **values = (char **)malloc(sizeof(char *) * MANY_PIPED_COUNT);
+  char **values = (char **)malloc(sizeof(char *) * count);
   size_t valuelengths[MANY_PIPED_COUNT];
 
-  for (uint32_t i=0; i<maxcount; i++)
-  {
+  for (i=0; i<count; i++) {
     indexes[i] = i;
     values[i]= (char *)malloc(sizeof(char) * 15);
     valuelengths[i]= snprintf(values[i], 15, "value%d", i);
   }
-
   rc= memcached_lop_piped_insert(memc, test_literal_param("list:a_list"),
-                                 MANY_PIPED_COUNT,
-                                 indexes, values, valuelengths,
+                                 count, indexes, values, valuelengths,
                                  &attributes, results, &piped_rc);
 
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
 
-  for (size_t i=0; i<maxcount; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
+  for (i=0; i<count; i++) {
+    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED,
+                  memcached_strerror(NULL, results[i]));
   }
 
-  for (uint32_t i=0; i<maxcount; i++)
-  {
+  for (i=0; i<count; i++) {
     free((void*)values[i]);
   }
+  free((void*)values);
 
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_1_6_list_piped_insert(memcached_st *memc)
+{
+  return do_arcus_1_6_list_piped_insert_with_count(memc, MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
+}
+
+static test_return_t arcus_1_6_list_piped_insert_one(memcached_st *memc)
+{
+  return do_arcus_1_6_list_piped_insert_with_count(memc, 1);
+}
+
+static test_return_t arcus_1_6_list_piped_insert_many(memcached_st *memc)
+{
+  return do_arcus_1_6_list_piped_insert_with_count(memc, MANY_PIPED_COUNT);
+}
+
+static test_return_t do_arcus_1_6_set_piped_insert_with_count(memcached_st *memc, uint32_t count)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= (count < 4000 ? 4000 : count);
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc;
+  memcached_return_t piped_rc;
+  memcached_return_t results[MANY_PIPED_COUNT];
+
+  uint32_t i;
+  char **values = (char **)malloc(sizeof(char *) * count);
+  size_t valuelengths[MANY_PIPED_COUNT];
+
+  for (i=0; i<count; i++) {
+    values[i]= (char *)malloc(sizeof(char) * 15);
+    valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
+  }
+  rc= memcached_sop_piped_insert(memc, test_literal_param("set:a_set"),
+                                 count, values, valuelengths,
+                                 &attributes, results, &piped_rc);
+
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
+
+  for (i=0; i<count; i++) {
+    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED,
+                  memcached_strerror(NULL, results[i]));
+  }
+
+  for (i=0; i<count; i++) {
+    free((void*)values[i]);
+  }
   free((void*)values);
 
   return TEST_SUCCESS;
@@ -8272,99 +8230,24 @@ static test_return_t arcus_1_6_list_piped_insert_many(memcached_st *memc)
 
 static test_return_t arcus_1_6_set_piped_insert(memcached_st *memc)
 {
-  uint32_t flags= 10;
-  int32_t exptime= 600;
-  uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-  memcached_return_t rc;
-  memcached_return_t piped_rc;
-  memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  for (uint64_t i=0; i<maxcount; i++)
-  {
-    values[i]= (char *)malloc(sizeof(char) * 15);
-    valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
-  }
-
-  rc= memcached_sop_piped_insert(memc, test_literal_param("set:a_set"),
-                                 MEMCACHED_COLL_MAX_PIPED_CMD_SIZE,
-                                 values, valuelengths,
-                                 &attributes, results, &piped_rc);
-
-  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
-
-  for (size_t i=0; i<maxcount; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
-  }
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    free((void*)values[i]);
-  }
-
-  free((void*)values);
-
-  return TEST_SUCCESS;
+  return do_arcus_1_6_set_piped_insert_with_count(memc, MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
 }
 
 static test_return_t arcus_1_6_set_piped_insert_one(memcached_st *memc)
 {
-  uint32_t flags= 10;
-  int32_t exptime= 600;
-  uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-  memcached_return_t rc;
-  memcached_return_t piped_rc;
-  memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  for (uint64_t i=0; i<maxcount; i++)
-  {
-    values[i]= (char *)malloc(sizeof(char) * 15);
-    valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
-  }
-
-  rc= memcached_sop_piped_insert(memc, test_literal_param("set:a_set"),
-                                 1,
-                                 values, valuelengths,
-                                 &attributes, results, &piped_rc);
-
-  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
-
-  for (size_t i=0; i<1; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
-  }
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    free((void*)values[i]);
-  }
-
-  free((void*)values);
-
-  return TEST_SUCCESS;
+  return do_arcus_1_6_set_piped_insert_with_count(memc, 1);
 }
 
 static test_return_t arcus_1_6_set_piped_insert_many(memcached_st *memc)
 {
+  return do_arcus_1_6_set_piped_insert_with_count(memc, MANY_PIPED_COUNT);
+}
+
+static test_return_t do_arcus_1_6_btree_piped_insert_with_count(memcached_st *memc, uint32_t count)
+{
   uint32_t flags= 10;
   int32_t exptime= 600;
-  uint32_t maxcount= MANY_PIPED_COUNT;
+  uint32_t maxcount= (count < 4000 ? 4000 : count);
 
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
@@ -8373,202 +8256,55 @@ static test_return_t arcus_1_6_set_piped_insert_many(memcached_st *memc)
   memcached_return_t piped_rc;
   memcached_return_t results[MANY_PIPED_COUNT];
 
-  char **values = (char **)malloc(sizeof(char *) * MANY_PIPED_COUNT);
   size_t valuelengths[MANY_PIPED_COUNT];
+  size_t eflaglengths[MANY_PIPED_COUNT];
+  uint64_t *bkeys = (uint64_t *)malloc(sizeof(uint64_t) * count);
+  char **values = (char **)malloc(sizeof(char *) * count);
+  unsigned char **eflags = (unsigned char **)malloc(sizeof(unsigned char *) * count);
+  uint32_t i, eflag = 0;
 
-  for (uint64_t i=0; i<maxcount; i++)
-  {
+  for (i=0; i<count; i++) {
+    bkeys[i] = (uint64_t)i;
+    eflags[i]= (unsigned char *)&eflag;
+    eflaglengths[i] = sizeof(eflag);
     values[i]= (char *)malloc(sizeof(char) * 15);
     valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
   }
-
-  rc= memcached_sop_piped_insert(memc, test_literal_param("set:a_set"),
-                                 MANY_PIPED_COUNT,
-                                 values, valuelengths,
+  rc= memcached_bop_piped_insert(memc, test_literal_param("btree:a_btree"),
+                                 count, bkeys, eflags, eflaglengths, values, valuelengths,
                                  &attributes, results, &piped_rc);
 
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
 
-  for (size_t i=0; i<maxcount; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
+  for (i=0; i<count; i++) {
+    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED,
+                  memcached_strerror(NULL, results[i]));
   }
 
-  for (uint32_t i=0; i<maxcount; i++)
-  {
+  for (i=0; i<count; i++) {
     free((void*)values[i]);
   }
-
   free((void*)values);
+  free((void*)eflags);
+  free((void*)bkeys);
 
   return TEST_SUCCESS;
 }
 
 static test_return_t arcus_1_6_btree_piped_insert(memcached_st *memc)
 {
-  uint32_t flags= 10;
-  int32_t exptime= 600;
-  uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-  memcached_return_t rc;
-  memcached_return_t piped_rc;
-  memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  uint64_t bkeys[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-  unsigned char **eflags = (unsigned char **)malloc(sizeof(unsigned char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t eflaglengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-  char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  uint32_t eflag = 0;
-
-  for (uint64_t i=0; i<maxcount; i++)
-  {
-    bkeys[i] = i;
-    eflags[i]= (unsigned char *)&eflag;
-    eflaglengths[i] = sizeof(eflag);
-    values[i]= (char *)malloc(sizeof(char) * 15);
-    valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
-  }
-
-  rc= memcached_bop_piped_insert(memc, test_literal_param("btree:a_btree"),
-                                 MEMCACHED_COLL_MAX_PIPED_CMD_SIZE,
-                                 bkeys, eflags, eflaglengths, values, valuelengths,
-                                 &attributes, results, &piped_rc);
-
-  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
-
-  for (size_t i=0; i<maxcount; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
-  }
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    free((void*)values[i]);
-  }
-
-  free((void*)eflags);
-  free((void*)values);
-
-  return TEST_SUCCESS;
+  return do_arcus_1_6_btree_piped_insert_with_count(memc, MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
 }
 
 static test_return_t arcus_1_6_btree_piped_insert_one(memcached_st *memc)
 {
-  uint32_t flags= 10;
-  int32_t exptime= 600;
-  uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-  memcached_return_t rc;
-  memcached_return_t piped_rc;
-  memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  uint64_t bkeys[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-  unsigned char **eflags = (unsigned char **)malloc(sizeof(unsigned char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t eflaglengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-  char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-  size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-
-  uint32_t eflag = 0;
-
-  for (uint64_t i=0; i<maxcount; i++)
-  {
-    bkeys[i] = i;
-    eflags[i]= (unsigned char *)&eflag;
-    eflaglengths[i] = sizeof(eflag);
-    values[i]= (char *)malloc(sizeof(char) * 15);
-    valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
-  }
-
-  rc= memcached_bop_piped_insert(memc, test_literal_param("btree:a_btree"),
-                                 1,
-                                 bkeys, eflags, eflaglengths, values, valuelengths,
-                                 &attributes, results, &piped_rc);
-
-  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
-
-  for (size_t i=0; i<1; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
-  }
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    free((void*)values[i]);
-  }
-
-  free((void*)eflags);
-  free((void*)values);
-
-  return TEST_SUCCESS;
+  return do_arcus_1_6_btree_piped_insert_with_count(memc, 1);
 }
 
 static test_return_t arcus_1_6_btree_piped_insert_many(memcached_st *memc)
 {
-  uint32_t flags= 10;
-  int32_t exptime= 600;
-  uint32_t maxcount= MANY_PIPED_COUNT;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-  memcached_return_t rc;
-  memcached_return_t piped_rc;
-  memcached_return_t *results = (memcached_return_t*)malloc(sizeof(memcached_return_t) * MANY_PIPED_COUNT);
-
-  uint64_t *bkeys = (uint64_t*)malloc(sizeof(uint64_t) * MANY_PIPED_COUNT);
-  unsigned char **eflags = (unsigned char **)malloc(sizeof(unsigned char *) * MANY_PIPED_COUNT);
-  size_t *eflaglengths = (size_t*)malloc(sizeof(size_t) * MANY_PIPED_COUNT);
-  char **values = (char **)malloc(sizeof(char *) * MANY_PIPED_COUNT);
-  size_t *valuelengths = (size_t*)malloc(sizeof(size_t) * MANY_PIPED_COUNT);
-
-  uint32_t eflag = 0;
-
-  for (uint64_t i=0; i<maxcount; i++)
-  {
-    bkeys[i] = i;
-    eflags[i]= (unsigned char *)&eflag;
-    eflaglengths[i] = sizeof(eflag);
-    values[i]= (char *)malloc(sizeof(char) * 15);
-    valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
-  }
-
-  rc= memcached_bop_piped_insert(memc, test_literal_param("btree:a_btree"),
-                                 MANY_PIPED_COUNT,
-                                 bkeys, eflags, eflaglengths, values, valuelengths,
-                                 &attributes, results, &piped_rc);
-
-  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
-
-  for (size_t i=0; i<maxcount; i++)
-  {
-    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
-  }
-
-  for (uint32_t i=0; i<maxcount; i++)
-  {
-    free((void*)values[i]);
-  }
-
-  free((void*)eflags);
-  free((void*)values);
-  free(results);
-  free(bkeys);
-  free(eflaglengths);
-  free(valuelengths);
-
-  return TEST_SUCCESS;
+  return do_arcus_1_6_btree_piped_insert_with_count(memc, MANY_PIPED_COUNT);
 }
 
 static test_return_t arcus_1_6_btree_ext_piped_insert(memcached_st *memc)
