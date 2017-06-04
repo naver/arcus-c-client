@@ -933,8 +933,6 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
                                                      memcached_coll_query_st *query,
                                                      memcached_hexadecimal_st *eflag,
                                                      memcached_coll_create_attrs_st *attributes,
-                                                     memcached_return_t *responses, size_t responses_cursor,
-                                                     memcached_return_t *piped_rc,
                                                      memcached_coll_action_t verb)
 {
   /* Already called before_operation(). */
@@ -1060,22 +1058,8 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
       memcached_io_reset(instance);
     return rc;
   }
+
   ptr->pipe_buffer_pos = 0; /* reset pipe_buffer_pos */
-
-  if (! ptr->flags.piped)
-  {
-    /* Fetch responses */
-    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-    ptr->pipe_responses= responses;
-    ptr->pipe_responses_length= responses_cursor;
-    rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-    if (rc == MEMCACHED_END)
-    {
-      rc= MEMCACHED_SUCCESS;
-    }
-    *piped_rc= ptr->pipe_return_code;
-  }
-
   return rc;
 }
 
@@ -1083,8 +1067,6 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
                                                     memcached_server_write_instance_st instance,
                                                     const char *key, size_t key_length,
                                                     const char *value, size_t value_length,
-                                                    memcached_return_t *responses, size_t responses_cursor,
-                                                    memcached_return_t *piped_rc,
                                                     memcached_coll_action_t verb)
 {
   /* Already called before_operation(). */
@@ -1150,22 +1132,8 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
       memcached_io_reset(instance);
     return rc;
   }
-  ptr->pipe_buffer_pos = 0; /* reset pipe_buffer_pos */
-  
-  if (! ptr->flags.piped)
-  {
-    /* Fetch responses */
-    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-    ptr->pipe_responses= responses;
-    ptr->pipe_responses_length= responses_cursor;
-    rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-    if (rc == MEMCACHED_END || rc == MEMCACHED_EXIST)
-    {
-      rc= MEMCACHED_SUCCESS;
-    }
-    *piped_rc= ptr->pipe_return_code;
-  }
 
+  ptr->pipe_buffer_pos = 0; /* reset pipe_buffer_pos */
   return rc;
 }
 
@@ -2322,49 +2290,46 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
-  memcached_return_t piped_return_code, last_piped_return_code;
-  piped_return_code= last_piped_return_code= MEMCACHED_MAXIMUM_RETURN;
-
+  memcached_return_t piped_return_code= MEMCACHED_MAXIMUM_RETURN;
   size_t response_offset= 0;
   ptr->pipe_buffer_pos= 0;
 
   for (size_t i= 0; i< number_of_piped_items; i++)
   {
-    /* Get piped responses */
-    if (((i+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0 or
-        ((i+1) == number_of_piped_items))
-    {
-      last_piped_return_code= piped_return_code;
+    if (((i+1) == number_of_piped_items) or
+        ((i+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0) {
+      ptr->flags.piped= false; /* the end of piped operation */
+    } else {
+      ptr->flags.piped= true;
+    }
+    rc= internal_coll_piped_exist(ptr, instance, key, key_length,
+                                  values[i], values_length[i], SOP_EXIST_OP);
+    if (rc != MEMCACHED_SUCCESS) {
+      break;
+    }
 
-      ptr->flags.piped= false;
-      rc= internal_coll_piped_exist(ptr, instance, key, key_length,
-                                    values[i], values_length[i],
-                                    responses, response_offset,
-                                    &piped_return_code, SOP_EXIST_OP);
+    if (! ptr->flags.piped) {
+      /* Fetch responses */
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      ptr->pipe_responses= responses;
+      ptr->pipe_responses_length= response_offset;
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      if (rc == MEMCACHED_END || rc == MEMCACHED_EXIST)
+      {
+        rc= MEMCACHED_SUCCESS;
+      }
       if (rc != MEMCACHED_SUCCESS)
       {
         break;
       }
-
-      if (last_piped_return_code != MEMCACHED_MAXIMUM_RETURN &&
-          last_piped_return_code != piped_return_code)
-      {
+  
+      if (piped_return_code == MEMCACHED_MAXIMUM_RETURN) {
+        piped_return_code= ptr->pipe_return_code;
+      }
+      else if (piped_return_code != ptr->pipe_return_code) {
         piped_return_code= MEMCACHED_SOME_EXIST;
       }
-
       response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-    }
-    /* Throw a piped operation */
-    else
-    {
-      ptr->flags.piped= true;
-      rc= internal_coll_piped_exist(ptr, instance, key, key_length,
-                                    values[i], values_length[i],
-                                    NULL, 0, NULL, SOP_EXIST_OP);
-      if (rc != MEMCACHED_SUCCESS)
-      {
-        break;
-      }
     }
   }
 
@@ -2416,9 +2381,7 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
-  memcached_return_t piped_return_code, last_piped_return_code;
-  piped_return_code= last_piped_return_code= MEMCACHED_MAXIMUM_RETURN;
-
+  memcached_return_t piped_return_code= MEMCACHED_MAXIMUM_RETURN;
   size_t response_offset= 0;
   ptr->pipe_buffer_pos= 0;
 
@@ -2436,41 +2399,40 @@ do_action:
     queries[i].value = values[i];
     queries[i].value_length = values_length[i];
 
-    /* Get piped responses */
-    if (((i+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0 or
-        ((i+1) == number_of_piped_items))
-    {
-      last_piped_return_code= piped_return_code;
+    if (((i+1) == number_of_piped_items) or
+        ((i+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0) {
+      ptr->flags.piped= false; /* the end of piped operation */
+    } else {
+      ptr->flags.piped= true;
+    }
+    rc= internal_coll_piped_insert(ptr, instance, key, key_length, &queries[i],
+                                   &eflag_hex, attributes, verb);
+    if (rc != MEMCACHED_SUCCESS) {
+      break;
+    }
 
-      ptr->flags.piped= false;
-      rc= internal_coll_piped_insert(ptr, instance, key, key_length,
-                                     &queries[i], &eflag_hex, attributes,
-                                     responses, response_offset,
-                                     &piped_return_code, verb);
+    if (! ptr->flags.piped) {
+      /* Fetch responses */
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      ptr->pipe_responses= responses;
+      ptr->pipe_responses_length= response_offset;
+      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      if (rc == MEMCACHED_END)
+      {
+        rc= MEMCACHED_SUCCESS;
+      }
       if (rc != MEMCACHED_SUCCESS)
       {
         break;
       }
 
-      if (last_piped_return_code != MEMCACHED_MAXIMUM_RETURN &&
-          last_piped_return_code != piped_return_code)
-      {
+      if (piped_return_code == MEMCACHED_MAXIMUM_RETURN) {
+        piped_return_code= ptr->pipe_return_code;
+      }
+      else if (piped_return_code != ptr->pipe_return_code) {
         piped_return_code= MEMCACHED_SOME_SUCCESS;
       }
- 
       response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-    }
-    /* Throw a piped operation */
-    else
-    {
-      ptr->flags.piped = true;
-      rc= internal_coll_piped_insert(ptr, instance, key, key_length,
-                                     &queries[i], &eflag_hex, attributes,
-                                     NULL, 0, NULL, verb);
-      if (rc != MEMCACHED_SUCCESS)
-      {
-        break;
-      }
     }
   }
 #ifdef ENABLE_REPLICATION
@@ -2643,8 +2605,7 @@ do_action:
   }
 
   /* Request */
-  memcached_return_t piped_return_code, last_piped_return_code;
-  piped_return_code= last_piped_return_code= MEMCACHED_MAXIMUM_RETURN;
+  memcached_return_t piped_return_code= MEMCACHED_MAXIMUM_RETURN;
 
   for (size_t i=0; i<memcached_server_count(ptr); i++)
   {
@@ -2664,17 +2625,28 @@ do_action:
     for (size_t j=0; j<number_of_piped_items; j++)
     {
       memcached_index_array_get(server_to_keys[i], j, &key_index);
+      if (((j+1) == number_of_piped_items) or
+          ((j+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0) {
+        ptr->flags.piped= false; /* the end of piped operation */
+      } else {
+        ptr->flags.piped= true;
+      }
+      rc= internal_coll_piped_insert(ptr, instance, keys[key_index], key_length[key_index],
+                                     query, &eflag_hex, attributes, verb);
+      if (rc != MEMCACHED_SUCCESS) {
+        break;
+      }
 
-      /* Get piped responses */
-      if (((j+1) % MEMCACHED_COLL_MAX_PIPED_CMD_SIZE) == 0 or
-          ((j+1) == number_of_piped_items))
-      {
-        last_piped_return_code= piped_return_code;
-
-        ptr->flags.piped= false;
-        rc= internal_coll_piped_insert(ptr, instance, keys[key_index], key_length[key_index],
-                                       query, &eflag_hex, attributes,
-                                       responses, response_offset, &piped_return_code, verb);
+      if (! ptr->flags.piped) {
+        /* Fetch responses */
+        char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+        ptr->pipe_responses= responses;
+        ptr->pipe_responses_length= response_offset;
+        rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+        if (rc == MEMCACHED_END)
+        {
+          rc= MEMCACHED_SUCCESS;
+        }
         if (rc != MEMCACHED_SUCCESS)
         {
 #ifdef ENABLE_REPLICATION
@@ -2687,32 +2659,13 @@ do_action:
           break;
         }
 
-        if (last_piped_return_code != MEMCACHED_MAXIMUM_RETURN &&
-            last_piped_return_code != piped_return_code)
-        {
+        if (piped_return_code == MEMCACHED_MAXIMUM_RETURN) {
+          piped_return_code= ptr->pipe_return_code;
+        }
+        else if (piped_return_code != ptr->pipe_return_code) {
           piped_return_code= MEMCACHED_SOME_SUCCESS;
         }
-
         response_offset+= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
-      }
-      /* Throw a piped operation */
-      else
-      {
-        ptr->flags.piped = true;
-        rc= internal_coll_piped_insert(ptr, instance, keys[key_index], key_length[key_index],
-                                       query, &eflag_hex, attributes,
-                                       NULL, 0, NULL, verb);
-        if (rc != MEMCACHED_SUCCESS)
-        {
-#ifdef ENABLE_REPLICATION
-          if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
-            ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                          instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-            memcached_rgroup_switchover(ptr, instance);
-          }
-#endif
-          break;
-        }
       }
     }
 
