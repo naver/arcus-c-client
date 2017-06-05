@@ -2573,6 +2573,7 @@ do_action:
   /* Key-Server mapping */
   uint32_t *key_to_serverkey= NULL;
   int32_t numkeys[MAX_SERVERS_FOR_COLL_INSERT_BULK]= { 0 };
+  int32_t numkeys_max= 0;
 
   ALLOCATE_ARRAY_OR_RETURN(ptr, key_to_serverkey, uint32_t, number_of_keys);
 
@@ -2594,6 +2595,8 @@ do_action:
     {
       server_to_keys[i]= memcached_index_array_create(ptr, numkeys[i]);
       assert_msg_with_return(server_to_keys[i], "failed to allocate memory", MEMCACHED_MEMORY_ALLOCATION_FAILURE);
+      if (numkeys[i] > numkeys_max)
+        numkeys_max= numkeys[i];
     }
   }
 
@@ -2604,6 +2607,10 @@ do_action:
     assert_msg_with_return(error == MEMCACHED_SUCCESS, "failed to push key index", MEMCACHED_FAILURE);
   }
 
+  /* Prepare responses */
+  memcached_return_t *responses= NULL;
+  ALLOCATE_ARRAY_OR_RETURN(ptr, responses, memcached_return_t, numkeys_max);
+
   /* Request */
   memcached_return_t piped_return_code= MEMCACHED_MAXIMUM_RETURN;
 
@@ -2612,12 +2619,7 @@ do_action:
     if (numkeys[i] == 0) continue;
 
     memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, i);
-
     size_t number_of_piped_items= server_to_keys[i]->cursor;
-
-    memcached_return_t *responses= NULL;
-    ALLOCATE_ARRAY_OR_RETURN(ptr, responses, memcached_return_t, number_of_piped_items);
-
     size_t key_index= 0;
     size_t response_offset= 0;
     ptr->pipe_buffer_pos= 0;
@@ -2697,7 +2699,6 @@ do_action:
       memcached_index_array_get(server_to_keys[i], j, &key_index);
       results[key_index]= responses[j];
     }
-    DEALLOCATE_ARRAY(ptr, responses);
   }
 
   for (size_t i=0; i<memcached_server_count(ptr); i++)
@@ -2710,6 +2711,7 @@ do_action:
 
   DEALLOCATE_ARRAY(ptr, key_to_serverkey);
   DEALLOCATE_ARRAY(ptr, server_to_keys);
+  DEALLOCATE_ARRAY(ptr, responses);
 
 #ifdef ENABLE_REPLICATION
   if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
