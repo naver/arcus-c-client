@@ -2675,24 +2675,28 @@ do_action:
           rc == MEMCACHED_CREATED_STORED )
       {
         responses[0]= rc;
-        piped_return_code= MEMCACHED_ALL_SUCCESS;
+        ptr->pipe_return_code= MEMCACHED_ALL_SUCCESS;
         rc= MEMCACHED_SUCCESS;
       }
       else
       {
         responses[0]= rc;
-        piped_return_code= MEMCACHED_ALL_FAILURE;
+        ptr->pipe_return_code= MEMCACHED_ALL_FAILURE;
+      }
+
+      if (piped_return_code == MEMCACHED_MAXIMUM_RETURN) {
+        piped_return_code= ptr->pipe_return_code;
+      }
+      else if (piped_return_code != ptr->pipe_return_code) {
+        piped_return_code= MEMCACHED_SOME_SUCCESS;
       }
     }
-
-    *piped_rc= piped_return_code;
 
     for (size_t j=0; j<number_of_piped_items; j++)
     {
       memcached_index_array_get(server_to_keys[i], j, &key_index);
       results[key_index]= responses[j];
     }
-
     DEALLOCATE_ARRAY(ptr, responses);
   }
 
@@ -2712,6 +2716,7 @@ do_action:
     goto do_action;
   }
 #endif
+  *piped_rc= piped_return_code;
   ptr->flags.piped= false;
 
   return rc;
