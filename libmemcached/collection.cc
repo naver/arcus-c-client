@@ -2314,12 +2314,22 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
       ptr->pipe_responses= responses;
       ptr->pipe_responses_length= response_offset;
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-      if (rc == MEMCACHED_END || rc == MEMCACHED_EXIST)
-      {
+
+      if (number_of_piped_items == 1) {
+        if (rc == MEMCACHED_EXIST or rc == MEMCACHED_NOT_EXIST) {
+          responses[0]= rc;
+          piped_return_code= (rc == MEMCACHED_EXIST) ? MEMCACHED_ALL_EXIST
+                                                     : MEMCACHED_ALL_NOT_EXIST;
+          rc= MEMCACHED_SUCCESS;
+        }
+        break;
+      }
+
+      /* number_of_piped_items > 1 */
+      if (rc == MEMCACHED_END) {
         rc= MEMCACHED_SUCCESS;
       }
-      if (rc != MEMCACHED_SUCCESS)
-      {
+      if (rc != MEMCACHED_SUCCESS) {
         break;
       }
   
@@ -2333,30 +2343,8 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
     }
   }
 
-  if (number_of_piped_items == 1)
-  {
-    if (rc == MEMCACHED_SUCCESS || rc == MEMCACHED_NOT_EXIST)
-    {
-      responses[0]= (rc == MEMCACHED_SUCCESS)? MEMCACHED_EXIST : MEMCACHED_NOT_EXIST;
-      piped_return_code= (rc == MEMCACHED_SUCCESS)? MEMCACHED_ALL_EXIST : MEMCACHED_ALL_NOT_EXIST;
-      rc= MEMCACHED_SUCCESS;
-    }
-    if (rc == MEMCACHED_SUCCESS)
-    {
-      responses[0]= MEMCACHED_EXIST;
-      piped_return_code= MEMCACHED_ALL_EXIST;
-    }
-    else if (rc == MEMCACHED_NOT_EXIST)
-    {
-      responses[0]= MEMCACHED_NOT_EXIST;
-      piped_return_code= MEMCACHED_ALL_NOT_EXIST;
-      rc= MEMCACHED_SUCCESS;
-    }
-  }
-
   *piped_rc= piped_return_code;
   ptr->flags.piped= false;
-
   return rc;
 }
 
@@ -2417,12 +2405,28 @@ do_action:
       ptr->pipe_responses= responses;
       ptr->pipe_responses_length= response_offset;
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-      if (rc == MEMCACHED_END)
-      {
+#ifdef ENABLE_REPLICATION
+      if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
+        break;
+      }
+#endif
+      if (number_of_piped_items == 1) {
+        if (rc == MEMCACHED_STORED or rc == MEMCACHED_CREATED_STORED) {
+          responses[0]= rc;
+          piped_return_code= MEMCACHED_ALL_SUCCESS;
+          rc= MEMCACHED_SUCCESS;
+        } else {
+          responses[0]= rc;
+          piped_return_code= MEMCACHED_ALL_FAILURE;
+        }
+        break;
+      }
+
+      /* number_of_piped_items > 1 */
+      if (rc == MEMCACHED_END) {
         rc= MEMCACHED_SUCCESS;
       }
-      if (rc != MEMCACHED_SUCCESS)
-      {
+      if (rc != MEMCACHED_SUCCESS) {
         break;
       }
 
@@ -2445,25 +2449,8 @@ do_action:
   }
 #endif
 
-  if (number_of_piped_items == 1)
-  {
-    if (rc == MEMCACHED_STORED         or
-        rc == MEMCACHED_CREATED_STORED )
-    {
-      responses[0]= rc;
-      piped_return_code= MEMCACHED_ALL_SUCCESS;
-      rc= MEMCACHED_SUCCESS;
-    }
-    else
-    {
-      responses[0]= rc;
-      piped_return_code= MEMCACHED_ALL_FAILURE;
-    }
-  }
-
   *piped_rc= piped_return_code;
   ptr->flags.piped= false;
-
   return rc;
 }
 
@@ -2567,9 +2554,6 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
     eflag_hex.length = eflag_length;
   }
 
-#ifdef ENABLE_REPLICATION
-do_action:
-#endif
   /* Key-Server mapping */
   uint32_t *key_to_serverkey= NULL;
   int32_t numkeys[MAX_SERVERS_FOR_COLL_INSERT_BULK]= { 0 };
@@ -2645,20 +2629,29 @@ do_action:
         ptr->pipe_responses= responses;
         ptr->pipe_responses_length= response_offset;
         rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-        if (rc == MEMCACHED_END)
-        {
-          rc= MEMCACHED_SUCCESS;
-        }
-        if (rc != MEMCACHED_SUCCESS)
-        {
 #ifdef ENABLE_REPLICATION
-          if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
-            ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                          instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-            memcached_rgroup_switchover(ptr, instance);
-          }
-#endif
+        if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
           break;
+        }
+#endif
+        if (number_of_piped_items == 1)
+        {
+          if (rc == MEMCACHED_STORED or rc == MEMCACHED_CREATED_STORED) {
+            responses[0]= rc;
+            ptr->pipe_return_code= MEMCACHED_ALL_SUCCESS;
+          } else {
+            responses[0]= rc;
+            ptr->pipe_return_code= MEMCACHED_ALL_FAILURE;
+          }
+        }
+        else /* number_of_piped_items > 1 */
+        {
+          if (rc == MEMCACHED_END) {
+            rc= MEMCACHED_SUCCESS;
+          }
+          if (rc != MEMCACHED_SUCCESS) {
+            break;
+          }
         }
 
         if (piped_return_code == MEMCACHED_MAXIMUM_RETURN) {
@@ -2671,28 +2664,14 @@ do_action:
       }
     }
 
-    if (number_of_piped_items == 1)
-    {
-      if (rc == MEMCACHED_STORED         or
-          rc == MEMCACHED_CREATED_STORED )
-      {
-        responses[0]= rc;
-        ptr->pipe_return_code= MEMCACHED_ALL_SUCCESS;
-        rc= MEMCACHED_SUCCESS;
-      }
-      else
-      {
-        responses[0]= rc;
-        ptr->pipe_return_code= MEMCACHED_ALL_FAILURE;
-      }
-
-      if (piped_return_code == MEMCACHED_MAXIMUM_RETURN) {
-        piped_return_code= ptr->pipe_return_code;
-      }
-      else if (piped_return_code != ptr->pipe_return_code) {
-        piped_return_code= MEMCACHED_SOME_SUCCESS;
-      }
+#ifdef ENABLE_REPLICATION
+    if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
+      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+      memcached_rgroup_switchover(ptr, instance);
+      i--; continue; /* retry */
     }
+#endif
 
     for (size_t j=0; j<number_of_piped_items; j++)
     {
@@ -2713,14 +2692,8 @@ do_action:
   DEALLOCATE_ARRAY(ptr, server_to_keys);
   DEALLOCATE_ARRAY(ptr, responses);
 
-#ifdef ENABLE_REPLICATION
-  if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
-    goto do_action;
-  }
-#endif
   *piped_rc= piped_return_code;
   ptr->flags.piped= false;
-
   return rc;
 }
 
