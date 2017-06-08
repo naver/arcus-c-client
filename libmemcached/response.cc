@@ -908,60 +908,49 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
   return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
 }
 
-static memcached_return_t aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t response,
-                                                     memcached_return_t *pipe_return_code, bool first)
+static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t response,
+                                       memcached_return_t *pipe_return_code)
 {
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-
   switch (ptr->last_op_code[4])
   {
   case 'e': /* exist */
-    if (response != MEMCACHED_EXIST and
-        response != MEMCACHED_NOT_EXIST )
+    if (response == MEMCACHED_EXIST)
     {
-      *pipe_return_code= MEMCACHED_ALL_NOT_EXIST;
-      return response;
-    }
-
-    if (first or *pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
-    {
-      *pipe_return_code= (response == MEMCACHED_EXIST)? MEMCACHED_ALL_EXIST : MEMCACHED_ALL_NOT_EXIST;
-    }
-    else
-    {
-      if ((*pipe_return_code == MEMCACHED_ALL_EXIST and response == MEMCACHED_NOT_EXIST) or
-          (*pipe_return_code == MEMCACHED_ALL_NOT_EXIST and response == MEMCACHED_EXIST) )
-      {
+      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
+        *pipe_return_code= MEMCACHED_ALL_EXIST;
+      else if (*pipe_return_code == MEMCACHED_ALL_NOT_EXIST)
         *pipe_return_code= MEMCACHED_SOME_EXIST;
-      }
+    }
+    else if (response == MEMCACHED_NOT_EXIST)
+    {
+      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
+        *pipe_return_code= MEMCACHED_ALL_NOT_EXIST;
+      else if (*pipe_return_code == MEMCACHED_ALL_EXIST)
+        *pipe_return_code= MEMCACHED_SOME_EXIST;
+    }
+    else /* failure */
+    {
+      *pipe_return_code= MEMCACHED_ALL_NOT_EXIST; /* FIXME */
     }
     break;
 
   case 'i': /* insert */
-    if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
+    if (response == MEMCACHED_STORED or response == MEMCACHED_CREATED_STORED)
     {
-      *pipe_return_code= MEMCACHED_ALL_SUCCESS;
+      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
+        *pipe_return_code= MEMCACHED_ALL_SUCCESS;
+      else if (*pipe_return_code == MEMCACHED_ALL_FAILURE)
+        *pipe_return_code= MEMCACHED_SOME_SUCCESS;
     }
-
-    if (response == MEMCACHED_STORED ||
-        response == MEMCACHED_CREATED_STORED )
+    else /* failure */
     {
-      if (*pipe_return_code == MEMCACHED_ALL_FAILURE)
-      {
-        *pipe_return_code = MEMCACHED_SOME_SUCCESS;
-      }
-    }
-    else
-    {
-      *pipe_return_code= (first)? MEMCACHED_ALL_FAILURE :
-                         (*pipe_return_code == MEMCACHED_ALL_SUCCESS)? MEMCACHED_SOME_SUCCESS :
-                          *pipe_return_code;
-      rc = response;
+      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
+        *pipe_return_code= MEMCACHED_ALL_FAILURE;
+      else if (*pipe_return_code == MEMCACHED_ALL_SUCCESS)
+        *pipe_return_code= MEMCACHED_SOME_SUCCESS;
     }
     break;
   }
-
-  return rc;
 }
 
 /*
@@ -991,7 +980,7 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
     responses[i]= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
     memcached_set_last_response_code(ptr->root, responses[i]);
 
-    rc= aggregate_pipe_return_code(ptr->root, responses[i], &pipe_return_code, i==offset);
+    aggregate_pipe_return_code(ptr->root, responses[i], &pipe_return_code);
   }
 
   ptr->root->pipe_return_code= pipe_return_code;
@@ -1000,7 +989,8 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   /* We add back in one because we will need to search for END */
   memcached_server_response_increment(ptr);
 
-  return memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  rc= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  return rc;
 }
 
 static memcached_return_t textual_coll_fetch_elements(memcached_server_write_instance_st ptr,
