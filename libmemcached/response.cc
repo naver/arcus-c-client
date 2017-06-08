@@ -978,8 +978,6 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   {
     memcached_server_response_increment(ptr);
     responses[i]= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-    memcached_set_last_response_code(ptr->root, responses[i]);
-
     aggregate_pipe_return_code(ptr->root, responses[i], &pipe_return_code);
   }
 

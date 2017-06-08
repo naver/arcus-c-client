@@ -2343,6 +2343,7 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
     }
   }
 
+  memcached_set_last_response_code(ptr, piped_return_code);
   *piped_rc= piped_return_code;
   ptr->flags.piped= false;
   return rc;
@@ -2449,6 +2450,7 @@ do_action:
   }
 #endif
 
+  memcached_set_last_response_code(ptr, piped_return_code);
   *piped_rc= piped_return_code;
   ptr->flags.piped= false;
   return rc;
@@ -2692,6 +2694,7 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
   DEALLOCATE_ARRAY(ptr, server_to_keys);
   DEALLOCATE_ARRAY(ptr, responses);
 
+  memcached_set_last_response_code(ptr, piped_return_code);
   *piped_rc= piped_return_code;
   ptr->flags.piped= false;
   return rc;
