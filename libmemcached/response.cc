@@ -930,7 +930,7 @@ static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t res
     }
     else /* failure */
     {
-      *pipe_return_code= MEMCACHED_ALL_NOT_EXIST; /* FIXME */
+      *pipe_return_code= MEMCACHED_ALL_FAILURE; /* FIXME */
     }
     break;
 
@@ -974,13 +974,14 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
 
   ptr->root->flags.piped= true;
 
-  for (size_t i= offset; i< count[0]+ offset; i++)
+  for (size_t i= 0; i< count[0]; i++)
   {
     memcached_server_response_increment(ptr);
-    responses[i]= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-    aggregate_pipe_return_code(ptr->root, responses[i], &pipe_return_code);
+    responses[offset+i]= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    aggregate_pipe_return_code(ptr->root, responses[offset+i], &pipe_return_code);
   }
 
+  ptr->root->pipe_responses_length+= count[0];
   ptr->root->pipe_return_code= pipe_return_code;
   ptr->root->flags.piped= false;
 
