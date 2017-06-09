@@ -960,8 +960,6 @@ static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t res
 static memcached_return_t textual_coll_piped_response_fetch(memcached_server_write_instance_st ptr, char *buffer)
 {
   memcached_return_t rc= MEMCACHED_SUCCESS;
-  memcached_return_t pipe_return_code= MEMCACHED_MAXIMUM_RETURN;
-
   memcached_return_t *responses= ptr->root->pipe_responses;
   size_t offset= ptr->root->pipe_responses_length;
   uint32_t count[1];
@@ -978,11 +976,10 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   {
     memcached_server_response_increment(ptr);
     responses[offset+i]= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-    aggregate_pipe_return_code(ptr->root, responses[offset+i], &pipe_return_code);
+    aggregate_pipe_return_code(ptr->root, responses[offset+i], &ptr->root->pipe_return_code);
   }
-
   ptr->root->pipe_responses_length+= count[0];
-  ptr->root->pipe_return_code= pipe_return_code;
+
   ptr->root->flags.piped= false;
 
   /* We add back in one because we will need to search for END */
@@ -1545,6 +1542,16 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
   }
 
   /* NOTREACHED */
+}
+
+void memcached_add_coll_pipe_return_code(memcached_server_write_instance_st ptr,
+                                         memcached_return_t return_code)
+{
+  memcached_return_t *responses= ptr->root->pipe_responses;
+
+  responses[ptr->root->pipe_responses_length]= return_code;
+  ptr->root->pipe_responses_length+= 1;
+  aggregate_pipe_return_code(ptr->root, return_code, &ptr->root->pipe_return_code);
 }
 
 /* Sort-merge-get */
