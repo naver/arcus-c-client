@@ -1360,7 +1360,6 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
         return MEMCACHED_UNKNOWN_READ_FAILURE;
       }
     }
-    return MEMCACHED_PIPE_ERROR_COMMAND_OVERFLOW;
   case 'O': /* OK */
     if (buffer[1] == 'U') /* OUT_OF_RANGE */
       return MEMCACHED_OUT_OF_RANGE;
