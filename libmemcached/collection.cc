@@ -2360,9 +2360,6 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
-#ifdef ENABLE_REPLICATION
-do_action:
-#endif
   /* preparation for pipe operations */
   ptr->pipe_return_code= MEMCACHED_MAXIMUM_RETURN;
   ptr->pipe_responses= responses;
@@ -2405,7 +2402,13 @@ do_action:
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
-        break;
+        ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                      instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+        memcached_rgroup_switchover(ptr, instance);
+        instance= memcached_server_instance_fetch(ptr, server_key);
+        i = ptr->pipe_responses_length-1; /* for-statement increments i varible */
+        requested_items= 0; /* reset */ 
+        continue; /* retry */
       }
 #endif
       if (requested_items == 1) {
@@ -2424,15 +2427,6 @@ do_action:
       requested_items= 0;
     }
   }
-#ifdef ENABLE_REPLICATION
-  if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
-    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-    memcached_rgroup_switchover(ptr, instance);
-    instance= memcached_server_instance_fetch(ptr, server_key);
-    goto do_action;
-  }
-#endif
 
   memcached_set_last_response_code(ptr, rc);
   *piped_rc= ptr->pipe_return_code;
@@ -2621,7 +2615,13 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
         rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 #ifdef ENABLE_REPLICATION
         if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
-          break;
+          ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                        instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+          memcached_rgroup_switchover(ptr, instance);
+          instance= memcached_server_instance_fetch(ptr, i);
+          j = ptr->pipe_responses_length-1; /* for-statement increments j varible */
+          requested_items= 0; /* reset */ 
+          continue; /* retry */
         }
 #endif
         if (requested_items == 1) {
@@ -2640,15 +2640,6 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
         requested_items= 0;
       }
     }
-
-#ifdef ENABLE_REPLICATION
-    if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
-      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      memcached_rgroup_switchover(ptr, instance);
-      i--; continue; /* retry */
-    }
-#endif
 
     for (size_t j=0; j<number_of_piped_items; j++)
     {

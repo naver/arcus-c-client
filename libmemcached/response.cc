@@ -959,9 +959,12 @@ static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t res
  */
 static memcached_return_t textual_coll_piped_response_fetch(memcached_server_write_instance_st ptr, char *buffer)
 {
+#ifdef ENABLE_REPLICATION
+  memcached_return_t switchover_rc= MEMCACHED_SUCCESS;
+#endif
   memcached_return_t rc= MEMCACHED_SUCCESS;
   memcached_return_t *responses= ptr->root->pipe_responses;
-  size_t offset= ptr->root->pipe_responses_length;
+  size_t i, offset= ptr->root->pipe_responses_length;
   uint32_t count[1];
 
   if (not parse_response_header(buffer, "RESPONSE", 8, count, 1))
@@ -972,13 +975,24 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
 
   ptr->root->flags.piped= true;
 
-  for (size_t i= 0; i< count[0]; i++)
+  for (i= 0; i< count[0]; i++)
   {
     memcached_server_response_increment(ptr);
     responses[offset+i]= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef ENABLE_REPLICATION
+    if (responses[offset+i] == MEMCACHED_SWITCHOVER or responses[offset+i] == MEMCACHED_REPL_SLAVE)
+    {
+      switchover_rc= responses[offset+i];
+      for (size_t j= i+1; j< count[0]; j++) {
+        memcached_server_response_increment(ptr);
+        (void)memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      }
+      break;
+    }
+#endif
     aggregate_pipe_return_code(ptr->root, responses[offset+i], &ptr->root->pipe_return_code);
   }
-  ptr->root->pipe_responses_length+= count[0];
+  ptr->root->pipe_responses_length+= i; /* i can be smaller than count[0] */
 
   ptr->root->flags.piped= false;
 
@@ -986,6 +1000,11 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   memcached_server_response_increment(ptr);
 
   rc= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef ENABLE_REPLICATION
+  if (switchover_rc != MEMCACHED_SUCCESS && rc == MEMCACHED_END) {
+    return switchover_rc; 
+  }
+#endif
   return rc;
 }
 
