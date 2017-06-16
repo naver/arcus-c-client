@@ -45,8 +45,7 @@ clientPort=2181
 maxClientCnxns=200
 ```
 
-This script creates ZooKeeper nodes for two memcached instances: one at at
-localhost:11211 and the other at localhost:11212.
+This script creates ZooKeeper nodes for two memcached instances: one at localhost:11211 and the other at localhost:11212.
 ```
 $ cat setup-test-zk.bash
 ZK_CLI="./zookeeper/bin/zkCli.sh"
@@ -78,7 +77,7 @@ arcus_proxy_create(proxy_mc, "localhost:2181", "test");
 ## Quick start helloworld example
 
 The following example code (arcus/sample.c) uses one memcached instance running on the local machine at port 11211.
-It simply creates a b+tree key, insert an element, and then retrieves it from the server.
+It simply creates a b+tree key, inserts an element, and then retrieves it from the server.
 
 ```
 #include <stdlib.h>
