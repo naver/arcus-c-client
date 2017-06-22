@@ -868,28 +868,28 @@ memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr, const char 
 ``` c
 memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                        const char * const *keys, const size_t *keylengths,
-                                       const size_t number_of_keys,
-                                       const uint64_t *bkeys,
-                                       const unsigned char * const *eflags, const size_t *eflags_length,
-                                       const char * const *values, const size_t *values_length,
+                                       size_t number_of_keys,
+                                       const uint64_t bkey,
+                                       const unsigned char *eflag, size_t eflag_length,
+                                       const char *value, size_t value_length,
                                        memcached_coll_create_attrs_st *attributes,
                                        memcached_return_t *results, memcached_return_t *piped_rc)
 
 memcached_return_t memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
                                        const char * const *keys, const size_t *keylengths,
-                                       const size_t number_of_keys,
-                                       const unsigned char * const *bkeys, const size_t *bkeys_length,
-                                       const unsigned char * const *eflags, const size_t *eflags_length,
-                                       const char * const *values, const size_t *values_length,
+                                       size_t number_of_keys,
+                                       const unsigned char *bkey, size_t bkey_length,
+                                       const unsigned char *eflag, size_t eflag_length,
+                                       const char *value, size_t value_length,
                                        memcached_coll_create_attrs_st *attributes,
                                        memcached_return_t *results, memcached_return_t *piped_rc)
 ```
 
 - keys, keys_length: 다수 b+tree items의 key array
 - number_of_keys: key들의 개수
-- bkeys 또는 bkeys, bkeys_length: key 개수만큼의 bkey array (필수)
-- eflags, eflags_length: key 개수만큼의 eflag array (옵션)
-- values, values_length: key 개수만큼의 value array (필수)
+- bkey, bkey_length: element의 bkey(b+tree key)
+- eflag, eflag_length: element의 eflag(element flag) (옵션)
+- value, value_length: element의 value
 - attributes: B+tree 없을 시에 attributes에 따라 empty b+tree를 생성 후에 element 삽입한다.
 
 B+tree element 일괄 삽입의 결과는 아래의 인자를 통해 받는다.
@@ -905,8 +905,53 @@ B+tree element 일괄 삽입의 결과는 아래의 인자를 통해 받는다.
 B+tree element 일괄 삽입의 예제는 아래와 같다.
 
 ``` c
-void arcus_set_element_piped_insert(memcached_st *memc)
+void arcus_btree_element_piped_insert(memcached_st *memc)
 {
+    uint32_t flags= 10;
+    uint32_t exptime= 600;
+    uint32_t maxcount= 500;
+
+    memcached_coll_create_attrs_st attributes;
+    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+    memcached_return_t rc;
+    memcached_return_t piped_rc;
+    memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
+
+    uint64_t bkeys[100];
+    unsigned char **eflags = (unsigned char **)malloc(sizeof(unsigned char *) * 100);
+    size_t elfaglengths[100];
+    char **values = (char **)malloc(sizeof(char *) * 100);
+
+    uint32_t elfag = 0;
+    int i;
+
+    // pipe 연산에 필요한 argument를 생성한다.
+    for (i=0; i<100; i++)
+    {
+        bkeys[i] = i;
+        eflags[i] = (unsigned char *)&eflag;
+        eflaglengts[i] = sizeof(eflag);
+        values[i] = (char *)malloc(sizeof(char)*15);
+        valuelengths[i] = snprintf(values[i], 15, "value%llu", (unsigned long long)i);
+    }
+
+    // 입력할 때 B+Tree가 존재하지 않으면 새로 생성한 뒤 입력한다.
+    rc= memcached_bop_piped_insert(memc, "btree:a_btree", strlen("btree:a_btree"),
+                                   100, bkeys, eflags, eflaglengths, values, valuelengths,
+                                   &attributes, results, &piped_rc);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(MEMCACHED_ALL_SUCCESS == piped_rc);
+    for (i=0; i<100; i++)
+    {
+        assert(MEMCACHED_STORED == results[i] || MEMCACHED_CREATED_STORED == results[i]);
+    }
+    for (i=0; i<100; i++)
+    {
+        free((void*)values[i]);
+    }
+    free((void*)eflags);
+    free((void*)values);
 }
 ```
 
