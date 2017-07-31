@@ -1,3 +1,19 @@
+2017-07-31 [version 1.7.5]
+	* [Feature] Support replication without read on slave feature.
+	* [Fix] the last_response_code setting of piped operations.
+	* [Fix] the piped_return_code setting in do_coll_piped_insert_bulk().
+	* [Fix] the mis-caculated MEMCACHED_COLL_MAX_FILTER_STR_LENGTH value.
+	* [Fix] pipe operation bugs like followings.
+	   - buffer overflow when request string is too long.
+	   - incorrect error handling when memcached_vdo fails. 
+	* [Fix] the end condition in the piped exist operation.
+	* [Fix] failed unit tests.
+	* [Fix] semaphore usage on OSX.
+	* [Enhance] Optimize responses alloc/free in do_coll_piped_insert_bulk().
+	* [Enhance] Use separate command buffer size. default and maximum.
+	* [Enhance] Apply multi-value filtering to all filtering operations.
+	* [Other] extensive code refactoring.
+
 2015-10-21 [version 1.7.4]
 	* Fix memory leak by deallcating a string vector gotten from ZK.
 
