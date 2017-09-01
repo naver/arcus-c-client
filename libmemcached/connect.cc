@@ -649,6 +649,12 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
 
   if (memcached_success(rc))
   {
+#if 1 // OPTIMIZE_MGET
+    if (server->major_version == UINT8_MAX)
+    {
+      memcached_version_from_instance(server);
+    }
+#endif
     memcached_mark_server_as_clean(server);
     return rc;
   }

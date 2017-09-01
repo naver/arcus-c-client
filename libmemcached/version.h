@@ -37,12 +37,20 @@
 
 #pragma once
 
+#if 1 // OPTIMIZE_MGET
+#include <libmemcached/server_instance.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 LIBMEMCACHED_API
 memcached_return_t memcached_version(memcached_st *ptr);
+#if 1 // OPTIMIZE_MGET
+LIBMEMCACHED_API
+memcached_return_t memcached_version_from_instance(memcached_server_write_instance_st instance);
+#endif
 
 LIBMEMCACHED_API
 const char * memcached_lib_version(void);

@@ -881,6 +881,10 @@ static test_return_t bad_key_test(memcached_st *memc)
     }
     test_compare(before_query_id +1, memcached_query_id(memc_clone));
 
+    /* MEMCACHED_BEHAVIOR_VERIFY_KEY is a flag that does not check
+     * the validity of the key. So the request for a get operation is
+     * key "foo bad" but key count is 1.
+     */
     query_id= memcached_query_id(memc_clone);
     test_compare(MEMCACHED_SUCCESS,
                  memcached_behavior_set(memc_clone, MEMCACHED_BEHAVIOR_VERIFY_KEY, false));
