@@ -58,26 +58,214 @@ const char * memcached_lib_version(void)
   return LIBMEMCACHED_VERSION_STRING;
 }
 
+#if 1 // OPTIMIZE_MGET
+static inline memcached_return_t memcached_version_binary_from_instance(memcached_server_write_instance_st instance);
+static inline memcached_return_t memcached_version_textual_from_instance(memcached_server_write_instance_st instance);
+#else
 static inline memcached_return_t memcached_version_binary(memcached_st *ptr);
 static inline memcached_return_t memcached_version_textual(memcached_st *ptr);
+#endif
 
 memcached_return_t memcached_version(memcached_st *ptr)
 {
+#if 1 // OPTIMIZE_MGET
+  if (ptr->flags.use_udp || ptr->flags.no_reply)
+#else
   if (ptr->flags.use_udp)
+#endif
     return MEMCACHED_NOT_SUPPORTED;
 
   memcached_return_t rc;
 
   arcus_server_check_for_update(ptr);
 
+#if 1 // OPTIMIZE_MGET
+  rc= MEMCACHED_SUCCESS;
+  for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
+  {
+    memcached_return_t rrc;
+    memcached_server_write_instance_st instance=
+      memcached_server_instance_fetch(ptr, x);
+    rrc= memcached_version_from_instance(instance);
+
+    if (rrc != MEMCACHED_SUCCESS) {
+      rc= MEMCACHED_SOME_ERRORS;
+    }
+  }
+#else
   if (ptr->flags.binary_protocol)
     rc= memcached_version_binary(ptr);
   else
-    rc= memcached_version_textual(ptr);      
+    rc= memcached_version_textual(ptr);
+#endif
 
   return rc;
 }
 
+#if 1 // OPTIMIZE_MGET
+memcached_return_t memcached_version_from_instance(memcached_server_write_instance_st instance)
+{
+  if (instance->root->flags.use_udp || instance->root->flags.no_reply)
+    return MEMCACHED_NOT_SUPPORTED;
+
+  memcached_return_t rc;
+
+  if (instance->root->flags.binary_protocol)
+    rc= memcached_version_binary_from_instance(instance);
+  else
+    rc= memcached_version_textual_from_instance(instance);
+
+  if (instance->major_version != UINT8_MAX)
+  {
+    if (instance->is_enterprise)
+    {
+      if (instance->major_version > 0 || instance->minor_version > 6)
+        instance->enable_optimized_mget= true;
+    }
+    else
+    {
+      if (instance->major_version > 1 || instance->minor_version > 10)
+        instance->enable_optimized_mget= true;
+    }
+  }
+
+  return rc;
+}
+
+static inline memcached_return_t memcached_version_textual_from_instance(memcached_server_write_instance_st instance)
+{
+  size_t send_length;
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  char *response_ptr;
+  const char *command= "version\r\n";
+
+  send_length= sizeof("version\r\n") -1;
+
+  memcached_return_t rrc = MEMCACHED_SUCCESS;
+
+  // Optimization, we only fetch version once.
+  if (instance->major_version != UINT8_MAX)
+    return rrc;
+
+  rrc= memcached_do(instance, command, send_length, true);
+  if (rrc != MEMCACHED_SUCCESS)
+  {
+    instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+    return MEMCACHED_SOME_ERRORS;
+  }
+
+  rrc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  if (rrc != MEMCACHED_SUCCESS)
+  {
+    instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+    return MEMCACHED_SOME_ERRORS;
+  }
+
+  /* Find the space, and then move one past it to copy version */
+  response_ptr= index(buffer, ' ');
+  response_ptr++;
+
+  // UNKNOWN
+  if (*response_ptr == 'U')
+  {
+    instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+    return MEMCACHED_SUCCESS;
+  }
+
+  // response string format : VERSION x.x.x-E || VERSION x.x.x
+  instance->is_enterprise = (strrchr(response_ptr, 'E') == NULL) ? false : true;
+
+  instance->major_version= (uint8_t)strtol(response_ptr, (char **)NULL, 10);
+  if (errno == ERANGE)
+  {
+    instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+    return MEMCACHED_SOME_ERRORS;
+  }
+
+  response_ptr= index(response_ptr, '.');
+  response_ptr++;
+
+  instance->minor_version= (uint8_t)strtol(response_ptr, (char **)NULL, 10);
+  if (errno == ERANGE)
+  {
+    instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+    return MEMCACHED_SOME_ERRORS;
+  }
+
+  response_ptr= index(response_ptr, '.');
+  response_ptr++;
+  instance->micro_version= (uint8_t)strtol(response_ptr, (char **)NULL, 10);
+  if (errno == ERANGE)
+  {
+    instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+    return MEMCACHED_SOME_ERRORS;
+  }
+
+  return MEMCACHED_SUCCESS;
+}
+
+static inline memcached_return_t memcached_version_binary_from_instance(memcached_server_write_instance_st instance)
+{
+  protocol_binary_request_version request= {};
+  request.message.header.request.magic= PROTOCOL_BINARY_REQ;
+  request.message.header.request.opcode= PROTOCOL_BINARY_CMD_VERSION;
+  request.message.header.request.datatype= PROTOCOL_BINARY_RAW_BYTES;
+
+  memcached_return_t rrc;
+
+  if (instance->major_version != UINT8_MAX)
+    return MEMCACHED_SUCCESS;
+
+  rrc= memcached_do(instance, request.bytes, sizeof(request.bytes), true);
+  if (rrc != MEMCACHED_SUCCESS)
+  {
+    memcached_io_reset(instance);
+    return MEMCACHED_SOME_ERRORS;
+  }
+
+  if (memcached_server_response_count(instance) > 0)
+  {
+    char buffer[32];
+    char *p;
+
+    rrc= memcached_response(instance, buffer, sizeof(buffer), NULL);
+    if (rrc != MEMCACHED_SUCCESS)
+    {
+      memcached_io_reset(instance);
+      return MEMCACHED_SOME_ERRORS;
+    }
+
+    // response string format : VERSION x.x.x-E || VERSION x.x.x
+    instance->is_enterprise = (strrchr(buffer+3, 'E') == NULL) ? false : true;
+
+    instance->major_version= (uint8_t)strtol(buffer, &p, 10);
+    if (errno == ERANGE)
+    {
+      instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+      return MEMCACHED_SOME_ERRORS;
+    }
+
+    instance->minor_version= (uint8_t)strtol(p + 1, &p, 10);
+    if (errno == ERANGE)
+    {
+      instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+      return MEMCACHED_SOME_ERRORS;
+    }
+
+    instance->micro_version= (uint8_t)strtol(p + 1, NULL, 10);
+    if (errno == ERANGE)
+    {
+      instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+      return MEMCACHED_SOME_ERRORS;
+    }
+  }
+
+  return MEMCACHED_SUCCESS;
+}
+#endif
+
+#if 1 // OPTIMIZE_MGET
+#else
 static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
 {
   size_t send_length;
@@ -238,3 +426,4 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
 
   return rc;
 }
+#endif
