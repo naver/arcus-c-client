@@ -8989,8 +8989,8 @@ static test_return_t arcus_btree_position(memcached_st *memc)
 
   for (uint64_t i = 100; i < 200; i++)
   {
-    snprintf(value_num_ptr, 15, "%llu", i);
-    snprintf((char *)bkey_ext, 5, "%llu", i);
+    snprintf(value_num_ptr, 15, "%llu", (unsigned long long)i);
+    snprintf((char *)bkey_ext, 5, "%llu", (unsigned long long)i);
 
     rc = memcached_bop_insert(memc, key, key_length, i, 
                               NULL, 0, (const char*)value, (size_t)(strlen(value)+1), &attr);
@@ -9007,22 +9007,26 @@ static test_return_t arcus_btree_position(memcached_st *memc)
 
   rc = memcached_bop_position(memc, key, key_length, (uint64_t)100, true, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(0, position);
+  test_true(0 == position);
+  //test_compare(0, position);
 
   rc = memcached_bop_position(memc, key, key_length, (uint64_t)182, true, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(82, position);
+  test_true(82 == position);
+  //test_compare(82, position);
 
   rc = memcached_bop_position(memc, key, key_length, (uint64_t)199, true, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(99, position);
+  test_true(99 == position);
+  //test_compare(99, position);
 
   rc = memcached_bop_position(memc, key, key_length, (uint64_t)200, true, &position);
   test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
 
   rc = memcached_bop_position(memc, key, key_length, (uint64_t)100, false, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(99, position);
+  test_true(99 == position);
+  //test_compare(99, position);
 
   /* memcached_bop_ext_position test */
   rc = memcached_bop_ext_position(memc, "key_not_exist", 13,
@@ -9032,17 +9036,20 @@ static test_return_t arcus_btree_position(memcached_st *memc)
   rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
                                   (const unsigned char*)"100", 4, true, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(0, position);
+  test_true(0 == position);
+  //test_compare(0, position);
 
   rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
                                   (const unsigned char*)"175", 4, true, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(75, position);
+  test_true(75 == position);
+  //test_compare(75, position);
 
   rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
                                   (const unsigned char*)"199", 4, true, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(99, position);
+  test_true(99 == position);
+  //test_compare(99, position);
   
   rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
                                   (const unsigned char*)"200", 4, true, &position);
@@ -9051,7 +9058,8 @@ static test_return_t arcus_btree_position(memcached_st *memc)
   rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
                                   (const unsigned char*)"100", 4, false, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_compare(99, position);
+  test_true(99 == position);
+  //test_compare(99, position);
 
   /* send query with "unsigned char" type bkey to a b+tree who have "uint64_t" type bkey */
   rc = memcached_bop_ext_position(memc, key, key_length, (const unsigned char*)"100", 4, true, &position);

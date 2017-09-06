@@ -312,6 +312,9 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
   case MEMCACHED_REPLACED:
     return "REPLACED";
 
+  case MEMCACHED_POSITION:
+    return "ELEMENT POSITION";
+
 #ifdef ENABLE_REPLICATION
   case MEMCACHED_SWITCHOVER:
     return "REPLICATION SWITCHOVER";
