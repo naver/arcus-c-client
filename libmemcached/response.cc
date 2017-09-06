@@ -1366,6 +1366,11 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
       return MEMCACHED_UNKNOWN_READ_FAILURE;
     }
   case 'P': /* PIPE_ERROR */
+    if (buffer[1] == 'O') /* POSITION */
+    {
+      return MEMCACHED_POSITION;
+    }
+    else
     {
       if (buffer[11] == 'c')
         return MEMCACHED_PIPE_ERROR_COMMAND_OVERFLOW;

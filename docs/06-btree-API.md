@@ -38,12 +38,10 @@ B+tree item에 대해 수행가능한 기본 연산들은 다음과 같다.
 
 - [B+Tree Element Sort-Merge 조회](06-btree-API.md#btree-element-sort-merge-%EC%A1%B0%ED%9A%8C) 
 
-B+tree position 기반 연산들을 Arcus server에서 제공하고 있지만,
-Arcus C client에서는 아직 이 연산을 제공하지 못하고 있는 상태이다.
-
-- B+Tree Position 조회
-- B+Tree Position 기반의 Element 조회
-- B+Tree Position과 Element 동시 조회
+B+Tree element 의 position과 관련하여 아래 연산들을 제공한다.
+- [B+Tree Element 위치 조회](06-btree-API.md#btree-element-위치-조회)
+- [B+Tree 위치 기반의 Element 조회](06-btree-API.md#btree-위치-기반의-element-조회)
+- [B+Tree Position과 Element 동시 조회](06-btree-API.md#btree-position과-element-동시-조회)
 
 ### BKey(B+Tree Key)와 EFlag(Element Flag)
 
@@ -1216,3 +1214,71 @@ void arcus_btree_element_smget(memcached_st *memc)
     }
 }
 ```
+
+### B+Tree Element 위치 조회
+
+B+Tree element 위치를 조회하는 함수는 아래와 같다.
+전자는 8바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+
+```c
+memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
+                                          const uint64_t bkey,
+                                          bool order_asc,
+                                          size_t *position)
+                                     
+memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
+                                              const unsigned char *bkey, size_t bkey_length,
+                                              bool order_asc,
+                                              size_t *position)
+```
+- key, key_length: B+Tree item의 key
+- bkey, bkey_length: 위치를 조회할 element 의 bkey
+- order_asc: 조회 순서 지정, true(오름차순) / false(내림차순)
+- position: element의 순서가 반환되는 인자
+
+Response code는 아래와 같다.
+- MEMCACHED_SUCCESS
+  - MEMCACHED_POSITION: 주어진 key, bkey에 해당하는 B+Tree element 의 위치를 성공적으로 조회함
+- not MEMCACHED_SUCCESS
+  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item 이 없음
+  - MEMCACHED_NOTFOUND_ELEMENT: 주어진 bkey에 해당하는 B+Tree element가 없음
+  - MEMCACHED_TYPE_MISMATCH: 해당 item이 B+Tree가 아님
+  - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형이 기존 bkey 유형과 다름
+  - UNREADABLE: 해당 key item이 unreadable 상태임
+
+B+Tree element 위치를 조회하는 예제는 아래와 같다.
+
+```c
+void arcus_btree_get_position(memcached_st *memc)
+{
+	uint32_t flags= 10;
+    uint32_t exptime= 600;
+    uint32_t maxcount= 1000;
+
+    memcached_coll_create_attrs_st attributes;
+    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+    memcached_return_t rc;
+
+    // 테스트 데이터를 입력한다.
+    rc= memcached_bop_insert(memc, "btree:a_btree", strlen("btree:a_btree"), 0, NULL, 0,
+            "value0", strlen("value0"), &attributes);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
+
+    rc= memcached_bop_insert(memc, "btree:a_btree", strlen("btree:a_btree"), 1, NULL, 0,
+            "value1", strlen("value1"), &attributes);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
+
+	//
+	int position = -1;
+	rc = memcached_bop_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1, true, &position);
+	assert(1 == position);
+}
+```
+
+### B+Tree 위치 기반의 Element 조회
+추후 기술함
+### B+Tree Position과 Element 동시 조회
+추후 기술함

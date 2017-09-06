@@ -42,6 +42,7 @@ typedef enum {
   BOP_COUNT_OP,
   BOP_SMGET_OP,
   BOP_MGET_OP,
+  BOP_POS_OP,
   UNKNOWN_OP
 } memcached_coll_action_t;
 
@@ -71,6 +72,7 @@ static inline const char *coll_op_string(memcached_coll_action_t verb)
   case BOP_COUNT_OP:            return "bop count ";
   case BOP_SMGET_OP:            return "bop smget ";
   case BOP_MGET_OP:             return "bop mget ";
+  case BOP_POS_OP:              return "bop position ";
   case UNKNOWN_OP:              return "unknown";
   default:
     return "invalid action";
@@ -103,6 +105,7 @@ static inline int coll_op_length(memcached_coll_action_t verb)
   case BOP_COUNT_OP:            return 10;
   case BOP_SMGET_OP:            return 10;
   case BOP_MGET_OP:             return 9;
+  case BOP_POS_OP:              return 13;
   case UNKNOWN_OP:              return 0;
   default:
     return 0;
@@ -1932,6 +1935,127 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   return MEMCACHED_FAILURE; // Complete failure occurred
 }
 
+static memcached_return_t do_bop_position(memcached_st *ptr,
+                                    const char *key, const size_t key_length,
+                                    memcached_coll_query_st *query,
+                                    bool order_asc,
+                                    size_t *position, memcached_coll_action_t verb)
+{
+  arcus_server_check_for_update(ptr);
+
+  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  if (rc != MEMCACHED_SUCCESS)
+  {
+    return rc;
+  }
+
+  uint32_t server_key = memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance = memcached_server_instance_fetch(ptr, server_key);
+
+  const char *command = coll_op_string(BOP_POS_OP);
+  uint8_t command_length = coll_op_length(BOP_POS_OP);
+  ptr->last_op_code = command;
+
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  size_t buffer_length = 0;
+
+  if (verb != BOP_POS_OP)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Not a b+tree operation"));
+  }
+
+  if (MEMCACHED_COLL_QUERY_BOP == query->type)
+  {
+    buffer_length = (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+                                      " %llu", (unsigned long long)query->sub_key.bkey);
+  }
+  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
+  {
+    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
+                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+
+    buffer_length = (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
+                                      " 0x%s", bkey_str); 
+  }
+  else
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  buffer_length += (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+                                     " %s", order_asc ? "asc" : "desc");
+
+  /* Request */
+  bool to_write = not ptr->flags.buffer_requests;
+
+  struct libmemcached_io_vector_st vector[] =
+  {
+    { command_length, command },
+    { key_length, key },
+    { buffer_length, buffer },
+    { 2, "\r\n" }
+  };
+
+  rc = memcached_vdo(instance, vector, 4, to_write);
+
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    if (to_write == false)
+    {
+      rc = MEMCACHED_BUFFERED;
+    }
+    else if (ptr->flags.no_reply || ptr->flags.piped)
+    {
+      rc = MEMCACHED_SUCCESS;
+    }
+    else
+    {
+      /* Fetch result */
+      //result = memcached_coll_fetch_result(ptr, result, &rc);
+      rc = memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      memcached_set_last_response_code(ptr, rc);
+
+      if (rc == MEMCACHED_POSITION)
+      {
+        rc = MEMCACHED_SUCCESS;
+      }
+      else
+      {
+        return rc;
+      }
+      
+      /* <position> */
+      char *string_ptr = buffer;
+      char *end_ptr = buffer + MEMCACHED_DEFAULT_COMMAND_SIZE;
+      char *next_ptr;
+
+      string_ptr += 9;  // "POSITION="
+
+      if (end_ptr == string_ptr)
+        goto read_error;
+
+      for (next_ptr = string_ptr; isdigit(*string_ptr); string_ptr++) {};
+      *position = (size_t) strtoull(next_ptr, &string_ptr, 10);
+
+      if (*string_ptr != '\r')
+        goto read_error;
+    }
+  }
+
+  if (rc == MEMCACHED_WRITE_FAILURE)
+  {
+    memcached_io_reset(instance);
+  }
+
+  return rc;
+
+read_error:
+  memcached_io_reset(instance);
+  return MEMCACHED_PARTIAL_READ;
+}
+
 static memcached_return_t do_bop_smget(memcached_st *ptr,
                                 const char * const *keys,
                                 const size_t *key_length, size_t number_of_keys,
@@ -3522,6 +3646,26 @@ memcached_return_t memcached_bop_smget(memcached_st *ptr,
                                        memcached_coll_smget_result_st *result)
 {
   return do_bop_smget(ptr, keys, key_length, number_of_keys, query, result);
+}
+
+memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
+                                     const uint64_t bkey,
+                                     bool order_asc,
+                                     size_t *position)
+{
+  memcached_coll_query_st query;
+  memcached_bop_query_init(&query, bkey, NULL);
+  return do_bop_position(ptr, key, key_length, &query, order_asc, position, BOP_POS_OP);
+}
+
+memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
+                                              const unsigned char *bkey, size_t bkey_length,
+                                              bool order_asc,
+                                              size_t *position)
+{
+  memcached_coll_query_st query;
+  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  return do_bop_position(ptr, key, key_length, &query, order_asc, position, BOP_POS_OP);
 }
 
 /* APIs : create */

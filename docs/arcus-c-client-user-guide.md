@@ -46,6 +46,10 @@ Arcus C Client User Guide
   - [B+Tree Element 일괄 삽입](06-btree-API.md#btree-element-%EC%9D%BC%EA%B4%84-%EC%82%BD%EC%9E%85)
   - [B+Tree Element 일괄 조회](06-btree-API.md#btree-element-%EC%9D%BC%EA%B4%84-%EC%A1%B0%ED%9A%8C)
   - [B+Tree Element Sort-Merge 조회](06-btree-API.md#btree-element-sort-merge-%EC%A1%B0%ED%9A%8C) 
+  - [B+Tree Element 위치 조회](06-btree-API.md#btree-element-위치-조회)
+  - [B+Tree 위치 기반의 Element 조회](06-btree-API.md#btree-위치-기반의-element-조회)
+  - [B+Tree Position과 Element 동시 조회](06-btree-API.md#btree-position과-element-동시-조회)
+
 - [Item Attribue 연산](07-attribute-API.md)
   - [Attribute 변경](07-attribute-API.md#attribute-%EB%B3%80%EA%B2%BD)
   - [Attribute 조회](07-attribute-API.md#attribute-%EC%A1%B0%ED%9A%8C)
