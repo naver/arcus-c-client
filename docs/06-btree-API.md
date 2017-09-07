@@ -1221,15 +1221,15 @@ B+Tree element 순위를 조회하는 함수는 아래와 같다.
 전자는 8바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ```c
-memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
-                                          const uint64_t bkey,
-                                          memcached_coll_order_t order,
-                                          size_t *position)
+memcached_return_t memcached_bop_find_position(memcached_st *ptr, const char *key, size_t key_length,
+                                               const uint64_t bkey,
+                                               memcached_coll_order_t order,
+                                               size_t *position)
                                      
-memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
-                                              const unsigned char *bkey, size_t bkey_length,
-                                              memcached_coll_order_t order,
-                                              size_t *position)
+memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr, const char *key, size_t key_length,
+                                                   const unsigned char *bkey, size_t bkey_length,
+                                                   memcached_coll_order_t order,
+                                                   size_t *position)
 ```
 - key, key_length: B+Tree item의 key
 - bkey, bkey_length: 순위를 조회할 element 의 bkey
@@ -1252,7 +1252,7 @@ Response code는 아래와 같다.
 B+Tree element 순위를 조회하는 예제는 아래와 같다.
 
 ```c
-void arcus_btree_get_position(memcached_st *memc)
+void arcus_btree_find_position(memcached_st *memc)
 {
 	uint32_t flags= 10;
     uint32_t exptime= 600;
@@ -1276,11 +1276,11 @@ void arcus_btree_get_position(memcached_st *memc)
 
 	// 순위를 조회한다.
 	int position = -1;
-	rc = memcached_bop_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
-                                       MEMCACHED_COLL_ORDER_ASC, &position);
+	rc = memcached_bop_find_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
+                                     MEMCACHED_COLL_ORDER_ASC, &position);
 	assert(1 == position);
-	rc = memcached_bop_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
-                                       MEMCACHED_COLL_ORDER_DESC, &position);
+	rc = memcached_bop_find_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
+                                     MEMCACHED_COLL_ORDER_DESC, &position);
 	assert(0 == position);
 }
 ```

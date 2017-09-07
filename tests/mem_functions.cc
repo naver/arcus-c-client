@@ -8971,7 +8971,7 @@ static test_return_t question_async_api(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_btree_position(memcached_st *memc)
+static test_return_t arcus_btree_find_position(memcached_st *memc)
 {
   memcached_return_t rc;
 
@@ -9001,79 +9001,79 @@ static test_return_t arcus_btree_position(memcached_st *memc)
     test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   }
   
-  /* memcached_bop_position test */
-  rc = memcached_bop_position(memc, "key_not_exist", 13, (uint64_t)100,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  /* memcached_bop_find_position test */
+  rc = memcached_bop_find_position(memc, "key_not_exist", 13, (uint64_t)100,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
 
-  rc = memcached_bop_position(memc, key, key_length, (uint64_t)100,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_find_position(memc, key, key_length, (uint64_t)100,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(0 == position);
 
-  rc = memcached_bop_position(memc, key, key_length, (uint64_t)182,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_find_position(memc, key, key_length, (uint64_t)182,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(82 == position);
 
-  rc = memcached_bop_position(memc, key, key_length, (uint64_t)199,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_find_position(memc, key, key_length, (uint64_t)199,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(99 == position);
 
-  rc = memcached_bop_position(memc, key, key_length, (uint64_t)200,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_find_position(memc, key, key_length, (uint64_t)200,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
 
-  rc = memcached_bop_position(memc, key, key_length, (uint64_t)100,
-                              MEMCACHED_COLL_ORDER_DESC, &position);
+  rc = memcached_bop_find_position(memc, key, key_length, (uint64_t)100,
+                                   MEMCACHED_COLL_ORDER_DESC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(99 == position);
 
-  /* memcached_bop_ext_position test */
-  rc = memcached_bop_ext_position(memc, "key_not_exist", 13,
-                                  (const unsigned char*)"100", 3,
-                                  MEMCACHED_COLL_ORDER_ASC, &position);
+  /* memcached_bop_ext_find_position test */
+  rc = memcached_bop_ext_find_position(memc, "key_not_exist", 13,
+                                       (const unsigned char*)"100", 3,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
 
-  rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
-                                  (const unsigned char*)"100", 3,
-                                  MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_ext_find_position(memc, key_ext, key_ext_length,
+                                       (const unsigned char*)"100", 3,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(0 == position);
 
-  rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
-                                  (const unsigned char*)"175", 3,
-                                  MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_ext_find_position(memc, key_ext, key_ext_length,
+                                       (const unsigned char*)"175", 3,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(75 == position);
 
-  rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
-                                  (const unsigned char*)"199", 3,
-                                  MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_ext_find_position(memc, key_ext, key_ext_length,
+                                       (const unsigned char*)"199", 3,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(99 == position);
   
-  rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
-                                  (const unsigned char*)"200", 3,
-                                  MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_ext_find_position(memc, key_ext, key_ext_length,
+                                       (const unsigned char*)"200", 3,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
 
-  rc = memcached_bop_ext_position(memc, key_ext, key_ext_length,
-                                  (const unsigned char*)"100", 3,
-                                  MEMCACHED_COLL_ORDER_DESC, &position);
+  rc = memcached_bop_ext_find_position(memc, key_ext, key_ext_length,
+                                       (const unsigned char*)"100", 3,
+                                       MEMCACHED_COLL_ORDER_DESC, &position);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(99 == position);
 
   /* send query with "unsigned char" type bkey to a b+tree who have "uint64_t" type bkey */
-  rc = memcached_bop_ext_position(memc, key, key_length,
-                                  (const unsigned char*)"100", 3,
-                                  MEMCACHED_COLL_ORDER_DESC, &position);
+  rc = memcached_bop_ext_find_position(memc, key, key_length,
+                                       (const unsigned char*)"100", 3,
+                                       MEMCACHED_COLL_ORDER_DESC, &position);
   test_true_got(rc == MEMCACHED_BKEY_MISMATCH, memcached_strerror(NULL, rc));
 
   /* vice versa */
-  rc = memcached_bop_position(memc, key_ext, key_ext_length, (uint64_t)100,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_find_position(memc, key_ext, key_ext_length, (uint64_t)100,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_BKEY_MISMATCH, memcached_strerror(NULL, rc));
 
   /* create a List item */
@@ -9082,13 +9082,13 @@ static test_return_t arcus_btree_position(memcached_st *memc)
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_CREATED,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
 
-  rc = memcached_bop_position(memc, test_literal_param("list:an_empty_list"), (uint64_t)100,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_find_position(memc, test_literal_param("list:an_empty_list"), (uint64_t)100,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
 
-  rc = memcached_bop_ext_position(memc, test_literal_param("list:an_empty_list"),
-                                  (const unsigned char*)"100", 3,
-                                  MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_ext_find_position(memc, test_literal_param("list:an_empty_list"),
+                                       (const unsigned char*)"100", 3,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
 
   /* create an unreadable B+Tree item */
@@ -9102,13 +9102,13 @@ static test_return_t arcus_btree_position(memcached_st *memc)
                                 NULL, 0, (const char*)value, (size_t)strlen(value), &attr);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
 
-  rc = memcached_bop_position(memc, test_literal_param("btree:unreadable"), (uint64_t)100,
-                              MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_find_position(memc, test_literal_param("btree:unreadable"), (uint64_t)100,
+                                   MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_UNREADABLE, memcached_strerror(NULL, rc));
 
-  rc = memcached_bop_ext_position(memc, test_literal_param("btree_ext:unreadable"),
-                                  (const unsigned char*)"100", 3,
-                                  MEMCACHED_COLL_ORDER_ASC, &position);
+  rc = memcached_bop_ext_find_position(memc, test_literal_param("btree_ext:unreadable"),
+                                       (const unsigned char*)"100", 3,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
   test_true_got(rc == MEMCACHED_UNREADABLE, memcached_strerror(NULL, rc));
 
   return TEST_SUCCESS;
@@ -9191,7 +9191,7 @@ test_st flags_filter[] = {
 };
 
 test_st arcus_1_8_tests[] ={
-  {"arcus_btree_position", true, (test_callback_fn*)arcus_btree_position},
+  {"arcus_btree_find_position", true, (test_callback_fn*)arcus_btree_find_position},
   {0, 0, (test_callback_fn*)0}
 };
 

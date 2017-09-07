@@ -1945,7 +1945,7 @@ static inline const char *order_to_str(memcached_coll_order_t order)
   }
 }
 
-static memcached_return_t do_bop_position(memcached_st *ptr,
+static memcached_return_t do_bop_find_position(memcached_st *ptr,
                                     const char *key, const size_t key_length,
                                     memcached_coll_query_st *query,
                                     memcached_coll_order_t order,
@@ -3659,26 +3659,26 @@ memcached_return_t memcached_bop_smget(memcached_st *ptr,
   return do_bop_smget(ptr, keys, key_length, number_of_keys, query, result);
 }
 
-memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
-                                          const uint64_t bkey,
-                                          memcached_coll_order_t order,
-                                          size_t *position)
+memcached_return_t memcached_bop_find_position(memcached_st *ptr, const char *key, size_t key_length,
+                                               const uint64_t bkey,
+                                               memcached_coll_order_t order,
+                                               size_t *position)
 {
   memcached_coll_query_st query;
   memcached_bop_query_init(&query, bkey, NULL);
 
-  return do_bop_position(ptr, key, key_length, &query, order, position, BOP_POSI_OP);
+  return do_bop_find_position(ptr, key, key_length, &query, order, position, BOP_POSI_OP);
 }
 
-memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
-                                              const unsigned char *bkey, size_t bkey_length,
-                                              memcached_coll_order_t order,
-                                              size_t *position)
+memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr, const char *key, size_t key_length,
+                                                   const unsigned char *bkey, size_t bkey_length,
+                                                   memcached_coll_order_t order,
+                                                   size_t *position)
 {
   memcached_coll_query_st query;
   memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
 
-  return do_bop_position(ptr, key, key_length, &query, order, position, BOP_POSI_OP);
+  return do_bop_find_position(ptr, key, key_length, &query, order, position, BOP_POSI_OP);
 }
 
 /* APIs : create */

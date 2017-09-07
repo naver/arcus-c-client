@@ -1348,7 +1348,7 @@ memcached_coll_smget_result_st *memcached_coll_smget_fetch_result(memcached_st *
  */
 
 /**
- * Get the position of an element found in b+tree item
+ * Find the position of an element found in b+tree item
  * @param ptr  memcached handle.
  * @param key  b+tree item's key.
  * @param key_length  key length (number of bytes).
@@ -1357,13 +1357,13 @@ memcached_coll_smget_result_st *memcached_coll_smget_fetch_result(memcached_st *
  * @param position element position, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
-                                     const uint64_t bkey,
-                                     memcached_coll_order_t order,
-                                     size_t *position);
+memcached_return_t memcached_bop_find_position(memcached_st *ptr, const char *key, size_t key_length,
+                                               const uint64_t bkey,
+                                               memcached_coll_order_t order,
+                                               size_t *position);
 
 /**
- * Get the position of an element found in b+tree item using byte-array bkey.
+ * Find the position of an element found in b+tree item using byte-array bkey.
  * @param ptr  memcached handle.
  * @param key  b+tree item's key.
  * @param key_length  key length (number of bytes).
@@ -1373,10 +1373,10 @@ memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, si
  * @param position element position, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
-                                              const unsigned char *bkey, size_t bkey_length,
-                                              memcached_coll_order_t order,
-                                              size_t *position);
+memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr, const char *key, size_t key_length,
+                                                   const unsigned char *bkey, size_t bkey_length,
+                                                   memcached_coll_order_t order,
+                                                   size_t *position);
 
 /**
  * Pipelined insertions.
