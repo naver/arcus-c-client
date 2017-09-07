@@ -38,10 +38,10 @@ B+tree item에 대해 수행가능한 기본 연산들은 다음과 같다.
 
 - [B+Tree Element Sort-Merge 조회](06-btree-API.md#btree-element-sort-merge-%EC%A1%B0%ED%9A%8C) 
 
-B+Tree element 의 position과 관련하여 아래 연산들을 제공한다.
-- [B+Tree Element 위치 조회](06-btree-API.md#btree-element-위치-조회)
-- [B+Tree 위치 기반의 Element 조회](06-btree-API.md#btree-위치-기반의-element-조회)
-- [B+Tree Position과 Element 동시 조회](06-btree-API.md#btree-position과-element-동시-조회)
+B+Tree내에서 element 순위(position)와 관련하여 아래 연산들을 제공한다.
+- [B+Tree Element 순위 조회](06-btree-API.md#btree-element-순위-조회)
+- [B+Tree 순위 기반의 Element 조회](06-btree-API.md#btree-순위-기반의-element-조회)
+- [B+Tree 순위와 Element 동시 조회](06-btree-API.md#btree-순위와-element-동시-조회)
 
 ### BKey(B+Tree Key)와 EFlag(Element Flag)
 
@@ -1215,38 +1215,41 @@ void arcus_btree_element_smget(memcached_st *memc)
 }
 ```
 
-### B+Tree Element 위치 조회
+### B+Tree Element 순위 조회
 
-B+Tree element 위치를 조회하는 함수는 아래와 같다.
+B+Tree element 순위를 조회하는 함수는 아래와 같다.
 전자는 8바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ```c
 memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
                                           const uint64_t bkey,
-                                          bool order_asc,
+                                          memcached_coll_order_t order,
                                           size_t *position)
                                      
 memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
                                               const unsigned char *bkey, size_t bkey_length,
-                                              bool order_asc,
+                                              memcached_coll_order_t order,
                                               size_t *position)
 ```
 - key, key_length: B+Tree item의 key
-- bkey, bkey_length: 위치를 조회할 element 의 bkey
-- order_asc: 조회 순서 지정, true(오름차순) / false(내림차순)
-- position: element의 순서가 반환되는 인자
+- bkey, bkey_length: 순위를 조회할 element 의 bkey
+- order : 순위 기준
+  - MEMCACHED_COLL_ORDER_ASC: bkey 값의 오름차순
+  - MEMCACHED_COLL_ORDER_DESC: bkey 값의 내림차순
+- position: element 순위가 반환되는 인자
 
 Response code는 아래와 같다.
 - MEMCACHED_SUCCESS
-  - MEMCACHED_POSITION: 주어진 key, bkey에 해당하는 B+Tree element 의 위치를 성공적으로 조회함
+  - MEMCACHED_SUCCESS: 주어진 key에서 bkey에 해당하는 B+Tree element 순위를 성공적으로 조회함
 - not MEMCACHED_SUCCESS
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item 이 없음
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 bkey에 해당하는 B+Tree element가 없음
   - MEMCACHED_TYPE_MISMATCH: 해당 item이 B+Tree가 아님
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형이 기존 bkey 유형과 다름
-  - UNREADABLE: 해당 key item이 unreadable 상태임
+  - MEMCACHED_UNREADABLE: 해당 key item이 unreadable 상태임
+  - MEMCACHED_NOT_SUPPORTED: 현재 순위 조회 연산이 지원되지 않음.
 
-B+Tree element 위치를 조회하는 예제는 아래와 같다.
+B+Tree element 순위를 조회하는 예제는 아래와 같다.
 
 ```c
 void arcus_btree_get_position(memcached_st *memc)
@@ -1271,14 +1274,18 @@ void arcus_btree_get_position(memcached_st *memc)
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
 
-	//
+	// 순위를 조회한다.
 	int position = -1;
-	rc = memcached_bop_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1, true, &position);
+	rc = memcached_bop_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
+                                       MEMCACHED_COLL_ORDER_ASC, &position);
 	assert(1 == position);
+	rc = memcached_bop_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
+                                       MEMCACHED_COLL_ORDER_DESC, &position);
+	assert(0 == position);
 }
 ```
 
-### B+Tree 위치 기반의 Element 조회
+### B+Tree 순위 기반의 Element 조회
 추후 기술함
-### B+Tree Position과 Element 동시 조회
+### B+Tree 순위와 Element 동시 조회
 추후 기술함

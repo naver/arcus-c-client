@@ -257,6 +257,7 @@ memcached_return_t memcached_response(memcached_server_write_instance_st ptr,
                 rc != MEMCACHED_NOTFOUND_ELEMENT and
                 rc != MEMCACHED_UNREADABLE       and
                 rc != MEMCACHED_NOTSTORED        and
+                rc != MEMCACHED_NOT_SUPPORTED    and
                 rc != MEMCACHED_DATA_EXISTS )
         return rc;
     }
@@ -489,7 +490,12 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
       if (buffer[4] == 'F')
         return MEMCACHED_NOTFOUND;
       else if (buffer[4] == 'S')
-        return MEMCACHED_NOTSTORED;
+      {
+        if (buffer[5] == 'T')
+          return MEMCACHED_NOTSTORED;
+        if (buffer[5] == 'U')
+          return MEMCACHED_NOT_SUPPORTED;
+      }
       else
       {
         WATCHPOINT_STRING(buffer);
@@ -788,6 +794,10 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
       rc= MEMCACHED_NOTSTORED;
       break;
 
+    case PROTOCOL_BINARY_RESPONSE_NOT_SUPPORTED:
+      rc= MEMCACHED_NOT_SUPPORTED;
+      break;
+
     case PROTOCOL_BINARY_RESPONSE_E2BIG:
       rc= MEMCACHED_E2BIG;
       break;
@@ -891,6 +901,7 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
               rc != MEMCACHED_DELETED_DROPPED  and
               rc != MEMCACHED_NOTFOUND         and
               rc != MEMCACHED_NOTSTORED        and
+              rc != MEMCACHED_NOT_SUPPORTED    and
               rc != MEMCACHED_DATA_EXISTS      and
               rc != MEMCACHED_TYPE_MISMATCH    and
               rc != MEMCACHED_EXIST            and
@@ -1463,7 +1474,12 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
         return MEMCACHED_NOTFOUND;
       }
       else if (buffer[4] == 'S')
-        return MEMCACHED_NOTSTORED;
+      {
+        if (buffer[5] == 'T')
+          return MEMCACHED_NOTSTORED;
+        if (buffer[5] == 'U')
+          return MEMCACHED_NOT_SUPPORTED;
+      }
       else if (buffer[4] == 'E')
         return MEMCACHED_NOT_EXIST;
       else
@@ -2029,7 +2045,12 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
         return MEMCACHED_NOTFOUND;
       }
       else if (buffer[4] == 'S')
-        return MEMCACHED_NOTSTORED;
+      {
+        if (buffer[5] == 'T')
+          return MEMCACHED_NOTSTORED;
+        if (buffer[5] == 'U')
+          return MEMCACHED_NOT_SUPPORTED;
+      }
       else if (buffer[4] == 'E')
         return MEMCACHED_NOT_EXIST;
       else

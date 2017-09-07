@@ -90,6 +90,12 @@ typedef enum {
   MEMCACHED_COLL_QUERY_UNKNOWN
 } memcached_coll_sub_key_type_t;
 
+/* order criteria of position in collection: ASC or DESC */
+typedef enum {
+  MEMCACHED_COLL_ORDER_ASC,
+  MEMCACHED_COLL_ORDER_DESC
+} memcached_coll_order_t;
+
 LIBMEMCACHED_LOCAL
 memcached_coll_type_t find_collection_type_by_opcode(const char *opcode);
 
@@ -1330,35 +1336,36 @@ memcached_return_t memcached_bop_smget(memcached_st *ptr,
                                        memcached_bop_query_st *query,
                                        memcached_coll_smget_result_st *result);
 
+
 /**
- * Get position of item in b+tree
+ * Get the position of an element found in b+tree item
  * @param ptr  memcached handle.
- * @param key  array of item keys.
- * @param key_length  array of item key lengths (number of bytes).
- * @param bkey  bkey of itme
- * @param order_asc order
- * @param result  result structure, filled upon return.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  element bkey.
+ * @param order order criteria of position, asc or desc.
+ * @param position element position, filled upon return.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_position(memcached_st *ptr, const char *key, size_t key_length,
                                      const uint64_t bkey,
-                                     bool order_asc,
+                                     memcached_coll_order_t order,
                                      size_t *position);
 
 /**
- * Get position of item in b+tree
+ * Get the position of an element found in b+tree item using byte-array bkey.
  * @param ptr  memcached handle.
- * @param key  array of item keys.
- * @param key_length  array of item key lengths (number of bytes).
- * @param bkey  bkey of itme
- * @param bkey_length array of item bkey lengths (number of bytes).
- * @param order_asc order
- * @param result  result structure, filled upon return.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  byte-array bkey.
+ * @param bkey_length  bkey length (number of bytes).
+ * @param order order criteria of position, asc or desc.
+ * @param position element position, filled upon return.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key, size_t key_length,
                                               const unsigned char *bkey, size_t bkey_length,
-                                              bool order_asc,
+                                              memcached_coll_order_t order,
                                               size_t *position);
 
 /* Used within the library. Do not call this from the application. */
