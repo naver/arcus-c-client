@@ -1336,6 +1336,16 @@ memcached_return_t memcached_bop_smget(memcached_st *ptr,
                                        memcached_bop_query_st *query,
                                        memcached_coll_smget_result_st *result);
 
+/* Used within the library. Do not call this from the application. */
+LIBMEMCACHED_LOCAL
+memcached_coll_smget_result_st *memcached_coll_smget_fetch_result(memcached_st *ptr,
+                                                                  memcached_coll_smget_result_st *result,
+                                                                  memcached_return_t *error,
+                                                                  memcached_coll_type_t type);
+
+/*
+ * B+Tree position API
+ */
 
 /**
  * Get the position of an element found in b+tree item
@@ -1367,13 +1377,6 @@ memcached_return_t memcached_bop_ext_position(memcached_st *ptr, const char *key
                                               const unsigned char *bkey, size_t bkey_length,
                                               memcached_coll_order_t order,
                                               size_t *position);
-
-/* Used within the library. Do not call this from the application. */
-LIBMEMCACHED_LOCAL
-memcached_coll_smget_result_st *memcached_coll_smget_fetch_result(memcached_st *ptr,
-                                                                  memcached_coll_smget_result_st *result,
-                                                                  memcached_return_t *error,
-                                                                  memcached_coll_type_t type);
 
 /**
  * Pipelined insertions.
