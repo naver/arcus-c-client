@@ -1512,8 +1512,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  memcached_coll_type_t type = COLL_NONE;
-
   char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
   size_t buffer_length= 0;
 
@@ -1522,7 +1520,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   /* 1. sub key */
   if (verb == LOP_GET_OP)
   {
-    type= COLL_LIST;
     if (MEMCACHED_COLL_QUERY_LOP == query->type)
     {
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
@@ -1542,13 +1539,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   }
   else if (verb == SOP_GET_OP)
   {
-    type= COLL_SET;
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
                                      " %u", (int)query->count);
   }
   else if (verb == BOP_GET_OP)
   {
-    type= COLL_BTREE;
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
       buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,

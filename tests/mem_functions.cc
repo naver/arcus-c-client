@@ -8957,9 +8957,12 @@ static test_return_t question_async_api(memcached_st *memc)
     rc= memcached_set(memc, keys[i], key_length[i],
                       keys[i], key_length[i],
                       (time_t)50, (uint32_t)9);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED,
+                  memcached_strerror(NULL, rc));
   }
 
   rc= memcached_mget(memc, keys, key_length, 4);
+  test_compare(MEMCACHED_SUCCESS, rc);
 
   callbacks[0]= &callback_counter;
   counter= 0;

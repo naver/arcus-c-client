@@ -48,8 +48,9 @@ static void *world_create(server_startup_st& servers, test_return_t& error)
     return NULL;
   }
 
-
+#if 0
   in_port_t max_port= TEST_PORT_BASE;
+#endif
   for (uint32_t x= 0; x < servers.count(); x++)
   {
     in_port_t port;
@@ -67,7 +68,9 @@ static void *world_create(server_startup_st& servers, test_return_t& error)
       port= in_port_t(TEST_PORT_BASE +x);
     }
 
+#if 0
     max_port= port;
+#endif
     const char *argv[1]= { "memcached" };
     if (servers.sasl())
     {

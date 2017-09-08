@@ -273,7 +273,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
   uint64_t total_weight= 0;
   uint32_t total_server= 0;
-  uint32_t first_weight;
+  uint32_t first_weight= 0;
   bool all_weights_same= true;
   if (is_ketama_weighted)
   {
