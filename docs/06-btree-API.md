@@ -1187,8 +1187,7 @@ void arcus_btree_element_smget(memcached_st *memc)
 
     // smget을 수행한다.
     rc = memcached_bop_smget(memc, keys, key_length, 100, &query, smget_result);
-    test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
-                  memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+    assert(MEMCACHED_END == memcached_get_last_response_code(memc));
 
     if (rc == MEMCACHED_SUCCESS) {
         uint32_t last_bkey = bkey_from;
@@ -1254,14 +1253,13 @@ B+Tree element 순위를 조회하는 예제는 아래와 같다.
 ```c
 void arcus_btree_find_position(memcached_st *memc)
 {
-	uint32_t flags= 10;
+    uint32_t flags= 10;
     uint32_t exptime= 600;
     uint32_t maxcount= 1000;
 
+    memcached_return_t rc;
     memcached_coll_create_attrs_st attributes;
     memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
-
-    memcached_return_t rc;
 
     // 테스트 데이터를 입력한다.
     rc= memcached_bop_insert(memc, "btree:a_btree", strlen("btree:a_btree"), 0, NULL, 0,
@@ -1274,14 +1272,14 @@ void arcus_btree_find_position(memcached_st *memc)
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
 
-	// 순위를 조회한다.
-	int position = -1;
-	rc = memcached_bop_find_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
+    // 순위를 조회한다.
+    int position = -1;
+    rc = memcached_bop_find_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
                                      MEMCACHED_COLL_ORDER_ASC, &position);
-	assert(1 == position);
-	rc = memcached_bop_find_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
+    assert(1 == position);
+    rc = memcached_bop_find_position(memc, "btree:a_btree", strlen("btree:a_btree"), 1,
                                      MEMCACHED_COLL_ORDER_DESC, &position);
-	assert(0 == position);
+    assert(0 == position);
 }
 ```
 
