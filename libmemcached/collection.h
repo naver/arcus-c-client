@@ -1379,6 +1379,58 @@ memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr, const char
                                                    size_t *position);
 
 /**
+ * Get the elements of given position range from the b+tree item.
+ * @param ptr  memcached handle.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param order order criteria of position, asc or desc.
+ * @param from_position beginning position
+ * @param to_position end position
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_get_by_position(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 memcached_coll_order_t order,
+                                                 size_t from_position, size_t to_position,
+                                                 memcached_coll_result_st *result);
+
+/**
+ * Find the position of given bkey in the b+tree item and get elements residing near the position.
+ * @param ptr  memcached handle.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  element bkey.
+ * @param order order criteria of position, asc or desc.
+ * @param count number of elements to be retrieved in both direction of the found position. (0 means the element of given bkey)
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_find_position_with_get(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 const uint64_t bkey,
+                                                 memcached_coll_order_t order, size_t count,
+                                                 memcached_coll_result_st *result);
+
+/**
+ * Find the position of given byte-array bkey in the b+tree item and get elements residing near the position.
+ * @param ptr  memcached handle.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  byte-array bkey.
+ * @param bkey_length  bkey length (number of bytes).
+ * @param order order criteria of position, asc or desc.
+ * @param count number of elements to be retrieved in both direction of the found position. (0 means the element of given bkey)
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_ext_find_position_with_get(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 const unsigned char *bkey, size_t bkey_length,
+                                                 memcached_coll_order_t order, size_t count,
+                                                 memcached_coll_result_st *result);
+
+/**
  * Pipelined insertions.
  * When inserting many elements, it is more efficient to use pipelined API
  * than inserting one element at a time.

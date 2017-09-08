@@ -21,6 +21,8 @@ static inline void _coll_result_init(memcached_coll_result_st *self,
 {
   self->collection_flags= 0;
   self->collection_count= 0;
+  self->btree_position= 0;
+  self->result_position= 0;
   self->item_expiration= 0;
   self->values= NULL;
   self->sub_key_type= MEMCACHED_COLL_QUERY_UNKNOWN;
@@ -144,6 +146,18 @@ uint32_t memcached_coll_result_get_flags(memcached_coll_result_st *result)
 {
   assert_msg_with_return(result, "result is null", 0);
   return result->collection_flags;
+}
+
+size_t memcached_coll_result_get_btree_position(memcached_coll_result_st *result)
+{
+  assert_msg_with_return(result, "result is null", 0);
+  return result->btree_position;
+}
+
+size_t memcached_coll_result_get_result_position(memcached_coll_result_st *result)
+{
+  assert_msg_with_return(result, "result is null", 0);
+  return result->result_position;
 }
 
 uint64_t memcached_coll_result_get_bkey(memcached_coll_result_st *result, size_t index)

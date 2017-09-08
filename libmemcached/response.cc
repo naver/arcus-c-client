@@ -1163,11 +1163,23 @@ read_error:
 static memcached_return_t textual_coll_value_fetch(memcached_server_write_instance_st ptr,
                                                    char *buffer, memcached_coll_result_st *result)
 {
-  uint32_t header_params[2];
-  const size_t PARAM_FLAGS= 0;
-  const size_t PARAM_COUNT= 1;
+  uint32_t header_params[4];
+  uint32_t num_params= 2;
+  int PARAM_FLAGS= 0;
+  int PARAM_COUNT= 1;
+  int PARAM_POSITION= -1;
+  int PARAM_RSTINDEX= -1;
 
-  if (not parse_response_header(buffer, "VALUE", 5, header_params, 2) or
+  if (ptr->root->last_op_code[4] == 'p' && ptr->root->last_op_code[5] == 'w') /* bop pwg */
+  {
+    num_params= 4;
+    PARAM_POSITION= 0;
+    PARAM_FLAGS= 1;
+    PARAM_COUNT= 2;
+    PARAM_RSTINDEX= 3;
+  }
+
+  if (not parse_response_header(buffer, "VALUE", 5, header_params, num_params) or
       not header_params[PARAM_COUNT] )
   {
     memcached_io_reset(ptr);
@@ -1175,6 +1187,11 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
   }
 
   result->collection_flags= header_params[PARAM_FLAGS];
+  if (PARAM_POSITION != -1) /* bop pwg */
+  {
+    result->btree_position= header_params[PARAM_POSITION];
+    result->result_position= header_params[PARAM_RSTINDEX];
+  }
 
   size_t count= header_params[PARAM_COUNT];
   if (count < 1)

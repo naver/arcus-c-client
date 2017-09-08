@@ -9114,6 +9114,190 @@ static test_return_t arcus_btree_find_position(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+static test_return_t arcus_btree_get_by_position(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+  char buffer[16];
+  size_t buffer_len;
+
+  memcached_return_t rc;
+  memcached_coll_result_st *result;
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  for (uint32_t bkey=0; bkey<maxcount; bkey++)
+  {
+    buffer_len= snprintf(buffer, 15, "value%u", bkey);
+    rc= memcached_bop_insert(memc, test_literal_param("btree:a_btree"), bkey, NULL, 0,
+                             buffer, buffer_len, &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  /* 1. NOT_FOUND */
+  result = memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get_by_position(memc, test_literal_param("btree:no_btree"),
+                                    MEMCACHED_COLL_ORDER_ASC, 0, 10, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+  memcached_coll_result_free(result);
+
+  /* 2. NOT_FOUND_ELEMENT */
+  result = memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get_by_position(memc, test_literal_param("btree:a_btree"),
+                                    MEMCACHED_COLL_ORDER_ASC, maxcount, maxcount+10, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+  memcached_coll_result_free(result);
+
+  /* 3. TYPE_MISMATCH */
+  result = memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get_by_position(memc, test_literal_param("kv:item"),
+                                    MEMCACHED_COLL_ORDER_ASC, 0, 10, result);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+  memcached_coll_result_free(result);
+
+  /* 4. END */
+  /* case 1) ASC, 99 */
+  result = memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get_by_position(memc, test_literal_param("btree:a_btree"),
+                                    MEMCACHED_COLL_ORDER_ASC, 99, 99, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(1 == memcached_coll_result_get_count(result));
+  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+    snprintf(buffer, 15, "value%u", (99+i));
+    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  }
+  memcached_coll_result_free(result);
+
+  /* case 2) DESC, 99 */
+  result = memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get_by_position(memc, test_literal_param("btree:a_btree"),
+                                    MEMCACHED_COLL_ORDER_DESC, 99, 99, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(1 == memcached_coll_result_get_count(result));
+  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+    snprintf(buffer, 15, "value%u", ((maxcount-1)-99-i));
+    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  }
+  memcached_coll_result_free(result);
+
+  /* case 3) ASC, 100 ~ 199 */
+  result = memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get_by_position(memc, test_literal_param("btree:a_btree"),
+                                    MEMCACHED_COLL_ORDER_ASC, 100, 199, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(100 == memcached_coll_result_get_count(result));
+  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+    snprintf(buffer, 15, "value%u", (100+i));
+    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  }
+  memcached_coll_result_free(result);
+
+  /* case 4) DESC, 100 ~ 199 */
+  result = memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get_by_position(memc, test_literal_param("btree:a_btree"),
+                                    MEMCACHED_COLL_ORDER_DESC, 100, 199, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(100 == memcached_coll_result_get_count(result));
+  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+    snprintf(buffer, 15, "value%u", ((maxcount-1)-100-i));
+    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  }
+  memcached_coll_result_free(result);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_btree_find_position_with_get(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+  char bkdata[16];
+  char buffer[16];
+  size_t bkdata_len;
+  size_t buffer_len;
+
+  memcached_return_t rc;
+  memcached_coll_result_st *result;
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  for (uint32_t bkey=0; bkey<maxcount; bkey++)
+  {
+    bkdata_len= snprintf(bkdata, 15, "%04u", bkey);
+    buffer_len= snprintf(buffer, 15, "value%u", bkey);
+    rc= memcached_bop_ext_insert(memc, test_literal_param("btree:a_btree"),
+                                 (unsigned char *)bkdata, bkdata_len, NULL, 0,
+                                 buffer, buffer_len, &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  /* 1. NOT_FOUND */
+  result = memcached_coll_result_create(memc, NULL);
+  bkdata_len= snprintf(bkdata, 15, "%04u", 100);
+  rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:no_btree"),
+                                               (unsigned char *)bkdata, bkdata_len,
+                                               MEMCACHED_COLL_ORDER_ASC, 10, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+  memcached_coll_result_free(result);
+
+  /* 2. NOT_FOUND_ELEMENT */
+  result = memcached_coll_result_create(memc, NULL);
+  bkdata_len= snprintf(bkdata, 15, "%04u", maxcount);
+  rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:a_btree"),
+                                               (unsigned char *)bkdata, bkdata_len,
+                                               MEMCACHED_COLL_ORDER_ASC, 10, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+  memcached_coll_result_free(result);
+
+  /* 3. TYPE_MISMATCH */
+  result = memcached_coll_result_create(memc, NULL);
+  bkdata_len= snprintf(bkdata, 15, "%04u", 100);
+  rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("kv:item"),
+                                               (unsigned char *)bkdata, bkdata_len,
+                                               MEMCACHED_COLL_ORDER_ASC, 10, result);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+  memcached_coll_result_free(result);
+
+  /* 4. END */
+  /* case 1) 99, ASC, 10 */
+  result = memcached_coll_result_create(memc, NULL);
+  bkdata_len= snprintf(bkdata, 15, "%04u", 99);
+  rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:a_btree"),
+                                               (unsigned char *)bkdata, bkdata_len,
+                                               MEMCACHED_COLL_ORDER_ASC, 10, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(21 == memcached_coll_result_get_count(result));
+  test_true(99 == memcached_coll_result_get_btree_position(result));
+  test_true(10 == memcached_coll_result_get_result_position(result));
+  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+    snprintf(buffer, 15, "value%u", ((99-10)+i));
+    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  }
+  memcached_coll_result_free(result);
+
+  /* case 2) 99, DESC, 10 */
+  result = memcached_coll_result_create(memc, NULL);
+  bkdata_len= snprintf(bkdata, 15, "%04u", ((maxcount-1)-99));
+  rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:a_btree"),
+                                               (unsigned char *)bkdata, bkdata_len,
+                                               MEMCACHED_COLL_ORDER_DESC, 10, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(21 == memcached_coll_result_get_count(result));
+  test_true(99 == memcached_coll_result_get_btree_position(result));
+  test_true(10 == memcached_coll_result_get_result_position(result));
+  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+    snprintf(buffer, 15, "value%u", ((maxcount-1)-(99-10)-i));
+    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  }
+
+  return TEST_SUCCESS;
+}
 
 test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_flush_by_prefix", true, (test_callback_fn*)arcus_1_6_flush_by_prefix},
@@ -9192,6 +9376,8 @@ test_st flags_filter[] = {
 
 test_st arcus_1_8_tests[] ={
   {"arcus_btree_find_position", true, (test_callback_fn*)arcus_btree_find_position},
+  {"arcus_btree_get_by_position", true, (test_callback_fn*)arcus_btree_get_by_position},
+  {"arcus_btree_find_position_with_get", true, (test_callback_fn*)arcus_btree_find_position_with_get},
   {0, 0, (test_callback_fn*)0}
 };
 

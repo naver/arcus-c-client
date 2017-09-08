@@ -1284,6 +1284,212 @@ void arcus_btree_find_position(memcached_st *memc)
 ```
 
 ### B+Tree 순위 기반의 Element 조회
-추후 기술함
+
+B+Tree에서 순위 범위로 element를 조회하는 함수는 아래와 같다.
+
+```c
+memcached_return_t memcached_bop_get_by_position(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 memcached_coll_order_t order,
+                                                 size_t from_position, size_t to_position,
+                                                 memcached_coll_result_st *result);
+```
+- key, key_length: B+Tree item의 key
+- order : 순위 기준
+  - MEMCACHED_COLL_ORDER_ASC: bkey 값의 오름차순
+  - MEMCACHED_COLL_ORDER_DESC: bkey 값의 내림차순
+- from_position, to_position: 순위의 범위로 시작 순위와 끝 순위
+- result: 조회 결과를 담는 result 구조체
+
+Response code는 아래와 같다.
+- MEMCACHED_SUCCESS
+  - MEMCACHED_SUCCESS: 주어진 순위 기준과 순위 범위에 해당하는 element들을 성공적으로 조회함
+- not MEMCACHED_SUCCESS
+  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item 이 없음
+  - MEMCACHED_NOTFOUND_ELEMENT: 주어진 순위 범위에 해당하는 B+Tree element가 없음
+  - MEMCACHED_TYPE_MISMATCH: 해당 item이 B+Tree가 아님
+  - MEMCACHED_UNREADABLE: 해당 key item이 unreadable 상태임
+  - MEMCACHED_NOT_SUPPORTED: 현재 순위 조회 연산이 지원되지 않음.
+
+B+Tree에서 순위 범위로 element를 조회하는 예제는 아래와 같다.
+
+```c
+void arcus_btree_get_by_position(memcached_st *memc)
+{
+    uint32_t flags= 10;
+    uint32_t exptime= 600;
+    uint32_t maxcount= 1000;
+    char buffer[16];
+    size_t buffer_len;
+
+    memcached_return_t rc;
+    memcached_coll_result_st *result;
+    memcached_coll_create_attrs_st attributes;
+    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+    // bkey 범위가 0 ~ 999인 1000개 element를 가진 b+tree 생성.
+    for (uint32_t bkey=0; bkey<maxcount; bkey++)
+    {
+      buffer_len= snprintf(buffer, 15, "value%u", bkey);
+      rc= memcached_bop_insert(memc, "btree:a_btree", strlen("btree:a_btree"),
+                               bkey, NULL, 0, buffer, buffer_len, &attributes);
+      assert(MEMCACHED_SUCCESS == rc);
+    }
+
+    // 오름차순으로 100번째 element를 조회한다.
+    result = memcached_coll_result_create(memc, NULL);
+    rc= memcached_bop_get_by_position(memc, "btree:a_btree", strlen("btree:a_btree"),
+                                      MEMCACHED_COLL_ORDER_ASC, 99, 99, result);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(1 == memcached_coll_result_get_count(result));
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      snprintf(buffer, 15, "value%u", (99+i));
+      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    }
+    memcached_coll_result_free(result);
+
+    // 내림차순으로 100번째 element를 조회한다.
+    result = memcached_coll_result_create(memc, NULL);
+    rc= memcached_bop_get_by_position(memc, "btree:a_btree", strlen("btree:a_btree"),
+                                      MEMCACHED_COLL_ORDER_DESC, 99, 99, result);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(1 == memcached_coll_result_get_count(result));
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      snprintf(buffer, 15, "value%u", ((maxcount-1)-99-i));
+      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    }
+    memcached_coll_result_free(result);
+
+    // 오름차순으로 101번째부터 200번째까지의 element들을 조회한다.
+    result = memcached_coll_result_create(memc, NULL);
+    rc= memcached_bop_get_by_position(memc, "btree:a_btree", strlen("btree:a_btree"),
+                                      MEMCACHED_COLL_ORDER_ASC, 100, 199, result);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(100 == memcached_coll_result_get_count(result));
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      snprintf(buffer, 15, "value%u", (100+i));
+      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    }
+    memcached_coll_result_free(result);
+
+    // 내림차순으로 101번째부터 200번째까지의 element들을 조회한다.
+    result = memcached_coll_result_create(memc, NULL);
+    rc= memcached_bop_get_by_position(memc, "btree:a_btree", strlen("btree:a_btree"),
+                                      MEMCACHED_COLL_ORDER_DESC, 100, 199, result);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(100 == memcached_coll_result_get_count(result));
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      snprintf(buffer, 15, "value%u", ((maxcount-1)-100-i));
+      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    }
+    memcached_coll_result_free(result);
+}
+```
+
 ### B+Tree 순위와 Element 동시 조회
-추후 기술함
+
+B+Tree에서 주어진 bkey에 대한 순위를 조회하면서 그 bkey의 element를 포함하여
+앞뒤 양방향으로 각 N개의 elements를 함께 조회하는 함수는 아래와 같다.
+전자는 8바이트 unsigned integer 타입의 bkey를 사용하는 함수이고,
+후자는 최대 31 크기의 byte array 타입의 bkey를 사용하는 함수이다.
+
+```c
+memcached_return_t memcached_bop_find_position_with_get(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 const uint64_t bkey,
+                                                 memcached_coll_order_t order, size_t count,
+                                                 memcached_coll_result_st *result);
+
+memcached_return_t memcached_bop_ext_find_position_with_get(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 const unsigned char *bkey, size_t bkey_length,
+                                                 memcached_coll_order_t order, size_t count,
+                                                 memcached_coll_result_st *result);
+```
+- key, key_length: B+Tree item의 key
+- bkey, bkey_length: 순위를 조회할 element의 bkey
+- order : 순위 기준
+  - MEMCACHED_COLL_ORDER_ASC: bkey 값의 오름차순
+  - MEMCACHED_COLL_ORDER_DESC: bkey 값의 내림차순
+- count : 찾은 element의 앞뒤 양방향으로 각각 조회할 element 개수
+- result: 조회한 순위와 element를 담는 result 구조체
+
+Response code는 아래와 같다.
+- MEMCACHED_SUCCESS
+  - MEMCACHED_SUCCESS: 순위 조회와 element 조회를 성공적으로 수행함.
+- not MEMCACHED_SUCCESS
+  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item 이 없음
+  - MEMCACHED_NOTFOUND_ELEMENT: 주어진 bkey에 해당하는 B+Tree element가 없음
+  - MEMCACHED_TYPE_MISMATCH: 해당 item이 B+Tree가 아님
+  - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형이 기존 bkey 유형과 다름
+  - MEMCACHED_UNREADABLE: 해당 key item이 unreadable 상태임
+  - MEMCACHED_NOT_SUPPORTED: 현재 순위 조회 연산이 지원되지 않음.
+
+정상 수행되었을 경우, result 구조체는 아래의 결과를 가진다.
+- 조회된 element 결과
+  -  bkey 값의 order 기준에 따라 정렬된 순서대로 element들이 보관된다.
+- btree 내에서 주어진 bkey의 순위
+  - memcached_coll_result_get_btree_position(result) API를 통해 조회한다.
+- result에 보관된 element들에서 주어진 bkey의 element 위치
+  - memcached_coll_result_get_result_position(result) API를 통해 조회한다.
+
+
+B+Tree에서 특정 bkey에 대한 순위 및 element 조회와 함께
+앞뒤 양방향으로 N개 element를 조회하는 예제는 아래와 같다.
+
+```c
+void arcus_btree_find_position_with_get(memcached_st *memc)
+{
+    uint32_t flags= 10;
+    uint32_t exptime= 600;
+    uint32_t maxcount= 1000;
+    char buffer[16];
+    size_t buffer_len;
+
+    memcached_return_t rc;
+    memcached_coll_result_st *result;
+    memcached_coll_create_attrs_st attributes;
+    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+    // bkey 범위가 0 ~ 999인 1000개 element를 가진 b+tree 생성.
+    for (uint32_t bkey=0; bkey<maxcount; bkey++)
+    {
+      buffer_len= snprintf(buffer, 15, "value%u", bkey);
+      rc= memcached_bop_insert(memc, "btree:a_btree", strlen("btree:a_btree"),
+                               bkey, NULL, 0, buffer, buffer_len, &attributes);
+      assert(MEMCACHED_SUCCESS == rc);
+    }
+
+    // 오름차순으로 100번째 bkey의 순위 및 element와 함께 앞뒤 양방향으로 각 10개 element를 조회한다.
+    result = memcached_coll_result_create(memc, NULL);
+    bkdata_len= snprintf(bkdata, 15, "%04u", 99);
+    rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:a_btree"),
+                                                 (unsigned char *)bkdata, bkdata_len,
+                                                 MEMCACHED_COLL_ORDER_ASC, 10, result);
+    assert(rc == MEMCACHED_SUCCESS);
+    assert(21 == memcached_coll_result_get_count(result));
+    assert(99 == memcached_coll_result_get_btree_position(result));
+    assert(10 == memcached_coll_result_get_result_position(result));
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      snprintf(buffer, 15, "value%u", ((99-10)+i));
+      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    }
+    memcached_coll_result_free(result);
+
+    // 내림차순으로 100번째 bkey의 순위 및 element와 함께 앞뒤 양방향으로 각 10개 element를 조회한다.
+    result = memcached_coll_result_create(memc, NULL);
+    bkdata_len= snprintf(bkdata, 15, "%04u", ((maxcount-1)-99));
+    rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:a_btree"),
+                                                 (unsigned char *)bkdata, bkdata_len,
+                                                  MEMCACHED_COLL_ORDER_DESC, 10, result);
+    assert(rc == MEMCACHED_SUCCESS);
+    assert(21 == memcached_coll_result_get_count(result));
+    assert(99 == memcached_coll_result_get_btree_position(result));
+    assert(10 == memcached_coll_result_get_result_position(result));
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      snprintf(buffer, 15, "value%u", ((maxcount-1)-(99-10)-i));
+      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    }
+    memcached_coll_result_free(result);
+}
+```

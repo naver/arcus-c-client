@@ -35,6 +35,8 @@ struct memcached_coll_result_st {
   memcached_coll_type_t type;
   uint32_t collection_flags;
   size_t collection_count;
+  size_t btree_position;  /* used only in bop_find_position_with_get */
+  size_t result_position; /* used only in bop_find_position_with_get */
   time_t item_expiration;
   const memcached_st *root;
   memcached_coll_sub_key_type_t sub_key_type;
@@ -150,6 +152,22 @@ size_t memcached_coll_result_get_count(memcached_coll_result_st *result);
  */
 LIBMEMCACHED_API
 uint32_t memcached_coll_result_get_flags(memcached_coll_result_st *result);
+
+/**
+ * Get the position of the found element in the btree.
+ * @param result  collection result structure.
+ * @return btree position.
+ */
+LIBMEMCACHED_API
+size_t memcached_coll_result_get_btree_position(memcached_coll_result_st *result);
+
+/**
+ * Get the position of the found element in the result.
+ * @param result  collection result structure.
+ * @return result position.
+ */
+LIBMEMCACHED_API
+size_t memcached_coll_result_get_result_position(memcached_coll_result_st *result);
 
 /**
  * Get the b+tree element's bkey.
