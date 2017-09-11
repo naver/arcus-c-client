@@ -7467,73 +7467,70 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
   return test_rc;
 }
 
-static test_return_t arcus_1_6_smget_with_attr_mismatch(memcached_st *memc)
+static test_return_t arcus_1_6_btree_smget_errors(memcached_st *memc)
 {
   memcached_return_t rc;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
+  const char *keys[] = { "btree:111", "btree:333", "btree:555" };
+  size_t keylengths[] = { 9, 9, 9 };
   uint32_t eflag = 0;
 
-  // test data
-
-  const char *keys[] = { "btree:888", "btree:889" };
-  size_t keylengths[] = { 9, 9 };
-
-  memcached_coll_create_attrs_set_maxcount(&attributes, 10);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 1, (unsigned char *)&eflag, sizeof(eflag),
-                            test_literal_param("value"), &attributes);
-
-  memcached_coll_create_attrs_set_maxcount(&attributes, 10);
-  rc = memcached_bop_insert(memc, keys[1], keylengths[1], 3, (unsigned char *)&eflag, sizeof(eflag),
-                            test_literal_param("value"), &attributes);
-
-  // change attributes
   memcached_coll_attrs_st attrs;
-  memcached_coll_attrs_init(&attrs);
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
 
+  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 1, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value1"), &attributes);
+  rc = memcached_bop_insert(memc, keys[1], keylengths[1], 3, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value3"), &attributes);
+  rc = memcached_bop_insert(memc, keys[2], keylengths[2], 5, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value5"), &attributes);
+
+  memcached_coll_query_st        smget_query;
+  memcached_coll_smget_result_st smget_result;
+
+  /* MEMCACHED_ATTR_MISMATCH: maxcount is different */
+  memcached_coll_attrs_init(&attrs);
+  memcached_coll_attrs_set_maxcount(&attrs, 10);
+  rc = memcached_set_attrs(memc, keys[1], keylengths[1], &attrs);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+
+  memcached_bop_range_query_init(&smget_query, 5, 0, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, keylengths, 2, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_ATTR_MISMATCH, memcached_strerror(NULL, rc));
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* MEMCACHED_ATTR_MISMATCH: oveflowaction is different */
+  memcached_coll_attrs_init(&attrs);
+  memcached_coll_attrs_set_maxcount(&attrs, 1000); /* restore */
+  memcached_coll_attrs_set_overflowaction(&attrs, OVERFLOWACTION_LARGEST_TRIM);
+  rc = memcached_set_attrs(memc, keys[1], keylengths[1], &attrs);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+
+  memcached_bop_range_query_init(&smget_query, 5, 0, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, keylengths, 2, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_ATTR_MISMATCH, memcached_strerror(NULL, rc));
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* MEMCACHED_ATTR_MISMATCH: maxbkeyrange is different */
+  memcached_coll_attrs_init(&attrs);
+  memcached_coll_attrs_set_overflowaction(&attrs, OVERFLOWACTION_SMALLEST_TRIM); /* restore */
   memcached_coll_attrs_set_maxbkeyrange(&attrs, 2000);
   rc = memcached_set_attrs(memc, keys[1], keylengths[1], &attrs);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
 
-  // smget
-  memcached_coll_smget_result_st smget_result_object;
-  memcached_coll_smget_result_st *smget_result = memcached_coll_smget_result_create(memc, &smget_result_object);
+  memcached_bop_range_query_init(&smget_query, 5, 0, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
 
-  memcached_coll_query_st query;
-  memcached_bop_range_query_init(&query, 5, 0, NULL, 0, 10);
-
-  rc = memcached_bop_smget(memc, keys, keylengths, 2, &query, smget_result);
-
+  rc = memcached_bop_smget(memc, keys, keylengths, 2, &smget_query, &smget_result);
   // FIXME
   //test_true_got(rc == MEMCACHED_ATTR_MISMATCH, memcached_strerror(NULL, rc));
+  memcached_coll_smget_result_free(&smget_result);
 
-  memcached_coll_smget_result_free(smget_result);
-
-  return TEST_SUCCESS;
-}
-
-static test_return_t arcus_1_6_smget_bad_value(memcached_st *memc)
-{
-  memcached_return_t rc;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
-  //uint32_t eflag = 0;
-
-  // test data
-
-  const char *keys[] = { "btree:key" };
-  size_t keylengths[] = { 9 };
-
-  memcached_coll_create_attrs_set_maxcount(&attributes, 10);
-  rc = memcached_bop_create(memc, keys[0], keylengths[0], &attributes);
-
-  // smget
-
-  memcached_coll_smget_result_st smget_result_object;
-  memcached_coll_smget_result_st *smget_result = memcached_coll_smget_result_create(memc, &smget_result_object);
-
+  /* INVALID_ARGUMENTS: (offset + count) <= 1000 */
   unsigned char fvalue[2] = { 0, 0 };
   unsigned char foperand[2] = { 0, 1 };
 
@@ -7541,15 +7538,13 @@ static test_return_t arcus_1_6_smget_bad_value(memcached_st *memc)
   memcached_coll_eflag_filter_init(&filter_object, 0, (unsigned char *)&fvalue, 2, MEMCACHED_COLL_COMP_EQ);
   memcached_coll_eflag_filter_set_bitwise(&filter_object, (unsigned char *)&foperand, 2, MEMCACHED_COLL_BITWISE_AND);
 
-  memcached_coll_query_st query;
-  memcached_bop_range_query_init(&query, 0, 9223372036854775807, &filter_object, 0, 1001);
+  memcached_bop_range_query_init(&smget_query, 0, 9223372036854775807, &filter_object, 0, 1001);
+  memcached_coll_smget_result_create(memc, &smget_result);
 
-  rc = memcached_bop_smget(memc, keys, keylengths, 1, &query, smget_result);
-
+  rc = memcached_bop_smget(memc, keys, keylengths, 3, &smget_query, &smget_result);
   test_true_got(rc == MEMCACHED_INVALID_ARGUMENTS, memcached_strerror(NULL, rc));
   fprintf(stderr, "last error message = '%s'\n", memcached_last_error_message(memc));
-
-  memcached_coll_smget_result_free(smget_result);
+  memcached_coll_smget_result_free(&smget_result);
 
   return TEST_SUCCESS;
 }
@@ -9311,8 +9306,7 @@ test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_btree_mget", true, (test_callback_fn*)arcus_1_6_btree_mget},
   {"arcus_1_6_btree_mget_errors", true, (test_callback_fn*)arcus_1_6_btree_mget_errors},
   {"arcus_1_6_btree_smget", true, (test_callback_fn*)arcus_1_6_btree_smget},
-  {"arcus_1_6_smget_with_attr_mismatch", true, (test_callback_fn*)arcus_1_6_smget_with_attr_mismatch},
-  {"arcus_1_6_smget_bad_value", true, (test_callback_fn*)arcus_1_6_smget_bad_value},
+  {"arcus_1_6_btree_smget_errors", true, (test_callback_fn*)arcus_1_6_btree_smget_errors},
   {"arcus_1_6_btree_smget_with_ascending_order", true, (test_callback_fn*)arcus_1_6_smget_with_ascending_order},
   {"arcus_1_6_smget_with_ascending_order_one_key", true, (test_callback_fn*)arcus_1_6_smget_with_ascending_order_one_key},
   {"arcus_1_6_btree_smget_with_descending_order", true, (test_callback_fn*)arcus_1_6_smget_with_descending_order},
