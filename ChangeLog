@@ -1,3 +1,11 @@
+2017-09-11 [version 1.8.0]
+	* [Feature] Add bop position operations.
+	   - memcached_bop_find_position()
+	   - memcached_bop_ext_find_position()
+	   - memcached_bop_get_by_position()
+	   - memcached_bop_find_position_with_get()
+	   - memcached_bop_ext_find_position_with_get()
+
 2017-07-31 [version 1.7.5]
 	* [Feature] Support replication without read on slave feature.
 	* [Fix] the last_response_code setting of piped operations.
