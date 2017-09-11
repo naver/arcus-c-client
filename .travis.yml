@@ -9,14 +9,14 @@ cache:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -qq build-essential autoconf automake libtool libcppunit-dev libevent-dev libcloog-ppl0
+  - sudo apt-get install -qq build-essential autoconf automake libtool libcppunit-dev libevent-dev
   - bash install-arcus-memcached.sh develop
 
 script:
   - ./config/autorun.sh
   - ./configure --with-memcached=$HOME/arcus-memcached/memcached --with-memcached_engine=$HOME/arcus-memcached/.libs/default_engine.so
-  - make LDFLAGS=-lpthread
-  - make test
+  - make
+  - sudo make test
 
 notifications:
   email:
