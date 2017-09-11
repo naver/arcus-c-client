@@ -1028,7 +1028,11 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
                                                       size_t count, memcached_coll_result_st *result)
 {
   memcached_return_t rc;
+#if 1 // MAP_COLLECTION_SUPPORT
+  const size_t MAX_ELEMENT_BUFFER_SIZE= 251;
+#else
   const size_t MAX_ELEMENT_BUFFER_SIZE= 100;
+#endif
 
   char *string_ptr;
   size_t i= 0, to_read= 0, value_length= 0;
@@ -1089,6 +1093,28 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
         }
       }
     }
+
+#if 1 // MAP_COLLECTION_SUPPORT
+    /* Map value starts with <mkey> */
+    if (result->type == COLL_MAP)
+    {
+      /* <mkey> */
+      rc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+
+      if (rc != MEMCACHED_SUCCESS)
+        goto read_error;
+
+      result->sub_keys[i].mkey.string= (char*)libmemcached_malloc(ptr->root, sizeof(char) * read_length);
+      memcpy((char*)result->sub_keys[i].mkey.string, to_read_string, read_length);
+      /* This next bit blows the API, but this is internal....*/
+      {
+        char *char_ptr= (char*)result->sub_keys[i].mkey.string;
+        char_ptr[read_length]= 0;
+        result->sub_keys[i].mkey.length= strlen(char_ptr);
+      }
+      result->sub_key_type = MEMCACHED_COLL_QUERY_MOP;
+    }
+#endif
 
     /* <bytes> */
     {
@@ -1207,6 +1233,12 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
     ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, count);
     ALLOCATE_ARRAY_OR_RETURN(result->root, result->eflags,   memcached_hexadecimal_st,  count);
   }
+#if 1 // MAP_COLLECTION_SUPPORT
+  else if (result->type == COLL_MAP)
+  {
+    ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, count);
+  }
+#endif
 
   /* Fetch all values */
   return textual_coll_fetch_elements(ptr, "", 0, count, result);

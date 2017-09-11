@@ -11038,6 +11038,475 @@ static test_return_t arcus_btree_new_smget_duptrim2(memcached_st *memc)
 }
 #endif
 
+#if 1 // MAP_COLLECTION_SUPPORT
+static test_return_t arcus_map_create(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  memcached_coll_create_attrs_set_overflowaction(&attributes, OVERFLOWACTION_ERROR);
+
+  // 1. CREATED
+  memcached_return_t rc= memcached_mop_create(memc, test_literal_param("map:an_empty_map"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_CREATED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+
+  // 2. EXISTS
+  rc= memcached_mop_create(memc, test_literal_param("map:an_empty_map"), &attributes);
+  test_true_got(rc == MEMCACHED_EXISTS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_EXISTS, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_insert(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  // 1. CREATED_STORED
+  memcached_return_t rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+
+  // 2. NOT_FOUND
+  rc= memcached_mop_insert(memc, test_literal_param("map:no_map"), test_literal_param("mkey"), test_literal_param("value"), NULL);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  // 3. TYPE_MISMATCH
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  rc= memcached_mop_insert(memc, test_literal_param("kv:item"), test_literal_param("mkey"), test_literal_param("value"), NULL);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+
+  // 4. ELEMENT_EXISTS
+  rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), test_literal_param("value"), NULL);
+  test_true_got(rc == MEMCACHED_ELEMENT_EXISTS, memcached_strerror(NULL, rc));
+
+  // 5. CLIENT_ERROR too large value
+  char too_large[MEMCACHED_COLL_MAX_ELEMENT_SIZE + 1];
+  rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey1"), too_large, MEMCACHED_COLL_MAX_ELEMENT_SIZE+1, &attributes);
+  test_true_got(rc == MEMCACHED_CLIENT_ERROR, memcached_strerror(NULL, rc));
+
+  sleep(MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT + 1);
+
+  // 6. OVERFLOWED
+  for (uint32_t i=1; i<maxcount; i++)
+  {
+    char buffer[15];
+    size_t buffer_len= snprintf(buffer, 15, "mkey%d", i);
+    rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), buffer, buffer_len, test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+    test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_STORED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  }
+
+  memcached_coll_attrs_st attrs;
+  memcached_coll_attrs_init(&attrs);
+  memcached_coll_attrs_set_overflowaction(&attrs, OVERFLOWACTION_ERROR);
+  memcached_coll_attrs_set_expiretime(&attrs, 1000);
+
+  rc= memcached_set_attrs(memc, test_literal_param("map:a_map"), &attrs);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+
+  rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("last_mkey"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_OVERFLOWED, memcached_strerror(NULL, rc));
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_update(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  // 1. UPDATED
+  rc= memcached_mop_update(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), test_literal_param("value"));
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  // 2. NOT_FOUND_ELEMENT
+  rc= memcached_mop_update(memc, test_literal_param("map:a_map"), test_literal_param("no_mkey"), test_literal_param("value"));
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_delete(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey0"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey1"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  // 1. NOT_FOUND
+  rc= memcached_mop_delete(memc, test_literal_param("map:no_map"), test_literal_param("mkey0"), true);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  // 2. NOT_FOUND_ELEMENT
+  rc= memcached_mop_delete(memc, test_literal_param("map:a_map"), test_literal_param("mkey2"), true);
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+
+  // 3. TYPE_MISMATCH
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  rc= memcached_mop_delete(memc, test_literal_param("kv:item"), test_literal_param("mkey0"), true);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+
+  // 4. DELETED
+  rc= memcached_mop_delete(memc, test_literal_param("map:a_map"), test_literal_param("mkey0"), true);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DELETED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+
+  // 5. DELETED_DROPPED
+  rc= memcached_mop_delete(memc, test_literal_param("map:a_map"), test_literal_param("mkey1"), true);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DELETED_DROPPED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_delete_all(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey0"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey1"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  // 1. NOT_FOUND
+  rc= memcached_mop_delete(memc, test_literal_param("map:no_map"), test_literal_param("mkey0"), true);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  // 2. NOT_FOUND_ELEMENT
+  rc= memcached_mop_delete(memc, test_literal_param("map:a_map"), test_literal_param("mkey3"), true);
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+
+  // 3. TYPE_MISMATCH
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  rc= memcached_mop_delete(memc, test_literal_param("kv:item"), test_literal_param("mkey0"), true);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+
+  // 4. DELETED_DROPPED
+  rc= memcached_mop_delete_all(memc, test_literal_param("map:a_map"), true);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DELETED_DROPPED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_get(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc;
+
+  rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  // 1. NOT_FOUND
+  memcached_coll_result_st *result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:no_map"), test_literal_param("mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  // 2. NOT_FOUND_ELEMENT
+  rc= memcached_mop_create(memc, test_literal_param("map:an_empty_map"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:an_empty_map"), test_literal_param("no_mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+
+  // 3. TYPE_MISMATCH
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("kv:item"), test_literal_param("mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+
+  // 4. END/DELETED/DELETED_DROPPED
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), true, true, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(1 == memcached_coll_result_get_count(result));
+
+  memcached_coll_result_free(result);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_get_all(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc;
+
+  for (size_t i=0; i<maxcount; i++)
+  {
+    char buffer[15];
+    size_t buffer_len= snprintf(buffer, 15, "mkey%u", (int)i);
+    rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), buffer, buffer_len, test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+
+  // 1. NOT_FOUND
+  memcached_coll_result_st *result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:no_map"), test_literal_param("mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  // 2. NOT_FOUND_ELEMENT
+  rc= memcached_mop_create(memc, test_literal_param("map:an_empty_map"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:an_empty_map"), test_literal_param("no_mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+
+  // 3. TYPE_MISMATCH
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("kv:item"), test_literal_param("mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+
+  // 4. END/MKEY_CHECK
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:a_map"), test_literal_param("mkey0"), false, false, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  assert(0 == strcmp("mkey0", memcached_coll_result_get_mkey(result, (size_t)0)));
+
+  // 5. END/DELETED/DELETED_DROPPED
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get_all(memc, test_literal_param("map:a_map"), true, true, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(maxcount == memcached_coll_result_get_count(result));
+
+  memcached_coll_result_free(result);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_get_with_mkeys(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc;
+
+  for (size_t i=0; i<maxcount; i++)
+  {
+    char buffer[15];
+    size_t buffer_len= snprintf(buffer, 15, "mkey%u", (int)i);
+    rc= memcached_mop_insert(memc, test_literal_param("map:a_map"), buffer, buffer_len, test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+
+  // 1. NOT_FOUND
+  memcached_coll_result_st *result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:no_map"), test_literal_param("mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  // 2. NOT_FOUND_ELEMENT
+  rc= memcached_mop_create(memc, test_literal_param("map:an_empty_map"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("map:an_empty_map"), test_literal_param("no_mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_NOTFOUND_ELEMENT, memcached_strerror(NULL, rc));
+
+  // 3. TYPE_MISMATCH
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get(memc, test_literal_param("kv:item"), test_literal_param("mkey"), false, false, result);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+
+  // 4. END/DELETED
+  //
+  // test data
+  const char *mkeys[]= { "mkey10", "mkey20", "mkey30", "mkey40", "mkey50" };
+  size_t mkeys_length[]= { 6, 6, 6, 6, 6 };
+
+  result = memcached_coll_result_create(memc, NULL);
+
+  rc= memcached_mop_get_by_list(memc, test_literal_param("map:a_map"), mkeys, mkeys_length, 5, true, true, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(5 == memcached_coll_result_get_count(result));
+
+  memcached_coll_result_free(result);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t do_arcus_map_piped_insert_with_count(memcached_st *memc, uint32_t count)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= (count < 4000 ? 4000 : count);
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc;
+  memcached_return_t piped_rc;
+  memcached_return_t results[MANY_PIPED_COUNT];
+
+  size_t mkeylengths[MANY_PIPED_COUNT];
+  size_t valuelengths[MANY_PIPED_COUNT];
+  char **mkeys = (char **)malloc(sizeof(char *) * count);
+  char **values = (char **)malloc(sizeof(char *) * count);
+  uint32_t i;
+
+  for (i=0; i<count; i++) {
+    mkeys[i]= (char *)malloc(sizeof(char) * 15);
+    mkeylengths[i]= snprintf(mkeys[i], 15, "mkey%llu", (unsigned long long)i);
+    values[i]= (char *)malloc(sizeof(char) * 15);
+    valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
+  }
+  rc= memcached_mop_piped_insert(memc, test_literal_param("map:a_map"),
+                                 count, mkeys, mkeylengths, values, valuelengths,
+                                 &attributes, results, &piped_rc);
+
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
+
+  for (i=0; i<count; i++) {
+    test_true_got(results[i] == MEMCACHED_STORED || results[i] == MEMCACHED_CREATED_STORED,
+                  memcached_strerror(NULL, results[i]));
+  }
+
+  for (i=0; i<count; i++) {
+    free((void*)mkeys[i]);
+    free((void*)values[i]);
+  }
+  free((void*)mkeys);
+  free((void*)values);
+
+  return TEST_SUCCESS;
+}
+
+static test_return_t arcus_map_piped_insert(memcached_st *memc)
+{
+  return do_arcus_map_piped_insert_with_count(memc, MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
+}
+
+static test_return_t arcus_map_piped_insert_one(memcached_st *memc)
+{
+  return do_arcus_map_piped_insert_with_count(memc, 1);
+}
+
+static test_return_t arcus_map_piped_insert_many(memcached_st *memc)
+{
+  return do_arcus_map_piped_insert_with_count(memc, MANY_PIPED_COUNT);
+}
+
+static test_return_t arcus_map_piped_insert_bulk(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  memcached_return_t rc;
+  memcached_return_t piped_rc;
+  memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
+
+  char **keys = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
+  size_t key_length[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
+  const char *mkey= "mkey";
+  const char *value= "value";
+  size_t mkey_length= 4;
+  size_t value_length= 5;
+
+  for (uint32_t i=0; i<maxcount; i++)
+  {
+    keys[i]= (char *)malloc(sizeof(char) * 15);
+    key_length[i]= snprintf(keys[i], 15, "key%d", i);
+  }
+
+  rc= memcached_mop_piped_insert_bulk(memc, keys, key_length,
+                                      maxcount,
+                                      mkey, mkey_length, value, value_length,
+                                      &attributes, results, &piped_rc);
+
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(piped_rc == MEMCACHED_ALL_SUCCESS, memcached_strerror(NULL, rc));
+
+  for (size_t i=0; i<maxcount; i++)
+  {
+    test_true_got(results[i] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[i]));
+  }
+
+  for (uint32_t i=0; i<maxcount; i++)
+  {
+    free((void*)keys[i]);
+  }
+
+  free((void*)keys);
+
+  return TEST_SUCCESS;
+}
+#endif
+
 test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_flush_by_prefix", true, (test_callback_fn*)arcus_1_6_flush_by_prefix},
   {"arcus_1_6_list_create", true, (test_callback_fn*)arcus_1_6_list_create},
@@ -11126,6 +11595,24 @@ test_st arcus_1_9_tests[] ={
 };
 #endif
 
+#if 1 // MAP_COLLECTION_SUPPORT
+test_st arcus_1_10_tests[] ={
+  {"arcus_map_create", true, (test_callback_fn*)arcus_map_create},
+  {"arcus_map_insert", true, (test_callback_fn*)arcus_map_insert},
+  {"arcus_map_update", true, (test_callback_fn*)arcus_map_update},
+  {"arcus_map_delete", true, (test_callback_fn*)arcus_map_delete},
+  {"arcus_map_delete_all", true, (test_callback_fn*)arcus_map_delete_all},
+  {"arcus_map_get", true, (test_callback_fn*)arcus_map_get},
+  {"arcus_map_get_all", true, (test_callback_fn*)arcus_map_get_all},
+  {"arcus_map_get_with_mkeys", true, (test_callback_fn*)arcus_map_get_with_mkeys},
+  {"arcus_map_piped_insert", true, (test_callback_fn*)arcus_map_piped_insert},
+  {"arcus_map_piped_insert_one", true, (test_callback_fn*)arcus_map_piped_insert_one},
+  {"arcus_map_piped_insert_many", true, (test_callback_fn*)arcus_map_piped_insert_many},
+  {"arcus_map_piped_insert_bulk", true, (test_callback_fn*)arcus_map_piped_insert_bulk},
+  {0, 0, (test_callback_fn*)0}
+};
+#endif
+
 collection_st collection[] ={
 #if 0
   {"hash_sanity", 0, 0, hash_sanity},
@@ -11201,6 +11688,9 @@ collection_st collection[] ={
   {"arcus_1_8_tests", 0, 0, arcus_1_8_tests},
 #ifdef SUPPORT_NEW_SMGET_INTERFACE
   {"arcus_1_9_tests", 0, 0, arcus_1_9_tests},
+#endif
+#if 1 // MAP_COLLECTION_SUPPORT
+  {"arcus_1_10_tests", 0, 0, arcus_1_10_tests},
 #endif
   {0, 0, 0, 0}
 };
