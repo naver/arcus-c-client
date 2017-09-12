@@ -7864,120 +7864,131 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_1_6_smget_with_duplicated(memcached_st *memc)
+static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
 {
   memcached_return_t rc;
   const char *keys[10];
-  size_t key_length[12];
+  size_t key_length[10];
+  uint64_t bkeys[] = { 5000, 5000, 500, 50, 5, 4000, 4000, 400, 40, 4 }; /* duplicate */
+  uint64_t bkey;
+  uint32_t eflag = 0;
+  char     buffer[64];
+  size_t   vlen;
 
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
+
+  memcached_coll_query_st        smget_query;
+  memcached_coll_smget_result_st smget_result;
+
+  /* prepare key strings */
   for (int i=0; i<10; i++) {
     keys[i] = (char *)malloc(sizeof(const char *)*100);
     key_length[i] = (size_t) snprintf((char *)keys[i], 100, "test:id_%d", i);
   }
 
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
-
-  uint64_t bkeys[] = { 5000, 5000, 50, 5, 4000, 400, 40, 4, 3000, 300, 30, 3, 2000, 200, 20, 2, 1000, 100, 10, 1 };
-
+  /* create btree items */
   for (int i=0; i<10; i++) {
-    uint64_t bkey = bkeys[i];
-    uint32_t eflag = 0;
-    char value[64];
-    size_t value_length = snprintf(value, 64, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
-    rc = memcached_bop_insert(memc, keys[i], key_length[i], bkey, (unsigned char *)&eflag, sizeof(eflag), value, value_length, &attributes);
+    bkey = bkeys[i];
+    vlen = snprintf(buffer, 63, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
+    rc = memcached_bop_insert(memc, keys[i], key_length[i],
+                              bkey, (unsigned char *)&eflag, sizeof(eflag),
+                              buffer, vlen, &attributes);
   }
 
-  memcached_coll_smget_result_st smget_result_object;
-  memcached_coll_smget_result_st *smget_result = memcached_coll_smget_result_create(memc, &smget_result_object);
-
+  /* do smget operation : duplicated */
   uint32_t bkey_from = 0;
   uint32_t bkey_to = 10000;
+  memcached_bop_range_query_init(&smget_query, bkey_from, bkey_to, NULL, 0, 100);
+  memcached_coll_smget_result_create(memc, &smget_result);
 
-  memcached_coll_query_st query;
-  memcached_bop_range_query_init(&query, bkey_from, bkey_to, NULL, 0, 100);
-
-  rc = memcached_bop_smget(memc, keys, key_length, 10, &query, smget_result);
-
-  for (int i=0; i<10; i++) {
-    free((void*)keys[i]);
-  }
-
+  rc = memcached_bop_smget(memc, keys, key_length, 10, &smget_query, &smget_result);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED,
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
 
   uint64_t last_bkey = 0;
-  for (uint32_t i=0; i<memcached_coll_smget_result_get_count(smget_result); i++) {
-    char *key = (char*)memcached_coll_smget_result_get_key(smget_result, i);
-    uint64_t bkey = memcached_coll_smget_result_get_bkey(smget_result, i);
-    char eflag_buf[64];
-    memcached_hexadecimal_to_str(memcached_coll_smget_result_get_eflag(smget_result, i), eflag_buf, 64);
-    char *rvalue = (char*)memcached_coll_smget_result_get_value(smget_result, i);
-    fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n", key, (unsigned long long)bkey, eflag_buf, rvalue);
-
+  for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+    bkey = memcached_coll_smget_result_get_bkey(&smget_result, i);
+    memcached_hexadecimal_to_str(memcached_coll_smget_result_get_eflag(&smget_result, i),
+                                 buffer, 64);
+    fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
+                    (char*)memcached_coll_smget_result_get_key(&smget_result, i),
+                    (unsigned long long)bkey, buffer,
+                    (char*)memcached_coll_smget_result_get_value(&smget_result, i));
     test_true(last_bkey <= bkey);
-
     last_bkey = bkey;
   }
+  memcached_coll_smget_result_free(&smget_result);
 
-  memcached_coll_smget_result_free(smget_result);
+  /* delete btree items */
+  for (int i=0; i<10; i++) {
+    memcached_delete(memc, keys[i], key_length[i], 0);
+  }
 
-  return TEST_SUCCESS;
-}
-
-static test_return_t arcus_1_6_smget_with_duplicated_trimmed(memcached_st *memc)
-{
-  memcached_return_t rc;
-
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
-  uint32_t eflag = 0;
-
-  // test data
-
-  const char *keys[] = { "btree:111", "btree:888", "btree:999" };
-  size_t keylengths[] = { 9, 9, 9 };
-
+  /* create btree items */
   memcached_coll_create_attrs_set_maxcount(&attributes, 10);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 1, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 2, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 3, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 4, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 5, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 6, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 7, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 8, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 9, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 10, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 1, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 2, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 3, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 4, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 5, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 6, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 7, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 8, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 9, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 10, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
 #ifdef IMPROVEMENT_TRIMMED_STATUS
-  rc = memcached_bop_insert(memc, keys[0], keylengths[0], 11, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[0], key_length[0], 11, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
 #endif
 
   memcached_coll_create_attrs_set_maxcount(&attributes, 10);
-  rc = memcached_bop_insert(memc, keys[1], keylengths[1], 3, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[1], keylengths[1], 4, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[1], keylengths[1], 5, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[1], key_length[1], 3, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[1], key_length[1], 4, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[1], key_length[1], 5, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
 
   memcached_coll_create_attrs_set_maxcount(&attributes, 10);
-  rc = memcached_bop_insert(memc, keys[2], keylengths[2], 6, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[2], keylengths[2], 7, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
-  rc = memcached_bop_insert(memc, keys[2], keylengths[2], 8, (unsigned char *)&eflag, sizeof(eflag), test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[2], key_length[2], 6, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[2], key_length[2], 7, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
+  rc = memcached_bop_insert(memc, keys[2], key_length[2], 8, (unsigned char *)&eflag, sizeof(eflag),
+                            test_literal_param("value"), &attributes);
 
-  // smget
+  /* do smget operation : duplicated & trimmed */
+  memcached_bop_range_query_init(&smget_query, 5, 0, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
 
-  memcached_coll_smget_result_st smget_result_object;
-  memcached_coll_smget_result_st *smget_result = memcached_coll_smget_result_create(memc, &smget_result_object);
-
-  memcached_coll_query_st query;
-  memcached_bop_range_query_init(&query, 5, 0, NULL, 0, 10);
-
-  rc = memcached_bop_smget(memc, keys, keylengths, 3, &query, smget_result);
-
+  rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
-  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED_TRIMMED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED_TRIMMED,
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
 
-  memcached_coll_smget_result_free(smget_result);
+  memcached_coll_smget_result_free(&smget_result);
 
+  /* delete btree items */
+  for (int i=0; i<3; i++) {
+    memcached_delete(memc, keys[i], key_length[i], 0);
+  }
+
+  /* free key strings */
+  for (int i=0; i<10; i++) {
+    free((void*)keys[i]);
+  }
   return TEST_SUCCESS;
 }
 
@@ -9216,8 +9227,7 @@ test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_btree_smget_more", true, (test_callback_fn*)arcus_1_6_btree_smget_more},
   {"arcus_1_6_btree_smget_errors", true, (test_callback_fn*)arcus_1_6_btree_smget_errors},
   {"arcus_1_6_btree_smget_one_key", true, (test_callback_fn*)arcus_1_6_btree_smget_one_key},
-  {"arcus_1_6_btree_smget_with_duplicated", true, (test_callback_fn*)arcus_1_6_smget_with_duplicated},
-  {"arcus_1_6_btree_smget_with_duplicated_trimmed", true, (test_callback_fn*)arcus_1_6_smget_with_duplicated_trimmed},
+  {"arcus_1_6_btree_smget_duptrim", true, (test_callback_fn*)arcus_1_6_btree_smget_duptrim},
   {"arcus_1_6_btree_count", true, (test_callback_fn*)arcus_1_6_btree_count},
   {"arcus_1_6_list_piped_insert", true, (test_callback_fn*)arcus_1_6_list_piped_insert},
   {"arcus_1_6_list_piped_insert_one", true, (test_callback_fn*)arcus_1_6_list_piped_insert_one},
