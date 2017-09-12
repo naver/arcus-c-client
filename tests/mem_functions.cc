@@ -7790,15 +7790,29 @@ static test_return_t arcus_1_6_btree_smget_errors(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_1_6_smget_with_ascending_order_one_key(memcached_st *memc)
+static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
 {
   memcached_return_t rc;
-  const char *keys[1];
-  size_t key_length[1];
+  const char *key = "test:smget_one_key";
+  size_t key_length = strlen(key);
   uint64_t bkeys[100];
+  uint64_t bkey;
+  char     buffer[64];
+  size_t   vlen;
 
-  keys[0] = (char *)malloc(sizeof(const char *)*100);
-  key_length[0] = (size_t) snprintf((char *)keys[0], 100, "test:ascending_order_id_%d", 0);
+  const unsigned char fvalue[31] = {
+    0x00, 0x00, 0x3F, 0x42, 0x0F, 0x00, 0x55, 0xC1, 0xD8, 0xA7,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0x42, 0x0F,
+    0x00, 0x55, 0xC1, 0xD8, 0xA7, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01 };
+  char fvalue_length = 31;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
+
+  memcached_coll_eflag_filter_st efilter;
+  memcached_coll_query_st        smget_query;
+  memcached_coll_smget_result_st smget_result;
 
   srand(time(NULL));
 
@@ -7806,61 +7820,46 @@ static test_return_t arcus_1_6_smget_with_ascending_order_one_key(memcached_st *
     bkeys[i] = (uint64_t)rand();
   }
 
-  memcached_coll_create_attrs_st attributes;
-  memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
-
-  const unsigned char fvalue[31] = {
-    0x00, 0x00, 0x3F, 0x42, 0x0F, 0x00, 0x55, 0xC1, 0xD8, 0xA7, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x3F, 0x42, 0x0F, 0x00, 0x55, 0xC1, 0xD8, 0xA7, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x01 };
-  char fvalue_length = 31;
-
   for (int i=0; i<100; i++) {
-    uint64_t bkey = bkeys[i];
-    char value[64];
-    size_t value_length = snprintf(value, 64, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
-    rc = memcached_bop_insert(memc, keys[0], key_length[0], bkey, (unsigned char *)&fvalue[0], fvalue_length, value, value_length, &attributes);
+    bkey = bkeys[i];
+    vlen = snprintf(buffer, 63, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
+    rc = memcached_bop_insert(memc, key, key_length,
+                              bkey, (unsigned char *)fvalue, fvalue_length,
+                              buffer, vlen, &attributes);
   }
 
-  memcached_coll_smget_result_st smget_result_object;
-  memcached_coll_smget_result_st *smget_result = memcached_coll_smget_result_create(memc, &smget_result_object);
-
+  /* do smget operation */
   uint64_t bkey_from = 0;
   uint64_t bkey_to = UINT64_MAX;
+  memcached_coll_eflag_filter_init(&efilter, 0,
+                                   (const unsigned char *)fvalue, fvalue_length,
+                                   MEMCACHED_COLL_COMP_EQ);
+  memcached_bop_range_query_init(&smget_query, bkey_from, bkey_to, &efilter, 0, 100);
+  memcached_coll_smget_result_create(memc, &smget_result);
 
-  memcached_coll_eflag_filter_st efilter;
-  memcached_coll_eflag_filter_init(&efilter, 0, (const unsigned char *)&fvalue[0], fvalue_length, MEMCACHED_COLL_COMP_EQ);
-
-  memcached_coll_query_st query;
-  memcached_bop_range_query_init(&query, bkey_from, bkey_to, &efilter, 0, 100);
-
-  rc = memcached_bop_smget(memc, keys, key_length, 1, &query, smget_result);
-  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
-
+  rc = memcached_bop_smget(memc, &key, &key_length, 1, &smget_query, &smget_result);
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
   if (rc == MEMCACHED_SUCCESS) {
     uint64_t last_bkey = bkey_from;
-    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(smget_result); i++) {
-      uint64_t bkey = smget_result->sub_keys[i].bkey;
-      char eflag_buf[64];
-      memcached_hexadecimal_to_str(&smget_result->eflags[i], eflag_buf, 64);
-      char *rvalue = (char*)memcached_coll_smget_result_get_value(smget_result, i);
-      fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n", (char*)memcached_coll_smget_result_get_key(smget_result, i), (unsigned long long)bkey, eflag_buf, rvalue);
-
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      bkey = smget_result.sub_keys[i].bkey;
+      memcached_hexadecimal_to_str(&smget_result.eflags[i], buffer, 64);
+      fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
+                      (char*)memcached_coll_smget_result_get_key(&smget_result, i),
+                      (unsigned long long)bkey, buffer,
+                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
       test_true(last_bkey <= bkey);
-
       last_bkey = bkey;
     }
-    for (uint32_t i=0; i<smget_result->missed_key_count; i++) {
-      fprintf(stderr, "\tMISSED_KEYS[%u]=%s\n", i, smget_result->missed_keys[i].string);
+    for (uint32_t i=0; i<smget_result.missed_key_count; i++) {
+      fprintf(stderr, "\tMISSED_KEYS[%u]=%s\n", i, smget_result.missed_keys[i].string);
     }
   } else {
     fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
     return TEST_FAILURE;
   }
-
-  memcached_coll_smget_result_free(smget_result);
-
-  free((void *)keys[0]);
+  memcached_coll_smget_result_free(&smget_result);
 
   return TEST_SUCCESS;
 }
@@ -9216,7 +9215,7 @@ test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_btree_smget", true, (test_callback_fn*)arcus_1_6_btree_smget},
   {"arcus_1_6_btree_smget_more", true, (test_callback_fn*)arcus_1_6_btree_smget_more},
   {"arcus_1_6_btree_smget_errors", true, (test_callback_fn*)arcus_1_6_btree_smget_errors},
-  {"arcus_1_6_smget_with_ascending_order_one_key", true, (test_callback_fn*)arcus_1_6_smget_with_ascending_order_one_key},
+  {"arcus_1_6_btree_smget_one_key", true, (test_callback_fn*)arcus_1_6_btree_smget_one_key},
   {"arcus_1_6_btree_smget_with_duplicated", true, (test_callback_fn*)arcus_1_6_smget_with_duplicated},
   {"arcus_1_6_btree_smget_with_duplicated_trimmed", true, (test_callback_fn*)arcus_1_6_smget_with_duplicated_trimmed},
   {"arcus_1_6_btree_count", true, (test_callback_fn*)arcus_1_6_btree_count},
