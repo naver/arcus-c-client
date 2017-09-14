@@ -1017,7 +1017,7 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   rc= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 #ifdef ENABLE_REPLICATION
   if (switchover_rc != MEMCACHED_SUCCESS && rc == MEMCACHED_END) {
-    return switchover_rc; 
+    return switchover_rc;
   }
 #endif
   return rc;

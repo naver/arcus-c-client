@@ -42,7 +42,7 @@ typedef enum {
   BOP_COUNT_OP,
   BOP_SMGET_OP,
   BOP_MGET_OP,
-  BOP_POSI_OP, /* find position */ 
+  BOP_POSI_OP, /* find position */
   BOP_GBP_OP,  /* get by position */
   BOP_PWG_OP,  /* find position with get */
   UNKNOWN_OP
@@ -1985,7 +1985,7 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " 0x%s", bkey_str); 
+                                     " 0x%s", bkey_str);
   }
   else
   {
@@ -2037,7 +2037,7 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
       {
         return rc;
       }
-      
+
       /* <position> */
       char *string_ptr= result;
       char *end_ptr= result + MEMCACHED_DEFAULT_COMMAND_SIZE;
@@ -2205,7 +2205,7 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " 0x%s", bkey_str); 
+                                     " 0x%s", bkey_str);
   }
   else
   {
@@ -2749,7 +2749,7 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
         memcached_rgroup_switchover(ptr, instance);
         instance= memcached_server_instance_fetch(ptr, server_key);
         i = ptr->pipe_responses_length-1; /* for-statement increments i varible */
-        requested_items= 0; /* reset */ 
+        requested_items= 0; /* reset */
         continue; /* retry */
       }
 #endif
@@ -2962,7 +2962,7 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
           memcached_rgroup_switchover(ptr, instance);
           instance= memcached_server_instance_fetch(ptr, i);
           j = ptr->pipe_responses_length-1; /* for-statement increments j varible */
-          requested_items= 0; /* reset */ 
+          requested_items= 0; /* reset */
           continue; /* retry */
         }
 #endif
