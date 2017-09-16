@@ -7965,20 +7965,24 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   for (int i=1; i<=10; i++) {
     rc = memcached_bop_insert(memc, keys[0], key_length[0], i, (unsigned char *)&eflag, sizeof(eflag),
                               test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
   }
 #ifdef IMPROVEMENT_TRIMMED_STATUS
   for (int i=11; i<=12; i++) {
     rc = memcached_bop_insert(memc, keys[0], key_length[0], i, (unsigned char *)&eflag, sizeof(eflag),
                               test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
   }
 #endif
-  for (int i=3; i<=5; i++) {
+  for (int i=1; i<=5; i++) {
     rc = memcached_bop_insert(memc, keys[1], key_length[1], i, (unsigned char *)&eflag, sizeof(eflag),
                               test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
   }
   for (int i=6; i<=8; i++) {
     rc = memcached_bop_insert(memc, keys[2], key_length[2], i, (unsigned char *)&eflag, sizeof(eflag),
                               test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
   }
 
   /* do smget operation (ascending order): duplicated & trimmed */
@@ -8013,6 +8017,158 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
                       (unsigned long long)bkey, buffer,
                       (char*)memcached_coll_smget_result_get_value(&smget_result, i));
       ***/
+    }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* do smget operation (descending order): duplicated & trimmed */
+  /* range = 5 ~ 0, count = 6 */
+  memcached_bop_range_query_init(&smget_query, 5, 0, NULL, 0, 6);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(6 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    uint64_t sorted_bkeys[] = { 3, 3, 4, 4, 5, 5 };
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      test_true(strcmp(memcached_coll_smget_result_get_key(&smget_result, i),
+                       (i%2)==0 ? "test:smget_key_1" : "test:smget_key_0") == 0);
+      test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
+    }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* do smget operation (descending order): duplicated & trimmed */
+  /* range = 5 ~ 3, count = 10 */
+  memcached_bop_range_query_init(&smget_query, 5, 3, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(6 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    uint64_t sorted_bkeys[] = { 3, 3, 4, 4, 5, 5 };
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      test_true(strcmp(memcached_coll_smget_result_get_key(&smget_result, i),
+                       (i%2)==0 ? "test:smget_key_1" : "test:smget_key_0") == 0);
+      test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
+    }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* delete btree items */
+  for (int i=0; i<3; i++) {
+    memcached_delete(memc, keys[i], key_length[i], 0);
+  }
+
+  /* create btree items */
+  memcached_coll_create_attrs_set_maxcount(&attributes, 10);
+  for (int i=1; i<=5; i++) {
+    rc = memcached_bop_insert(memc, keys[0], key_length[0], (uint64_t)i, (unsigned char *)&eflag, sizeof(eflag),
+                              test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+  for (int i=1; i<=10; i++) {
+    rc = memcached_bop_insert(memc, keys[1], key_length[1], (uint64_t)i, (unsigned char *)&eflag, sizeof(eflag),
+                              test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+#ifdef IMPROVEMENT_TRIMMED_STATUS
+  for (int i=11; i<=12; i++) {
+    rc = memcached_bop_insert(memc, keys[1], key_length[1], (uint64_t)i, (unsigned char *)&eflag, sizeof(eflag),
+                              test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+#endif
+  for (int i=6; i<=8; i++) {
+    rc = memcached_bop_insert(memc, keys[2], key_length[2], (uint64_t)i, (unsigned char *)&eflag, sizeof(eflag),
+                              test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  }
+
+#if 0 /* FIXME */
+  /* do smget operation (ascending order): duplicated & trimmed */
+  memcached_bop_range_query_init(&smget_query, 0, 5, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_OUT_OF_RANGE, memcached_strerror(NULL, rc));
+
+  memcached_coll_smget_result_free(&smget_result);
+#endif
+
+  /* do smget operation (descending order): duplicated & trimmed */
+  /* count = 10 */
+  memcached_bop_range_query_init(&smget_query, 5, 0, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED_TRIMMED,
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(6 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    uint64_t sorted_bkeys[] = { 3, 3, 4, 4, 5, 5 };
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      test_true(strcmp(memcached_coll_smget_result_get_key(&smget_result, i),
+                       (i%2)==0 ? "test:smget_key_1" : "test:smget_key_0") == 0);
+      test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
+      /***
+      fprintf(stderr, "key[%s], bkey[%llu] = %s\n",
+                      (char*)memcached_coll_smget_result_get_key(&smget_result, i),
+                      (unsigned long long)memcached_coll_smget_result_get_bkey(&smget_result, i),
+                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
+      ***/
+    }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* do smget operation (descending order): duplicated & trimmed */
+  /* range = 5 ~ 0, count = 6 */
+  memcached_bop_range_query_init(&smget_query, 5, 0, NULL, 0, 6);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(6 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    uint64_t sorted_bkeys[] = { 3, 3, 4, 4, 5, 5 };
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      test_true(strcmp(memcached_coll_smget_result_get_key(&smget_result, i),
+                       (i%2)==0 ? "test:smget_key_1" : "test:smget_key_0") == 0);
+      test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
+    }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* do smget operation (descending order): duplicated & trimmed */
+  /* range = 5 ~ 3, count = 10 */
+  memcached_bop_range_query_init(&smget_query, 5, 3, NULL, 0, 10);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(6 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    uint64_t sorted_bkeys[] = { 3, 3, 4, 4, 5, 5 };
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      test_true(strcmp(memcached_coll_smget_result_get_key(&smget_result, i),
+                       (i%2)==0 ? "test:smget_key_1" : "test:smget_key_0") == 0);
+      test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
     }
   }
   memcached_coll_smget_result_free(&smget_result);
