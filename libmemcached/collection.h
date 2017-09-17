@@ -118,7 +118,7 @@ struct memcached_hexadecimal_st {
 LIBMEMCACHED_API
 size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr, char *buffer, size_t buffer_length);
 
-LIBMEMCACHED_LOCAL
+LIBMEMCACHED_API
 int memcached_compare_two_hexadecimal(memcached_hexadecimal_st *lhs, memcached_hexadecimal_st *rhs);
 
 LIBMEMCACHED_LOCAL

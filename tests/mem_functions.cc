@@ -7332,7 +7332,6 @@ static test_return_t arcus_1_6_set_piped_exist_many(memcached_st *memc)
 
 static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
 {
-  test_return_t test_rc = TEST_SUCCESS;
   memcached_return_t rc;
   const char *keys[12];
   size_t key_length[12];
@@ -7341,8 +7340,15 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
                        3000, 300, 30, 3,
                        2000, 200, 20, 2,
                        1000, 100, 10, 1 };
+  uint64_t sorts[] = {    1,    2,    3,    4,    5,
+                         10,   20,   30,   40,   50,
+                        100,  200,  300,  400,  500,
+                       1000, 2000, 3000, 4000, 5000 };
+  uint64_t bkey_nbo; /* bkey of network byte order */
   uint64_t bkey;
   uint32_t eflag = 0;
+  memcached_hexadecimal_st bkey_hex;
+  memcached_hexadecimal_st eflag_hex;
   char     buffer[64];
   size_t   vlen;
 
@@ -7355,116 +7361,221 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
   /* prepare key strings */
   for (int i=0; i<10; i++) {
     keys[i] = (char *)malloc(sizeof(const char *)*100);
-    key_length[i] = (size_t) snprintf((char *)keys[i], 100, "test:id_%d", i);
+    key_length[i] = (size_t) snprintf((char *)keys[i], 100, "test:smget_key_%d", i);
   }
   keys[10] = "missing_key1"; key_length[10] = strlen(keys[10]);
   keys[11] = "missing_key2"; key_length[11] = strlen(keys[11]);
 
-  /*
-   * case 1) use uint64_t bkey
-   */
-  if (test_rc == TEST_SUCCESS)
-  {
-    /* create btree items */
-    for (int i=0; i<10; i++) {
-      for (int j=0; j<2; j++) {
-        bkey = bkeys[i*2 + j];
-        vlen = snprintf(buffer, 63, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
-        rc = memcached_bop_insert(memc, keys[i], key_length[i], bkey, (unsigned char *)&eflag, sizeof(eflag),
-                                  buffer, vlen, &attributes);
-      }
-    }
-
-    /* do smget operation */
-    /* bkey range: 0 ~ 10000, eflag filter: NULL, offset: 0, count: 100 */
-    memcached_bop_range_query_init(&smget_query, 0, 10000, NULL, 0, 100);
-    memcached_coll_smget_result_create(memc, &smget_result);
-
-    rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
-    if (rc == MEMCACHED_SUCCESS) {
-      uint64_t last_bkey = 0;
-      for (uint32_t i=0; i<smget_result.value_count; i++) {
-        bkey = smget_result.sub_keys[i].bkey;
-        memcached_hexadecimal_to_str(&smget_result.eflags[i], buffer, 64);
-        fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
-                        smget_result.keys[i].string, (unsigned long long)bkey, buffer,
-                        smget_result.values[i].string);
-        test_true(last_bkey <= bkey);
-        last_bkey = bkey;
-      }
-      for (uint32_t i=0; i<smget_result.missed_key_count; i++) {
-        fprintf(stderr, "\tMISSED_KEYS[%u]=%s\n", i, smget_result.missed_keys[i].string);
-      }
-    } else {
-      fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-      test_rc = TEST_FAILURE;
-    }
-    memcached_coll_smget_result_free(&smget_result);
-
-    /* delete btree items */
-    for (int i=0; i<10; i++) {
-      memcached_delete(memc, keys[i], key_length[i], 0);
+  /**************************
+   * case 1) uint64_t bkey
+   **************************/
+  /* create btree items */
+  for (int i=0; i<10; i++) {
+    for (int j=0; j<2; j++) {
+      bkey = bkeys[i*2 + j];
+      eflag = (uint32_t)bkey;
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      rc = memcached_bop_insert(memc, keys[i], key_length[i], bkey,
+                                (unsigned char *)&eflag, sizeof(eflag),
+                                buffer, vlen, &attributes);
     }
   }
 
-  /*
-   * case 2) use byte array bkey
-   */
-  if (test_rc == TEST_SUCCESS)
-  {
-    /* create btree items */
-    for (int i=0; i<10; i++) {
-      for (int j=0; j<2; j++) {
-        bkey = htonl(bkeys[i*2 + j]);
-        eflag = i;
-        vlen = snprintf(buffer, 63, "value_id%d_bkey%llu", i, (unsigned long long)bkeys[i*2 + j]);
-        rc = memcached_bop_ext_insert(memc, keys[i], key_length[i], (unsigned char *)&bkey, sizeof(bkey),
-                                      (unsigned char *)&eflag, sizeof(eflag), buffer, vlen, &attributes);
+  /* do smget operation (ascending order)*/
+  /* bkey range: 0 ~ 10000, eflag filter: NULL, offset: 0, count: 100 */
+  memcached_bop_range_query_init(&smget_query, 0, 10000, NULL, 0, 100);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(20 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(2 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* compare bkey */
+      bkey = sorts[i];
+      test_true(bkey == memcached_coll_smget_result_get_bkey(&smget_result, i));
+      /* compare eflag */
+      eflag = (uint32_t)bkey;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+#if 0 // DEBUG
+      memcached_hexadecimal_to_str(&smget_result.eflags[i], eflag_buf, 64);
+      fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
+                       memcached_coll_smget_result_get_key(&smget_result, i),
+                       (unsigned long long)bkey, eflag_buf,
+                       memcached_coll_smget_result_get_value(&smget_result, i));
+#endif
+    }
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_missed_key_count(&smget_result); i++) {
+      if (strcmp(smget_result.missed_keys[i].string, "missing_key1") != 0 &&
+          strcmp(smget_result.missed_keys[i].string, "missing_key2") != 0)
+      {
+        test_fail(smget_result.missed_keys[i].string);
       }
     }
+  }
+  memcached_coll_smget_result_free(&smget_result);
 
-    /* do smget operation */
-    /* bkey range: 0 ~ 10000, eflag filter: NULL, offset: 0, count: 100 */
-    uint32_t bkey_from = htonl(0);
-    uint32_t bkey_to = htonl(10000);
-    memcached_bop_ext_range_query_init(&smget_query,
-                                       (const unsigned char *)&bkey_from, sizeof(bkey_from),
-                                       (const unsigned char *)&bkey_to, sizeof(bkey_to),
-                                       NULL, 0, 100);
-    memcached_coll_smget_result_create(memc, &smget_result);
+  /* do smget operation (descending order)*/
+  /* bkey range: 10000 ~ 0, eflag filter: NULL, offset: 0, count: 100 */
+  memcached_bop_range_query_init(&smget_query, 10000, 0, NULL, 0, 100);
+  memcached_coll_smget_result_create(memc, &smget_result);
 
-    rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
-    if (rc == MEMCACHED_SUCCESS) {
-      for (uint32_t i=0; i<smget_result.value_count; i++) {
-        char bkey_buf[64];
-        char eflag_buf[64];
-        memcached_hexadecimal_to_str(&smget_result.sub_keys[i].bkey_ext, bkey_buf, 64);
-        memcached_hexadecimal_to_str(&smget_result.eflags[i], eflag_buf, 64);
-        fprintf(stderr, "key[%s], bkey[%s], eflag[%s] = %s\n",
-                        smget_result.keys[i].string, bkey_buf, eflag_buf,
-                        smget_result.values[i].string);
-        //test_true();
-      }
-      for (uint32_t i=0; i<smget_result.missed_key_count; i++) {
-        //fprintf(stderr, "\tMISSED_KEYS[%u]=%s\n", i, smget_result.missed_keys[i].string);
-      }
-    } else {
-      fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-      test_rc = TEST_FAILURE;
+  rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(20 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(2 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* compare bkey */
+      bkey = sorts[(20-1)-i];
+      test_true(bkey == memcached_coll_smget_result_get_bkey(&smget_result, i));
+      /* compare eflag */
+      eflag = (uint32_t)bkey;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
     }
-    memcached_coll_smget_result_free(&smget_result);
-
-    /* delete btree items */
-    for (int i=0; i<10; i++) {
-      memcached_delete(memc, keys[i], key_length[i], 0);
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_missed_key_count(&smget_result); i++) {
+      if (strcmp(smget_result.missed_keys[i].string, "missing_key1") != 0 &&
+          strcmp(smget_result.missed_keys[i].string, "missing_key2") != 0)
+      {
+        test_fail(smget_result.missed_keys[i].string);
+      }
     }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* delete btree items */
+  for (int i=0; i<10; i++) {
+    memcached_delete(memc, keys[i], key_length[i], 0);
+  }
+
+  /**************************
+   * case 2) byte array bkey
+   **************************/
+  /* create btree items */
+  for (int i=0; i<10; i++) {
+    for (int j=0; j<2; j++) {
+      bkey = bkeys[i*2 + j];
+      bkey_nbo = htonl(bkey);
+      eflag = (uint32_t)bkey;
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      rc = memcached_bop_ext_insert(memc, keys[i], key_length[i],
+                                    (unsigned char *)&bkey_nbo, sizeof(bkey_nbo),
+                                    (unsigned char *)&eflag, sizeof(eflag),
+                                    buffer, vlen, &attributes);
+    }
+  }
+
+  /* do smget operation (ascending order) */
+  /* bkey range: 0 ~ 10000, eflag filter: NULL, offset: 0, count: 100 */
+  uint32_t bkey_from = htonl(0);
+  uint32_t bkey_to = htonl(10000);
+  memcached_bop_ext_range_query_init(&smget_query,
+                                     (const unsigned char *)&bkey_from, sizeof(bkey_from),
+                                     (const unsigned char *)&bkey_to, sizeof(bkey_to),
+                                     NULL, 0, 100);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(20 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(2 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* compare bkey */
+      bkey = sorts[i];
+      bkey_nbo = htonl(bkey);
+      bkey_hex.array = (unsigned char *)&bkey_nbo;
+      bkey_hex.length = sizeof(bkey_nbo);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.sub_keys[i].bkey_ext, &bkey_hex) == 0);
+      /* compare eflag */
+      eflag = (uint32_t)bkey;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+    }
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_missed_key_count(&smget_result); i++) {
+      if (strcmp(smget_result.missed_keys[i].string, "missing_key1") != 0 &&
+          strcmp(smget_result.missed_keys[i].string, "missing_key2") != 0)
+      {
+        test_fail(smget_result.missed_keys[i].string);
+      }
+    }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* do smget operation (descending order) */
+  /* bkey range: 10000 ~ 0, eflag filter: NULL, offset: 0, count: 100 */
+  bkey_from = htonl(10000);
+  bkey_to = htonl(0);
+  memcached_bop_ext_range_query_init(&smget_query,
+                                     (const unsigned char *)&bkey_from, sizeof(bkey_from),
+                                     (const unsigned char *)&bkey_to, sizeof(bkey_to),
+                                     NULL, 0, 100);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(20 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(2 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  if (rc == MEMCACHED_SUCCESS) {
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* compare bkey */
+      bkey = sorts[(20-1)-i];
+      bkey_nbo = htonl(bkey);
+      bkey_hex.array = (unsigned char *)&bkey_nbo;
+      bkey_hex.length = sizeof(bkey_nbo);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.sub_keys[i].bkey_ext, &bkey_hex) == 0);
+      /* compare eflag */
+      eflag = (uint32_t)bkey;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+    }
+    for (uint32_t i=0; i<memcached_coll_smget_result_get_missed_key_count(&smget_result); i++) {
+      if (strcmp(smget_result.missed_keys[i].string, "missing_key1") != 0 &&
+          strcmp(smget_result.missed_keys[i].string, "missing_key2") != 0)
+      {
+        test_fail(smget_result.missed_keys[i].string);
+      }
+    }
+  }
+  memcached_coll_smget_result_free(&smget_result);
+
+  /* delete btree items */
+  for (int i=0; i<10; i++) {
+    memcached_delete(memc, keys[i], key_length[i], 0);
   }
 
   /* free key strings */
   for (int i=0; i<10; i++) {
     free((void*)keys[i]);
   }
-  return test_rc;
+  return TEST_SUCCESS;
 }
 
 static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
@@ -7474,8 +7585,11 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   const char *keys[100];
   size_t key_length[100];
   uint64_t bkeys[100];
+  uint64_t bkey_nbo; /* bkey of network byte order */
   uint64_t bkey;
   uint32_t eflag;
+  memcached_hexadecimal_st bkey_hex;
+  memcached_hexadecimal_st eflag_hex;
   char     buffer[64];
   size_t   vlen;
 
@@ -7489,19 +7603,19 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
 
   for (int i=0; i<100; i++) {
     keys[i] = &key_buffer[64 * i];
-    key_length[i] = (size_t)snprintf((char *)keys[i], 63, "test:smget_more_id_%d", i);
+    key_length[i] = (size_t)snprintf((char *)keys[i], 63, "test:smget_more_key_%d", i);
     bkeys[i] = (uint64_t)rand();
   }
 
-  /*
-   * Case 1) use uint64_t bkey
-   */
+  /**************************
+   * case 1) uint64_t bkey
+   **************************/
 
   /* create btree items */
   for (int i=0; i<100; i++) {
     bkey = bkeys[i];
     eflag = 0;
-    vlen = snprintf(buffer, 63, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
+    vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
     rc = memcached_bop_insert(memc, keys[i], key_length[i],
                               bkey, (unsigned char *)&eflag, sizeof(eflag),
                               buffer, vlen, &attributes);
@@ -7514,23 +7628,34 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(100 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
     uint64_t last_bkey = bkey_from;
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* check bkey */
       bkey = smget_result.sub_keys[i].bkey;
-      memcached_hexadecimal_to_str(&smget_result.eflags[i], buffer, 64);
-      fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
-                      (char*)memcached_coll_smget_result_get_key(&smget_result, i),
-                      (unsigned long long)bkey, buffer,
-                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
       test_true(last_bkey <= bkey);
       last_bkey = bkey;
+      /* compare eflag */
+      eflag = 0;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+#if 0 // DEBUG
+      memcached_hexadecimal_to_str(&smget_result.eflags[i], eflag_buf, 64);
+      fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
+                      (char*)memcached_coll_smget_result_get_key(&smget_result, i),
+                      (unsigned long long)bkey, eflag_buf,
+                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
+#endif
     }
-  } else {
-    fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-    return TEST_FAILURE;
   }
   memcached_coll_smget_result_free(&smget_result);
 
@@ -7541,23 +7666,27 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(100 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
     uint64_t last_bkey = bkey_from;
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* check bkey */
       bkey = smget_result.sub_keys[i].bkey;
-      memcached_hexadecimal_to_str(&smget_result.eflags[i], buffer, 64);
-      fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
-                      (char*)memcached_coll_smget_result_get_key(&smget_result, i),
-                      (unsigned long long)bkey, buffer,
-                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
-      test_true(last_bkey > bkey);
+      test_true(last_bkey >= bkey);
       last_bkey = bkey;
+      /* compare eflag */
+      eflag = 0;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
     }
-  } else {
-    fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-    return TEST_FAILURE;
   }
   memcached_coll_smget_result_free(&smget_result);
 
@@ -7568,41 +7697,47 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(20 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
     uint64_t last_bkey = bkey_from;
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* check bkey */
       bkey = smget_result.sub_keys[i].bkey;
-      memcached_hexadecimal_to_str(&smget_result.eflags[i], buffer, 64);
-      fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
-                      (char*)memcached_coll_smget_result_get_key(&smget_result, i),
-                      (unsigned long long)bkey, buffer,
-                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
       test_true(last_bkey <= bkey);
       last_bkey = bkey;
+      /* compare eflag */
+      eflag = 0;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
     }
-  } else {
-    fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-    return TEST_FAILURE;
   }
+  memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
   for (int i=0; i<100; i++) {
     memcached_delete(memc, keys[i], key_length[i], 0);
   }
 
-  /*
-   * Case 2) use byte-array bkey
-   */
+  /**************************
+   * case 2) byte array bkey
+   **************************/
 
   /* create btree items */
   for (int i=0; i<100; i++) {
-    bkey = (uint64_t)htonl(bkeys[i]);
+    bkey = bkeys[i];
+    bkey_nbo = htonl(bkey);
     eflag = 0;
-    vlen = snprintf(buffer, 63, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
+    vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
     rc = memcached_bop_ext_insert(memc, keys[i], key_length[i],
-                                  (unsigned char *)&bkey, sizeof(bkey),
+                                  (unsigned char *)&bkey_nbo, sizeof(bkey_nbo),
                                   (unsigned char *)&eflag, sizeof(eflag),
                                   buffer, vlen, &attributes);
   }
@@ -7617,24 +7752,28 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(100 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
-    //uint64_t last_bkey = bkey_from;
+    bkey_hex.array = (unsigned char *)&bkey_from;
+    bkey_hex.length = sizeof(bkey_from);
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
-      char bkey_buf[64];
-      char eflag_buf[64];
-      memcached_hexadecimal_to_str(&smget_result.sub_keys[i].bkey_ext, bkey_buf, 64);
-      memcached_hexadecimal_to_str(&smget_result.eflags[i], eflag_buf, 64);
-      fprintf(stderr, "key[%s], bkey[%s], eflag[%s] = %s\n",
-                      smget_result.keys[i].string, bkey_buf, eflag_buf,
-                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
-      //test_true(memcached_compare_two_hexadecimal() != -1);
-      //last_bkey = bkey;
+      /* check bkey */
+      test_true(memcached_compare_two_hexadecimal(&smget_result.sub_keys[i].bkey_ext, &bkey_hex) >= 0);
+      bkey_hex = smget_result.sub_keys[i].bkey_ext;
+      /* compare eflag */
+      eflag = 0;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+#if 0 /* compare value */
+      vlen = snprintf(buffer, 63, "value-%s", smget_result.sub_keys[i].bkey_ext.array);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+#endif
     }
-  } else {
-    fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-    return TEST_FAILURE;
   }
   memcached_coll_smget_result_free(&smget_result);
 
@@ -7648,24 +7787,28 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(100 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
-    //uint64_t last_bkey = bkey_from;
+    bkey_hex.array = (unsigned char *)&bkey_from;
+    bkey_hex.length = sizeof(bkey_from);
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
-      char bkey_buf[64];
-      char eflag_buf[64];
-      memcached_hexadecimal_to_str(&smget_result.sub_keys[i].bkey_ext, bkey_buf, 64);
-      memcached_hexadecimal_to_str(&smget_result.eflags[i], eflag_buf, 64);
-      fprintf(stderr, "key[%s], bkey[%s], eflag[%s] = %s\n",
-                      smget_result.keys[i].string, bkey_buf, eflag_buf,
-                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
-      //test_true(memcached_compare_two_hexadecimal() != -1);
-      //last_bkey = bkey;
+      /* check bkey */
+      test_true(memcached_compare_two_hexadecimal(&smget_result.sub_keys[i].bkey_ext, &bkey_hex) <= 0);
+      bkey_hex = smget_result.sub_keys[i].bkey_ext;
+      /* compare eflag */
+      eflag = 0;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+#if 0 /* compare value */
+      vlen = snprintf(buffer, 63, "value-%s", smget_result.sub_keys[i].bkey_ext.array);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+#endif
     }
-  } else {
-    fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-    return TEST_FAILURE;
   }
   memcached_coll_smget_result_free(&smget_result);
 
@@ -7679,24 +7822,28 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(20 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
-    //uint64_t last_bkey = bkey_from;
+    bkey_hex.array = (unsigned char *)&bkey_from;
+    bkey_hex.length = sizeof(bkey_from);
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
-      char bkey_buf[64];
-      char eflag_buf[64];
-      memcached_hexadecimal_to_str(&smget_result.sub_keys[i].bkey_ext, bkey_buf, 64);
-      memcached_hexadecimal_to_str(&smget_result.eflags[i], eflag_buf, 64);
-      fprintf(stderr, "key[%s], bkey[%s], eflag[%s] = %s\n",
-                      smget_result.keys[i].string, bkey_buf, eflag_buf,
-                      (char*)memcached_coll_smget_result_get_value(&smget_result, i));
-      //test_true(memcached_compare_two_hexadecimal() != -1);
-      //last_bkey = bkey;
+      /* check bkey */
+      test_true(memcached_compare_two_hexadecimal(&smget_result.sub_keys[i].bkey_ext, &bkey_hex) >= 0);
+      bkey_hex = smget_result.sub_keys[i].bkey_ext;
+      /* compare eflag */
+      eflag = 0;
+      eflag_hex.array = (unsigned char *)&eflag;
+      eflag_hex.length = sizeof(eflag);
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+#if 0 /* compare value */
+      vlen = snprintf(buffer, 63, "value-%s", smget_result.sub_keys[i].bkey_ext.array);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+#endif
     }
-  } else {
-    fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-    return TEST_FAILURE;
   }
   memcached_coll_smget_result_free(&smget_result);
 
@@ -7822,7 +7969,7 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
 
   for (int i=0; i<100; i++) {
     bkey = bkeys[i];
-    vlen = snprintf(buffer, 63, "value_id%d_bkey%llu", i, (unsigned long long)bkey);
+    vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
     rc = memcached_bop_insert(memc, key, key_length,
                               bkey, (unsigned char *)fvalue, fvalue_length,
                               buffer, vlen, &attributes);
@@ -7838,26 +7985,34 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, &key, &key_length, 1, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(100 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
+    memcached_hexadecimal_st eflag_hex;
     uint64_t last_bkey = bkey_from;
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
+      /* check bkey */
       bkey = smget_result.sub_keys[i].bkey;
+      test_true(last_bkey <= bkey);
+      last_bkey = bkey;
+      /* compare eflag */
+      eflag_hex.array = (unsigned char *)fvalue;
+      eflag_hex.length = fvalue_length;
+      test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
+      /* compare value */
+      vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
+      test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
+#if 0 // DEBUG
       memcached_hexadecimal_to_str(&smget_result.eflags[i], buffer, 64);
       fprintf(stderr, "key[%s], bkey[%llu], eflag[%s] = %s\n",
                       (char*)memcached_coll_smget_result_get_key(&smget_result, i),
                       (unsigned long long)bkey, buffer,
                       (char*)memcached_coll_smget_result_get_value(&smget_result, i));
-      test_true(last_bkey <= bkey);
-      last_bkey = bkey;
+#endif
     }
-    for (uint32_t i=0; i<smget_result.missed_key_count; i++) {
-      fprintf(stderr, "\tMISSED_KEYS[%u]=%s\n", i, smget_result.missed_keys[i].string);
-    }
-  } else {
-    fprintf(stderr, "memcached_bop_smget() failed, reason=%s\n", memcached_strerror(NULL, rc));
-    return TEST_FAILURE;
   }
   memcached_coll_smget_result_free(&smget_result);
 
