@@ -8093,7 +8093,6 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
     test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
   }
 
-#if 0 /* FIXME */
   /* do smget operation (ascending order): duplicated & trimmed */
   memcached_bop_range_query_init(&smget_query, 0, 5, NULL, 0, 10);
   memcached_coll_smget_result_create(memc, &smget_result);
@@ -8102,7 +8101,6 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   test_true_got(rc == MEMCACHED_OUT_OF_RANGE, memcached_strerror(NULL, rc));
 
   memcached_coll_smget_result_free(&smget_result);
-#endif
 
   /* do smget operation (descending order): duplicated & trimmed */
   /* count = 10 */

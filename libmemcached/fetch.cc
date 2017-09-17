@@ -804,6 +804,7 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
   size_t server_idx= 0;
 
   *error= MEMCACHED_MAXIMUM_RETURN; // We use this to see if we ever go into the loop
+  memcached_return_t smget_error= MEMCACHED_SUCCESS;
   memcached_server_st *server = NULL; // Avoid compiler warning (-Wuninitialized)
   bool stay_on_server = false;
   while (stay_on_server || (server= memcached_io_get_readable_server(ptr)) != NULL)
@@ -871,6 +872,18 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
     {
       memcached_server_response_reset(server);
     }
+    else if (*error == MEMCACHED_OUT_OF_RANGE  or
+             *error == MEMCACHED_TYPE_MISMATCH or
+             *error == MEMCACHED_BKEY_MISMATCH or
+             *error == MEMCACHED_ATTR_MISMATCH)
+    {
+      memcached_coll_smget_result_free(each_result);
+      if (smget_error == MEMCACHED_SUCCESS) {
+        smget_error= *error;
+      }
+      each_result= NULL;
+      continue;
+    }
     else /* other failures */
     {
       memcached_coll_smget_result_free(each_result);
@@ -897,6 +910,12 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
          *error == MEMCACHED_DUPLICATED_TRIMMED or
          *error == MEMCACHED_TRIMMED            )
   {
+    if (smget_error != MEMCACHED_SUCCESS)
+    {
+      *error= smget_error;
+      break;
+    }
+
     /* Prepare the result */
     result->type= type;
 
