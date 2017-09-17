@@ -8415,6 +8415,18 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   memcached_coll_smget_result_free(&smget_result);
 
+  /* do smget operation (50 ~ 40, offset=0, count=100) */
+  memcached_bop_range_query_init(&smget_query, 50, 40, NULL, 0, 100);
+  memcached_coll_smget_result_create(memc, &smget_result);
+
+  rc = memcached_bop_smget(memc, keys, key_length, 2, &smget_query, &smget_result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  test_true(0 == memcached_coll_smget_result_get_count(&smget_result));
+  test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+  memcached_coll_smget_result_free(&smget_result);
+
   /* do smget operation (9 ~ 5, count=100) */
   memcached_bop_range_query_init(&smget_query, 9, 5, NULL, 0, 100);
   memcached_coll_smget_result_create(memc, &smget_result);
