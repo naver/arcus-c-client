@@ -1505,6 +1505,8 @@ Response code는 아래와 같다.
 정상 수행되었을 경우, result 구조체는 아래의 결과를 가진다.
 - 조회된 element 결과
   -  bkey 값의 order 기준에 따라 정렬된 순서대로 element들이 보관된다.
+- 각 element의 bkey 순위
+  - memcached_coll_result_get_position(result, index) API를 통해 조회한다.
 - btree 내에서 주어진 bkey의 순위
   - memcached_coll_result_get_btree_position(result) API를 통해 조회한다.
 - result에 보관된 element들에서 주어진 bkey의 element 위치
@@ -1547,9 +1549,14 @@ void arcus_btree_find_position_with_get(memcached_st *memc)
     assert(21 == memcached_coll_result_get_count(result));
     assert(99 == memcached_coll_result_get_btree_position(result));
     assert(10 == memcached_coll_result_get_result_position(result));
-    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
-      snprintf(buffer, 15, "value%u", ((99-10)+i));
-      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    if (rc == MEMCACHED_SUCCESS) {
+      size_t position = (99-10);
+      for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+        assert(position == memcached_coll_result_get_position(result, i));
+        snprintf(buffer, 15, "value%u", ((99-10)+i));
+        assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+        position += 1;
+      }
     }
     memcached_coll_result_free(result);
 
@@ -1563,9 +1570,14 @@ void arcus_btree_find_position_with_get(memcached_st *memc)
     assert(21 == memcached_coll_result_get_count(result));
     assert(99 == memcached_coll_result_get_btree_position(result));
     assert(10 == memcached_coll_result_get_result_position(result));
-    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
-      snprintf(buffer, 15, "value%u", ((maxcount-1)-(99-10)-i));
-      assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+    if (rc == MEMCACHED_SUCCESS) {
+      size_t position = (99-10);
+      for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+        assert(position == memcached_coll_result_get_position(result, i));
+        snprintf(buffer, 15, "value%u", ((maxcount-1)-(99-10)-i));
+        assert(0 == strcmp(buffer, memcached_coll_result_get_value(result, i)));
+        position += 1;
+      }
     }
     memcached_coll_result_free(result);
 }

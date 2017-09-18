@@ -9628,9 +9628,14 @@ static test_return_t arcus_btree_find_position_with_get(memcached_st *memc)
   test_true(21 == memcached_coll_result_get_count(result));
   test_true(99 == memcached_coll_result_get_btree_position(result));
   test_true(10 == memcached_coll_result_get_result_position(result));
-  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
-    snprintf(buffer, 15, "value%u", ((99-10)+i));
-    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  if (rc == MEMCACHED_SUCCESS) {
+    size_t position = (99-10);
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      test_true(position == memcached_coll_result_get_position(result, i));
+      snprintf(buffer, 15, "value%u", ((99-10)+i));
+      test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+      position += 1;
+    }
   }
   memcached_coll_result_free(result);
 
@@ -9644,9 +9649,14 @@ static test_return_t arcus_btree_find_position_with_get(memcached_st *memc)
   test_true(21 == memcached_coll_result_get_count(result));
   test_true(99 == memcached_coll_result_get_btree_position(result));
   test_true(10 == memcached_coll_result_get_result_position(result));
-  for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
-    snprintf(buffer, 15, "value%u", ((maxcount-1)-(99-10)-i));
-    test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+  if (rc == MEMCACHED_SUCCESS) {
+    size_t position = (99-10);
+    for (uint32_t i= 0; i < memcached_coll_result_get_count(result); i++) {
+      test_true(position == memcached_coll_result_get_position(result, i));
+      snprintf(buffer, 15, "value%u", ((maxcount-1)-(99-10)-i));
+      test_true(strcmp(buffer, memcached_coll_result_get_value(result, i)) == 0);
+      position += 1;
+    }
   }
 
   return TEST_SUCCESS;

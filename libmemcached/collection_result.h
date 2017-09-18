@@ -182,6 +182,15 @@ LIBMEMCACHED_API
 size_t memcached_coll_result_get_result_position(memcached_coll_result_st *result);
 
 /**
+ * Get the b+tree element's position.
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's position.
+ */
+LIBMEMCACHED_API
+size_t memcached_coll_result_get_position(memcached_coll_result_st *result, size_t idx);
+
+/**
  * Get the b+tree element's bkey.
  * @param result  collection result structure
  * @param idx  element's index (0th fetched element, 1st fetched element, and so on).

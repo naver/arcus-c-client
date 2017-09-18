@@ -160,6 +160,13 @@ size_t memcached_coll_result_get_result_position(memcached_coll_result_st *resul
   return result->result_position;
 }
 
+size_t memcached_coll_result_get_position(memcached_coll_result_st *result, size_t index)
+{
+  assert_msg_with_return(result, "result is null", 0);
+  assert_msg_with_return(result->type == COLL_BTREE, "not a b+tree", 0);
+  return ((result->btree_position - result->result_position) + index);
+}
+
 uint64_t memcached_coll_result_get_bkey(memcached_coll_result_st *result, size_t index)
 {
   assert_msg_with_return(result, "result is null", 0);
