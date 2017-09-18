@@ -1065,7 +1065,45 @@ static void arcus_btree_element_mget(memcached_st *memc)
 
 서로 다른 key로 분산되어 있는 b+Tree들의 element를 sort-merge 방식으로 조회하는 기능이다.
 이는 서로 다른 b+tree들이지만, 논리적으로 하나로 합쳐진 거대한 b+tree에 대해 element 조회 연산하는 것과
-동일한 효과를 낸다. 이를 수행하는 함수는 아래와 같다.
+동일한 효과를 낸다.
+
+smget 동작은 조회 범위와 어떤 b+tree의 trim 영역과의 겹침에 대한 처리로,
+아래 두 가지 동작 모드가 있다.
+
+1) 기존 Sort-Merge 조회 (1.8.X 이하 버전에서 동작하던 방식)
+   - smget 조회 조건을 만족하는 첫번째 element가 trim된 b+tree가 하나라도 존재하면 OUT_OF_RANGE 응답을 보낸다.
+     이 경우, 응용은 모든 key에 대해 백엔드 저장소인 DB에서 elements 조회한 후에
+     응용에서 sort-merge 작업을 수행하여야 한다.
+   - OUT_OF_RANGE가 없는 상황에서 smget을 수행하면서
+     조회 조건을 만족하는 두번째 이후의 element가 trim된 b+tree를 만나게 되면,
+     그 지점까지 조회한 elements를 최종 elements 결과로 하고
+     smget 수행 상태는 TRIMMED로 하여 응답을 보낸다.
+     이 경우, 응용은 모든 key에 대해 백엔드 저장소인 DB에서 trim 영역의 elements를 조회하여
+     smget 결과에 반영하여야 한다.
+
+2) 신규 Sort-Merge 조회 (1.9.0 이후 버전에서 추가된 방식)
+   - 기존의 OUT_OF_RANGE에 해당하는 b+tree를 missed keys로 분류하고
+     나머지 b+tree들에 대해 smget을 계속 수행한다.
+     따라서, 응용에서는 missed keys에 한해서만
+     백엔드 저장소인 DB에서 elements를 조회하여 최종 smget 결과에 반영할 수 있다.
+   - smget 조회 조건을 만족하는 두번째 이후의 element가 trim된 b+tree가 존재하더라도,
+     그 지점에서 smget을 중지하는 것이 아니라, 그러한 b+tree를 trimmed keys로 분류하고
+     원하는 개수의 elements를 찾을 때까지 smget을 계속 진행한다.
+     따라서, 응용에서는 trimmed keys에 한하여
+     백엔드 저장소인 DB에서 trim된 elements를 조회하여 최종 smget 결과에 반영할 수 있다.
+   - bkey에 대한 unique 조회 기능을 지원한다.
+     중복 bkey를 허용하여 조회하는 duplcate 조회 외에
+     중복 bkey를 제거하고 unique bkey만을 조회하는 unique 조회를 지원한다.
+   - 조회 조건에 offset 기능을 제거한다.
+
+기존 smget 연산을 사용하더라도, offset 값은 항상 0으로 사용하길 권고한다.
+양수의 offset을 사용하는 smget에서 missed keys가 존재하고
+missed keys에 대한 DB 조회가 offset으로 skip된 element를 가지는 경우,
+응용에서 정확한 offset 처리가 불가능해지기 때문이다.
+이전의 조회 결과에 이어서 추가로 조회하고자 하는 경우,
+이전에 조회된 bkey 값을 바탕으로 bkey range를 재조정하여 사용할 수 있다.
+
+Sort-Merge 조회를 수행하는 함수는 아래와 같다.
 
 ``` c
 memcached_return_t memcached_bop_smget(memcached_st *ptr, const char * const *keys, const size_t *keys_length,
@@ -1077,17 +1115,40 @@ memcached_return_t memcached_bop_smget(memcached_st *ptr, const char * const *ke
 - query: 조회 조건을 가진 query 구조체
 - result: sort-merge 조회 결과는 담는 구조체
 
+Sort-Merge 조회 질의를 표현하는 memcached_bop_query_st 구조체 생성 방법은
+기존 sort-merge 조회와 신규 sort-merge 조회에 따라 다르다.
+기존 sort-merge 조회에서 memcached_bop_query_st 구조체 생성 방법은
+앞서 설명한 [B+Tree Query 구조체](06-btree-API.md#btree-query-구조체) 참고하기 바란다.
+신규 sort-merge 조회에서는 아래의 sort-merge 질의 생성하는 전용 API를 사용해
+bkey range, element flag, count 그리고 unique를 명시하여 query 구조체를 생성한다.
+마지막 인자인 unique가 false이면 중복 bkey를 허용하여 조회하며,
+true이면 중복 bkey를 제거하여 unique bkey만을 조회한다. 
+
+``` c
+memcached_return_t memcached_bop_smget_query_init(memcached_bop_query_st *ptr,
+                                                  const uint64_t bkey_from, const uint64_t bkey_to,
+                                                  memcached_coll_eflag_filter_st *eflag_filter,
+                                                  size_t count, bool unique);
+memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *ptr,
+                                                  const unsigned char *bkey_from, size_t bkey_from_length,
+                                                  const unsigned char *bkey_to, size_t bkey_to_length,
+                                                  memcached_coll_eflag_filter_st *eflag_filter,
+                                                  size_t count, bool unique);
+```
+
+
 Response code는 아래와 같다.
 
 - MEMCACHED_SUCCESS
   - MEMCACHED_END: 여러 B+tree에서 정상적으로 element를 조회하였음.
   - MEMCACHED_DUPLICATED: 여러 B+tree에서 정상적으로 element를 조회하였으나 중복된 bkey가 존재함.
-  - MEMCACHED_TRIMMED
+  - MEMCACHED_TRIMMED (기존 sort-merge 조회에 한정)
     - 정상적으로 element를 조회하였으나, 조회 범위가 특정 B+tree의 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음.
     - 즉, 해당 B+tree 크기 제한으로 인해 삭제되어 조회되지 않은 element가 어딘가(DB)에 존재할 수도 있음을 뜻함.
-  - MEMCACHED_DUPLICATED_TRIMMED: MEMCACHED_DUPLICATED 상태와MEMCACHED_TRIMMED 상태가 모두 존재.
+  - MEMCACHED_DUPLICATED_TRIMMED (기존 sort-merge 조회에 한정)
+    - MEMCACHED_DUPLICATED 상태와MEMCACHED_TRIMMED 상태가 모두 존재.
 - not MEMCACHED_SUCCESS
-  - MEMCACHED_OUT_OF_RANGE
+  - MEMCACHED_OUT_OF_RANGE (기존 sort-merge 조회에 한정)
     - 주어진 조회 범위에 해당하는 element가 없으나, 조회 범위가 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음.
     - 즉, B+tree 크기 제한으로 인해 삭제되어 조회되지 않은 element가 어딘가(DB)에 존재할 수도 있음을 뜻함.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 B+tree가 아님.
@@ -1110,6 +1171,7 @@ void                           memcached_bop_smget_result_free(memcached_bop_smg
 memcached_bop_smget_result_create | result 구조체를 초기화한다. result에 NULL을 넣으면 새로 allocate 하여 반환한다.
 memcached_bop_smget_result_free   | result 구조체를 초기화하고 allocate 된 경우 free 한다.
 
+
 memcached_bop_smget_result_t 구조체에서 조회 결과를 얻기 위한 함수들은 아래와 같다.
 
 ``` c
@@ -1123,20 +1185,32 @@ size_t                    memcached_bop_smget_result_get_value_length(memcached_
 size_t                    memcached_bop_smget_result_get_missed_key_count(memcached_bop_smget_result_st *result)
 const char *              memcached_bop_smget_result_get_missed_key(memcached_bop_smget_result_st *result, size_t index)
 size_t                    memcached_bop_smget_result_get_missed_key_length(memcached_bop_smget_result_st *result, size_t index)
+memcached_return_t        memcached_coll_smget_result_get_missed_cause(memcached_coll_smget_result_st *result, size_t index)
+size_t                    memcached_coll_smget_result_get_trimmed_key_count(memcached_coll_smget_result_st *result)
+const char *              memcached_coll_smget_result_get_trimmed_key(memcached_coll_smget_result_st *result, size_t index)
+size_t                    memcached_coll_smget_result_get_trimmed_key_length(memcached_coll_smget_result_st *result, size_t index)
+uint64_t                  memcached_coll_smget_result_get_trimmed_bkey(memcached_coll_smget_result_st *result, size_t index)
+memcached_hexadecimal_st *memcached_coll_smget_result_get_trimmed_bkey_ext(memcached_coll_smget_result_st *result, size_t index)
 ```
 
-함수                                             | 기능
------------------------------------------------- | ---------------------------------------------------------------
-memcached_bop_smget_result_get_count             | 조회 결과의 element 개수
-memcached_bop_smget_result_get_key               | Element array에서 index 위치에 있는 element의 key
-memcached_bop_smget_result_get_bkey              | Element array에서 index 위치에 있는 element의 unsigned int bkey
-memcached_bop_smget_result_get_bkey_ext          | Element array에서 index 위치에 있는 element의 byte array bkey
-memcached_bop_smget_result_get_eflag             | Element array에서 index 위치에 있는 element의 eflag
-memcached_bop_smget_result_get_value             | Element array에서 index 위치에 있는 element의 value
-memcached_bop_smget_result_get_value_length      | Element array에서 index 위치에 있는 element의 value 길이
-memcached_bop_smget_result_get_missed_key_count  | 조회 결과의 missed key 개수
-memcached_bop_smget_result_get_missed_key        | Missed key array에서 index 위치에 있는 key
-memcached_bop_smget_result_get_missed_key_length | Missed key array에서 index 위치에 있는 key 길이
+함수                                              | 기능
+------------------------------------------------- | ---------------------------------------------------------------
+memcached_bop_smget_result_get_count              | 조회 결과의 element 개수
+memcached_bop_smget_result_get_key                | Element array에서 index 위치에 있는 element의 key
+memcached_bop_smget_result_get_bkey               | Element array에서 index 위치에 있는 element의 unsigned int bkey
+memcached_bop_smget_result_get_bkey_ext           | Element array에서 index 위치에 있는 element의 byte array bkey
+memcached_bop_smget_result_get_eflag              | Element array에서 index 위치에 있는 element의 eflag
+memcached_bop_smget_result_get_value              | Element array에서 index 위치에 있는 element의 value
+memcached_bop_smget_result_get_value_length       | Element array에서 index 위치에 있는 element의 value 길이
+memcached_bop_smget_result_get_missed_key_count   | 조회 결과의 missed key 개수
+memcached_bop_smget_result_get_missed_key         | Missed key array에서 index 위치에 있는 key
+memcached_bop_smget_result_get_missed_key_length  | Missed key array에서 index 위치에 있는 key 길이
+memcached_bop_smget_result_get_missed_cause       | 해당 missed key가 miss된 원인 (신규 sort-merge 조회 한정)
+memcached_bop_smget_result_get_trimmed_key_count  | 조회 결과의 trimmed key 개수 (신규 sort-merge 조회 한정)
+memcached_bop_smget_result_get_trimmed_key_key    | Trimmed key array에서 index 위치에 있는 key (신규 sort-merge 조회 한정)
+memcached_bop_smget_result_get_trimmed_key_length | Trimmed key array에서 index 위치에 있는 key 길이 (신규 sort-merge 조회 한정)
+memcached_bop_smget_result_get_trimmed_bkey       | 해당 trimmed key의 마지막 unsigned int bkey (신규 sort-merge 조회 한정)
+memcached_bop_smget_result_get_trimmed_bkey_ext   | 해당 trimmed key의 마지막 byte array bkey (신규 sort-merge 조회 한정)
 
 B+tree element sort-merge 조회하는 예제는 아래와 같다.
 
@@ -1180,14 +1254,17 @@ void arcus_btree_element_smget(memcached_st *memc)
     uint32_t bkey_from = 0;
     uint32_t bkey_to = htonl(UINT32_MAX);
 
-    // byte array bkey에 대한 범위 검색 쿼리를 생성한다.
+    // byte array bkey에 대해 중복 bkey 허용한 범위 검색 쿼리를 생성한다.
     memcached_bop_query_st query;
-    memcached_bop_ext_range_query_init(memc, &query, (unsigned char *)&bkey_from, sizeof(uint32_t),
-                                       (unsigned char *)&bkey_to, sizeof(uint32_t), NULL, 0, 100);
+    memcached_bop_ext_smget_query_init(memc, &query, (unsigned char *)&bkey_from, sizeof(uint32_t),
+                                       (unsigned char *)&bkey_to, sizeof(uint32_t), NULL, 100, false);
 
     // smget을 수행한다.
     rc = memcached_bop_smget(memc, keys, key_length, 100, &query, smget_result);
     assert(MEMCACHED_END == memcached_get_last_response_code(memc));
+    aseert(100 == memcached_bop_smget_result_get_count(smget_result));
+    aseert(0 == memcached_bop_smget_result_get_missed_key_count(smget_result));
+    aseert(0 == memcached_bop_smget_result_get_trimmed_key_count(smget_result));
 
     if (rc == MEMCACHED_SUCCESS) {
         uint32_t last_bkey = bkey_from;
