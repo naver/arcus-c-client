@@ -2309,6 +2309,15 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("'offset + count' should be <= 1000"));
   }
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+  if (query->smgmode != MEMCACHED_COLL_SMGET_NONE &&
+      query->smgmode != MEMCACHED_COLL_SMGET_DUPLICATE &&
+      query->smgmode != MEMCACHED_COLL_SMGET_UNIQUE)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("invalid smget mode"));
+  }
+#endif
 
   if (memcached_server_count(ptr) > MAX_SERVERS_FOR_BOP_SMGET)
   {
@@ -2390,6 +2399,16 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     result->offset= query->offset;
     result->count= query->count;
   }
+
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+  /* smget mode */
+  if (query->smgmode != MEMCACHED_COLL_SMGET_NONE)
+  {
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE, " %s",
+                    (query->smgmode == MEMCACHED_COLL_SMGET_DUPLICATE ?  "duplicate" : "unique"));
+    result->smgmode= query->smgmode;
+  }
+#endif
 
   /* Command */
   const char *command= coll_op_string(BOP_SMGET_OP);
@@ -4108,6 +4127,9 @@ static void memcached_coll_query_init(memcached_coll_query_st *ptr)
   ptr->offset = 0;
   ptr->count = 0;
   ptr->eflag_filter = NULL;
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+  ptr->smgmode = MEMCACHED_COLL_SMGET_NONE;
+#endif
 
   return;
 }
@@ -4222,6 +4244,47 @@ memcached_return_t memcached_bop_ext_range_query_init(memcached_bop_query_st *pt
 
   return MEMCACHED_SUCCESS;
 }
+
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+memcached_return_t memcached_bop_smget_query_init(memcached_bop_query_st *ptr,
+                                                  const uint64_t bkey_from, const uint64_t bkey_to,
+                                                  memcached_coll_eflag_filter_st *eflag_filter,
+                                                  size_t count, bool unique)
+{
+  memcached_coll_query_init(ptr);
+
+  ptr->type = MEMCACHED_COLL_QUERY_BOP_RANGE;
+  ptr->sub_key.bkey_range[0] = bkey_from;
+  ptr->sub_key.bkey_range[1] = bkey_to;
+  ptr->eflag_filter = eflag_filter;
+  ptr->offset = 0;
+  ptr->count = count;
+  ptr->smgmode = (unique ? MEMCACHED_COLL_SMGET_UNIQUE : MEMCACHED_COLL_SMGET_DUPLICATE);
+
+  return MEMCACHED_SUCCESS;
+}
+
+memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *ptr,
+                                                      const unsigned char *bkey_from, size_t bkey_from_length,
+                                                      const unsigned char *bkey_to, size_t bkey_to_length,
+                                                      memcached_coll_eflag_filter_st *eflag_filter,
+                                                      size_t count, bool unique)
+{
+  memcached_coll_query_init(ptr);
+
+  ptr->type = MEMCACHED_COLL_QUERY_BOP_EXT_RANGE;
+  ptr->sub_key.bkey_ext_range[0].array = (unsigned char *)bkey_from;
+  ptr->sub_key.bkey_ext_range[0].length = bkey_from_length;
+  ptr->sub_key.bkey_ext_range[1].array = (unsigned char *)bkey_to;
+  ptr->sub_key.bkey_ext_range[1].length = bkey_to_length;
+  ptr->eflag_filter = eflag_filter;
+  ptr->offset = 0;
+  ptr->count = count;
+  ptr->smgmode = (unique ? MEMCACHED_COLL_SMGET_UNIQUE : MEMCACHED_COLL_SMGET_DUPLICATE);
+
+  return MEMCACHED_SUCCESS;
+}
+#endif
 
 /* APIs : memcached_coll_eflag_filter_st */
 

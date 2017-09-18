@@ -414,8 +414,16 @@ merge_smget_results(memcached_coll_smget_result_st **results,
   size_t result_idx[256];
   memset(result_idx, 0, 256*sizeof(size_t));
 
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+  memcached_coll_sub_key_st *prev_sub_key = NULL;
+  memcached_coll_sub_key_st *curr_sub_key;
+#endif
+
 #ifdef FIX_SMGET_BUG
   size_t merged_count= 0;
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+  size_t found_count= 0;
+#endif
   bool bkey_trimmed= false;
   bool byte_array_bkey= (merged->sub_key_type == MEMCACHED_COLL_QUERY_BOP_EXT or
                          merged->sub_key_type == MEMCACHED_COLL_QUERY_BOP_EXT_RANGE)
@@ -484,9 +492,55 @@ merge_smget_results(memcached_coll_smget_result_st **results,
       }
     }
 
-    // merge or free
-    if (i >= merged->offset and i < merged->offset+merged->count)
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+    bool bkey_duplicated= false;
+    curr_sub_key= &results[smallest_idx]->sub_keys[result_idx[smallest_idx]];
+    if (prev_sub_key != NULL) {
+      if (byte_array_bkey) {
+        if (memcached_compare_two_hexadecimal(&prev_sub_key->bkey_ext, &curr_sub_key->bkey_ext) == 0)
+           bkey_duplicated= true;
+      } else {
+        if (prev_sub_key->bkey == curr_sub_key->bkey)
+           bkey_duplicated= true;
+      }
+    }
+    prev_sub_key= curr_sub_key;
+
+    if (bkey_duplicated)
     {
+      if (merged->smgmode == MEMCACHED_COLL_SMGET_UNIQUE) {
+        /* if there are no more elements in this result. */
+        if (++result_idx[smallest_idx] >= results[smallest_idx]->value_count) {
+          if ((merged->smgmode == MEMCACHED_COLL_SMGET_NONE) &&
+              (responses[smallest_idx] == MEMCACHED_TRIMMED or
+               responses[smallest_idx] == MEMCACHED_DUPLICATED_TRIMMED)) {
+              bkey_trimmed= true;
+          }
+        }
+        continue;
+      }
+    }
+    else
+    {
+      if (bkey_trimmed) {
+        break; /* stop smget */
+      }
+    }
+#endif
+
+    // merge or free
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+    if (found_count >= merged->offset and found_count < merged->offset+merged->count)
+#else
+    if (i >= merged->offset and i < merged->offset+merged->count)
+#endif
+    {
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+      if (merged_count > 0 && bkey_duplicated) {
+        if (rc == MEMCACHED_END)
+          rc= MEMCACHED_DUPLICATED;
+      }
+#else
       bool bkey_duplicated= false;
       if (byte_array_bkey) {
         merged->sub_keys[merged_count].bkey_ext= results[smallest_idx]->sub_keys[result_idx[smallest_idx]].bkey_ext;
@@ -509,7 +563,14 @@ merge_smget_results(memcached_coll_smget_result_st **results,
         if (bkey_trimmed)
           break;
       }
+#endif
       // merge
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+      if (byte_array_bkey)
+        merged->sub_keys[merged_count].bkey_ext= curr_sub_key->bkey_ext;
+      else
+        merged->sub_keys[merged_count].bkey= curr_sub_key->bkey;
+#endif
       merged->keys  [merged_count]= results[smallest_idx]->keys  [result_idx[smallest_idx]];
       merged->values[merged_count]= results[smallest_idx]->values[result_idx[smallest_idx]];
       merged->flags [merged_count]= results[smallest_idx]->flags [result_idx[smallest_idx]];
@@ -529,11 +590,21 @@ merge_smget_results(memcached_coll_smget_result_st **results,
                           results[smallest_idx]->sub_keys[result_idx[smallest_idx]].bkey_ext.array);
       }
     }
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+    found_count++;
+
+#endif
     /* if there are no more elements in this result. */
     if (++result_idx[smallest_idx] >= results[smallest_idx]->value_count)
     {
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+      if ((merged->smgmode == MEMCACHED_COLL_SMGET_NONE) &&
+          (responses[smallest_idx] == MEMCACHED_TRIMMED or
+           responses[smallest_idx] == MEMCACHED_DUPLICATED_TRIMMED))
+#else
       if (responses[smallest_idx] == MEMCACHED_TRIMMED or
           responses[smallest_idx] == MEMCACHED_DUPLICATED_TRIMMED)
+#endif
       {
           bkey_trimmed= true;
       }
@@ -723,10 +794,107 @@ merge_smget_results(memcached_coll_smget_result_st **results,
     for (size_t x=0; x<results[j]->missed_key_count; x++)
     {
       merged->missed_keys[merged_count]= results[j]->missed_keys[x];
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+      if (merged->smgmode != MEMCACHED_COLL_SMGET_NONE)
+        merged->missed_causes[merged_count]= results[j]->missed_causes[x];
+#endif
       merged_count++;
     }
     results[j]->missed_key_count= 0;
   }
+
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+  /* 3. Merge trimmed keys */
+
+  memset(result_idx, 0, 256*sizeof(size_t));
+  merged_count= 0;
+  for (size_t i=0; i<merged->trimmed_key_count; i++)
+  {
+    int smallest_idx= -1;
+    int comp_result;
+    bool should_merge= false;
+    for (size_t j=0; j<num_results; j++)
+    {
+      if (results[j]->trimmed_key_count == 0) {
+        /* no elements in this result. */
+        continue;
+      }
+      if (smallest_idx == -1) {
+        smallest_idx= j;
+        continue;
+      }
+
+      prev_sub_key = &results[smallest_idx]->trimmed_sub_keys[result_idx[smallest_idx]];
+      curr_sub_key = &results[j]->trimmed_sub_keys[result_idx[j]];
+      if (byte_array_bkey) {
+        comp_result= memcached_compare_two_hexadecimal(&prev_sub_key->bkey_ext,
+                                                       &curr_sub_key->bkey_ext);
+      } else {
+        comp_result= (prev_sub_key->bkey == curr_sub_key->bkey) ? 0
+                   : ((prev_sub_key->bkey <  curr_sub_key->bkey) ? -1 : 1);
+      }
+      if (comp_result == 0) { /* compare key string */
+        const char *prev_key= memcached_string_value(&results[smallest_idx]->keys[result_idx[smallest_idx]]);
+        const char *curr_key= memcached_string_value(&results[j]->keys[result_idx[j]]);
+        comp_result= strcmp(prev_key, curr_key);
+      }
+
+      if (memcached_is_descending(merged)) {
+        if (comp_result < 0)
+          smallest_idx= j;
+      } else {
+        if (comp_result > 0)
+          smallest_idx= j;
+      }
+    }
+
+    if (merged->value_count < merged->count)
+    {
+      /* compare it with the bkey of the last found element */
+      prev_sub_key = &merged->sub_keys[merged->value_count-1];
+      curr_sub_key = &results[smallest_idx]->trimmed_sub_keys[result_idx[smallest_idx]];
+      if (byte_array_bkey) {
+        comp_result= memcached_compare_two_hexadecimal(&prev_sub_key->bkey_ext,
+                                                       &curr_sub_key->bkey_ext);
+      } else {
+        comp_result= (prev_sub_key->bkey == curr_sub_key->bkey) ? 0
+                   : (prev_sub_key->bkey <  curr_sub_key->bkey) ? -1 : 1;
+      }
+      if (comp_result <= 0) {
+          should_merge= true;
+      }
+    }
+
+    if (should_merge)
+    {
+      /* merge */
+      if (byte_array_bkey) {
+        merged->trimmed_sub_keys[merged_count].bkey_ext= curr_sub_key->bkey_ext;
+      } else {
+        merged->trimmed_sub_keys[merged_count].bkey= curr_sub_key->bkey;
+      }
+      merged->trimmed_keys[merged_count]= results[smallest_idx]->trimmed_keys[result_idx[smallest_idx]];
+      merged_count++;
+    }
+    else /* merged->value_count == merged->count */
+    {
+      /* free */
+      memcached_string_free(&results[smallest_idx]->trimmed_keys[result_idx[smallest_idx]]);
+      if (byte_array_bkey) {
+        libmemcached_free(results[smallest_idx]->root,
+                          results[smallest_idx]->trimmed_sub_keys[result_idx[smallest_idx]].bkey_ext.array);
+      }
+    }
+
+    /* no more elements in this result */
+    if (++result_idx[smallest_idx] >= results[smallest_idx]->trimmed_key_count)
+    {
+      results[smallest_idx]->trimmed_key_count = 0;
+    }
+  }
+
+  merged->trimmed_key_count = merged_count;
+#endif
 #else
   memset(result_idx, 0, 256*sizeof(size_t));
 
@@ -893,6 +1061,9 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
     /* On MEMCACHED_END or something. */
     result->value_count+= each_result->value_count;
     result->missed_key_count+= each_result->missed_key_count;
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+    result->trimmed_key_count+= each_result->trimmed_key_count;
+#endif
 
     responses_on_each_server[server_idx]= *error;
     results_on_each_server[server_idx]= each_result;
@@ -934,10 +1105,23 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
     if (result->missed_key_count > 0)
     {
       ALLOCATE_ARRAY_WITH_ERROR(result->root, result->missed_keys, memcached_string_st, result->missed_key_count, error);
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->missed_causes, memcached_return_t, result->missed_key_count, error);
+#endif
       if (*error == MEMCACHED_MEMORY_ALLOCATION_FAILURE) {
         break;
       }
     }
+#ifdef SUPPORT_NEW_SMGET_INTERFACE
+    if (result->trimmed_key_count > 0)
+    {
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->trimmed_keys,     memcached_string_st,       result->trimmed_key_count, error);
+      ALLOCATE_ARRAY_WITH_ERROR(result->root, result->trimmed_sub_keys, memcached_coll_sub_key_st, result->trimmed_key_count, error);
+      if (*error == MEMCACHED_MEMORY_ALLOCATION_FAILURE) {
+        break;
+      }
+    }
+#endif
 
     memcached_return_t response= merge_smget_results(results_on_each_server, responses_on_each_server, server_idx, result);
     memcached_set_last_response_code(ptr, response);
