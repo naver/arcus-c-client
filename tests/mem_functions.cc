@@ -7914,8 +7914,7 @@ static test_return_t arcus_1_6_btree_smget_errors(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, keylengths, 2, &smget_query, &smget_result);
-  // FIXME
-  //test_true_got(rc == MEMCACHED_ATTR_MISMATCH, memcached_strerror(NULL, rc));
+  test_true_got(rc == MEMCACHED_ATTR_MISMATCH, memcached_strerror(NULL, rc));
   memcached_coll_smget_result_free(&smget_result);
 
   /* INVALID_ARGUMENTS: (offset + count) <= 1000 */
