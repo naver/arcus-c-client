@@ -1,3 +1,14 @@
+2017-09-18 [version 1.9.0]
+	* [Fix] Fix some bugs of existing sort-merge get.
+	   - bugs related to trimmed key and duplicate bkey.
+	* [Feature] Support new sort-merge get operation.
+	   - duplicate or unique sort-merge get.
+	   - OUT_OF_RANGE is treated as missed key.
+	   - Missed keys are given with the causes. 
+	   - Trimmed keys and the last bkeys are given.
+	   - offset search condition is removed.
+	* [Feature] Add memcached_coll_result_get_position() API.
+
 2017-09-11 [version 1.8.0]
 	* [Feature] Add bop position operations.
 	   - memcached_bop_find_position()
