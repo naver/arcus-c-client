@@ -39,6 +39,9 @@
 #define MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH   MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH*2+1
 #define MEMCACHED_COLL_MAX_ELEMENT_SIZE         4*1024  /* server maximum, not client limitation */
 #define MEMCACHED_COLL_MAX_PIPED_CMD_SIZE       500
+#if 1 // MAP_COLLECTION_SUPPORT
+#define MEMCACHED_COLL_MAX_MOP_MKEY_LENG        250
+#endif
 #define MEMCACHED_COLL_MAX_BOP_SMGET_KEY_COUNT  2000
 #define MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT 1000
 #define MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE    10240
@@ -76,6 +79,9 @@ typedef enum {
   COLL_KV,
   COLL_LIST,
   COLL_SET,
+#if 1 // MAP_COLLECTION_SUPPORT
+  COLL_MAP,
+#endif
   COLL_BTREE
 } memcached_coll_type_t;
 
@@ -83,6 +89,10 @@ typedef enum {
   MEMCACHED_COLL_QUERY_LOP,
   MEMCACHED_COLL_QUERY_LOP_RANGE,
   MEMCACHED_COLL_QUERY_SOP,
+#if 1 // MAP_COLLECTION_SUPPORT
+  MEMCACHED_COLL_QUERY_MOP,
+  MEMCACHED_COLL_QUERY_MOP_RANGE,
+#endif
   MEMCACHED_COLL_QUERY_BOP,
   MEMCACHED_COLL_QUERY_BOP_RANGE,
   MEMCACHED_COLL_QUERY_BOP_EXT,
@@ -116,6 +126,21 @@ struct memcached_hexadecimal_st {
     bool array_is_allocated:1;
   } options;
 };
+
+#if 1 // MAP_COLLECTION_SUPPORT
+struct memcached_mkey_st {
+  const char *string;
+  size_t length;
+
+  const char * const *string_array;
+  const size_t *length_array;
+  size_t number_of_mkeys;
+
+  struct {
+    bool array_is_allocated:1;
+  } options;
+};
+#endif
 
 /**
  * Convert the numerical number in memcached_hexadecimal_st to a string.
@@ -154,6 +179,9 @@ union memcached_coll_sub_key_st{
   uint64_t bkey_range[2];
   memcached_hexadecimal_st bkey_ext;
   memcached_hexadecimal_st bkey_ext_range[2];
+#if 1 // MAP_COLLECTION_SUPPORT
+  memcached_mkey_st mkey;
+#endif
 };
 
 /**
@@ -485,6 +513,30 @@ memcached_return_t memcached_sop_query_init(memcached_coll_query_st *ptr,
 LIBMEMCACHED_API
 memcached_return_t memcached_sop_value_query_init(memcached_coll_query_st *ptr,
                                                   const char *value, size_t value_length);
+
+#if 1 // MAP_COLLECTION_SUPPORT
+/**
+ * Initialize the query structure for a single map element.
+ * @param ptr  query structure for collection items.
+ * @param mkey  mkey of the map element.
+ * @param mkey_length  mkey length (number of bytes).
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_query_init(memcached_coll_query_st *ptr,
+                                            const char *mkey, size_t mkey_length);
+
+/**
+ * Initialize the query structure for a list of map elements using mkey list.
+ * @param ptr  query structure for collection items.
+ * @param mkeys  array of map element's keys.
+ * @param mkeys_length  array of mkeys (number of bytes).
+ * @param number_of_mkeys  number of elements.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_mkey_list_query_init(memcached_coll_query_st *ptr,
+                                                  const char * const *mkeys, const size_t *mkeys_length,
+                                                  size_t number_of_mkeys);
+#endif
 
 /**
  * Initialize the query structure for a b+tree element.
@@ -885,6 +937,125 @@ LIBMEMCACHED_API
 memcached_return_t memcached_sop_get(memcached_st *ptr, const char *key, size_t key_length,
                                      size_t count, bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result);
+
+#if 1 // MAP_COLLECTION_SUPPORT
+/**
+ * Map API.
+ */
+
+/**
+ * Insert an element into the map item.
+ * Optionally create the item if it does not exist.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param mkey  map element's key.
+ * @param mkey_length  mkey length (number of bytes).
+ * @param value  buffer holding the element value.
+ * @param value_length  length of the element value (number of bytes).
+ * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_insert(memcached_st *ptr, const char *key, size_t key_length,
+                                        const char *mkey, size_t mkey_length,
+                                        const char *value, size_t value_length,
+                                        memcached_coll_create_attrs_st *attributes);
+
+/**
+ * Update the existing element in the map item.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param mkey  map element's key.
+ * @param mkey_length  mkey length (number of bytes).
+ * @param value  buffer holding the element value.
+ * @param value_length  length of the element value (number of bytes).
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size_t key_length,
+                                        const char *mkey, size_t mkey_length,
+                                        const char *value, size_t value_length);
+
+/**
+ * Delete an element from the map item.
+ * Optionally delete the item if it becomes empty.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param mkey  map element's key.
+ * @param mkey_length  mkey length (number of bytes).
+ * @param drop_if_empty  if true, delete the empty list item.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_delete(memcached_st *ptr, const char *key, size_t key_length,
+                                        const char *mkey, size_t mkey_length,
+                                        bool drop_if_empty);
+
+/**
+ * Delete all element from the map item.
+ * Optionally delete the item if it becomes empty.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param drop_if_empty  if true, delete the empty list item.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_delete_all(memcached_st *ptr, const char *key, size_t key_length,
+                                            bool drop_if_empty);
+
+/**
+ * Fetch an element from the map item.
+ * Optionally delete the element and delete the item if it becomes empty.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param mkey  map element's key.
+ * @param mkey_length mkey length (number of bytes).
+ * @param with_delete  if true, delete the element.
+ * @param drop_if_empty  if true, delete the empty list item.
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_get(memcached_st *ptr, const char *key, size_t key_length,
+                                     const char *mkey, size_t mkey_length,
+                                     bool with_delete, bool drop_if_empty,
+                                     memcached_coll_result_st *result);
+
+/**
+ * Fetch all element from the map item.
+ * Optionally delete the element and delete the item if it becomes empty.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param with_delete  if true, delete the element.
+ * @param drop_if_empty  if true, delete the empty list item.
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_get_all(memcached_st *ptr, const char *key, size_t key_length,
+                                         bool with_delete, bool drop_if_empty,
+                                         memcached_coll_result_st *result);
+
+/**
+ * Fetch a list of elements from the map item.
+ * Optionally delete the elements and delete the item if it becomes empty.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param mkeys  array of map element's keys.
+ * @param mkeys_length  array of mkeys (number of bytes).
+ * @param number_of_mkeys  number of elements.
+ * @param with_delete  if true, delete the elements.
+ * @param drop_if_empty  if true, delete the empty list item.
+ * @param result  result structure, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key, size_t key_length,
+                                             const char * const *mkeys, const size_t *mkeys_length,
+                                             size_t number_of_mkeys,
+                                             bool with_delete, bool drop_if_empty,
+                                             memcached_coll_result_st *result);
+#endif
 
 /**
  * B+tree API.
@@ -1354,6 +1525,19 @@ LIBMEMCACHED_API
 memcached_return_t memcached_sop_create(memcached_st *ptr, const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attrs);
 
+#if 1 // MAP_COLLECTION_SUPPORT
+/**
+ * Create an empty map item.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param attrs  item's attributes.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_create(memcached_st *ptr, const char *key, size_t key_length,
+                                        memcached_coll_create_attrs_st *attrs);
+#endif
+
 /**
  * Create an empty b+tree item.
  * @param ptr  memcached handle.
@@ -1529,6 +1713,30 @@ memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key
                                               memcached_coll_create_attrs_st *attrs,
                                               memcached_return_t *results, memcached_return_t *piped_rc);
 
+#if 1 // MAP_COLLECTION_SUPPORT
+/**
+ * Insert multiple elements into the map item in a pipelined fashion.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param number_of_piped_items  number of elements to insert.
+ * @param mkeys  array of map element's keys.
+ * @param mkeys_length  array of mkeys (number of bytes).
+ * @param values  array of buffers, each holding one element's value.
+ * @param values_length  array of value buffer lengths (number of bytes).
+ * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
+ * @param results  array of return codes for individual insertion operations, one for each element.
+ * @param piped_rc  return code for the whole pipelined operation.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+                                              const size_t number_of_piped_items,
+                                              const char * const *mkeys, const size_t *mkeys_length,
+                                              const char * const *values, const size_t *values_length,
+                                              memcached_coll_create_attrs_st *attrs,
+                                              memcached_return_t *results, memcached_return_t *piped_rc);
+#endif
+
 /**
  * Insert multiple elements into the b+tree item in a pipelined fashion.
  * @param ptr  memcached handle.
@@ -1621,6 +1829,32 @@ memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                                    memcached_coll_create_attrs_st *attrs,
                                                    memcached_return_t *results,
                                                    memcached_return_t *piped_rc);
+
+#if 1 // MAP_COLLECTION_SUPPORT
+/**
+ * Insert a single element into multiple map items in a pipelined fashion.
+ * @param ptr  memcached handle.
+ * @param keys  array of the map items' keys.
+ * @param key_length  array of key lengths (number of bytes).
+ * @param number_of_keys  number of map items.
+ * @param mkey  map element's key.
+ * @param mkey_length  mkey length (number of bytes).
+ * @param value  buffer holding the element's value.
+ * @param value_length  length of the value buffer (number of bytes).
+ * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
+ * @param results  array of return codes for individual insertion operations, one for each element.
+ * @param piped_rc  return code for the whole pipelined operation.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
+                                                   const char * const *keys,
+                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const char *mkey, size_t mkey_length,
+                                                   const char *value, size_t value_length,
+                                                   memcached_coll_create_attrs_st *attrs,
+                                                   memcached_return_t *results,
+                                                   memcached_return_t *piped_rc);
+#endif
 
 /**
  * Insert a single element into multiple b+tree items in a pipelined fashion.

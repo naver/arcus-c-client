@@ -217,6 +217,26 @@ memcached_hexadecimal_st *memcached_coll_result_get_bkey_ext(memcached_coll_resu
 LIBMEMCACHED_API
 memcached_hexadecimal_st *memcached_coll_result_get_eflag(memcached_coll_result_st *result, size_t idx);
 
+#if 1 // MAP_COLLECTION_SUPPORT
+/**
+ * Get the map element's mkey.
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's mkey.
+ */
+LIBMEMCACHED_API
+const char *memcached_coll_result_get_mkey(memcached_coll_result_st* result, size_t idx);
+
+/**
+ * Get the map element's mkey length.
+ * @param result  collection result structure
+ * @param idx  element's index (0th fetched element, 1st fetched element, and so on).
+ * @return element's mkey length.
+ */
+LIBMEMCACHED_API
+size_t memcached_coll_result_get_mkey_length(memcached_coll_result_st* result, size_t idx);
+#endif
+
 /**
  * Get the element's value.
  * @param result  collection result structure
