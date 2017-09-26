@@ -1,3 +1,6 @@
+2017-09-26 [version 1.10.0]
+	* [Feature] Support map collection.
+
 2017-09-18 [version 1.9.0]
 	* [Fix] Fix some bugs of existing sort-merge get.
 	   - bugs related to trimmed key and duplicate bkey.
