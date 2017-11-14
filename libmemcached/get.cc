@@ -222,9 +222,15 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
                                                      bool mget_mode)
 {
   bool failures_occured_in_sending= false;
+#if 1 // OPTIMIZE_MGET
+#else
   const char *get_command= "get ";
   uint8_t get_command_length= 4;
+#endif
   unsigned int master_server_key= (unsigned int)-1; /* 0 is a valid server id! */
+#if 1 // OPTIMIZE_MGET
+  const size_t MAX_SERVERS_FOR_MGET= 200;
+#endif
 
   memcached_return_t rc;
   if (memcached_failed(rc= initialize_query(ptr)))
@@ -290,11 +296,43 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
                               key_length, number_of_keys, mget_mode);
   }
 
+#if 1 // OPTIMIZE_MGET
+#else
   if (ptr->flags.support_cas)
   {
     get_command= "gets ";
     get_command_length= 5;
   }
+#endif
+
+#if 1 // OPTIMIZE_MGET
+  /* Key-Server mapping */
+  uint32_t *key_to_serverkey= NULL;
+  ALLOCATE_ARRAY_OR_RETURN(ptr, key_to_serverkey, uint32_t, number_of_keys);
+
+  for (uint32_t x= 0; x<number_of_keys; x++)
+  {
+    key_to_serverkey[x]= memcached_generate_hash_with_redistribution(ptr, keys[x], key_length[x]);
+  }
+
+  /* Prepare <lenkeys> and <numkeys> */
+  int32_t lenkeys[MAX_SERVERS_FOR_MGET]= { 0 };
+  int32_t numkeys[MAX_SERVERS_FOR_MGET]= { 0 };
+  char lenkeys_numkeys_str[MAX_SERVERS_FOR_MGET][64];
+  size_t lenkeys_numkeys_length[MAX_SERVERS_FOR_MGET];
+
+  for (size_t i=0; i<number_of_keys; i++)
+  {
+    lenkeys[key_to_serverkey[i]]+= (memcached_array_size(ptr->_namespace) + key_length[i] + 1); // +1 for the space( )
+    numkeys[key_to_serverkey[i]]+= 1;
+  }
+
+  for (size_t i=0; i<memcached_server_count(ptr); i++)
+  {
+    lenkeys_numkeys_length[i]= snprintf(lenkeys_numkeys_str[i], 64, "%d %d",
+                                        lenkeys[i]-1, numkeys[i]); // -1 for the space-less first key
+  }
+#endif
 
   /*
     If a server fails we warn about errors and start all over with sending keys
@@ -313,11 +351,17 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
     }
     else
     {
+#if 1 // OPTIMIZE_MGET
+      server_key= key_to_serverkey[x];
+#else
       server_key= memcached_generate_hash_with_redistribution(ptr, keys[x], key_length[x]);
+#endif
     }
 
     instance= memcached_server_instance_fetch(ptr, server_key);
 
+#if 1 // OPTIMIZE_MGET
+#else
     struct libmemcached_io_vector_st vector[]=
     {
       { get_command_length, get_command },
@@ -325,8 +369,12 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
       { key_length[x], keys[x] },
       { 1, " " }
     };
+#endif
 
-
+#if 1 // OPTIMIZE_MGET
+    struct libmemcached_io_vector_st vector[5];
+    int veclen;
+#endif
     if (memcached_server_response_count(instance) == 0)
     {
       rc= memcached_connect(instance);
@@ -338,25 +386,73 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
       }
       hosts_connected++;
 
+#if 1 // OPTIMIZE_MGET
+      if (instance->enable_optimized_mget && !ptr->flags.support_cas && (number_of_keys > 1))
+      {
+        vector[0].length= 5; vector[0].buffer= "mget ";
+        vector[1].length= lenkeys_numkeys_length[key_to_serverkey[x]]; vector[1].buffer= lenkeys_numkeys_str[key_to_serverkey[x]];
+        vector[2].length= 2; vector[2].buffer= "\r\n";
+        vector[3].length= memcached_array_size(ptr->_namespace); vector[3].buffer= memcached_array_string(ptr->_namespace);
+        vector[4].length= key_length[x]; vector[4].buffer= keys[x];
+        veclen= 5;
+      }
+      else
+      {
+        if (ptr->flags.support_cas)
+        {
+          vector[0].length= 5; vector[0].buffer= "gets ";
+        }
+        else
+        {
+          vector[0].length= 4; vector[0].buffer= "get ";
+        }
+        vector[1].length= memcached_array_size(ptr->_namespace); vector[1].buffer= memcached_array_string(ptr->_namespace);
+        vector[2].length= key_length[x], vector[2].buffer= keys[x];
+        veclen= 3;
+      }
+      if ((memcached_io_writev(instance, vector, veclen, false)) == -1)
+      {
+        failures_occured_in_sending= true;
+        continue;
+      }
+#else
       if ((memcached_io_writev(instance, vector, 4, false)) == -1)
       {
         failures_occured_in_sending= true;
         continue;
       }
+#endif
       WATCHPOINT_ASSERT(instance->cursor_active == 0);
       memcached_server_response_increment(instance);
       WATCHPOINT_ASSERT(instance->cursor_active == 1);
     }
     else
     {
+#if 1 // OPTIMIZE_MGET
+      vector[0].length= 1; vector[0].buffer= " ";
+      vector[1].length= memcached_array_size(ptr->_namespace); vector[1].buffer= memcached_array_string(ptr->_namespace);
+      vector[2].length= key_length[x]; vector[2].buffer= keys[x];
+      veclen= 3;
+      if ((memcached_io_writev(instance, vector, veclen, false)) == -1)
+      {
+        memcached_server_response_reset(instance);
+        failures_occured_in_sending= true;
+        continue;
+      }
+#else
       if ((memcached_io_writev(instance, (vector + 1), 3, false)) == -1)
       {
         memcached_server_response_reset(instance);
         failures_occured_in_sending= true;
         continue;
       }
+#endif
     }
   }
+
+#if 1 // OPTIMIZE_MGET
+  DEALLOCATE_ARRAY(ptr, key_to_serverkey);
+#endif
 
   if (hosts_connected == 0)
   {
