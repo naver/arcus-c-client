@@ -1714,9 +1714,15 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
         }
         else
         {
+#if 1 // COMMA_TO_SPACE
+          mkey_length= (size_t) snprintf(mkey_buffer+mkey_buffer_length,
+                                                 MEMCACHED_MAXIMUM_COMMAND_SIZE, "%s ",
+                                                 query->sub_key.mkey.string_array[i]);
+#else
           mkey_length= (size_t) snprintf(mkey_buffer+mkey_buffer_length,
                                                  MEMCACHED_MAXIMUM_COMMAND_SIZE, "%s,",
                                                  query->sub_key.mkey.string_array[i]);
+#endif
         }
         mkey_buffer_length += mkey_length;
       }
@@ -2096,8 +2102,13 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       { buffer_length, buffer },
       { 2, "\r\n" },
       { key_length[i], keys[i] },
+#if 1 // COMMA_TO_SPACE
+      // space-separated request keys
+      { 1, " " },
+#else
       // comma-seperated request keys
       { 1, "," },
+#endif
       { key_length[i], keys[i] },
     };
 
@@ -2711,8 +2722,13 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       { buffer_length, buffer },
       { 2, "\r\n" },
       { key_length[i], keys[i] },
+#if 1 // COMMA_TO_SPACE
+      // space-separated request keys
+      { 1, " " },
+#else
       // comma-seperated request keys
       { 1, "," },
+#endif
       { key_length[i], keys[i] },
     };
 
