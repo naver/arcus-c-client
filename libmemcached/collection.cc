@@ -1671,9 +1671,15 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       mkey_buffer= (char*)libmemcached_malloc(ptr, mkey_buffer_length);
       for (size_t i=0; i<number_of_mkeys-1; i++)
       {
+#if 1 // COMMA_TO_SPACE
+        mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
+                                     mkey_buffer_length-mkey_write_length, "%s ",
+                                     query->sub_key.mkey.string_array[i]);
+#else
         mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
                                      mkey_buffer_length-mkey_write_length, "%s,",
                                      query->sub_key.mkey.string_array[i]);
+#endif
       }
       mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
                                    mkey_buffer_length-mkey_write_length, "%s",
@@ -2016,7 +2022,11 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
 
   for (size_t i=0; i<number_of_keys; i++)
   {
+#if 1 // COMMA_TO_SPACE
+    lenkeys[key_to_serverkey[i]]+= (key_length[i] + 1); // +1 for the space( )
+#else
     lenkeys[key_to_serverkey[i]]+= (key_length[i] + 1); // +1 for the comma(,)
+#endif
     numkeys[key_to_serverkey[i]]+= 1;
   }
 
@@ -2028,8 +2038,13 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                  memcached_literal_param("key size for a server should be <= 200"));
     }
+#if 1 // COMMA_TO_SPACE
+    lenkeys_numkeys_length[i]= snprintf(lenkeys_numkeys_str[i], 64, "%d %d",
+                                        lenkeys[i]-1, numkeys[i]); // -1 for the space-less first key
+#else
     lenkeys_numkeys_length[i]= snprintf(lenkeys_numkeys_str[i], 64, "%d %d",
                                         lenkeys[i]-1, numkeys[i]); // -1 for the comma-less first key
+#endif
   }
 
   /* Send the request (buffered) */
@@ -2054,8 +2069,13 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       { (size_t)write_length, buffer },
       { 2, "\r\n" },
       { key_length[i], keys[i] },
+#if 1 // COMMA_TO_SPACE
+      // space-separated request keys
+      { 1, " " },
+#else
       // comma-seperated request keys
       { 1, "," },
+#endif
       { key_length[i], keys[i] },
     };
 
@@ -2630,7 +2650,11 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
 
   for (size_t i=0; i<number_of_keys; i++)
   {
+#if 1 // COMMA_TO_SPACE
+    lenkeys[key_to_serverkey[i]]+= (key_length[i] + 1); // +1 for the space( )
+#else
     lenkeys[key_to_serverkey[i]]+= (key_length[i] + 1); // +1 for the comma(,)
+#endif
     numkeys[key_to_serverkey[i]]+= 1;
   }
 
@@ -2642,8 +2666,13 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                  memcached_literal_param("key size for a server should be <= 2000"));
     }
+#if 1 // COMMA_TO_SPACE
+    lenkeys_numkeys_length[i]= snprintf(lenkeys_numkeys_str[i], 64, "%d %d",
+                                        lenkeys[i]-1, numkeys[i]); // -1 for the space-less first key
+#else
     lenkeys_numkeys_length[i]= snprintf(lenkeys_numkeys_str[i], 64, "%d %d",
                                         lenkeys[i]-1, numkeys[i]); // -1 for the comma-less first key
+#endif
   }
 
   /* Send the request (buffered) */
@@ -2668,8 +2697,13 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       { (size_t)write_length, buffer },
       { 2, "\r\n" },
       { key_length[i], keys[i] },
+#if 1 // COMMA_TO_SPACE
+      // space-separated request keys
+      { 1, " " },
+#else
       // comma-seperated request keys
       { 1, "," },
+#endif
       { key_length[i], keys[i] },
     };
 
