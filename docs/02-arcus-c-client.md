@@ -9,7 +9,7 @@ Arcus cache server에서 제공하는 failover 기능과 collection 기능 등�
 
 지원되는 추가 기능은 다음과 같다.
 
-* Cache Cluster-awareness: Arcus admin 서버에 연결 하여 자신이 사용하는 캐시 서버 클러스터의 변경사항을 자동으로 인식한다.
+* Cache Cluster-awareness: Arcus admin 서버에 연결하여 자신이 사용하는 캐시 서버 클러스터의 변경사항을 자동으로 인식한다.
 * Collection APIs: Arcus cache server에서 지원하는 List, Set, B+tree 형태의 자료구조를 사용할 수 있다.
 * Prefix: 특정 prefix를 가지는 모든 item을 삭제할 수 있다.
 
