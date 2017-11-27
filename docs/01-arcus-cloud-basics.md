@@ -30,7 +30,7 @@ Arcus cache cloud 서비스를 응용들에게 제공한다는 의미에서 "서
 
 하나의 응용에서 하나 이상의 Arcus cache cloud를 구축하여 사용할 수 있다.
 Arcus java client 객체는 하나의 Arcus 서비스코드만을 가지며, 하나의 Arcus cache cloud에만 접근할 수 있다.
-해당 응용이 둘 이상의 Arcus cache cloud를 접근해야 한다면,
+해당 응용이 둘 이상의 Arcus cache cloud에 접근해야 한다면,
 각 Arcus cache cloud의 서비스코드를 가지는 Arcus java client 객체를 따로 생성하여 사용하여야 한다.
 
 ### Arcus Admin

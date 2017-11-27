@@ -6,7 +6,7 @@ Key-value item은 하나의 key에 대해 하나의 value만을 저장하는 ite
 - Key의 최대 크기는 250 character이다.
 - Value는 최대 1Mb까지 저장할 수 있다.
 
-Key-value item에 대해 수행가능한 연산들은 아래와 같다.
+Key-value item에 대해 수행 가능한 연산들은 아래와 같다.
 
 - [Key-Value Item 저장](03-key-value-API.md#key-value-item-%EC%A0%80%EC%9E%A5)
 - [Key-Value Item 조회](03-key-value-API.md#key-value-item-%EC%A1%B0%ED%9A%8C)

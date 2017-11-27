@@ -7,18 +7,18 @@ Set item은 하나의 key에 대해 unique value의 집합을 저장한다. 주�
 - 각 element에서 value 최대 크기 : 4KB
 - Element 값의 중복을 허용하지 않는다.
 
-Set item에 수행가능한 기본 연산들은 다음과 같다.
+Set item에 수행 가능한 기본 연산들은 다음과 같다.
 
 - [Set Item 생성](05-set-API.md#set-item-%EC%83%9D%EC%84%B1) (Set item 삭제는 key-value item 삭제 함수로 수행한다) 
 - [Set Element 삽입](05-set-API.md#set-element-%EC%82%BD%EC%9E%85)
 - [Set Element 삭제](05-set-API.md#set-element-%EC%82%AD%EC%A0%9C)
-- [Set Element 존재유무 확인](05-set-API.md#set-element-%EC%A1%B4%EC%9E%AC%EC%97%AC%EB%B6%80-%ED%99%95%EC%9D%B8)
+- [Set Element 존재 여부 확인](05-set-API.md#set-element-존재-여부-확인)
 - [Set Element 조회](05-set-API.md#set-element-%EC%A1%B0%ED%9A%8C)
 
 여러 set element들에 대해 한번에 일괄 수행하는 연산은 다음과 같다.
 
 - [Set Element 일괄 삽입](05-set-API.md#set-element-%EC%9D%BC%EA%B4%84-%EC%82%BD%EC%9E%85)
-- [Set Element 일괄 존재유무 확인](05-set-API.md#set-element-%EC%9D%BC%EA%B4%84-%EC%A1%B4%EC%9E%AC%EC%97%AC%EB%B6%80-%ED%99%95%EC%9D%B8)
+- [Set Element 일괄 존재 여부 확인](05-set-API.md#set-element-일괄-존재-여부-확인)
 
 
 ### Set Item 생성
@@ -219,16 +219,16 @@ void arcus_set_element_delete(memcached_st *memc)
 }
 ```
 
-### Set Element 존재여부 확인
+### Set Element 존재 여부 확인
 
-Set에서 주어진 value를 가진 element의 존재유무를 확인한다.
+Set에서 주어진 value를 가진 element의 존재 여부를 확인한다.
 
 ``` c
 memcached_return_t memcached_sop_exist(memcached_st *ptr, const char *key, size_t key_length,
                                        const char *value, size_t value_length)
 ```
 
-- value, value_length: 존재여부를 확인할 element의 value
+- value, value_length: 존재 여부를 확인할 element의 value
 
 Response code는 아래와 같다.
 
@@ -240,7 +240,7 @@ Response code는 아래와 같다.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 Set이 아님.
   - MEMCACHED_UNREADABLE: 주어진 key에 해당하는 Set이 unreadable 상태임.
 
-Set element의 존재여부를 확인하는 예제는 아래와 같다.
+Set element의 존재 여부를 확인하는 예제는 아래와 같다.
 
 ``` c
 void arcus_set_element_exist(memcached_st *memc)
@@ -378,7 +378,7 @@ memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key
 - key, key_length: 하나의 key를 지정
 - numr_of_piped_items: 한번에 삽입할 element 개수
 - values, values_length: 다수 element 각각의 value와 그 길이
-- attributes: 해당 set이 없을 시에, attrbiutes에 따라 set을 생성 후에 삽입한다.
+- attributes: 해당 set이 없을 시에, attributes에 따라 set을 생성 후에 삽입한다.
 
 둘째, 여러 key들이 가리키는 set들에 각각 하나의 element를 삽입하는 함수이다. 
 
@@ -451,9 +451,9 @@ void arcus_set_element_piped_insert(memcached_st *memc)
 }
 ```
 
-### Set Element 일괄 존재여부 확인
+### Set Element 일괄 존재 여부 확인
 
-Set에서 여러 element의 존재여부를 한번에 확인하는 함수이다.
+Set에서 여러 element의 존재 여부를 한번에 확인하는 함수이다.
 
 ``` c
 memcached_return_t memcached_sop_piped_exist(memcached_st *ptr, const char *key, size_t key_length,
@@ -466,17 +466,17 @@ memcached_return_t memcached_sop_piped_exist(memcached_st *ptr, const char *key,
 - numr_of_piped_items: 한번에 확인할 element 개수
 - values, values_length: 각 element의 value와 길이
 
-Set element 일괄 존재유무 확인의 결과는 아래의 인자를 통해 받는다.
+Set element 일괄 존재 여부 확인의 결과는 아래의 인자를 통해 받는다.
 
-- results: 각 value에 대한 element 존재유무 결과를 순서대로 저장한다.
+- results: 각 value에 대한 element 존재 여부 결과를 순서대로 저장한다.
   - MEMCACHED_EXIST
   - MEMCACHED_NOT_EXIST
-- piped_rc: 일괄 존재유무 확인 결과를 담고 있다.
+- piped_rc: 일괄 존재 여부 확인 결과를 담고 있다.
   - MEMCACHED_ALL_EXIST: 모든 element가 존재함.
   - MEMCACHED_SOME_EXIST: 일부 element가 존재함.
   - MEMCACHED_ALL_NOT_EXIST: 모든 element가 존재하지 않음.
 
-Set element 일괄 존재유무 확인의 예는 아래와 같다.
+Set element 일괄 존재 여부 확인의 예는 아래와 같다.
 
 ``` c
 void arcus_set_element_piped_exist(memcached_st *memc)
