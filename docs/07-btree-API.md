@@ -137,7 +137,7 @@ memcached_return_t memcached_bop_ext_query_init(memcached_bop_query_st *ptr,
                                             memcached_bop_eflag_filter_st *eflag_filter)
 ```
 
-아래 함수는 bkery range, element flag filter, offset과 count를 함께 명시하여 query 구조체를 생성한다.
+아래 함수는 bkey range, element flag filter, offset과 count를 함께 명시하여 query 구조체를 생성한다.
 
 ``` c
 memcached_return_t memcached_bop_range_query_init(memcached_bop_query_st *ptr,
@@ -225,7 +225,7 @@ void arcus_btree_item_create(memcached_st *memc)
 ### B+Tree Element 삽입
 
 B+Tree에 하나의 element를 삽입한다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8 바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_insert(memcached_st *ptr, const char *key, size_t key_length,
@@ -306,7 +306,7 @@ void arcus_btree_element_insert(memcached_st *memc)
 
 B+Tree에 하나의 element를 upsert하는 함수들이다.
 Upsert 연산은 해당 element가 없으면 insert하고, 있으면 update하는 연산이다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8 바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_upsert(memcached_st *ptr, const char *key, size_t key_length,
@@ -373,7 +373,7 @@ void arcus_btree_element_upsert(memcached_st *memc)
 ### B+Tree Element 변경
 
 B+Tree에서 하나의 element를 변경하는 함수이다. Element의 eflag 그리고/또는 value를 변경한다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8 바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_update(memcached_st *ptr, const char *key, size_t key_length,
@@ -513,7 +513,7 @@ void arcus_btree_element_delete(memcached_st *memc)
 B+tree element의 값을 증가/감소 시키는 함수는 아래와 같다. 
 Element의 값은 숫자형 값이어야 한다.
 
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8 바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t key_length,
@@ -726,7 +726,7 @@ memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr, const char 
                                      bool with_delete, bool drop_if_empty, memcached_coll_result_st *result)
 ```
 
-셋째, qeury 구조체를 이용하여 b+tree element를 조회하는 함수이다.
+셋째, query 구조체를 이용하여 b+tree element를 조회하는 함수이다.
 
 ``` c
 memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key, size_t key_length,
@@ -833,7 +833,7 @@ void arcus_btree_element_get(memcached_st *memc)
 B+tree에 여러 element를 한번에 삽입하는 함수는 두 유형이 있다.
 
 첫째, 하나의 key가 가리키는 b+tree에 다수의 element를 삽입하는 함수이다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8 바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
@@ -861,7 +861,7 @@ memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr, const char 
 - attributes: B+tree 없을 시에 attributes에 따라 empty b+tree를 생성 후에 element 삽입한다.
 
 둘째, 여러 key들이 가리키는 b+tree들에 각각 하나의 element를 삽입하는 함수이다. 
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8 바이트 unsigned integer 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
@@ -970,7 +970,7 @@ memcached_return_t memcached_bop_mget(memcached_st *ptr, const char * const *key
 
 - keys, keys_length: 다수 bt+tree item들의 key array
 - number_of_keys: key 개수
-- qeury: 조회 조건을 가진 query 구조체
+- query: 조회 조건을 가진 query 구조체
 
 Response code는 아래와 같다.
 
