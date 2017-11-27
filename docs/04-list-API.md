@@ -8,7 +8,7 @@ List item은 하나의 key에 대해 여러 value들을 double linked list 구�
 - List의 앞, 뒤에서 element를 삽입/삭제하기를 권한다. 임의의 index 위치에서 element 삽입/삭제가 가능하지만,
   임의의 index 위치를 신속히 찾아가기 위한 자료구조가 현재 없는 상태라서 비용이 많이 든다.
 
-List item에 대해 수행가능한 기본 연산들은 아래와 같다.
+List item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 
 - [List Item 생성](04-list-API.md#list-item-%EC%83%9D%EC%84%B1) (List Item 삭제는 key-value item 삭제 함수로 수행한다)
 - [List Element 삽입](04-list-API.md#list-element-%EC%82%BD%EC%9E%85)
@@ -73,7 +73,7 @@ memcached_return_t memcached_coll_create_set_unreadable(memcached_coll_create_at
   - OVERFLOWACTION_HEAD_TRIM: overflow가 발생하면 가장 작은 index를 갖는 element를 삭제한다.
   - OVERFLOWACTION_TAIL_TRIM: overflow가 발생하면 가장 큰 index를 갖는 element를 삭제한다.
 - memcached_coll_create_set_unreadable : 생성 시 unreadable 상태로 만들 것인지 설정한다.
-  Unreadable 상태로 생성된 List는 readable 상태가 되기 전 까지 조회할 수 없다.
+  Unreadable 상태로 생성된 List는 readable 상태가 되기 전까지 조회할 수 없다.
   이렇게 unreadable 상태로 생성된 B+tree를 readable 상태로 만들기 위해서는 memcached_set_attrs를 사용해야 한다.
 
 

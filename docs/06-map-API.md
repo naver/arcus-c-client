@@ -7,7 +7,7 @@ Map item은 하나의 key에 대해 hash 구조 기반으로 mkey & value 쌍을
 - 각 element에서 value 최대 크기 : 4KB
 - mkey 최대 길이는 250 바이트 이고, 하나의 map에 중복된 mkey는 허용하지 않는다.
 
-Map item에 대해 수행가능한 기본 연산들은 아래와 같다.
+Map item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 
 - [Map Item 생성](06-map-API.md#map-item-생성) (Map Item 삭제는 key-value item 삭제 함수로 수행한다)
 - [Map Element 삽입](06-map-API.md#map-element-삽입)
@@ -73,7 +73,7 @@ memcached_return_t memcached_coll_create_set_unreadable(memcached_coll_create_at
   - OVERFLOWACTION_HEAD_TRIM: Map은 지원하지 않는다.
   - OVERFLOWACTION_TAIL_TRIM: Map은 지원하지 않는다.
 - memcached_coll_create_set_unreadable : 생성 시 unreadable 상태로 만들 것인지 설정한다.
-  Unreadable 상태로 생성된 Map은 readable 상태가 되기 전 까지 조회할 수 없다.
+  Unreadable 상태로 생성된 Map은 readable 상태가 되기 전까지 조회할 수 없다.
   이렇게 unreadable 상태로 생성된 Map을 readable 상태로 만들기 위해서는 memcached_set_attrs를 사용해야 한다.
 
 
@@ -165,7 +165,7 @@ void arcus_map_element_insert(memcached_st *memc)
 ### Map Element 변경
 
 
-Map에 하나의 element를 변경하는 함수이다. 주어진 mkey를 가진 element의 value를 변경 한다.
+Map에 하나의 element를 변경하는 함수이다. 주어진 mkey를 가진 element의 value를 변경한다.
 
 ``` c
 memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size_t key_length,
@@ -180,7 +180,7 @@ memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size
 Response code는 아래와 같다.
 
 - MEMCACHED_SUCCESS
-  - MEMCACHED_UPDATED: 주어진 mkey를 가진 element를 업데이트 함.
+  - MEMCACHED_UPDATED: 주어진 mkey를 가진 element를 업데이트함.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_NOTFOUND: Map이 존재하지 않음.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 Map이 아님.
@@ -307,8 +307,8 @@ memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key,
 ```
 
 - key, key_length: map item의 key
-- mkey, mkey_length: 조회 할 mkey
-- mkeys, mkeys_length: 조회 할 mkey list
+- mkey, mkey_length: 조회할 mkey
+- mkeys, mkeys_length: 조회할 mkey list
 - with_delete: 조회와 함께 삭제도 수행할 것인지를 지정
 - drop_if_empty: element 삭제로 empty list가 될 경우, 그 list도 삭제할 것인지를 지정
 
@@ -470,7 +470,7 @@ void arcus_map_element_piped_insert(memcached_st *memc)
 
     memcached_return_t rc;
     memcached_return_t piped_rc; // pipe operation의 전체 성공 여부
-    memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE]; // 각 key에 대한 응답코드
+    memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE]; // 각 key에 대한 응답 코드
 
     // 테스트 데이터
     char **mkeys = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
