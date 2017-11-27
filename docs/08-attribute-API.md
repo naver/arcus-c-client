@@ -1,7 +1,7 @@
 ## Item Attributes
 
 Item attributes는 각 cache item의 메타데이터를 의미한다.
-Item attributes의 기본 설명은 [Arcus cache server의 item attributes 부분](https://github.com/naver/arcus-memcached/blob/master/doc/arcus-item-attribute.md)을 참고 하길 바란다.
+Item attributes의 기본 설명은 [Arcus cache server의 item attributes 부분](https://github.com/naver/arcus-memcached/blob/master/doc/arcus-item-attribute.md)을 참고하길 바란다.
 
 Item attributes를 변경하거나 조회하는 함수들을 설명한다.
 
@@ -24,7 +24,7 @@ Return codes는 다음과 같다.
   - MEMCACHED_END: Attribute 정보를 성공적으로 변경함.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 item이 존재하지 않음.
-  - MEMCACHED_ATTR_ERROR_BAD_VALUE: 잘못된 설정 값을 지정하였음.
+  - MEMCACHED_ATTR_ERROR_BAD_VALUE: 잘못된 설정값을 지정하였음.
 
 
 변경할 attributes 정보를 가지는 memcached_coll_attrs_st 구조체는 아래 API를 통해 초기화하고 설정할 수 있다.
@@ -90,7 +90,7 @@ uint32_t                        memcached_coll_attrs_get_trimmed(memcached_coll_
 - memcached_coll_attrs_get_expiretime : Expire time 값을 얻는다.
 - memcached_coll_attrs_get_overflowaction : Overflowaction을 얻는다.
 - memcached_coll_attrs_get_maxcount : Maxcount 값을 얻는다.
-- memcached_cool_attrs_is_readable : Attribute가 readable 상태인지 여부를 얻는다.
+- memcached_cool_attrs_is_readable : Attribute가 readable 상태인지 아닌지를 얻는다.
 - memcached_coll_attrs_get_maxbkeyrange : Maxbkeyrange 값을 얻는다.
 - memcached_coll_attrs_get_maxbkeyrange_by_byte : Maxbkeyrange 값을 얻는다. (byte 타입)
 - memcached_coll_attrs_get_minbkey : Min bkey 값을 얻는다.

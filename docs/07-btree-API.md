@@ -6,7 +6,7 @@ B+tree item은 하나의 key에 대해 b+tree 구조 기반으로 b+tree key(bke
 - 저장 가능한 최대 element 개수 : 디폴트 4,000개 (attribute 설정으로 최대 50,000개 확장 가능)
 - 각 element에서 value 최대 크기 : 4KB
 - 하나의 b+tree 내에서 모든 element는 동일한 bkey 유형을 가져야 한다. 
-  즉, 8 바이트 unsigned integer bkey 유형과 byte array bkey 유형이 혼재할 수 없다.
+  즉, 8바이트 unsigned integer bkey 유형과 byte array bkey 유형이 혼재할 수 없다.
 
 B+tree item 구조와 기본 특징은 **[Arcus Server Ascii Protocol 문서의 내용](https://github.com/naver/arcus-memcached/blob/master/doc/arcus-collection-concept.md)**을
 먼저 참고하기 바란다.
@@ -45,7 +45,7 @@ B+Tree내에서 element 순위(position)와 관련하여 아래 연산들을 제
 
 ### BKey(B+Tree Key)와 EFlag(Element Flag)
 
-B+tree item에서 사용가능한 bkey 데이터 타입은 아래 두 가지이다.
+B+tree item에서 사용 가능한 bkey 데이터 타입은 아래 두 가지이다.
 
 - 8바이트 unsigned integer
 - 최대 31 크기의 byte array 
@@ -225,7 +225,7 @@ void arcus_btree_item_create(memcached_st *memc)
 ### B+Tree Element 삽입
 
 B+Tree에 하나의 element를 삽입한다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_insert(memcached_st *ptr, const char *key, size_t key_length,
@@ -306,7 +306,7 @@ void arcus_btree_element_insert(memcached_st *memc)
 
 B+Tree에 하나의 element를 upsert하는 함수들이다.
 Upsert 연산은 해당 element가 없으면 insert하고, 있으면 update하는 연산이다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_upsert(memcached_st *ptr, const char *key, size_t key_length,
@@ -373,7 +373,7 @@ void arcus_btree_element_upsert(memcached_st *memc)
 ### B+Tree Element 변경
 
 B+Tree에서 하나의 element를 변경하는 함수이다. Element의 eflag 그리고/또는 value를 변경한다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_update(memcached_st *ptr, const char *key, size_t key_length,
@@ -395,7 +395,7 @@ memcached_return_t memcached_bop_ext_update(memcached_st *ptr, const char *key, 
 Response code는 아래와 같다.
 
 - MEMCACHED_SUCCESS
-  - MEMCACHED_UPDATED: 주어진 bkey를 가진 element를 업데이트 함.
+  - MEMCACHED_UPDATED: 주어진 bkey를 가진 element를 업데이트함.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+tree가 없음.
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 bkey에 해당하는 element가 없음.
@@ -500,7 +500,7 @@ void arcus_btree_element_delete(memcached_st *memc)
     assert(MEMCACHED_NOTFOUND_ELEMENT == memcached_get_last_response_code(memc));
 
 
-    // bkey 범위가 0~10 사이 인 element를 모두 삭제한다.
+    // bkey 범위가 0~10 사이인 element를 모두 삭제한다.
     rc= memcached_bop_delete_by_range(memc, "btree:a_btree", strlen("btree:a_btree"), 0, 10, NULL, 0, true);
 
     assert(MEMCACHED_SUCCESS == rc);
@@ -510,10 +510,10 @@ void arcus_btree_element_delete(memcached_st *memc)
 
 ### B+Tree Element 값의 증감
 
-B+tree element의 값을 증가/감소 시키는 함수는 아래와 같다. 
+B+tree element의 값을 증가/감소시키는 함수는 아래와 같다. 
 Element의 값은 숫자형 값이어야 한다.
 
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t key_length,
@@ -611,7 +611,7 @@ void arcus_btree_element_decr(memcached_st *memc)
 
 B+tree element 개수를 확인하는 함수는 두 유형이 있다.
 
-첫째, b+tree에서 특정 bkey를 가진 element에 대해 eflag filter 조건을 만족하는 지를 확인하는 함수이다.
+첫째, b+tree에서 특정 bkey를 가진 element에 대해 eflag filter 조건을 만족하는지를 확인하는 함수이다.
 
 ``` c
 memcached_return_t memcached_bop_count(memcached_st *ptr, const char *key, size_t key_length,
@@ -833,7 +833,7 @@ void arcus_btree_element_get(memcached_st *memc)
 B+tree에 여러 element를 한번에 삽입하는 함수는 두 유형이 있다.
 
 첫째, 하나의 key가 가리키는 b+tree에 다수의 element를 삽입하는 함수이다.
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
@@ -861,7 +861,7 @@ memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr, const char 
 - attributes: B+tree 없을 시에 attributes에 따라 empty b+tree를 생성 후에 element 삽입한다.
 
 둘째, 여러 key들이 가리키는 b+tree들에 각각 하나의 element를 삽입하는 함수이다. 
-전자는 8 바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
+전자는 8바이트 unsigned interger 타입의 bkey를, 후자는 최대 31 크기의 byte array 타입의 bkey를 사용한다.
 
 ``` c
 memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
@@ -955,7 +955,7 @@ void arcus_btree_element_piped_insert(memcached_st *memc)
 
 ### B+tree Element 일괄 조회
 
-서로 다른 key로 분산되어 있는 b+tree들의 element들을 한번의 요청으로 조회할 수 있는 기능이다.
+서로 다른 key로 분산되어 있는 b+tree들의 element들을 한 번의 요청으로 조회할 수 있는 기능이다.
 이 기능은 비동기(asynchronous) 방식으로 수행하며,
 (1) 다수 b+tree들의 element 조회 요청을 보내는 단계와 
 (2) 조회 결과를 받아내는 단계로 구분된다.
@@ -989,7 +989,7 @@ memcached_coll_result_st *memcached_coll_fetch_result(memcached_st *ptr, memcach
 
 - result != null
   - MEMCACHED_SUCCESS: 정상적으로 element를 조회함.
-  - MEMCACHED_TRIMMED: 정상적으로 element를 조회 하였으나, 조회 범위가 특정 B+tree의 overflow 정책에 의해
+  - MEMCACHED_TRIMMED: 정상적으로 element를 조회하였으나, 조회 범위가 특정 B+tree의 overflow 정책에 의해
                        삭제되는 영역에 걸쳐 있음. 즉, 해당 B+tree 크기 제한으로 인해 삭제되어
                        조회되지 않은 element가 존재할 수 있음.
 - result == null
@@ -1067,15 +1067,15 @@ static void arcus_btree_element_mget(memcached_st *memc)
 이는 서로 다른 b+tree들이지만, 논리적으로 하나로 합쳐진 거대한 b+tree에 대해 element 조회 연산하는 것과
 동일한 효과를 낸다.
 
-smget 동작은 조회 범위와 어떤 b+tree의 trim 영역과의 겹침에 대한 처리로,
+smget 동작은 조회 범위와 어떤 b+tree의 trim 영역과 겹침에 대한 처리로,
 아래 두 가지 동작 모드가 있다.
 
 1) 기존 Sort-Merge 조회 (1.8.X 이하 버전에서 동작하던 방식)
-   - smget 조회 조건을 만족하는 첫번째 element가 trim된 b+tree가 하나라도 존재하면 OUT_OF_RANGE 응답을 보낸다.
+   - smget 조회 조건을 만족하는 첫 번째 element가 trim된 b+tree가 하나라도 존재하면 OUT_OF_RANGE 응답을 보낸다.
      이 경우, 응용은 모든 key에 대해 백엔드 저장소인 DB에서 elements 조회한 후에
      응용에서 sort-merge 작업을 수행하여야 한다.
    - OUT_OF_RANGE가 없는 상황에서 smget을 수행하면서
-     조회 조건을 만족하는 두번째 이후의 element가 trim된 b+tree를 만나게 되면,
+     조회 조건을 만족하는 두 번째 이후의 element가 trim된 b+tree를 만나게 되면,
      그 지점까지 조회한 elements를 최종 elements 결과로 하고
      smget 수행 상태는 TRIMMED로 하여 응답을 보낸다.
      이 경우, 응용은 모든 key에 대해 백엔드 저장소인 DB에서 trim 영역의 elements를 조회하여
@@ -1086,13 +1086,13 @@ smget 동작은 조회 범위와 어떤 b+tree의 trim 영역과의 겹침에 �
      나머지 b+tree들에 대해 smget을 계속 수행한다.
      따라서, 응용에서는 missed keys에 한해서만
      백엔드 저장소인 DB에서 elements를 조회하여 최종 smget 결과에 반영할 수 있다.
-   - smget 조회 조건을 만족하는 두번째 이후의 element가 trim된 b+tree가 존재하더라도,
+   - smget 조회 조건을 만족하는 두 번째 이후의 element가 trim된 b+tree가 존재하더라도,
      그 지점에서 smget을 중지하는 것이 아니라, 그러한 b+tree를 trimmed keys로 분류하고
      원하는 개수의 elements를 찾을 때까지 smget을 계속 진행한다.
      따라서, 응용에서는 trimmed keys에 한하여
      백엔드 저장소인 DB에서 trim된 elements를 조회하여 최종 smget 결과에 반영할 수 있다.
    - bkey에 대한 unique 조회 기능을 지원한다.
-     중복 bkey를 허용하여 조회하는 duplcate 조회 외에
+     중복 bkey를 허용하여 조회하는 duplicate 조회 외에
      중복 bkey를 제거하고 unique bkey만을 조회하는 unique 조회를 지원한다.
    - 조회 조건에 offset 기능을 제거한다.
 
@@ -1308,7 +1308,7 @@ memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr, const char
                                                    size_t *position)
 ```
 - key, key_length: B+Tree item의 key
-- bkey, bkey_length: 순위를 조회할 element 의 bkey
+- bkey, bkey_length: 순위를 조회할 element의 bkey
 - order : 순위 기준
   - MEMCACHED_COLL_ORDER_ASC: bkey 값의 오름차순
   - MEMCACHED_COLL_ORDER_DESC: bkey 값의 내림차순
@@ -1318,7 +1318,7 @@ Response code는 아래와 같다.
 - MEMCACHED_SUCCESS
   - MEMCACHED_SUCCESS: 주어진 key에서 bkey에 해당하는 B+Tree element 순위를 성공적으로 조회함
 - not MEMCACHED_SUCCESS
-  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item 이 없음
+  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item이 없음
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 bkey에 해당하는 B+Tree element가 없음
   - MEMCACHED_TYPE_MISMATCH: 해당 item이 B+Tree가 아님
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형이 기존 bkey 유형과 다름
@@ -1382,7 +1382,7 @@ Response code는 아래와 같다.
 - MEMCACHED_SUCCESS
   - MEMCACHED_SUCCESS: 주어진 순위 기준과 순위 범위에 해당하는 element들을 성공적으로 조회함
 - not MEMCACHED_SUCCESS
-  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item 이 없음
+  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item이 없음
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 순위 범위에 해당하는 B+Tree element가 없음
   - MEMCACHED_TYPE_MISMATCH: 해당 item이 B+Tree가 아님
   - MEMCACHED_UNREADABLE: 해당 key item이 unreadable 상태임
@@ -1495,7 +1495,7 @@ Response code는 아래와 같다.
 - MEMCACHED_SUCCESS
   - MEMCACHED_SUCCESS: 순위 조회와 element 조회를 성공적으로 수행함.
 - not MEMCACHED_SUCCESS
-  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item 이 없음
+  - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+Tree item이 없음
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 bkey에 해당하는 B+Tree element가 없음
   - MEMCACHED_TYPE_MISMATCH: 해당 item이 B+Tree가 아님
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형이 기존 bkey 유형과 다름
@@ -1504,7 +1504,7 @@ Response code는 아래와 같다.
 
 정상 수행되었을 경우, result 구조체는 아래의 결과를 가진다.
 - 조회된 element 결과
-  -  bkey 값의 order 기준에 따라 정렬된 순서대로 element들이 보관된다.
+  - bkey 값의 order 기준에 따라 정렬된 순서대로 element들이 보관된다.
 - 각 element의 bkey 순위
   - memcached_coll_result_get_position(result, index) API를 통해 조회한다.
 - btree 내에서 주어진 bkey의 순위
