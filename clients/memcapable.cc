@@ -60,7 +60,7 @@ static int timeout= 2;
 
 /*
  * Instead of having to cast between the different datatypes we create
- * a union of all of the different types of pacages we want to send.
+ * a union of all of the different types of packages we want to send.
  * A lot of the different commands use the same packet layout, so I'll
  * just define the different types I need. The typedefs only contain
  * the header of the message, so we need some space for keys and body
