@@ -86,7 +86,8 @@ nobase_include_HEADERS+= \
 			 libmemcached/verbosity.h \
 			 libmemcached/version.h \
 			 libmemcached/visibility.h \
-			 libmemcached/watchpoint.h
+			 libmemcached/watchpoint.h \
+                         libmemcached/server_instance.h
 
 lib_LTLIBRARIES+= libmemcached/libmemcached.la
 libmemcached_libmemcached_la_CFLAGS= -DBUILDING_LIBMEMCACHED
