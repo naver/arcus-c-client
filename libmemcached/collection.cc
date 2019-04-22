@@ -730,6 +730,8 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
         }
         else if (strncmp("type", attr_name, sizeof(attr_name)) == 0)
         {
+          word[word_length - 2] = '\0'; // \r
+          word[word_length - 1] = '\0'; // \n
           attrs->type = str_to_type(word, strlen(word));
         }
         else if (strncmp("count", attr_name, sizeof(attr_name)) == 0)
@@ -745,6 +747,10 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
           word[word_length - 2] = '\0'; // \r
           word[word_length - 1] = '\0'; // \n
           attrs->overflowaction = str_to_overflowaction(word, strlen(word));
+        }
+        else if (strncmp("readable", attr_name, sizeof(attr_name)) == 0)
+        {
+          attrs->readable = word[0] - '0';
         }
         else if (strncmp("minbkey", attr_name, sizeof(attr_name)) == 0)
         {
