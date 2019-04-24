@@ -10126,7 +10126,9 @@ static test_return_t arcus_1_9_btree_new_smget_errors(memcached_st *memc)
   size_t keylengths[] = { 9, 9, 9 };
   uint32_t eflag = 0;
 
+#if 0
   memcached_coll_attrs_st attrs;
+#endif
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
 
@@ -10140,6 +10142,10 @@ static test_return_t arcus_1_9_btree_new_smget_errors(memcached_st *memc)
   memcached_coll_query_st        smget_query;
   memcached_coll_smget_result_st smget_result;
 
+/* Since version 1.11.3 of arcus-memcached,
+ * the attribute unification constraint has disappeared.
+ */
+#if 0
   /* MEMCACHED_ATTR_MISMATCH: maxcount is different */
   memcached_coll_attrs_init(&attrs);
   memcached_coll_attrs_set_maxcount(&attrs, 10);
@@ -10180,6 +10186,7 @@ static test_return_t arcus_1_9_btree_new_smget_errors(memcached_st *memc)
   rc = memcached_bop_smget(memc, keys, keylengths, 2, &smget_query, &smget_result);
   test_true_got(rc == MEMCACHED_ATTR_MISMATCH, memcached_strerror(NULL, rc));
   memcached_coll_smget_result_free(&smget_result);
+#endif
 
   /* INVALID_ARGUMENTS: (offset + count) <= 1000 */
   unsigned char fvalue[2] = { 0, 0 };
@@ -11529,7 +11536,9 @@ test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_btree_mget_errors", true, (test_callback_fn*)arcus_1_6_btree_mget_errors},
   {"arcus_1_6_btree_smget", true, (test_callback_fn*)arcus_1_6_btree_smget},
   {"arcus_1_6_btree_smget_more", true, (test_callback_fn*)arcus_1_6_btree_smget_more},
+#if 0
   {"arcus_1_6_btree_smget_errors", true, (test_callback_fn*)arcus_1_6_btree_smget_errors},
+#endif
   {"arcus_1_6_btree_smget_one_key", true, (test_callback_fn*)arcus_1_6_btree_smget_one_key},
   {"arcus_1_6_btree_smget_duptrim", true, (test_callback_fn*)arcus_1_6_btree_smget_duptrim},
   {"arcus_1_6_btree_smget_duptrim2", true, (test_callback_fn*)arcus_1_6_btree_smget_duptrim2},
