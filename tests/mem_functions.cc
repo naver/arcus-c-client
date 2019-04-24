@@ -8342,7 +8342,6 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   memcached_return_t rc;
   const char *keys[2] = { "test:smget_key_0", "test:smget_key_1" };
   size_t key_length[2] = { 16, 16 };
-  uint64_t bkey;
   uint32_t eflag = 0;
 
   memcached_coll_create_attrs_st attributes;
@@ -8383,7 +8382,6 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
   if (rc == MEMCACHED_SUCCESS) {
     for (uint32_t i=0; i<memcached_coll_smget_result_get_count(&smget_result); i++) {
-      bkey = 20;
       test_true(strcmp(memcached_coll_smget_result_get_key(&smget_result, i), keys[0]) == 0);
       test_true((20-i) == memcached_coll_smget_result_get_bkey(&smget_result, i));
     }
@@ -8911,7 +8909,7 @@ static test_return_t arcus_1_6_btree_ext_piped_insert_bulk(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t sticky_item_test(memcached_st *memc)
+static test_return_t arcus_1_6_sticky_item_test(memcached_st *memc)
 {
   const char *key= "foo";
   const char *value= "when we sanitize";
@@ -9211,7 +9209,7 @@ static test_return_t arcus_1_6_attr_overflow_test(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t question_mget(memcached_st *memc)
+static test_return_t arcus_1_6_question_mget(memcached_st *memc)
 {
   uint32_t flags= 0;
   int32_t exptime= 600;
@@ -9263,7 +9261,7 @@ static test_return_t question_mget(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t question_lop_get(memcached_st *memc)
+static test_return_t arcus_1_6_question_lop_get(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 5;
@@ -9292,7 +9290,7 @@ static test_return_t question_lop_get(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t question_async_api(memcached_st *memc)
+static test_return_t arcus_1_6_question_async_api(memcached_st *memc)
 {
   memcached_return_t rc;
 
@@ -9663,7 +9661,7 @@ static test_return_t arcus_btree_find_position_with_get(memcached_st *memc)
 }
 
 #ifdef SUPPORT_NEW_SMGET_INTERFACE
-static test_return_t arcus_btree_new_smget(memcached_st *memc)
+static test_return_t arcus_1_9_btree_new_smget(memcached_st *memc)
 {
   memcached_return_t rc;
   int kcount = 10; /* key count */
@@ -9911,7 +9909,7 @@ static test_return_t arcus_btree_new_smget(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_btree_new_smget_more(memcached_st *memc)
+static test_return_t arcus_1_9_btree_new_smget_more(memcached_st *memc)
 {
   memcached_return_t rc;
   int kcount = 100; /* key count */
@@ -10121,14 +10119,16 @@ static test_return_t arcus_btree_new_smget_more(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_btree_new_smget_errors(memcached_st *memc)
+static test_return_t arcus_1_9_btree_new_smget_errors(memcached_st *memc)
 {
   memcached_return_t rc;
   const char *keys[] = { "btree:111", "btree:333", "btree:555" };
   size_t keylengths[] = { 9, 9, 9 };
   uint32_t eflag = 0;
 
+#if 0
   memcached_coll_attrs_st attrs;
+#endif
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
 
@@ -10142,6 +10142,10 @@ static test_return_t arcus_btree_new_smget_errors(memcached_st *memc)
   memcached_coll_query_st        smget_query;
   memcached_coll_smget_result_st smget_result;
 
+/* Since version 1.11.3 of arcus-memcached,
+ * the attribute unification constraint has disappeared.
+ */
+#if 0
   /* MEMCACHED_ATTR_MISMATCH: maxcount is different */
   memcached_coll_attrs_init(&attrs);
   memcached_coll_attrs_set_maxcount(&attrs, 10);
@@ -10182,6 +10186,7 @@ static test_return_t arcus_btree_new_smget_errors(memcached_st *memc)
   rc = memcached_bop_smget(memc, keys, keylengths, 2, &smget_query, &smget_result);
   test_true_got(rc == MEMCACHED_ATTR_MISMATCH, memcached_strerror(NULL, rc));
   memcached_coll_smget_result_free(&smget_result);
+#endif
 
   /* INVALID_ARGUMENTS: (offset + count) <= 1000 */
   unsigned char fvalue[2] = { 0, 0 };
@@ -10202,7 +10207,7 @@ static test_return_t arcus_btree_new_smget_errors(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_btree_new_smget_one_key(memcached_st *memc)
+static test_return_t arcus_1_9_btree_new_smget_one_key(memcached_st *memc)
 {
   memcached_return_t rc;
   const char *key = "test:smget_one_key";
@@ -10286,7 +10291,7 @@ static test_return_t arcus_btree_new_smget_one_key(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_btree_new_smget_duptrim(memcached_st *memc)
+static test_return_t arcus_1_9_btree_new_smget_duptrim(memcached_st *memc)
 {
   memcached_return_t rc;
   const char *keys[10];
@@ -10869,7 +10874,7 @@ static test_return_t arcus_btree_new_smget_duptrim(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_btree_new_smget_duptrim2(memcached_st *memc)
+static test_return_t arcus_1_9_btree_new_smget_duptrim2(memcached_st *memc)
 {
   memcached_return_t rc;
   const char *keys[2] = { "test:smget_key_0", "test:smget_key_1" };
@@ -11039,7 +11044,7 @@ static test_return_t arcus_btree_new_smget_duptrim2(memcached_st *memc)
 #endif
 
 #if 1 // MAP_COLLECTION_SUPPORT
-static test_return_t arcus_map_create(memcached_st *memc)
+static test_return_t arcus_1_10_map_create(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11062,7 +11067,7 @@ static test_return_t arcus_map_create(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_insert(memcached_st *memc)
+static test_return_t arcus_1_10_map_insert(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11121,7 +11126,7 @@ static test_return_t arcus_map_insert(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_update(memcached_st *memc)
+static test_return_t arcus_1_10_map_update(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11144,7 +11149,7 @@ static test_return_t arcus_map_update(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_delete(memcached_st *memc)
+static test_return_t arcus_1_10_map_delete(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11186,7 +11191,7 @@ static test_return_t arcus_map_delete(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_delete_all(memcached_st *memc)
+static test_return_t arcus_1_10_map_delete_all(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11223,7 +11228,7 @@ static test_return_t arcus_map_delete_all(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_get(memcached_st *memc)
+static test_return_t arcus_1_10_map_get(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11273,7 +11278,7 @@ static test_return_t arcus_map_get(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_get_all(memcached_st *memc)
+static test_return_t arcus_1_10_map_get_all(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11335,7 +11340,7 @@ static test_return_t arcus_map_get_all(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_get_with_mkeys(memcached_st *memc)
+static test_return_t arcus_1_10_map_get_with_mkeys(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11442,22 +11447,22 @@ static test_return_t do_arcus_map_piped_insert_with_count(memcached_st *memc, ui
   return TEST_SUCCESS;
 }
 
-static test_return_t arcus_map_piped_insert(memcached_st *memc)
+static test_return_t arcus_1_10_map_piped_insert(memcached_st *memc)
 {
   return do_arcus_map_piped_insert_with_count(memc, MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
 }
 
-static test_return_t arcus_map_piped_insert_one(memcached_st *memc)
+static test_return_t arcus_1_10_map_piped_insert_one(memcached_st *memc)
 {
   return do_arcus_map_piped_insert_with_count(memc, 1);
 }
 
-static test_return_t arcus_map_piped_insert_many(memcached_st *memc)
+static test_return_t arcus_1_10_map_piped_insert_many(memcached_st *memc)
 {
   return do_arcus_map_piped_insert_with_count(memc, MANY_PIPED_COUNT);
 }
 
-static test_return_t arcus_map_piped_insert_bulk(memcached_st *memc)
+static test_return_t arcus_1_10_map_piped_insert_bulk(memcached_st *memc)
 {
   uint32_t flags= 10;
   int32_t exptime= 600;
@@ -11531,7 +11536,9 @@ test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_btree_mget_errors", true, (test_callback_fn*)arcus_1_6_btree_mget_errors},
   {"arcus_1_6_btree_smget", true, (test_callback_fn*)arcus_1_6_btree_smget},
   {"arcus_1_6_btree_smget_more", true, (test_callback_fn*)arcus_1_6_btree_smget_more},
+#if 0
   {"arcus_1_6_btree_smget_errors", true, (test_callback_fn*)arcus_1_6_btree_smget_errors},
+#endif
   {"arcus_1_6_btree_smget_one_key", true, (test_callback_fn*)arcus_1_6_btree_smget_one_key},
   {"arcus_1_6_btree_smget_duptrim", true, (test_callback_fn*)arcus_1_6_btree_smget_duptrim},
   {"arcus_1_6_btree_smget_duptrim2", true, (test_callback_fn*)arcus_1_6_btree_smget_duptrim2},
@@ -11550,12 +11557,12 @@ test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_set_piped_insert_bulk", true, (test_callback_fn*)arcus_1_6_set_piped_insert_bulk},
   {"arcus_1_6_btree_piped_insert_bulk", true, (test_callback_fn*)arcus_1_6_btree_piped_insert_bulk},
   {"arcus_1_6_btree_ext_piped_insert_bulk", true, (test_callback_fn*)arcus_1_6_btree_ext_piped_insert_bulk},
-  {"sticky_item_test", false, (test_callback_fn*)sticky_item_test },
+  {"arcus_1_6_sticky_item_test", false, (test_callback_fn*)arcus_1_6_sticky_item_test },
   {"arcus_1_6_attr_test", false, (test_callback_fn*)arcus_1_6_attr_test},
   {"arcus_1_6_attr_overflow_test", true, (test_callback_fn*)arcus_1_6_attr_overflow_test},
-  {"question_mget", true, (test_callback_fn*)question_mget},
-  {"question_async_api", true, (test_callback_fn*)question_async_api},
-  {"question_lop_get", true, (test_callback_fn*)question_lop_get},
+  {"arcus_1_6_question_mget", true, (test_callback_fn*)arcus_1_6_question_mget},
+  {"arcus_1_6_question_async_api", true, (test_callback_fn*)arcus_1_6_question_async_api},
+  {"arcus_1_6_question_lop_get", true, (test_callback_fn*)arcus_1_6_question_lop_get},
   {0, 0, (test_callback_fn*)0}
 };
 
@@ -11585,30 +11592,30 @@ test_st arcus_1_8_tests[] ={
 
 #ifdef SUPPORT_NEW_SMGET_INTERFACE
 test_st arcus_1_9_tests[] ={
-  {"arcus_btree_new_smget", true, (test_callback_fn*)arcus_btree_new_smget},
-  {"arcus_btree_new_smget_more", true, (test_callback_fn*)arcus_btree_new_smget_more},
-  {"arcus_btree_new_smget_errors", true, (test_callback_fn*)arcus_btree_new_smget_errors},
-  {"arcus_btree_new_smget_one_key", true, (test_callback_fn*)arcus_btree_new_smget_one_key},
-  {"arcus_btree_new_smget_duptrim", true, (test_callback_fn*)arcus_btree_new_smget_duptrim},
-  {"arcus_btree_new_smget_duptrim2", true, (test_callback_fn*)arcus_btree_new_smget_duptrim2},
+  {"arcus_1_9_btree_new_smget", true, (test_callback_fn*)arcus_1_9_btree_new_smget},
+  {"arcus_1_9_btree_new_smget_more", true, (test_callback_fn*)arcus_1_9_btree_new_smget_more},
+  {"arcus_1_9_btree_new_smget_errors", true, (test_callback_fn*)arcus_1_9_btree_new_smget_errors},
+  {"arcus_1_9_btree_new_smget_one_key", true, (test_callback_fn*)arcus_1_9_btree_new_smget_one_key},
+  {"arcus_1_9_btree_new_smget_duptrim", true, (test_callback_fn*)arcus_1_9_btree_new_smget_duptrim},
+  {"arcus_1_9_btree_new_smget_duptrim2", true, (test_callback_fn*)arcus_1_9_btree_new_smget_duptrim2},
   {0, 0, (test_callback_fn*)0}
 };
 #endif
 
 #if 1 // MAP_COLLECTION_SUPPORT
 test_st arcus_1_10_tests[] ={
-  {"arcus_map_create", true, (test_callback_fn*)arcus_map_create},
-  {"arcus_map_insert", true, (test_callback_fn*)arcus_map_insert},
-  {"arcus_map_update", true, (test_callback_fn*)arcus_map_update},
-  {"arcus_map_delete", true, (test_callback_fn*)arcus_map_delete},
-  {"arcus_map_delete_all", true, (test_callback_fn*)arcus_map_delete_all},
-  {"arcus_map_get", true, (test_callback_fn*)arcus_map_get},
-  {"arcus_map_get_all", true, (test_callback_fn*)arcus_map_get_all},
-  {"arcus_map_get_with_mkeys", true, (test_callback_fn*)arcus_map_get_with_mkeys},
-  {"arcus_map_piped_insert", true, (test_callback_fn*)arcus_map_piped_insert},
-  {"arcus_map_piped_insert_one", true, (test_callback_fn*)arcus_map_piped_insert_one},
-  {"arcus_map_piped_insert_many", true, (test_callback_fn*)arcus_map_piped_insert_many},
-  {"arcus_map_piped_insert_bulk", true, (test_callback_fn*)arcus_map_piped_insert_bulk},
+  {"arcus_1_10_map_create", true, (test_callback_fn*)arcus_1_10_map_create},
+  {"arcus_1_10_map_insert", true, (test_callback_fn*)arcus_1_10_map_insert},
+  {"arcus_1_10_map_update", true, (test_callback_fn*)arcus_1_10_map_update},
+  {"arcus_1_10_map_delete", true, (test_callback_fn*)arcus_1_10_map_delete},
+  {"arcus_1_10_map_delete_all", true, (test_callback_fn*)arcus_1_10_map_delete_all},
+  {"arcus_1_10_map_get", true, (test_callback_fn*)arcus_1_10_map_get},
+  {"arcus_1_10_map_get_all", true, (test_callback_fn*)arcus_1_10_map_get_all},
+  {"arcus_1_10_map_get_with_mkeys", true, (test_callback_fn*)arcus_1_10_map_get_with_mkeys},
+  {"arcus_1_10_map_piped_insert", true, (test_callback_fn*)arcus_1_10_map_piped_insert},
+  {"arcus_1_10_map_piped_insert_one", true, (test_callback_fn*)arcus_1_10_map_piped_insert_one},
+  {"arcus_1_10_map_piped_insert_many", true, (test_callback_fn*)arcus_1_10_map_piped_insert_many},
+  {"arcus_1_10_map_piped_insert_bulk", true, (test_callback_fn*)arcus_1_10_map_piped_insert_bulk},
   {0, 0, (test_callback_fn*)0}
 };
 #endif

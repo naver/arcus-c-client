@@ -1155,6 +1155,7 @@ Response code는 아래와 같다.
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형과 해당 B+tree의 bkey 유형이 다름.
   - MEMCACHED_ATTR_MISMATCH: smget에 참여하는 B+tree들의 attribute가 서로 다름.
     - 참고로 smget에 참여하는 B+tree들은 maxcount, maxbkeyrange, overflowaction이 모두 동일해야 함.
+    - arcus-memcached 1.11.3 이후로 attribute 통일 제약이 사라짐.
 
 Sort-merge 조회 결과는 memcached_bop_smget_result_t 구조체로 받아온다.
 Sort-merge 조회하기 전에 memcached_bop_smget_result_t 구조체를 초기화하여 사용해야 하고,
