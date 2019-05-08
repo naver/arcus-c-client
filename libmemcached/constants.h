@@ -58,6 +58,8 @@
 #define ENABLE_REPLICATION 1
 #endif
 
+#define IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211
 #define MEMCACHED_MAX_KEY 251 /* We add one to have it null terminated */

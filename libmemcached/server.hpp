@@ -99,16 +99,21 @@ static inline void memcached_mark_server_for_timeout(memcached_server_write_inst
   if (server->state != MEMCACHED_SERVER_STATE_IN_TIMEOUT)
   {
     struct timeval next_time;
-    if (server->root->retry_timeout != 0 and gettimeofday(&next_time, NULL) == 0)
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+    if (server->root->retry_timeout != 0 and gettimeofday(&next_time, NULL) == 0 and !server->immediately_connect)
     {
       server->next_retry= next_time.tv_sec +server->root->retry_timeout;
     }
+#endif
     else
     {
       server->next_retry= 1; // Setting the value to 1 causes the timeout to occur immediatly
     }
 
     server->state= MEMCACHED_SERVER_STATE_IN_TIMEOUT;
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+    server->immediately_connect = false;
+#endif
     if (server->server_failure_counter_query_id != server->root->query_id)
     {
       server->server_failure_counter++;

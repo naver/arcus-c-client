@@ -220,6 +220,13 @@ memcached_return_t memcached_read_one_response(memcached_server_write_instance_s
   {
     rc= textual_read_one_response(ptr, buffer, buffer_length, result);
   }
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+  if(rc == MEMCACHED_CLIENT_ERROR or
+     rc == MEMCACHED_PROTOCOL_ERROR)
+  {
+    memcached_server_set_retry_timeout_immediately(ptr);
+  }
+#endif
 
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
            rc == MEMCACHED_PROTOCOL_ERROR or
@@ -855,6 +862,13 @@ memcached_return_t memcached_read_one_coll_response(memcached_server_write_insta
   {
     rc= textual_read_one_coll_response(ptr, buffer, buffer_length, result);
   }
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+  if(rc == MEMCACHED_CLIENT_ERROR ||
+     rc == MEMCACHED_PROTOCOL_ERROR)
+  {
+    memcached_server_set_retry_timeout_immediately(ptr);
+  }
+#endif
 
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
            rc == MEMCACHED_PROTOCOL_ERROR ||
@@ -1670,6 +1684,13 @@ memcached_return_t memcached_read_one_coll_smget_response(memcached_server_write
   {
     rc= textual_read_one_coll_smget_response(ptr, buffer, buffer_length, result);
   }
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+  if(rc == MEMCACHED_CLIENT_ERROR or
+     rc == MEMCACHED_PROTOCOL_ERROR)
+  {
+    memcached_server_set_retry_timeout_immediately(ptr);
+  }
+#endif
 
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
            rc == MEMCACHED_PROTOCOL_ERROR or

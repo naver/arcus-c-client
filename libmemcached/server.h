@@ -100,6 +100,9 @@ struct memcached_server_st {
   char read_buffer[MEMCACHED_MAX_BUFFER];
   char write_buffer[MEMCACHED_MAX_BUFFER];
   char hostname[MEMCACHED_NI_MAXHOST];
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+  bool immediately_connect;
+#endif
 };
 
 
@@ -183,6 +186,11 @@ const char *memcached_server_type(const memcached_server_instance_st ptr);
 
 LIBMEMCACHED_LOCAL
 void __server_free(memcached_server_st *);
+
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+LIBMEMCACHED_API
+void memcached_server_set_retry_timeout_immediately(memcached_server_st *ptr);
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

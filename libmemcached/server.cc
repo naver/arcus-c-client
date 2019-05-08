@@ -90,6 +90,9 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   self->groupindex= -1; /* replica group index */
   self->next= NULL;     /* next server pointer */
 #endif
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+  self->immediately_connect = false;
+#endif
 }
 
 static memcached_server_st *_server_create(memcached_server_st *self, const memcached_st *memc)
@@ -381,3 +384,16 @@ const char *memcached_server_type(const memcached_server_instance_st ptr)
 
   return "UNKNOWN";
 }
+
+#ifdef IMMEDIATELY_RECONNECT_WHEN_SOME_ERROR
+void memcached_server_set_retry_timeout_immediately(memcached_server_st *self)
+{
+  WATCHPOINT_ASSERT(self);
+  if (not self)
+  {
+    return;
+  }
+
+  self->immediately_connect = true;
+}
+#endif
