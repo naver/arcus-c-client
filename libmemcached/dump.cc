@@ -36,14 +36,14 @@ static memcached_return_t ascii_dump(memcached_st *ptr, memcached_dump_fn *callb
     memcached_server_write_instance_st instance;
     instance= memcached_server_instance_fetch(ptr, server_key);
 
-    /* 256 I BELIEVE is the upper limit of slabs */
-    for (uint32_t x= 0; x < 256; x++)
+    /* 200 : the upper limit of slabs */
+    for (uint32_t x= 0; x < 200; x++)
     {
       char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       int send_length;
       send_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                            "stats cachedump %u 0 0\r\n", x);
+                            "stats cachedump %u 0\r\n", x);
 
       if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)
       {
