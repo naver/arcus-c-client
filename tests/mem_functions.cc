@@ -38,6 +38,7 @@
 
 #include <config.h>
 #include <libtest/test.hpp>
+#include <climits>
 
 /*
   Test cases
@@ -4301,6 +4302,7 @@ static test_return_t dump_test(memcached_st *memc)
   // confirm_key_count() call dump
   size_t counter= confirm_key_count(memc);
 
+  test_true(counter != ULONG_MAX);
   /* We may have more then 32 if our previous flush has not completed */
   test_true(counter >= 32);
 
