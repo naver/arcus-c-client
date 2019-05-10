@@ -93,9 +93,13 @@ static inline bool _memcached_init(memcached_st *self)
 
   self->server_info.version= 0;
 
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+  self->ketama.info= NULL;
+#else
   self->ketama.continuum= NULL;
   self->ketama.continuum_count= 0;
   self->ketama.continuum_points_counter= 0;
+#endif
   self->ketama.next_distribution_rebuild= 0;
   self->ketama.weighted= false;
 
@@ -181,7 +185,11 @@ static void _free(memcached_st *ptr, bool release_st)
     ptr->on_cleanup(ptr);
   }
 
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+  memcached_ketama_release(ptr);
+#else
   libmemcached_free(ptr, ptr->ketama.continuum);
+#endif
 
   memcached_array_free(ptr->_namespace);
   ptr->_namespace= NULL;
@@ -418,12 +426,15 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
     }
   }
 
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+#else
   if (memcached_failed(run_distribution(new_clone)))
   {
     memcached_free(new_clone);
 
     return NULL;
   }
+#endif
 
   if (source->on_clone)
   {
@@ -506,3 +517,34 @@ void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc)
 {
   ptr->last_response_code= rc;
 }
+
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+void memcached_ketama_reference(memcached_st *ptr, memcached_st *master)
+{
+  assert(ptr->ketama.info == NULL);
+
+  if (master->ketama.info != NULL) {
+    /* If the cache node of the cluster is not running,
+     * master->ketama.info == NULL.
+     * Thus, ptr->ketama.info also be NULL.
+     */
+    ptr->ketama.info= master->ketama.info;
+    ptr->ketama.info->continuum_refcount++;
+  }
+}
+
+void memcached_ketama_release(memcached_st *ptr)
+{
+  if (ptr->ketama.info != NULL) {
+    ptr->ketama.info->continuum_refcount--;
+
+    if (ptr->ketama.info->continuum_refcount == 0) {
+      if (ptr->ketama.info->continuum != NULL) {
+        libmemcached_free(ptr, ptr->ketama.info->continuum);
+      }
+      libmemcached_free(ptr, ptr->ketama.info);
+    }
+    ptr->ketama.info= NULL;
+  }
+}
+#endif

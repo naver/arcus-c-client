@@ -58,6 +58,8 @@
 #define ENABLE_REPLICATION 1
 #endif
 
+#define USE_SHARED_HASHRING_IN_ARCUS_MC_POOL 1
+
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211
 #define MEMCACHED_MAX_KEY 251 /* We add one to have it null terminated */

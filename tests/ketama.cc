@@ -75,7 +75,11 @@ test_return_t ketama_compatibility_libmemcached(memcached_st *)
   /* VDEAAAAA hashes to fffcd1b5, after the last continuum point, and lets
    * us test the boundary wraparound.
    */
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+  test_true(memcached_generate_hash(memc, (char *)"VDEAAAAA", 8) == memc->ketama.info->continuum[0].index);
+#else
   test_true(memcached_generate_hash(memc, (char *)"VDEAAAAA", 8) == memc->ketama.continuum[0].index);
+#endif
 
   /* verify the standard ketama set. */
   for (uint32_t x= 0; x < 99; x++)
@@ -136,7 +140,11 @@ test_return_t user_supplied_bug18(memcached_st *trash)
   /* VDEAAAAA hashes to fffcd1b5, after the last continuum point, and lets
    * us test the boundary wraparound.
    */
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+  test_true(memcached_generate_hash(memc, (char *)"VDEAAAAA", 8) == memc->ketama.info->continuum[0].index);
+#else
   test_true(memcached_generate_hash(memc, (char *)"VDEAAAAA", 8) == memc->ketama.continuum[0].index);
+#endif
 
   /* verify the standard ketama set. */
   for (x= 0; x < 99; x++)
@@ -267,7 +275,11 @@ test_return_t ketama_compatibility_spymemcached(memcached_st *)
   /* VDEAAAAA hashes to fffcd1b5, after the last continuum point, and lets
    * us test the boundary wraparound.
    */
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+  test_true(memcached_generate_hash(memc, (char *)"VDEAAAAA", 8) == memc->ketama.info->continuum[0].index);
+#else
   test_true(memcached_generate_hash(memc, (char *)"VDEAAAAA", 8) == memc->ketama.continuum[0].index);
+#endif
 
   /* verify the standard ketama set. */
   for (uint32_t x= 0; x < 99; x++)
