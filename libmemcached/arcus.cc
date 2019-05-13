@@ -20,13 +20,14 @@
 #include <sys/mman.h>
 #include <pthread.h>
 
+#define FIX_REPLICATION_CLIENT_INFO 1
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
 #ifdef ENABLE_REPLICATION
 #define ARCUS_REPL_ZK_CACHE_LIST              "/arcus_repl/cache_list"
 #endif
 #define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
 #define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
-//#define ARCUS_ZK_ADDING_CLEINT_INFO           1
+#define ARCUS_ZK_ADDING_CLEINT_INFO           1
 #define ZOO_NO_FLAGS 0
 
 #ifdef ARCUS_ZK_ADDING_CLEINT_INFO
@@ -35,6 +36,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #define ARCUS_ZK_CLIENT_INFO_NODE             "/arcus/client_list"
+#ifdef FIX_REPLICATION_CLIENT_INFO
+#ifdef ENABLE_REPLICATION
+#define ARCUS_REPL_ZK_CLIENT_INFO_NODE        "/arcus_repl/client_list"
+#endif
+#endif
 #endif
 #include <sys/file.h>
 #include "libmemcached/arcus_priv.h"
@@ -502,10 +508,26 @@ static inline void do_add_client_info(arcus_st *arcus)
   gethostname(hostname, 50);
   host = (struct hostent *) gethostbyname(hostname);
 
+#ifdef FIX_REPLICATION_CLIENT_INFO
+  // create the ephemeral znode "/arcus or arcus_repl/client_list/{service_code}/{client hostname}_{ip address}_{pool count}_{client language}_{client version}_{YYYYMMDDHHIISS}_{zk session id}"
+#else
   // create the ephemeral znode "/arcus/client_list/{service_code}/{client hostname}_{ip address}_{pool count}_{client language}_{client version}_{YYYYMMDDHHIISS}_{zk session id}"
+#endif
   // it means administrator has to create the {service_code} node before using.
+#ifdef FIX_REPLICATION_CLIENT_INFO
+  char* client_info_znode = ARCUS_ZK_CLIENT_INFO_NODE;
+#ifdef ENABLE_REPLICATION
+  if (arcus->zk.is_repl_enabled) {
+    client_info_znode = ARCUS_REPL_ZK_CLIENT_INFO_NODE;
+  }
+#endif
+#endif
   snprintf(path, sizeof(path), "%s/%s/%s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx",
+#ifdef FIX_REPLICATION_CLIENT_INFO
+                              client_info_znode,
+#else
                               ARCUS_ZK_CLIENT_INFO_NODE,
+#endif
                               arcus->zk.svc_code,
                               hostname,
                               inet_ntoa(*((struct in_addr *)host->h_addr)),
@@ -638,6 +660,39 @@ void arcus_server_check_for_update(memcached_st *ptr)
     proc_mutex_unlock(&arcus->proxy.data->mutex);
   }
 }
+
+#ifdef FIX_REPLICATION_CLIENT_INFO
+static inline int do_arcus_cluster_check_for_replication(memcached_st *mc, arcus_st *arcus)
+{
+  int zkrc;
+
+  /* Check /arcus_repl and /arcus to determine whether we belong to replication
+   * or base(non-repl) cluster.
+   */
+  struct Stat stat;
+  snprintf(arcus->zk.path, sizeof(arcus->zk.path),
+    "%s/%s", ARCUS_REPL_ZK_CACHE_LIST, arcus->zk.svc_code);
+  zkrc = zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
+  if (zkrc == ZOK) {
+    ZOO_LOG_WARN(("Detected Arcus replication cluster. %s exits", arcus->zk.path));
+    arcus->zk.is_repl_enabled = true;
+    mc->flags.repl_enabled= true;
+  }
+  else if (zkrc == ZNONODE) {
+    snprintf(arcus->zk.path, sizeof(arcus->zk.path),
+      "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
+    arcus->zk.is_repl_enabled = false;
+    mc->flags.repl_enabled= false;
+  }
+  else {
+    ZOO_LOG_ERROR(("zoo_exists failed while trying to"
+        " determine Arcus version. path=%s reason=%s, zookeeper=%s",
+        arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
+    return -1;
+  }
+  return 0;
+}
+#endif
 
 /**
  * Add a server to the cache server list with a given host:port string.
@@ -1042,6 +1097,8 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
     return;
   }
 
+#ifdef FIX_REPLICATION_CLIENT_INFO
+#else
 #ifdef ENABLE_REPLICATION
   /* Check /arucs_repl and /arcus to determine whether we belong to replication
    * or base(non-repl) cluster.
@@ -1069,6 +1126,7 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
       return;
     }
   }
+#endif
 #endif
 
   /* Make a new watch on Arcus cache list. */
@@ -1133,6 +1191,16 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
       arcus->zk.myid= *id;
       ZOO_LOG_DEBUG(("Current sessionid  : 0x%llx", (long long) arcus->zk.myid.client_id));
     }
+#ifdef FIX_REPLICATION_CLIENT_INFO
+#ifdef ENABLE_REPLICATION
+    if (arcus->is_initializing) {
+      if (do_arcus_cluster_check_for_replication(mc, arcus) < 0) {
+        pthread_mutex_unlock(&lock_arcus);
+        return;
+      }
+    }
+#endif
+#endif
 #ifdef ARCUS_ZK_ADDING_CLEINT_INFO
     do_add_client_info(arcus);
 #endif
