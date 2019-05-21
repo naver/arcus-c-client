@@ -7857,6 +7857,7 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+#if 0
 static test_return_t arcus_1_6_btree_smget_errors(memcached_st *memc)
 {
   memcached_return_t rc;
@@ -7937,6 +7938,7 @@ static test_return_t arcus_1_6_btree_smget_errors(memcached_st *memc)
 
   return TEST_SUCCESS;
 }
+#endif
 
 static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
 {
