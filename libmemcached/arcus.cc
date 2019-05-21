@@ -20,7 +20,6 @@
 #include <sys/mman.h>
 #include <pthread.h>
 
-#define CHECK_ARCUS_CLUSTER 1
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
 #ifdef ENABLE_REPLICATION
 #define ARCUS_REPL_ZK_CACHE_LIST              "/arcus_repl/cache_list"
@@ -649,15 +648,9 @@ void arcus_server_check_for_update(memcached_st *ptr)
   }
 }
 
-#ifdef CHECK_ARCUS_CLUSTER
 static inline int do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *arcus)
-#else
-static inline int do_arcus_cluster_check_for_replication(memcached_st *mc, arcus_st *arcus)
-#endif
 {
   int zkrc;
-
-#ifdef CHECK_ARCUS_CLUSTER
   struct Stat stat;
 
 #ifdef ENABLE_REPLICATION
@@ -674,6 +667,7 @@ static inline int do_arcus_cluster_check_for_replication(memcached_st *mc, arcus
     return 0;
   }
 #endif
+
   snprintf(arcus->zk.path, sizeof(arcus->zk.path),
     "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
   zkrc= zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
@@ -683,41 +677,12 @@ static inline int do_arcus_cluster_check_for_replication(memcached_st *mc, arcus
     mc->flags.repl_enabled= false;
     return 0;
   }
-#else
-  /* Check /arcus_repl and /arcus to determine whether we belong to replication
-   * or base(non-repl) cluster.
-   */
-  struct Stat stat;
-  snprintf(arcus->zk.path, sizeof(arcus->zk.path),
-    "%s/%s", ARCUS_REPL_ZK_CACHE_LIST, arcus->zk.svc_code);
-  zkrc = zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
-  if (zkrc == ZOK) {
-    ZOO_LOG_WARN(("Detected Arcus replication cluster. %s exits", arcus->zk.path));
-    arcus->zk.is_repl_enabled = true;
-    mc->flags.repl_enabled= true;
-  }
-  else if (zkrc == ZNONODE) {
-    snprintf(arcus->zk.path, sizeof(arcus->zk.path),
-      "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
-    arcus->zk.is_repl_enabled = false;
-    mc->flags.repl_enabled= false;
-  }
-#endif
   else {
     ZOO_LOG_ERROR(("zoo_exists failed while trying to"
-#ifdef ARCUS_CHECK_CLUSTER
       " determine Arcus version. path=%s reason=%s, zookeeper=%s",
       arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
-#else
-        " determine Arcus version. path=%s reason=%s, zookeeper=%s",
-        arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
-#endif
     return -1;
   }
-#ifdef ARCUS_CHECK_CLUSTER
-#else
-  return 0;
-#endif
 }
 
 /**
@@ -1185,14 +1150,12 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
       arcus->zk.myid= *id;
       ZOO_LOG_DEBUG(("Current sessionid  : 0x%llx", (long long) arcus->zk.myid.client_id));
     }
-#ifdef CHECK_ARCUS_CLUSTER
     if (arcus->is_initializing) {
       if (do_arcus_cluster_validation_check(mc, arcus) < 0) {
         pthread_mutex_unlock(&lock_arcus);
         return;
       }
     }
-#endif
 #ifdef ARCUS_ZK_ADDING_CLEINT_INFO
     do_add_client_info(arcus);
 #endif
