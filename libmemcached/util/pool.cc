@@ -177,7 +177,7 @@ bool memcached_pool_st::init(uint32_t initial)
 }
 
 
-static inline memcached_pool_st *_pool_create(memcached_st* master, uint32_t initial, uint32_t max)
+memcached_pool_st *memcached_pool_create(memcached_st* master, uint32_t initial, uint32_t max)
 {
   if (initial == 0 or max == 0 or (initial > max))
   {
@@ -201,11 +201,6 @@ static inline memcached_pool_st *_pool_create(memcached_st* master, uint32_t ini
   }
 
   return object;
-}
-
-memcached_pool_st *memcached_pool_create(memcached_st* master, uint32_t initial, uint32_t max)
-{
-  return _pool_create(master, initial, max);
 }
 
 memcached_pool_st * memcached_pool(const char *option_string, size_t option_string_length)
@@ -273,14 +268,20 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
     {
       ret= mc_pool[firstfree--];
     }
-    else if (cur_size == max_size)
+    else if (cur_size < max_size)
+    {
+      if (grow_pool(this) == false)
+      {
+        rc= MEMCACHED_MEMORY_ALLOCATION_FAILURE;
+        break;
+      }
+    }
+    else /* cur_size == max_size */
     {
       if (relative_time.tv_sec == 0 and relative_time.tv_nsec == 0)
       {
-        pthread_mutex_unlock(&mutex);
         rc= MEMCACHED_NOTFOUND;
-
-        return NULL;
+        break;
       }
 
       struct timespec time_to_wait= {0, 0};
@@ -290,8 +291,6 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
       int thread_ret;
       if ((thread_ret= pthread_cond_timedwait(&cond, &mutex, &time_to_wait)) != 0)
       {
-        pthread_mutex_unlock(&mutex);
-
         if (thread_ret == ETIMEDOUT)
         {
           rc= MEMCACHED_TIMEOUT;
@@ -301,14 +300,8 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
           errno= thread_ret;
           rc= MEMCACHED_ERRNO;
         }
-
-        return NULL;
+        break;
       }
-    }
-    else if (grow_pool(this) == false)
-    {
-      (void)pthread_mutex_unlock(&mutex);
-      return NULL;
     }
   } while (ret == NULL);
 
