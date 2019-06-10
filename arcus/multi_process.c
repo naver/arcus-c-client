@@ -40,10 +40,11 @@ static inline void process_child(memcached_st *proxy_mc)
   fprintf(stderr, "[pid:%d] begin : child_process\n", getpid());
   arcus_proxy_connect(mc, NULL, proxy_mc);
 
+  int userid, i;
   int id = getpid();
   sleep(1);
 
-  for (int userid=0; userid<10; userid++) {
+  for (userid=0; userid<10; userid++) {
 
     if (SAMPLE_PIPE) {
       fprintf(stderr, "test piped_insert()\n");
@@ -67,7 +68,7 @@ static inline void process_child(memcached_st *proxy_mc)
       const char **values = malloc(sizeof(char *) * NUM_OF_PIPED_ITEMS);
       size_t values_length[NUM_OF_PIPED_ITEMS];
 
-      for (int i=0; i<NUM_OF_PIPED_ITEMS; i++)
+      for (i=0; i<NUM_OF_PIPED_ITEMS; i++)
       {
         //queries[i] = memcached_bop_query_create(mc, NULL, bkey);
         bkeys[i] = bkey;
@@ -108,7 +109,7 @@ static inline void process_child(memcached_st *proxy_mc)
       free(eflags);
       free(values);
 
-      for (int i=0; i<NUM_OF_PIPED_ITEMS; i++)
+      for (i=0; i<NUM_OF_PIPED_ITEMS; i++)
       {
         fprintf(stderr, "[%d] insert result : %s\n", i, memcached_strerror(mc, errors[i]));
       }
@@ -171,7 +172,7 @@ static inline void process_child(memcached_st *proxy_mc)
       char key[MEMCACHED_MAX_KEY];
       size_t key_length;
 
-      for (int i=0; i<20; i++)
+      for (i=0; i<20; i++)
       {
         string = memcached_fetch(mc, key, &key_length, &string_length, &flags, &rc);
         key[key_length] = '\0';
@@ -187,7 +188,7 @@ static inline void process_child(memcached_st *proxy_mc)
       const char *keys[] = {"foo1", "foo2", "foo3", "foo4", "foo5"};
       size_t lengths[] = { 4, 4, 4, 4, 4 };
 
-      for (int i=0; i<5; i++)
+      for (i=0; i<5; i++)
       {
         rc = memcached_set(mc, keys[i], lengths[i], keys[i], lengths[i], 600, 0);
         if (i == 1 || i == 2 || i == 4)
@@ -203,7 +204,7 @@ static inline void process_child(memcached_st *proxy_mc)
       char key[MEMCACHED_MAX_KEY];
       size_t key_length;
 
-      for (int i=0; i<5; i++)
+      for (i=0; i<5; i++)
       {
         string = memcached_fetch(mc, key, &key_length, &string_length, &flags, &rc);
         fprintf(stderr, "fetch[%d] key=%s, value=%s, rc = %s\n", i, key, string, memcached_strerror(mc, rc));

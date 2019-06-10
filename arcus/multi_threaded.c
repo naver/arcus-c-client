@@ -122,6 +122,7 @@ sample_sop(memcached_st *mc)
   uint32_t flags= 10;
   uint32_t exptime= 600;
   uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE - 1;
+  uint32_t i;
 
   memcached_return_t rc;
 
@@ -133,7 +134,7 @@ sample_sop(memcached_st *mc)
 
   memcached_sop_create(mc, "set:a_set", 9, &attributes);
 
-  for (uint32_t i=0; i<maxcount; i++)
+  for (i=0; i<maxcount; i++)
   {
     values[i]= (char *)malloc(sizeof(char) * 15);
     values_length[i]= snprintf(values[i], 15, "value%d", i);
@@ -156,7 +157,7 @@ sample_sop(memcached_st *mc)
   //test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   //test_true_got(piped_rc == MEMCACHED_SOME_EXIST, memcached_strerror(NULL, piped_rc));
 
-  for (uint32_t i=0; i<maxcount; i++)
+  for (i=0; i<maxcount; i++)
   {
     free(values[i]);
   }
@@ -173,6 +174,7 @@ sample_sop_piped_exist(memcached_st *mc, int id, uint32_t userid)
   uint32_t flags= 10;
   uint32_t exptime= 600;
   uint32_t maxcount= MANY_PIPED_COUNT;
+  uint32_t i;
 
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, flags, exptime, 10000);
@@ -184,7 +186,7 @@ sample_sop_piped_exist(memcached_st *mc, int id, uint32_t userid)
   char **values = (char **)malloc(sizeof(char *) * MANY_PIPED_COUNT);
   size_t valuelengths[MANY_PIPED_COUNT];
   
-  for (uint32_t i=0; i<maxcount; i++)
+  for (i=0; i<maxcount; i++)
   { 
     values[i]= (char *)malloc(sizeof(char) * 15);
     valuelengths[i]= snprintf(values[i], 15, "%u", i);
@@ -217,7 +219,7 @@ sample_sop_piped_exist(memcached_st *mc, int id, uint32_t userid)
   else
     fprintf(stderr, "elapsed time : %lf ms\n", elapsed_ms);
   
-  for (uint32_t i=0; i<maxcount; i++)
+  for (i=0; i<maxcount; i++)
   { 
     free((void*)values[i]);
   }
