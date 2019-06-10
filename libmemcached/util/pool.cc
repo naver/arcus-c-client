@@ -67,19 +67,19 @@ struct memcached_pool_st
   pthread_mutex_t mutex;
   pthread_cond_t cond;
   memcached_st *master;
-  memcached_st **server_pool;
+  memcached_st **mc_pool;
   int firstfree;
-  const uint32_t size;
-  uint32_t current_size;
+  const uint32_t max_size;
+  uint32_t cur_size;
   bool _owns_master;
   struct timespec _timeout;
 
   memcached_pool_st(memcached_st *master_arg, size_t max_arg) :
     master(master_arg),
-    server_pool(NULL),
+    mc_pool(NULL),
     firstfree(-1),
-    size(max_arg),
-    current_size(0),
+    max_size(max_arg),
+    cur_size(0),
     _owns_master(false)
   {
     pthread_mutex_init(&mutex, NULL);
@@ -104,13 +104,13 @@ struct memcached_pool_st
   {
     for (int x= 0; x <= firstfree; ++x)
     {
-      memcached_free(server_pool[x]);
-      server_pool[x] = NULL;
+      memcached_free(mc_pool[x]);
+      mc_pool[x] = NULL;
     }
 
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&cond);
-    delete [] server_pool;
+    delete [] mc_pool;
     if (_owns_master)
     {
       memcached_free(master);
@@ -148,8 +148,8 @@ static bool grow_pool(memcached_pool_st* pool)
     return false;
   }
 
-  pool->server_pool[++pool->firstfree]= obj;
-  pool->current_size++;
+  pool->mc_pool[++pool->firstfree]= obj;
+  pool->cur_size++;
   obj->configure.version= pool->version();
 
   return true;
@@ -157,8 +157,8 @@ static bool grow_pool(memcached_pool_st* pool)
 
 bool memcached_pool_st::init(uint32_t initial)
 {
-  server_pool= new (std::nothrow) memcached_st *[size];
-  if (not server_pool)
+  mc_pool= new (std::nothrow) memcached_st *[max_size];
+  if (not mc_pool)
     return false;
 
   /*
@@ -271,9 +271,9 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
   {
     if (firstfree > -1)
     {
-      ret= server_pool[firstfree--];
+      ret= mc_pool[firstfree--];
     }
-    else if (current_size == size)
+    else if (cur_size == max_size)
     {
       if (relative_time.tv_sec == 0 and relative_time.tv_nsec == 0)
       {
@@ -345,9 +345,9 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
     }
   }
 
-  server_pool[++firstfree]= released;
+  mc_pool[++firstfree]= released;
 
-  if (firstfree == 0 and current_size == size)
+  if (firstfree == 0 and cur_size == max_size)
   {
     /* we might have people waiting for a connection.. wake them up :-) */
     pthread_cond_broadcast(&cond);
@@ -453,17 +453,17 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
   /* update the clones */
   for (int xx= 0; xx <= pool->firstfree; ++xx)
   {
-    if (memcached_success(memcached_behavior_set(pool->server_pool[xx], flag, data)))
+    if (memcached_success(memcached_behavior_set(pool->mc_pool[xx], flag, data)))
     {
-      pool->server_pool[xx]->configure.version= pool->version();
+      pool->mc_pool[xx]->configure.version= pool->version();
     }
     else
     {
       memcached_st *memc;
       if ((memc= memcached_clone(NULL, pool->master)))
       {
-        memcached_free(pool->server_pool[xx]);
-        pool->server_pool[xx]= memc;
+        memcached_free(pool->mc_pool[xx]);
+        pool->mc_pool[xx]= memc;
         /* I'm not sure what to do in this case.. this would happen
           if we fail to push the server list inside the client..
           I should add a testcase for this, but I believe the following
@@ -543,8 +543,8 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
     memcached_st *memc;
     if ((memc= memcached_clone(NULL, pool->master)))
     {
-      memcached_free(pool->server_pool[xx]);
-      pool->server_pool[xx]= memc;
+      memcached_free(pool->mc_pool[xx]);
+      pool->mc_pool[xx]= memc;
       /* I'm not sure what to do in this case.. this would happen
         if we fail to push the server list inside the client..
         I should add a testcase for this, but I believe the following
@@ -593,7 +593,7 @@ memcached_pool_use_single_server(memcached_pool_st *pool,
 uint16_t get_memcached_pool_size(memcached_pool_st* pool) 
 {
   if (pool == NULL) return 1;
-  return pool->size;
+  return pool->max_size;
 }
 
 #endif
