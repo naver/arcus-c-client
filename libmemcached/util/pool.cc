@@ -499,18 +499,7 @@ memcached_return_t memcached_pool_behavior_get(memcached_pool_st *pool,
  */
 memcached_st *memcached_pool_get_master(memcached_pool_st* pool)
 {
-  memcached_st *master;
-
-  if (pthread_mutex_lock(&pool->mutex))
-  {
-    return NULL;
-  }
-
-  master = pool->master;
-
-  (void)pthread_mutex_unlock(&pool->mutex);
-
-  return master;
+  return pool->master;
 }
 
 /**
