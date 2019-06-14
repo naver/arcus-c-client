@@ -68,7 +68,7 @@ struct memcached_pool_st
   pthread_cond_t cond;
   memcached_st *master;
   memcached_st **mc_pool;
-  int firstfree;
+  int top;
   const uint32_t max_size;
   uint32_t cur_size;
   bool _owns_master;
@@ -77,7 +77,7 @@ struct memcached_pool_st
   memcached_pool_st(memcached_st *master_arg, size_t max_arg) :
     master(master_arg),
     mc_pool(NULL),
-    firstfree(-1),
+    top(-1),
     max_size(max_arg),
     cur_size(0),
     _owns_master(false)
@@ -102,7 +102,7 @@ struct memcached_pool_st
 
   ~memcached_pool_st()
   {
-    for (int x= 0; x <= firstfree; ++x)
+    for (int x= 0; x <= top; ++x)
     {
       memcached_free(mc_pool[x]);
       mc_pool[x] = NULL;
@@ -148,7 +148,7 @@ static bool grow_pool(memcached_pool_st* pool)
     return false;
   }
 
-  pool->mc_pool[++pool->firstfree]= obj;
+  pool->mc_pool[++pool->top]= obj;
   pool->cur_size++;
   obj->configure.version= pool->version();
 
@@ -264,9 +264,9 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
   memcached_st *ret= NULL;
   do
   {
-    if (firstfree > -1)
+    if (top > -1)
     {
-      ret= mc_pool[firstfree--];
+      ret= mc_pool[top--];
     }
     else if (cur_size < max_size)
     {
@@ -338,9 +338,9 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
     }
   }
 
-  mc_pool[++firstfree]= released;
+  mc_pool[++top]= released;
 
-  if (firstfree == 0 and cur_size == max_size)
+  if (top == 0 and cur_size == max_size)
   {
     /* we might have people waiting for a connection.. wake them up :-) */
     pthread_cond_broadcast(&cond);
@@ -444,7 +444,7 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
 
   pool->increment_version();
   /* update the clones */
-  for (int xx= 0; xx <= pool->firstfree; ++xx)
+  for (int xx= 0; xx <= pool->top; ++xx)
   {
     if (memcached_success(memcached_behavior_set(pool->mc_pool[xx], flag, data)))
     {
@@ -520,7 +520,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   pool->increment_version();
 
   /* update the clones */
-  for (int xx= 0; xx <= pool->firstfree; ++xx)
+  for (int xx= 0; xx <= pool->top; ++xx)
   {
     memcached_st *memc;
     if ((memc= memcached_clone(NULL, pool->master)))
@@ -574,7 +574,7 @@ memcached_pool_use_single_server(memcached_pool_st *pool,
 
 uint16_t get_memcached_pool_size(memcached_pool_st* pool) 
 {
-  if (pool == NULL) return 1;
+  if (pool == NULL) return 0;
   return pool->max_size;
 }
 
