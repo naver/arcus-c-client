@@ -67,4 +67,33 @@ memcached_return_t memcached_key_test(const memcached_st &memc,
 
   return MEMCACHED_SUCCESS;
 }
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+void memcached_key_retest(const memcached_st &memc,
+                          const char * const *keys,
+                          const size_t *key_length,
+                          size_t number_of_keys)
+{
+  if (not memc.flags.verify_key)
+    return;
+
+  if (memc.flags.binary_protocol)
+    return;
+
+  for (uint32_t x= 0; x < number_of_keys; x++)
+  {
+    memcached_return_t rc= memcached_validate_key_length(*(key_length + x), false);
+    assert (memcached_failed(rc) != false);
+
+    for (size_t y= 0; y < *(key_length + x); y++)
+    {
+      if ((isgraph(keys[x][y])) == 0)
+      {
+        fprintf(stderr, "Key string had been modified or overwritten. operation=%s wrong key=%.*s\r\n",
+                (memc.last_op_code ? memc.last_op_code : "NULL"), (int)*(key_length + x), keys[x]);
+        break;
+      }
+    }
+  }
+}
+#endif
 

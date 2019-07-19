@@ -268,6 +268,9 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
   bool to_write;
   size_t write_length;
   char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  ptr->last_op_code= storage_op_string(verb);
+#endif
   memcached_return_t rc;
 
   if (cas)
@@ -381,6 +384,12 @@ do_action:
 
       if (rc == MEMCACHED_STORED)
         rc= MEMCACHED_SUCCESS;
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      else if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",

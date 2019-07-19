@@ -66,6 +66,9 @@ static inline memcached_return_t ascii_delete(memcached_st *ptr,
   bool to_write= (ptr->flags.buffer_requests) ? false : true;
   bool no_reply= (ptr->flags.no_reply);
   int send_length;
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  ptr->last_op_code= "delete";
+#endif
   memcached_return_t rc;
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
@@ -157,6 +160,12 @@ do_action:
     {
       rc= MEMCACHED_SUCCESS;
     }
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+    else if (rc == MEMCACHED_CLIENT_ERROR)
+    {
+      memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+    }
+#endif
 #ifdef ENABLE_REPLICATION
     else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
     {

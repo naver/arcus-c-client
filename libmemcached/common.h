@@ -178,6 +178,13 @@ memcached_return_t memcached_key_test(const memcached_st& memc,
                                       const char * const *keys,
                                       const size_t *key_length,
                                       size_t number_of_keys);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+LIBMEMCACHED_LOCAL
+void memcached_key_retest(const memcached_st& memc,
+                          const char * const *keys,
+                          const size_t *key_length,
+                          size_t number_of_keys);
+#endif
 #endif
 
 LIBMEMCACHED_LOCAL

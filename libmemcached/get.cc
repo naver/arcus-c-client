@@ -126,9 +126,21 @@ char *memcached_get_by_key(memcached_st *ptr,
   assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
   //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  /* This is for historical reasons */
+  if (*error == MEMCACHED_END)
+  {
+    *error= MEMCACHED_NOTFOUND;
+  }
+  else if (*error == MEMCACHED_CLIENT_ERROR)
+  {
+    memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+  }
+#else
   /* This is for historical reasons */
   if (*error == MEMCACHED_END)
     *error= MEMCACHED_NOTFOUND;
+#endif
 
   if (value == NULL)
   {
@@ -226,6 +238,9 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
   uint8_t get_command_length= 4;
   unsigned int master_server_key= (unsigned int)-1; /* 0 is a valid server id! */
 
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  ptr->last_op_code= get_command;
+#endif
   memcached_return_t rc;
   if (memcached_failed(rc= initialize_query(ptr)))
   {
@@ -294,6 +309,9 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
   {
     get_command= "gets ";
     get_command_length= 5;
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+    ptr->last_op_code= get_command;
+#endif
   }
 
   /*

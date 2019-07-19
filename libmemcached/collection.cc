@@ -592,6 +592,9 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
   /* Command */
   const char *command= coll_op_string(SETATTRS_OP);
   uint8_t command_length= coll_op_length(SETATTRS_OP);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  ptr->last_op_code= command;
+#endif
 
   /* Attributes */
   char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
@@ -673,6 +676,12 @@ do_action:
       // expecting OK (MEMCACHED_SUCCESS)
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
       {
@@ -707,6 +716,9 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
   /* Command */
   const char *command= coll_op_string(GETATTRS_OP);
   uint8_t command_length= coll_op_length(GETATTRS_OP);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  ptr->last_op_code= command;
+#endif
 
   struct libmemcached_io_vector_st vector[]=
   {
@@ -857,6 +869,12 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
       }
     }
   }
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  if (rc == MEMCACHED_CLIENT_ERROR)
+  {
+    memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+  }
+#endif
 
   memcached_set_last_response_code(ptr, rc);
 
@@ -955,6 +973,12 @@ do_action:
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
       {
@@ -1352,6 +1376,12 @@ do_action:
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
       {
@@ -1579,6 +1609,12 @@ do_action:
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
       {
@@ -1888,6 +1924,12 @@ do_action:
     {
       /* Fetch results */
       result = memcached_coll_fetch_result(ptr, result, &rc);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
       {
@@ -2271,6 +2313,12 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_POSITION)
@@ -2386,6 +2434,12 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
     {
       /* Fetch results */
       result = memcached_coll_fetch_result(ptr, result, &rc);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 
       /* Search for END or something */
       if (result)
@@ -2495,6 +2549,12 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
     {
       /* Fetch results */
       result = memcached_coll_fetch_result(ptr, result, &rc);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 
       /* Search for END or something */
       if (result)
@@ -2792,6 +2852,12 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   if (success_happened)
   {
     result = memcached_coll_smget_fetch_result(ptr, result, &rc, type);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+    if (rc == MEMCACHED_CLIENT_ERROR)
+    {
+      memcached_key_retest(*ptr, keys, key_length, number_of_keys);
+    }
+#endif
     return rc;
   }
   else
@@ -2864,6 +2930,12 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_EXIST)
@@ -2923,6 +2995,12 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 
       if (requested_items == 1) {
         memcached_add_coll_pipe_return_code(instance, rc);
@@ -3005,6 +3083,12 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
@@ -3218,6 +3302,12 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
       {
         char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
         rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+        if (rc == MEMCACHED_CLIENT_ERROR)
+        {
+          memcached_key_retest(*ptr, keys, key_length, number_of_keys);
+        }
+#endif
 #ifdef ENABLE_REPLICATION
         if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
           ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
@@ -3429,6 +3519,12 @@ do_action:
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
       {
@@ -3547,6 +3643,12 @@ do_action:
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
 #ifdef ENABLE_REPLICATION
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
       {
@@ -3695,6 +3797,12 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     {
       char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+      if (rc == MEMCACHED_CLIENT_ERROR)
+      {
+        memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+      }
+#endif
       memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_COUNT)

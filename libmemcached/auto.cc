@@ -70,6 +70,9 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
   uint32_t server_key;
   memcached_server_write_instance_st instance;
   bool no_reply= ptr->flags.no_reply;
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+  ptr->last_op_code= verb;
+#endif
 
   arcus_server_check_for_update(ptr);
 
@@ -119,6 +122,12 @@ do_action:
   rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
   if (rc != MEMCACHED_SUCCESS)
   {
+#ifdef KEY_RETEST_WHEN_CLIENT_ERROR
+    if (rc == MEMCACHED_CLIENT_ERROR)
+    {
+      memcached_key_retest(*ptr, (const char **)&key, &key_length, 1);
+    }
+#endif
 #ifdef ENABLE_REPLICATION
     if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",

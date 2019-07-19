@@ -61,6 +61,7 @@
 #define USE_SHARED_HASHRING_IN_ARCUS_MC_POOL 1
 #define UPDATE_HASH_RING_OF_FETCHED_MC 1
 
+#define KEY_RETEST_WHEN_CLIENT_ERROR 1
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211
 #define MEMCACHED_MAX_KEY 251 /* We add one to have it null terminated */
