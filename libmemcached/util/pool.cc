@@ -113,6 +113,7 @@ struct memcached_pool_st
     delete [] mc_pool;
     if (_owns_master)
     {
+      master->state.is_referenced= false;
       memcached_free(master);
     }
   }
@@ -200,6 +201,8 @@ memcached_pool_st *memcached_pool_create(memcached_st* master, uint32_t initial,
     return NULL;
   }
 
+  master->state.is_referenced= true;
+
   return object;
 }
 
@@ -238,6 +241,9 @@ memcached_st*  memcached_pool_destroy(memcached_pool_st* pool)
   else
   {
     ret= pool->master;
+    if (ret != NULL) {
+      ret->state.is_referenced= false;
+    }
   }
 
   delete pool;
