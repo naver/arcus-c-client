@@ -167,7 +167,9 @@ static void _free(memcached_st *ptr, bool release_st)
   /* If we have anything open, lets close it now */
   send_quit(ptr);
 #ifdef ENABLE_REPLICATION
-  memcached_rgroup_list_free(ptr);
+  if (ptr->flags.repl_enabled)
+    memcached_rgroup_list_free(ptr);
+  else
 #endif
   memcached_server_list_free(memcached_server_list(ptr));
   memcached_result_free(&ptr->result);
