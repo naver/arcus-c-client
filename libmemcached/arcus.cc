@@ -804,7 +804,7 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
 static inline memcached_return_t
 __do_arcus_update_grouplist(memcached_st *mc,
                             struct memcached_server_info *serverinfo,
-                            uint32_t servercount)
+                            uint32_t servercount, bool *changed_serverinfo)
 {
   struct memcached_rgroup_info *groupinfo;
   uint32_t groupcount= 0;
@@ -814,6 +814,7 @@ __do_arcus_update_grouplist(memcached_st *mc,
 
   if (servercount == 0) {
     memcached_rgroup_prune(mc, true); /* prune all rgroups */
+    *changed_serverinfo= true;
     return run_distribution(mc);
   }
 
@@ -865,6 +866,7 @@ __do_arcus_update_grouplist(memcached_st *mc,
   memcached_rgroup_info_destroy(mc, groupinfo);
 
   if (prune_flag or validcount > 0) {
+    *changed_serverinfo= true;
     return run_distribution(mc);
   } else {
     return MEMCACHED_SUCCESS;
@@ -875,7 +877,7 @@ __do_arcus_update_grouplist(memcached_st *mc,
 static inline memcached_return_t
 __do_arcus_update_cachelist(memcached_st *mc,
                             struct memcached_server_info *serverinfo,
-                            uint32_t servercount)
+                            uint32_t servercount, bool *changed_serverinfo)
 {
   memcached_return_t error= MEMCACHED_SUCCESS;
   uint32_t x, y;
@@ -887,6 +889,7 @@ __do_arcus_update_cachelist(memcached_st *mc,
   {
     /* If there's no available servers, delete all managed servers. */
     memcached_server_prune(mc, true); /* prune all servers */
+    *changed_serverinfo = true;
     return run_distribution(mc);
   }
 
@@ -929,6 +932,9 @@ __do_arcus_update_cachelist(memcached_st *mc,
         error= run_distribution(mc);
       }
     }
+    if (servers or prune_flag) {
+      *changed_serverinfo = true;
+    }
   } else { /* memcached_server_list_append FAIL */
     if (prune_flag) {
       for (x= 0; x< memcached_server_count(mc); x++) {
@@ -957,12 +963,13 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   gettimeofday(&tv_begin, 0);
 
   /* Update the server list. */
+  bool changed_serverinfo= false;
 #ifdef ENABLE_REPLICATION
   if (mc->flags.repl_enabled)
-    error= __do_arcus_update_grouplist(mc, serverinfo, servercount);
+    error= __do_arcus_update_grouplist(mc, serverinfo, servercount, &changed_serverinfo);
   else
 #endif
-  error= __do_arcus_update_cachelist(mc, serverinfo, servercount);
+  error= __do_arcus_update_cachelist(mc, serverinfo, servercount, &changed_serverinfo);
 
   unlikely (arcus->is_initializing)
   {
@@ -971,7 +978,7 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   }
 
   /* If enabled memcached pooling, repopulate the pool. */
-  if (arcus->pool) {
+  if (arcus->pool && changed_serverinfo) {
     memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
     if (rc == MEMCACHED_SUCCESS) {
       ZOO_LOG_WARN(("MEMACHED_POOL=REPOPULATED"));
