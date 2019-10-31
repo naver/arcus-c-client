@@ -59,6 +59,7 @@
 #endif
 
 #define USE_SHARED_HASHRING_IN_ARCUS_MC_POOL 1
+#define UPDATE_HASH_RING_OF_FETCHED_MC 1
 
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211
