@@ -44,3 +44,11 @@ struct memcached_continuum_item_st
   uint32_t index;
   uint32_t value;
 };
+
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+struct memcached_ketama_info_st {
+  uint32_t continuum_refcount;
+  uint32_t continuum_points_counter;
+  memcached_continuum_item_st *continuum;
+};
+#endif

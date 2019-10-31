@@ -54,6 +54,11 @@
 
 #include <libmemcached/common.h>
 #include <libmemcached/memcached_util.h>
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+#include <libmemcached/arcus_priv.h>
+#endif
+#endif
 
 #include <libmemcached/error.hpp>
 
@@ -305,6 +310,17 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
     }
   } while (ret == NULL);
 
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  if (ret != NULL && ret->ketama.info == NULL) {
+    arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(ret));
+    if (arcus && arcus->pool) {
+      memcached_ketama_reference(ret, this->master);
+    }
+  }
+#endif
+#endif
+
   pthread_mutex_unlock(&mutex);
 
   return ret;
@@ -324,6 +340,15 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
     rc= MEMCACHED_IN_PROGRESS;
     return false;
   }
+
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(released));
+  if (arcus && arcus->pool) {
+    memcached_ketama_release(released);
+  }
+#endif
+#endif
 
   /* 
     Someone updated the behavior on the object, so we clone a new memcached_st with the new settings. If we fail to clone, we keep the old one around.
@@ -492,6 +517,18 @@ memcached_return_t memcached_pool_behavior_get(memcached_pool_st *pool,
 
   return MEMCACHED_SUCCESS;
 }
+
+#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
+void memcached_pool_lock(memcached_pool_st* pool)
+{
+  (void)pthread_mutex_lock(&pool->mutex);
+}
+
+void memcached_pool_unlock(memcached_pool_st* pool)
+{
+  (void)pthread_mutex_unlock(&pool->mutex);
+}
+#endif
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 /**
