@@ -122,6 +122,23 @@ struct memcached_pool_st
     }
   }
 
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  void increment_ketama_version()
+  {
+    ++master->configure.ketama_version;
+  }
+
+  bool compare_ketama_version(const memcached_st *arg) const
+  {
+    return (arg->configure.ketama_version == ketama_version());
+  }
+
+  int32_t ketama_version() const
+  {
+    return master->configure.ketama_version;
+  }
+#endif
+
   void increment_version()
   {
     ++master->configure.version;
@@ -129,7 +146,11 @@ struct memcached_pool_st
 
   bool compare_version(const memcached_st *arg) const
   {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    return (arg->configure.version == version() && compare_ketama_version(arg));
+#else
     return (arg->configure.version == version());
+#endif
   }
 
   int32_t version() const
@@ -155,6 +176,9 @@ static bool grow_pool(memcached_pool_st* pool)
 
   pool->mc_pool[++pool->top]= obj;
   pool->cur_size++;
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  obj->configure.ketama_version= pool->ketama_version();
+#endif
   obj->configure.version= pool->version();
 
   return true;
@@ -554,7 +578,11 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
     return MEMCACHED_IN_PROGRESS;
   }
 
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  pool->increment_ketama_version();
+#else
   pool->increment_version();
+#endif
 
   /* update the clones */
   for (int xx= 0; xx <= pool->top; ++xx)

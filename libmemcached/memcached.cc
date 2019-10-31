@@ -149,6 +149,9 @@ static inline bool _memcached_init(memcached_st *self)
   self->_namespace= NULL;
   self->configure.initial_pool_size= 1;
   self->configure.max_pool_size= 1;
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  self->configure.ketama_version= -1;
+#endif
   self->configure.version= -1;
   self->configure.filename= NULL;
 
@@ -417,6 +420,9 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
 
   new_clone->_namespace= memcached_array_clone(new_clone, source->_namespace);
   new_clone->configure.filename= memcached_array_clone(new_clone, source->_namespace);
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  new_clone->configure.ketama_version= source->configure.ketama_version;
+#endif
   new_clone->configure.version= source->configure.version;
 
   if (LIBMEMCACHED_WITH_SASL_SUPPORT and source->sasl.callbacks)
