@@ -87,7 +87,15 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
 static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *nodename,
                                              struct memcached_server_info *serverinfo);
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached_st *master);
+#ifdef ENABLE_REPLICATION
+static inline memcached_return_t __do_arcus_update_grouplist(memcached_st *mc,
+                                                             struct memcached_server_info *serverinfo,
+                                                             uint32_t servercount, bool *serverlist_changed);
+#endif
+static inline memcached_return_t __do_arcus_update_cachelist(memcached_st *mc,
+                                                             struct memcached_server_info *serverinfo,
+                                                             uint32_t servercount, bool *serverlist_changed);
+
 #endif
 
 pthread_mutex_t lock_arcus = PTHREAD_MUTEX_INITIALIZER;
@@ -129,6 +137,12 @@ arcus_return_t arcus_close(memcached_st *mc)
   pthread_mutex_lock(&lock_arcus);
   arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
   if (arcus) {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    if (arcus->serverinfo) {
+      libmemcached_free(mc, arcus->serverinfo);
+      arcus->serverinfo= NULL;
+    }
+#endif
     arcus->pool= NULL;
     free(arcus);
     arcus= NULL;
@@ -459,6 +473,11 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
     arcus->zk.maxbytes= 0;
     arcus->zk.last_rc= !ZOK;
 
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    arcus->serverinfo= NULL;
+    arcus->servercount= 0;
+#endif
+
     arcus->pool = pool;
     arcus->is_initializing= true;
     arcus->is_proxy= false;
@@ -614,6 +633,43 @@ static inline arcus_return_t do_arcus_zk_close(memcached_st *mc)
   return rc;
 }
 
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+/**
+ * PUBLIC API
+ * Upate of pool member for apply cache server updates.
+ */
+void arcus_update_cachelist_of_pool_member(memcached_st *mc)
+{
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+  memcached_st *master = memcached_pool_get_master(arcus->pool);
+  struct memcached_server_info *serverinfo= arcus->serverinfo;
+  uint32_t servercount= arcus->servercount;
+
+  /* Update the server list. */
+  memcached_return_t error= MEMCACHED_SUCCESS;
+  bool serverlist_changed;
+
+  /* reset exist flag for check serverlist changed */
+  for (uint32_t i= 0; i < servercount; i++) {
+    serverinfo[i].exist = false;
+  }
+#ifdef ENABLE_REPLICATION
+  if (mc->flags.repl_enabled)
+    error= __do_arcus_update_grouplist(mc, serverinfo, servercount, &serverlist_changed);
+  else
+#endif
+  error= __do_arcus_update_cachelist(mc, serverinfo, servercount, &serverlist_changed);
+
+  /* TODO: need error handling */
+  if (error != MEMCACHED_SUCCESS)
+  {
+  }
+
+  /* update hash ring version */
+  mc->configure.ketama_version = master->configure.ketama_version;
+}
+#endif
+
 /**
  * PUBLIC API
  * Check for cache server updates.
@@ -658,7 +714,11 @@ void arcus_server_check_for_update(memcached_st *ptr)
     if (master && master->configure.ketama_version != ptr->configure.ketama_version) {
       /* master's cache list was changed, update my server list. */
       memcached_pool_lock(arcus->pool);
-      do_update_serverlist_with_master(ptr, master);
+      arcus_update_cachelist_of_pool_member(ptr);
+
+      /* update hash ring */
+      memcached_ketama_release(ptr);
+      memcached_ketama_reference(ptr, master);
       memcached_pool_unlock(arcus->pool);
     }
   }
@@ -753,7 +813,11 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
     {
       if (c == 0) /* groupname */
       {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+        serverinfo->groupname= strdup(word);
+#else
         serverinfo->groupname= word;
+#endif
       }
       else if (c == 1) /* role : M or S */
       {
@@ -785,7 +849,11 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
   {
     if (c == 0) /* HOST */
     {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+      serverinfo->hostname= strdup(word);
+#else
       serverinfo->hostname= word;
+#endif
     }
     else if (c == 1) /* PORT */
     {
@@ -1027,6 +1095,30 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
 
   /* If enabled memcached pooling, repopulate the pool. */
   if (arcus->pool && serverlist_changed) {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    /* replace serverinfo of server manager */
+    memcached_pool_lock(arcus->pool);
+    struct memcached_server_info *old_serverinfo= arcus->serverinfo;
+    uint32_t old_servercount= arcus->servercount;
+    arcus->serverinfo= serverinfo;
+    arcus->servercount= servercount;
+
+    if (old_serverinfo) {
+      for (uint32_t i= 0; i < old_servercount; i++) {
+#ifdef ENABLE_REPLICATION
+        if (old_serverinfo[i].groupname) {
+          free(old_serverinfo[i].groupname);
+        }
+#endif
+        if (old_serverinfo[i].hostname) {
+          free(old_serverinfo[i].hostname);
+        }
+      }
+      libmemcached_free(mc, old_serverinfo);
+    }
+    memcached_pool_unlock(arcus->pool);
+#endif
+
     memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
     if (rc == MEMCACHED_SUCCESS) {
       ZOO_LOG_WARN(("MEMACHED_POOL=REPOPULATED"));
@@ -1087,81 +1179,11 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
   do_arcus_update_cachelist(mc, serverinfo, servercount);
   pthread_mutex_unlock(&lock_arcus);
 
-  libmemcached_free(mc, serverinfo);
-}
-
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached_st *master)
-{
-  /* pool locked */
-  uint32_t servercount= 0;
-  struct memcached_server_info *serverinfo;
-#ifdef ENABLE_REPLICATION
-  if (ptr->flags.repl_enabled)
-  {
-    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(ptr, sizeof(memcached_server_info)*(master->number_of_hosts*2)));
-    if (not serverinfo) {
-      return;
-    }
-
-    memcached_rgroup_st *grouplist = master->rgroups;
-    for (uint32_t i= 0; i< master->number_of_hosts; i++) {
-      for (uint32_t j= 0; j< grouplist[i].nreplica; j++) {
-        serverinfo[servercount].groupname = grouplist[i].groupname;
-        serverinfo[servercount].hostname  = grouplist[i].replicas[j]->hostname;
-        serverinfo[servercount].port      = grouplist[i].replicas[j]->port;
-        serverinfo[servercount].master    = (j == 0 ? true : false);
-        serverinfo[servercount].exist     = false;
-        servercount++;
-      }
-    }
-  }
-  else
+#else
+  libmemcached_free(mc, serverinfo);
 #endif
-  {
-    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(ptr, sizeof(memcached_server_info)*(master->number_of_hosts)));
-    if (not serverinfo) {
-      return;
-    }
-
-    memcached_server_list_st list = master->servers;
-    for (uint32_t i= 0; i< master->number_of_hosts; i++) {
-#ifdef ENABLE_REPLICATION
-      serverinfo[servercount].groupname = NULL;
-      serverinfo[servercount].master    = false;
-#endif
-      serverinfo[servercount].hostname  = list[i].hostname;
-      serverinfo[servercount].port      = list[i].port;
-      serverinfo[servercount].exist     = false;
-      servercount++; /* valid znode name */
-    }
-  }
-
-  /* Update the server list. */
-  memcached_return_t error= MEMCACHED_SUCCESS;
-  bool serverlist_changed;
-#ifdef ENABLE_REPLICATION
-  if (ptr->flags.repl_enabled)
-    error= __do_arcus_update_grouplist(ptr, serverinfo, servercount, &serverlist_changed);
-  else
-#endif
-  error= __do_arcus_update_cachelist(ptr, serverinfo, servercount, &serverlist_changed);
-
-  /* TODO: need error handling */
-  if (error != MEMCACHED_SUCCESS)
-  {
-  }
-  libmemcached_free(ptr, serverinfo);
-
-  /* update hash ring */
-  memcached_ketama_release(ptr);
-  memcached_ketama_reference(ptr, master);
-
-  /* increment hash ring version */
-  ++ptr->configure.ketama_version;
 }
-#endif
-
 
 /**
  * Rebuild the memcached server list.
@@ -1197,7 +1219,10 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc,
         }
       }
       do_arcus_update_cachelist(mc, serverinfo, servercount);
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+#else
       libmemcached_free(mc, serverinfo);
+#endif
     }
   } while(0);
   pthread_mutex_unlock(&lock_arcus);

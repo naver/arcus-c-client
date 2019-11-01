@@ -70,6 +70,11 @@ typedef struct arcus_st {
     arcus_proxy_data_st *data;
   } proxy;
 
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  struct memcached_server_info *serverinfo;
+  uint32_t                      servercount;
+#endif
+
   memcached_pool_st *pool;
 
   bool is_initializing;
@@ -98,6 +103,9 @@ struct memcached_server_info
 
 LIBMEMCACHED_API
 void arcus_server_check_for_update(memcached_st *ptr);
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+void arcus_update_cachelist_of_pool_member(memcached_st *ptr);
+#endif
 
 #else /* LIBMEMCACHED_WITH_ZK_INTEGRATION */
 
@@ -105,6 +113,13 @@ static inline void arcus_server_check_for_update(memcached_st *)
 {
   /* Nothing */
 }
+
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+static inline void do_arcus_update_cachelist_of_pool_member(memcached_st *ptr)
+{
+  /* Nothing */
+}
+#endif
 #endif
 
 #endif /* __LIBMEMCACHED_ARCUS_PRIV_H__ */

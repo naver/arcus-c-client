@@ -128,27 +128,17 @@ struct memcached_pool_st
     ++master->configure.ketama_version;
   }
 
-  void increment_behavior_version()
+  bool compare_ketama_version(const memcached_st *arg) const
   {
-    ++master->configure.behavior_version;
-  }
-
-  bool compare_version(const memcached_st *arg) const
-  {
-    return (arg->configure.ketama_version == ketama_version() &&
-            arg->configure.behavior_version == behavior_version());
+    return (arg->configure.ketama_version == ketama_version());
   }
 
   int32_t ketama_version() const
   {
     return master->configure.ketama_version;
   }
+#endif
 
-  int32_t behavior_version() const
-  {
-    return master->configure.behavior_version;
-  }
-#else
   void increment_version()
   {
     ++master->configure.version;
@@ -163,7 +153,6 @@ struct memcached_pool_st
   {
     return master->configure.version;
   }
-#endif
 };
 
 
@@ -185,10 +174,8 @@ static bool grow_pool(memcached_pool_st* pool)
   pool->cur_size++;
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   obj->configure.ketama_version= pool->ketama_version();
-  obj->configure.behavior_version= pool->behavior_version();
-#else
-  obj->configure.version= pool->version();
 #endif
+  obj->configure.version= pool->version();
 
   return true;
 }
@@ -395,6 +382,12 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
       released= memc;
     }
   }
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  else if (compare_ketama_version(released) == false)
+  {
+    arcus_update_cachelist_of_pool_member(released);
+  }
+#endif
 
   mc_pool[++top]= released;
 
@@ -500,21 +493,14 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
     return rc;
   }
 
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-  pool->increment_behavior_version();
-#else
   pool->increment_version();
-#endif
+
   /* update the clones */
   for (int xx= 0; xx <= pool->top; ++xx)
   {
     if (memcached_success(memcached_behavior_set(pool->mc_pool[xx], flag, data)))
     {
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-      pool->mc_pool[xx]->configure.behavior_version= pool->behavior_version();
-#else
       pool->mc_pool[xx]->configure.version= pool->version();
-#endif
     }
     else
     {
@@ -604,6 +590,25 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   /* update the clones */
   for (int xx= 0; xx <= pool->top; ++xx)
   {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(pool->mc_pool[xx]));
+    if (arcus && arcus->pool) {
+      arcus_update_cachelist_of_pool_member(pool->mc_pool[xx]);
+    } else {
+      memcached_st *memc;
+      if ((memc= memcached_clone(NULL, pool->master)))
+      {
+        memcached_free(pool->mc_pool[xx]);
+        pool->mc_pool[xx]= memc;
+        /* I'm not sure what to do in this case.. this would happen
+          if we fail to push the server list inside the client..
+          I should add a testcase for this, but I believe the following
+          would work, except that you would add a hole in the pool list..
+          in theory you could end up with an empty pool....
+        */
+      }
+    }
+#else
     memcached_st *memc;
     if ((memc= memcached_clone(NULL, pool->master)))
     {
@@ -616,6 +621,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
         in theory you could end up with an empty pool....
       */
     }
+#endif
   }
 
   (void)pthread_mutex_unlock(&pool->mutex);
