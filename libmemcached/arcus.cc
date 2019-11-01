@@ -139,6 +139,16 @@ arcus_return_t arcus_close(memcached_st *mc)
   if (arcus) {
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
     if (arcus->serverinfo) {
+      for (uint32_t i= 0; i < arcus->servercount; i++) {
+#ifdef ENABLE_REPLICATION
+        if (arcus->serverinfo[i].groupname) {
+          free(arcus->serverinfo[i].groupname);
+        }
+#endif
+        if (arcus->serverinfo[i].hostname) {
+          free(arcus->serverinfo[i].hostname);
+        }
+      }
       libmemcached_free(mc, arcus->serverinfo);
       arcus->serverinfo= NULL;
     }
