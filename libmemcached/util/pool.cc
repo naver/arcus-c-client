@@ -584,7 +584,6 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   }
 
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-  pool->increment_ketama_version();
 #else
   pool->increment_version();
 #endif
@@ -592,8 +591,9 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   /* update the clones */
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(pool->mc_pool[0]));
-  if (arcus && arucs->pool)
+  if (arcus && arcus->pool)
   {
+    pool->increment_ketama_version();
     for (int xx= 0; xx <= pool->top; ++xx)
     {
       arcus_update_cachelist_of_pool_member(pool->mc_pool[xx]);
@@ -601,6 +601,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   }
   else
   {
+    pool->increment_version();
     for (int xx= 0; xx <= pool->top; ++xx)
     {
       memcached_st *memc;
