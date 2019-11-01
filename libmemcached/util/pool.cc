@@ -373,7 +373,18 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
   /* 
     Someone updated the behavior on the object, so we clone a new memcached_st with the new settings. If we fail to clone, we keep the old one around.
   */
-  if (compare_version(released) == false)
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  bool make_new_memcached= false;
+  if (compare_version(released) == false) {
+    make_new_memcached= true;
+  } else if (compare_ketama_version(released) == false) {
+    make_new_memcached= true;
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+    arcus_update_cachelist_of_pool_member(released);
+    make_new_memcached= false;
+#endif
+  }
+  if (make_new_memcached)
   {
     memcached_st *memc;
     if ((memc= memcached_clone(NULL, master)))
@@ -382,10 +393,15 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
       released= memc;
     }
   }
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-  else if (compare_ketama_version(released) == false)
+#else
+  if (compare_version(released) == false)
   {
-    arcus_update_cachelist_of_pool_member(released);
+    memcached_st *memc;
+    if ((memc= memcached_clone(NULL, master)))
+    {
+      memcached_free(released);
+      released= memc;
+    }
   }
 #endif
 
@@ -592,9 +608,12 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   {
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
     arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(pool->mc_pool[xx]));
-    if (arcus && arcus->pool) {
+    if (arcus && arcus->pool)
+    {
       arcus_update_cachelist_of_pool_member(pool->mc_pool[xx]);
-    } else {
+    }
+    else
+    {
       memcached_st *memc;
       if ((memc= memcached_clone(NULL, pool->master)))
       {

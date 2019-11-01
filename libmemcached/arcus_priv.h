@@ -115,7 +115,7 @@ static inline void arcus_server_check_for_update(memcached_st *)
 }
 
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-static inline void do_arcus_update_cachelist_of_pool_member(memcached_st *ptr)
+static inline void do_arcus_update_cachelist_of_pool_member(memcached_st *)
 {
   /* Nothing */
 }
