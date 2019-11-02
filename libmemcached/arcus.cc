@@ -984,7 +984,7 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   }
 
   /* If enabled memcached pooling, repopulate the pool. */
-  if (arcus->pool && serverlist_changed) {
+  if (arcus->pool && mc == memcached_pool_get_master(arcus->pool) && serverlist_changed) {
     memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
     if (rc == MEMCACHED_SUCCESS) {
       ZOO_LOG_WARN(("MEMACHED_POOL=REPOPULATED"));
