@@ -217,6 +217,9 @@ struct memcached_st {
   struct {
     uint32_t initial_pool_size;
     uint32_t max_pool_size;
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    int32_t ketama_version;
+#endif
     int32_t version; // This is used by pool and others to determine if the memcached_st is out of date.
     struct memcached_array_st *filename;
   } configure;
