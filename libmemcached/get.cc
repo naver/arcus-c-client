@@ -333,7 +333,10 @@ static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
 
       if (memcached_failed(rc))
       {
-        memcached_set_error(*instance, rc, MEMCACHED_AT);
+        if (rc != MEMCACHED_ERRNO)
+        {
+          memcached_set_error(*instance, rc, MEMCACHED_AT);
+        }
         continue;
       }
       hosts_connected++;
