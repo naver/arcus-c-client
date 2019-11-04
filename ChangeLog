@@ -1,3 +1,14 @@
+2019-11-04 [version 1.10.1]
+	* [Enhance] Update the server list of fetched mcs with ketama version.
+	* [Enhance] Repopulate mc pool only when master's server list is chaned.
+	* [Enhance] Use the shared ketama hashring of master mc in arcus mc pool.
+	* [Enhance] Repopulate mc pool only when the server list is changed.
+	* [Fix] Solved assertion failure when connect has failed.
+	* [Fix] Freed only the rgroup list if replication is enabled.
+	* [Fix] Registered the missed client info if replication is enabled.
+	* [Fix] Solved problems of getting collection attributes(type, readable)
+	* [Internal] Changed the method of confirming arcus cluster type.
+
 2017-09-26 [version 1.10.0]
 	* [Feature] Support map collection.
 
