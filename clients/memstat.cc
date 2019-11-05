@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   options_parse(argc, argv);
   initialize_sockets();
 
-  if (opt_servers == false)
+  if (opt_servers == NULL)
   {
     char *temp;
     if ((temp= getenv("MEMCACHED_SERVERS")))

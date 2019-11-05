@@ -36,7 +36,7 @@ namespace libtest {
 template <class T_comparable, class T_hint>
 bool _compare_truth_hint(const char *file, int line, const char *func, T_comparable __expected, const char *assertation_label,  T_hint __hint)
 {
-  if (__expected == false)
+  if (!__expected)
   {
     libtest::stream::make_cerr(file, line, func) << "Assertation  \"" << assertation_label << "\" failed, hint: " << __hint;
     return false;

@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 {
   options_parse(argc, argv);
 
-  if (opt_servers == false)
+  if (opt_servers == NULL)
   {
     char *temp;
 
