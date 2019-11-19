@@ -106,9 +106,10 @@ LIBMEMCACHED_API
   memcached_rgroup_expand(memcached_st *memc, uint32_t rgroupcount,
                                               uint32_t servercount);
 LIBMEMCACHED_API
-  void
+  bool
   memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
                         struct memcached_rgroup_info *rginfo);
+
 LIBMEMCACHED_API
   void
   memcached_rgroup_push_with_groupinfo(memcached_st *memc,

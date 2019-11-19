@@ -909,7 +909,9 @@ __do_arcus_update_grouplist(memcached_st *mc,
     }
     if (y < groupcount) { /* Found */
       if (groupinfo[y].valid) {
-        memcached_rgroup_update_with_groupinfo(&mc->rgroups[x], &groupinfo[y]);
+        if (memcached_rgroup_update_with_groupinfo(&mc->rgroups[x], &groupinfo[y]) == true) {
+            *serverlist_changed= true;
+        }
         groupinfo[y].valid= false;
         validcount--;
       }

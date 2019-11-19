@@ -386,7 +386,7 @@ memcached_rgroup_expand(memcached_st *memc, uint32_t rgroupcount,
   (strcmp((g1)->replicas[n1]->hostname, (g2)->replicas[n2]->hostname) == 0 \
    and (g1)->replicas[n1]->port == (g2)->replicas[n2]->port)
 
-void
+bool
 memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
                                        struct memcached_rgroup_info *rginfo)
 {
@@ -398,6 +398,7 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
     if (rginfo->nreplica == 1) {
       if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
         /* no change: do nothing */
+        return false;
       } else {
         /* replace the server */
         do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
@@ -443,6 +444,7 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
       if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
         if (RGROUP_SERVER_IS_SAME(rgroup, 1, rginfo, 1)) {
           /* no change: do nothing */
+          return false;
         } else {
           /* replace slave only */
           do_rgroup_server_replace(rgroup, 1, rginfo->replicas[1]->hostname,
@@ -482,6 +484,7 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
       }
     }
   }
+  return true;
 }
 
 void
