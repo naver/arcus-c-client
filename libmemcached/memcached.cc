@@ -78,7 +78,7 @@ static inline bool _memcached_init(memcached_st *self)
   self->flags.use_udp= false;
   self->flags.verify_key= false;
   self->flags.tcp_keepalive= false;
-#ifdef ENABLE_REPLICATiON
+#ifdef ENABLE_REPLICATION
   self->flags.repl_enabled= false;
 #endif
 
