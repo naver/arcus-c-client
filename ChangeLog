@@ -1,3 +1,6 @@
+2019-11-19 [version 1.10.3]
+	* [Fix] fixed segfault caused by code tag mistake.
+
 2019-11-14 [version 1.10.2]
 	* [Fix] fixed compiler errors reported by @orchistro.
 
