@@ -361,6 +361,16 @@ static inline arcus_return_t do_arcus_proxy_connect(memcached_st *mc,
   strncpy(arcus->proxy.name, proxy_arcus->proxy.name, 256);
   arcus->proxy.data= proxy_arcus->proxy.data;
   arcus->pool = pool;
+#ifdef ENABLE_REPLICATION
+  arcus->zk.is_repl_enabled= proxy_arcus->zk.is_repl_enabled;
+  mc->flags.repl_enabled= arcus->zk.is_repl_enabled;
+  if (arcus->pool) {
+    memcached_st *master = memcached_pool_get_master(arcus->pool);
+    if (master != mc) {
+      master->flags.repl_enabled=  arcus->zk.is_repl_enabled;
+    }
+  }
+#endif
 
   return ARCUS_SUCCESS;
 }
@@ -510,10 +520,10 @@ static inline void do_add_client_info(arcus_st *arcus)
 
   // create the ephemeral znode "/arcus or arcus_repl/client_list/{service_code}/{client hostname}_{ip address}_{pool count}_{client language}_{client version}_{YYYYMMDDHHIISS}_{zk session id}"
   // it means administrator has to create the {service_code} node before using.
-  char* client_info_znode = ARCUS_ZK_CLIENT_INFO_NODE;
+  char* client_info_znode = (char*)ARCUS_ZK_CLIENT_INFO_NODE;
 #ifdef ENABLE_REPLICATION
   if (arcus->zk.is_repl_enabled) {
-    client_info_znode = ARCUS_REPL_ZK_CLIENT_INFO_NODE;
+    client_info_znode = (char*)ARCUS_REPL_ZK_CLIENT_INFO_NODE;
   }
 #endif
   snprintf(path, sizeof(path), "%s/%s/%s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx",
