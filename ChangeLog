@@ -1,4 +1,4 @@
-2019-11-20 [version 1.10.3]
+2019-12-17 [version 1.10.3] (revised)
 	* [FIX] master failover issue by setting serverlist_changed corretly.
 	* [Fix] enable replication by referencing ZK in multi process mode.
 	* [Fix] fixed segfault caused by code tag mistake.

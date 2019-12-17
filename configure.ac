@@ -190,7 +190,7 @@ AS_IF([test "x$enable_zk_integration" = "xyes"],
       [ARCUS_CLUSTER_API_ENABLED="#define ARCUS_CLUSTER_API_ENABLED 1"])
 AC_SUBST(ARCUS_CLUSTER_API_ENABLED)
 
-AC_DEFINE([ARCUS_VERSION_STRING],["1.6.0"],[Arcus Version String])
+AC_DEFINE([ARCUS_VERSION_STRING],["1.10.3"],[Arcus Version String])
 
 if test "x$enable_zk_integration" = "xyes"; then
   tryzookeeperdir=""
