@@ -207,7 +207,7 @@ bool Instance::run()
     case READING:
       if (operation->has_response())
       {
-        size_t total_read;
+        size_t total_read = 0;
         ssize_t read_length;
 
         do
