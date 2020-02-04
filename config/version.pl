@@ -43,8 +43,8 @@ if (scalar @arcus_versions > 1) {
 my $arcus_version = join('_', @arcus_versions);
 
 # VERSION_NUMBER
-my $version = $libmemcached_version."-arcus-".$arcus_version;
-write_file('m4/version.m4', "m4_define([VERSION_NUMBER], [$version])\n");
+#my $version = $libmemcached_version."-arcus-".$arcus_version;
+write_file('m4/version.m4', "m4_define([VERSION_NUMBER], [$arcus_version])\n");
 
 sub write_file {
     my $file = shift;
