@@ -66,7 +66,7 @@ hashkit_st *hashkit_clone(hashkit_st *destination, const hashkit_st *source)
     return hashkit_create(destination);
   }
 
-  /* new_clone will be a pointer to destination */ 
+  /* new_clone will be a pointer to destination */
   destination= _hashkit_create(destination);
 
   // Should only happen on allocation failure.

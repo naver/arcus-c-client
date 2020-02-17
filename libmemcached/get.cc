@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -91,7 +91,7 @@ char *memcached_get_by_key(memcached_st *ptr,
 
   unlikely (ptr->flags.use_udp)
   {
-    if (value_length) 
+    if (value_length)
       *value_length= 0;
 
     *error= memcached_set_error(*ptr, MEMCACHED_NOT_SUPPORTED, MEMCACHED_AT);
@@ -103,7 +103,7 @@ char *memcached_get_by_key(memcached_st *ptr,
 
   /* Request the key */
   *error= memcached_mget_by_key_real(ptr, group_key, group_key_length,
-                                     (const char * const *)&key, &key_length, 
+                                     (const char * const *)&key, &key_length,
                                      1, false);
   assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
   //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
@@ -115,7 +115,7 @@ char *memcached_get_by_key(memcached_st *ptr,
       *error= memcached_last_error(ptr);
     }
 
-    if (value_length) 
+    if (value_length)
       *value_length= 0;
 
     return NULL;

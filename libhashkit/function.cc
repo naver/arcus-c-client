@@ -53,7 +53,7 @@ static hashkit_return_t _set_function(struct hashkit_st::hashkit_function_st *se
     if (libhashkit_has_algorithm(HASHKIT_HASH_HSIEH))
     {
       self->function= hashkit_hsieh;
-      break;    
+      break;
     }
     return HASHKIT_INVALID_ARGUMENT;
 
@@ -61,13 +61,13 @@ static hashkit_return_t _set_function(struct hashkit_st::hashkit_function_st *se
     if (libhashkit_has_algorithm(HASHKIT_HASH_MURMUR))
     {
       self->function= hashkit_murmur;
-      break;    
+      break;
     }
     return HASHKIT_INVALID_ARGUMENT;
 
   case HASHKIT_HASH_JENKINS:
     self->function= hashkit_jenkins;
-    break;    
+    break;
 
   case HASHKIT_HASH_CUSTOM:
     return HASHKIT_INVALID_ARGUMENT;

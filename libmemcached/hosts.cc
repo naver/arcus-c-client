@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -124,7 +124,7 @@ void memcached_server_prune(memcached_st *ptr, bool all_flag)
         }
         ptr->servers[cursor] = ptr->servers[i];
         if (offset == -1) {
-            ptr->servers[cursor].read_ptr = NULL;  
+            ptr->servers[cursor].read_ptr = NULL;
         } else {
             ptr->servers[cursor].read_ptr = &ptr->servers[cursor].read_buffer[offset];
         }
@@ -386,7 +386,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
-          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                      memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
         }
 
@@ -449,7 +449,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
-          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                      memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
         }
 
@@ -824,7 +824,7 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
 }
 #endif
 
-static memcached_return_t server_add(memcached_st *ptr, 
+static memcached_return_t server_add(memcached_st *ptr,
                                      const memcached_string_t& hostname,
                                      in_port_t port,
                                      uint32_t weight,
@@ -1031,7 +1031,7 @@ memcached_return_t memcached_server_add_with_weight(memcached_st *ptr,
   }
 
   return server_add(ptr, _hostname, port, weight,
-                    _hostname.c_str[0] == '/' ? MEMCACHED_CONNECTION_UNIX_SOCKET 
+                    _hostname.c_str[0] == '/' ? MEMCACHED_CONNECTION_UNIX_SOCKET
                                               : MEMCACHED_CONNECTION_TCP);
 }
 

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -55,27 +55,27 @@ bool _compare(const char *file, int line, const char *func, const T1_comparable 
       const char *expected_str= test_strerror(test_return_t(__expected));
       const char *got_str= test_strerror(test_return_t(__actual));
 
-      libtest::stream::make_cerr(file, line, func) << "Expected \"" 
+      libtest::stream::make_cerr(file, line, func) << "Expected \""
         << expected_str
-        << "\" got \"" 
+        << "\" got \""
         << got_str
         << "\"";
     }
 #if defined(HAVE_LIBMEMCACHED) && HAVE_LIBMEMCACHED
     else if (typeid(__expected) == typeid(memcached_return_t))
     {
-      libtest::stream::make_cerr(file, line, func) << "Expected \"" 
-        << memcached_strerror(NULL, memcached_return_t(__expected)) 
-        << "\" got \"" 
+      libtest::stream::make_cerr(file, line, func) << "Expected \""
+        << memcached_strerror(NULL, memcached_return_t(__expected))
+        << "\" got \""
         << memcached_strerror(NULL, memcached_return_t(__actual)) << "\"";
     }
 #endif
 #if defined(HAVE_LIBGEARMAN) && HAVE_LIBGEARMAN
     else if (typeid(__expected) == typeid(gearman_return_t))
     {
-      libtest::stream::make_cerr(file, line, func) << "Expected \"" 
-        << gearman_strerror(gearman_return_t(__expected)) 
-        << "\" got \"" 
+      libtest::stream::make_cerr(file, line, func) << "Expected \""
+        << gearman_strerror(gearman_return_t(__expected))
+        << "\" got \""
         << gearman_strerror(gearman_return_t(__actual)) << "\"";
     }
 #endif
@@ -123,9 +123,9 @@ bool _compare_hint(const char *file, int line, const char *func, T1_comparable _
       const char *expected_str= test_strerror(test_return_t(__expected));
       const char *got_str= test_strerror(test_return_t(__actual));
 
-      libtest::stream::make_cerr(file, line, func) << "Expected \"" 
+      libtest::stream::make_cerr(file, line, func) << "Expected \""
         << expected_str
-        << "\" got \"" 
+        << "\" got \""
         << got_str
         << "\""
         << " Additionally: \"" << __hint << "\"";
@@ -133,9 +133,9 @@ bool _compare_hint(const char *file, int line, const char *func, T1_comparable _
 #if defined(HAVE_LIBMEMCACHED) && HAVE_LIBMEMCACHED
     else if (typeid(__expected) == typeid(memcached_return_t))
     {
-      libtest::stream::make_cerr(file, line, func) << "Expected \"" 
-        << memcached_strerror(NULL, memcached_return_t(__expected)) 
-        << "\" got \"" 
+      libtest::stream::make_cerr(file, line, func) << "Expected \""
+        << memcached_strerror(NULL, memcached_return_t(__expected))
+        << "\" got \""
         << memcached_strerror(NULL, memcached_return_t(__actual)) << "\""
         << " Additionally: \"" << __hint << "\"";
     }
@@ -143,9 +143,9 @@ bool _compare_hint(const char *file, int line, const char *func, T1_comparable _
 #if defined(HAVE_LIBGEARMAN) && HAVE_LIBGEARMAN
     else if (typeid(__expected) == typeid(gearman_return_t))
     {
-      libtest::stream::make_cerr(file, line, func) << "Expected \"" 
-        << gearman_strerror(gearman_return_t(__expected)) 
-        << "\" got \"" 
+      libtest::stream::make_cerr(file, line, func) << "Expected \""
+        << gearman_strerror(gearman_return_t(__expected))
+        << "\" got \""
         << gearman_strerror(gearman_return_t(__actual)) << "\""
         << " Additionally: \"" << __hint << "\"";
     }

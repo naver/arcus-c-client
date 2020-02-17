@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -91,7 +91,7 @@ struct memcached_server_st {
 #ifdef ENABLE_REPLICATION
   /* In replication, a group may have one master and one slave.
    */
-  int32_t groupindex; 
+  int32_t groupindex;
   struct memcached_server_st *next;
 #endif
   memcached_st *root;

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -25,6 +25,6 @@ namespace libtest {
 
 bool exec_cmdline(const std::string& executable, const char *args[]);
 
-const char *gearmand_binary(); 
+const char *gearmand_binary();
 
 }

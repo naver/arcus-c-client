@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -63,7 +63,7 @@ memcached_return_t memcached_virtual_bucket_create(memcached_st *self,
   memcached_virtual_bucket_free(self);
 
   struct memcached_virtual_bucket_t *virtual_bucket= (struct memcached_virtual_bucket_t *)malloc(sizeof(struct memcached_virtual_bucket_t) + sizeof(struct bucket_t) *buckets);
-  
+
   if (! virtual_bucket)
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
 
@@ -84,7 +84,7 @@ memcached_return_t memcached_virtual_bucket_create(memcached_st *self,
       virtual_bucket->buckets[x].forward= 0;
     }
   }
-  
+
 
   return MEMCACHED_SUCCESS;
 }

@@ -79,7 +79,7 @@ typedef struct arcus_st {
 #ifdef ENABLE_REPLICATION
 /* replication cluster:
  * groupname is the name of the group this server belongs to.
- * hostname is the name of the master server. 
+ * hostname is the name of the master server.
  * If there are no masters, then hostname = NULL.
  */
 #endif

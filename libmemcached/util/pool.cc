@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -374,7 +374,7 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
 #endif
 #endif
 
-  /* 
+  /*
     Someone updated the behavior on the object, so we clone a new memcached_st with the new settings. If we fail to clone, we keep the old one around.
   */
   if (compare_version(released) == false)
@@ -637,7 +637,7 @@ memcached_pool_use_single_server(memcached_pool_st *pool,
 }
 #endif
 
-uint16_t get_memcached_pool_size(memcached_pool_st* pool) 
+uint16_t get_memcached_pool_size(memcached_pool_st* pool)
 {
   if (pool == NULL) return 0;
   return pool->max_size;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -110,7 +110,7 @@ static memcached_return_t binary_exist(memcached_st *memc,
   request.message.body.flags= 0;
   request.message.body.expiration= htonl(2678400);
 
-  request.message.header.request.bodylen= htonl((uint32_t) (key_length 
+  request.message.header.request.bodylen= htonl((uint32_t) (key_length
                                                             +memcached_array_size(memc->_namespace)
                                                             +request.message.header.request.extlen));
 

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -64,7 +64,7 @@ static test_return_t GDB_COMMAND_test(void *)
 static test_return_t test_success_equals_one_test(void *)
 {
   test_skip(HAVE_LIBMEMCACHED, true);
-#if defined(HAVE_LIBMEMCACHED) && HAVE_LIBMEMCACHED 
+#if defined(HAVE_LIBMEMCACHED) && HAVE_LIBMEMCACHED
   test_zero(MEMCACHED_SUCCESS);
 #endif
   return TEST_SUCCESS;
@@ -208,7 +208,7 @@ static test_return_t _compare_test_return_t_test(void *)
 static test_return_t _compare_memcached_return_t_test(void *)
 {
   test_skip(HAVE_LIBMEMCACHED, true);
-#if defined(HAVE_LIBMEMCACHED) && HAVE_LIBMEMCACHED 
+#if defined(HAVE_LIBMEMCACHED) && HAVE_LIBMEMCACHED
   test_compare(MEMCACHED_SUCCESS, MEMCACHED_SUCCESS);
 #endif
 
@@ -247,7 +247,7 @@ static test_return_t memcached_cycle_test(void *object)
   server_startup_st *servers= (server_startup_st*)object;
   test_true(servers);
 
-  if (MEMCACHED_BINARY and HAVE_LIBMEMCACHED) 
+  if (MEMCACHED_BINARY and HAVE_LIBMEMCACHED)
   {
     test_true(has_memcached_binary());
     const char *argv[1]= { "cycle_memcached" };

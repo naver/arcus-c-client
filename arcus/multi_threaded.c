@@ -178,21 +178,21 @@ sample_sop_piped_exist(memcached_st *mc, int id, uint32_t userid)
 
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, flags, exptime, 10000);
-  
+
   memcached_return_t rc;
   memcached_return_t piped_rc;
   memcached_return_t results[MANY_PIPED_COUNT];
-  
+
   char **values = (char **)malloc(sizeof(char *) * MANY_PIPED_COUNT);
   size_t valuelengths[MANY_PIPED_COUNT];
-  
+
   for (i=0; i<maxcount; i++)
-  { 
+  {
     values[i]= (char *)malloc(sizeof(char) * 15);
     valuelengths[i]= snprintf(values[i], 15, "%u", i);
     //valuelengths[i]= snprintf(values[i], 15, "value%llu", (unsigned long long)i);
   }
-  
+
   memcached_sop_create(mc, key, strlen(key), &attributes);
   memcached_sop_insert(mc, key, strlen(key), "0", 1, NULL);
   memcached_sop_insert(mc, key, strlen(key), "499", 3, NULL);
@@ -213,14 +213,14 @@ sample_sop_piped_exist(memcached_st *mc, int id, uint32_t userid)
 
   gettimeofday(&e_time, NULL);
   double elapsed_ms = ((e_time.tv_sec - s_time.tv_sec) * 1000.0) + ((e_time.tv_usec - s_time.tv_usec) / 1000.0);
-  
+
   if (rc != MEMCACHED_SUCCESS && piped_rc != MEMCACHED_ALL_EXIST)
     fprintf(stderr, "sop_piped_exist failed, reason=%s\n", memcached_strerror(NULL, rc));
   else
     fprintf(stderr, "elapsed time : %lf ms\n", elapsed_ms);
-  
+
   for (i=0; i<maxcount; i++)
-  { 
+  {
     free((void*)values[i]);
   }
 

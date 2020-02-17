@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  DataDifferential Utility Library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/

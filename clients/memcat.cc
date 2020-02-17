@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
           }
 
           written= fwrite(string, 1, string_length, fp);
-          if (written != string_length) 
+          if (written != string_length)
           {
             fprintf(stderr, "error writing file (written %lu, should be %lu)\n", (unsigned long)written, (unsigned long)string_length);
             return_code= -1;

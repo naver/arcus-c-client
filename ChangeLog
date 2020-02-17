@@ -26,7 +26,7 @@
 	* [Feature] Support new sort-merge get operation.
 	   - duplicate or unique sort-merge get.
 	   - OUT_OF_RANGE is treated as missed key.
-	   - Missed keys are given with the causes. 
+	   - Missed keys are given with the causes.
 	   - Trimmed keys and the last bkeys are given.
 	   - offset search condition is removed.
 	* [Feature] Add memcached_coll_result_get_position() API.
@@ -46,7 +46,7 @@
 	* [Fix] the mis-caculated MEMCACHED_COLL_MAX_FILTER_STR_LENGTH value.
 	* [Fix] pipe operation bugs like followings.
 	   - buffer overflow when request string is too long.
-	   - incorrect error handling when memcached_vdo fails. 
+	   - incorrect error handling when memcached_vdo fails.
 	* [Fix] the end condition in the piped exist operation.
 	* [Fix] failed unit tests.
 	* [Fix] semaphore usage on OSX.
@@ -70,8 +70,8 @@
 	* Disable registering client info in ZK ensemble.
 	* Modify the memcached.h file to include the arcus.h file.
 	* Make unit tests success in an environment that uses both IPv4 and IPv6.
-	* Revert to the orginal inteface of arcus_connect() function.   
+	* Revert to the orginal inteface of arcus_connect() function.
 	* Add ARCUS C Client User Guide Document.
 
-2014-05-15 
+2014-05-15
 	* arcus-c-client 1.7.0 is opened. (Apache License 2.0)

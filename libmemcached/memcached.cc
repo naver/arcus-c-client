@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -281,7 +281,7 @@ memcached_st *memcached(const char *string, size_t length)
   {
     rc= memcached_parse_configure_file(*self, memcached_parse_filename(self), memcached_parse_filename_length(self));
   }
-    
+
   if (memcached_failed(rc))
   {
     memcached_free(self);

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -21,7 +21,7 @@
 
 
 
-#pragma once 
+#pragma once
 
 #include <pthread.h>
 #include <semaphore.h>

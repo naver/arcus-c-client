@@ -1,6 +1,6 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
- *  Libmemcached Client and Server 
+ *
+ *  Libmemcached Client and Server
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
  *  All rights reserved.
@@ -132,7 +132,7 @@ test_return_t virtual_back_map(memcached_st *)
   /* verify the standard ketama set. */
   for (expect_t *ptr= basic_keys; not libtest_string_is_null(ptr->key); ptr++)
   {
-    uint32_t server_idx = memcached_generate_hash(memc, ptr->key.c_str, ptr->key.size); 
+    uint32_t server_idx = memcached_generate_hash(memc, ptr->key.c_str, ptr->key.size);
 
     char buffer[1024];
     snprintf(buffer, sizeof(buffer), "%.*s:%lu Got/Expected %u == %u", (int)ptr->key.size, ptr->key.c_str, (unsigned long)ptr->key.size, server_idx, ptr->server_id);

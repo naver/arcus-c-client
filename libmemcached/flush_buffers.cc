@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -46,7 +46,7 @@ memcached_return_t memcached_flush_buffers(memcached_st *memc)
     memcached_server_write_instance_st instance=
       memcached_server_instance_fetch(memc, x);
 
-    if (instance->write_buffer_offset != 0) 
+    if (instance->write_buffer_offset != 0)
     {
       if (instance->fd == -1 &&
           (ret= memcached_connect(instance)) != MEMCACHED_SUCCESS)

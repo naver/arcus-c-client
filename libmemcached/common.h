@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  LibMemcached
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/

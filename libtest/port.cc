@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -53,7 +53,7 @@ in_port_t default_port()
 {
   return global_port;
 }
- 
+
 void set_default_port(in_port_t port)
 {
   global_port= port;
@@ -63,7 +63,7 @@ in_port_t max_port()
 {
   return global_max_port;
 }
- 
+
 void set_max_port(in_port_t port)
 {
   if (port > global_max_port)

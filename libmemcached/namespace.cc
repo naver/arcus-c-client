@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -42,7 +42,7 @@ memcached_return_t memcached_set_namespace(memcached_st *self, const char *key, 
   WATCHPOINT_ASSERT(self);
 
   if (key and key_length == 0)
-  { 
+  {
     WATCHPOINT_ASSERT(key_length);
     return memcached_set_error(*self, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid namespace, namespace string had value but length was 0"));
   }

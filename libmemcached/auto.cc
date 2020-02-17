@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -101,7 +101,7 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
   }
   if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)
   {
-    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
@@ -378,7 +378,7 @@ memcached_return_t memcached_increment_with_initial_by_key(memcached_st *ptr,
     //rc= MEMCACHED_PROTOCOL_ERROR;
     rc= binary_incr_decr(ptr, PROTOCOL_BINARY_CMD_INCREMENT,
                          group_key, group_key_length, key, key_length,
-                         offset, initial, expiration, value); 
+                         offset, initial, expiration, value);
   }
   else
   {
@@ -440,7 +440,7 @@ memcached_return_t memcached_decrement_with_initial_by_key(memcached_st *ptr,
     //rc= MEMCACHED_PROTOCOL_ERROR;
     rc= binary_incr_decr(ptr, PROTOCOL_BINARY_CMD_DECREMENT,
                          group_key, group_key_length, key, key_length,
-                         offset, initial, expiration, value); 
+                         offset, initial, expiration, value);
   }
   else
   {

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -119,7 +119,7 @@ memcached_server_st *__server_create_with(memcached_st *memc,
                                           memcached_server_write_instance_st self,
                                           const memcached_string_t& hostname,
                                           const in_port_t port,
-                                          uint32_t weight, 
+                                          uint32_t weight,
                                           const memcached_connection_t type)
 {
   if (memcached_is_valid_servername(hostname) == false)

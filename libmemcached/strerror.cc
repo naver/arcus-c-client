@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -197,7 +197,7 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
 
   case MEMCACHED_IN_PROGRESS:
     return "OPERATION IN PROCESS";
-    
+
   case MEMCACHED_SERVER_TEMPORARILY_DISABLED:
     return "SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY";
 

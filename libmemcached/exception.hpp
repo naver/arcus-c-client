@@ -15,27 +15,27 @@
 #include <stdexcept>
 #include <string>
 
-namespace memcache 
+namespace memcache
 {
   class Exception : public std::runtime_error
   {
   public:
     Exception(const std::string& msg, int in_errno)
-      : 
-        std::runtime_error(msg), 
-        _errno(in_errno) 
+      :
+        std::runtime_error(msg),
+        _errno(in_errno)
     {}
 
     Exception(const char *msg, int in_errno)
-      : 
-        std::runtime_error(std::string(msg)), 
+      :
+        std::runtime_error(std::string(msg)),
         _errno(in_errno) {}
 
     virtual ~Exception() throw() {}
 
-    int getErrno() const 
-    { 
-      return _errno; 
+    int getErrno() const
+    {
+      return _errno;
     }
 
   private:

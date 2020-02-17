@@ -71,7 +71,7 @@ void options_parse(int argc, char *argv[])
   bool opt_version= false;
   bool opt_help= false;
   int option_index= 0;
-  while (1) 
+  while (1)
   {
     int option_rv= getopt_long(argc, argv, "Vhvds:", long_options, &option_index);
     if (option_rv == -1)

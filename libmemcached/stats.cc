@@ -429,7 +429,7 @@ static memcached_return_t ascii_stats_fetch(memcached_stat_st *memc_stat,
 
   if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)
   {
-    return memcached_set_error(*instance, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+    return memcached_set_error(*instance, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
@@ -486,9 +486,9 @@ memcached_stat_st *memcached_stat(memcached_st *self, char *args, memcached_retu
   }
 
   memcached_return_t rc;
-  
+
   arcus_server_check_for_update(self);
-    
+
   if (memcached_failed(rc= initialize_query(self)))
   {
     *error= rc;

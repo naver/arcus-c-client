@@ -283,7 +283,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                            (ptr->flags.no_reply) ? " noreply" : "");
     if (check_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || check_length < 0)
     {
-      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                  memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
     }
     write_length= check_length;
@@ -314,7 +314,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                                ptr->flags.no_reply ? " noreply" : "");
     if ((size_t)check_length >= MEMCACHED_DEFAULT_COMMAND_SIZE -size_t(buffer_ptr - buffer) || check_length < 0)
     {
-      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                  memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
     }
 
@@ -323,7 +323,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
   }
   if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
   {
-    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 

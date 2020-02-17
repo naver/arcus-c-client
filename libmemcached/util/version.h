@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 LIBMEMCACHED_API
-  bool libmemcached_util_version_check(memcached_st *memc, 
+  bool libmemcached_util_version_check(memcached_st *memc,
                                        uint8_t major_version,
                                        uint8_t minor_version,
                                        uint8_t micro_version);

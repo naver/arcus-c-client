@@ -48,7 +48,7 @@ do {                                                           \
  * @return true if the database schema was created without any problems
  *         false otherwise.
  */
-static bool create_schema(void) 
+static bool create_schema(void)
 {
   ib_tbl_sch_t schema= NULL;
   ib_idx_sch_t dbindex= NULL;
@@ -102,7 +102,7 @@ static bool create_schema(void)
  * @param item the item to store
  * @return true if we can go ahead and commit the transaction, false otherwise
  */
-static bool do_put_item(ib_trx_t trx, struct item* item) 
+static bool do_put_item(ib_trx_t trx, struct item* item)
 {
   update_cas(item);
 
@@ -201,13 +201,13 @@ static bool do_locate_item(ib_trx_t trx,
  * @param nkey the lenght of the key
  * @return a pointer to the item if I found it in the database
  */
-static struct item* do_get_item(ib_trx_t trx, const void* key, size_t nkey) 
+static struct item* do_get_item(ib_trx_t trx, const void* key, size_t nkey)
 {
   ib_crsr_t cursor= NULL;
   ib_tpl_t tuple= NULL;
   struct item* retval= NULL;
 
-  if (do_locate_item(trx, key, nkey, &cursor)) 
+  if (do_locate_item(trx, key, nkey, &cursor))
   {
     tuple= ib_clust_read_tuple_create(cursor);
     if (tuple == NULL)
@@ -224,25 +224,25 @@ static struct item* do_get_item(ib_trx_t trx, const void* key, size_t nkey)
     const void *dataptr= ib_col_get_value(tuple, data_col_idx);
 
     retval= create_item(key, nkey, dataptr, datalen, 0, 0);
-    if (retval == NULL) 
+    if (retval == NULL)
     {
       fprintf(stderr, "Failed to allocate memory\n");
       goto error_exit;
     }
 
-    if (flaglen != 0) 
+    if (flaglen != 0)
     {
       ib_u32_t val;
       checked(ib_tuple_read_u32(tuple, flags_col_idx, &val));
       retval->flags= (uint32_t)val;
     }
-    if (caslen != 0) 
+    if (caslen != 0)
     {
       ib_u64_t val;
       checked(ib_tuple_read_u64(tuple, cas_col_idx, &val));
       retval->cas= (uint64_t)val;
     }
-    if (explen != 0) 
+    if (explen != 0)
     {
       ib_u32_t val;
       checked(ib_tuple_read_u32(tuple, exp_col_idx, &val));
@@ -304,7 +304,7 @@ static bool do_delete_item(ib_trx_t trx, const void* key, size_t nkey) {
  * Initialize the database storage
  * @return true if the database was initialized successfully, false otherwise
  */
-bool initialize_storage(void) 
+bool initialize_storage(void)
 {
   ib_err_t error;
   ib_id_t tid;
@@ -317,14 +317,14 @@ bool initialize_storage(void)
 
   /* check to see if the table exists or if we should create the schema */
   error= ib_table_get_id(tablename, &tid);
-  if (error == DB_TABLE_NOT_FOUND) 
+  if (error == DB_TABLE_NOT_FOUND)
   {
-    if (!create_schema()) 
+    if (!create_schema())
     {
       return false;
     }
-  } 
-  else if (error != DB_SUCCESS) 
+  }
+  else if (error != DB_SUCCESS)
   {
     fprintf(stderr, "Failed to get table id: %s\n", ib_strerror(error));
     return false;
@@ -340,7 +340,7 @@ bool initialize_storage(void)
 /**
  * Shut down this storage engine
  */
-void shutdown_storage(void) 
+void shutdown_storage(void)
 {
   checked(ib_shutdown(IB_SHUTDOWN_NORMAL));
  error_exit:
@@ -352,19 +352,19 @@ void shutdown_storage(void)
  *
  * @param item the item to store
  */
-void put_item(struct item* item) 
+void put_item(struct item* item)
 {
   ib_trx_t transaction= ib_trx_begin(IB_TRX_SERIALIZABLE);
-  if (do_put_item(transaction, item)) 
+  if (do_put_item(transaction, item))
   {
     ib_err_t error= ib_trx_commit(transaction);
-    if (error != DB_SUCCESS) 
+    if (error != DB_SUCCESS)
     {
       fprintf(stderr, "Failed to store key:\n\t%s\n",
               ib_strerror(error));
     }
-  } 
-  else 
+  }
+  else
   {
     ib_err_t error= ib_trx_rollback(transaction);
     if (error != DB_SUCCESS)
@@ -379,7 +379,7 @@ void put_item(struct item* item)
  * @param nkey number of bytes in the key
  * @return pointer to the item if found
  */
-struct item* get_item(const void* key, size_t nkey) 
+struct item* get_item(const void* key, size_t nkey)
 {
   ib_trx_t transaction= ib_trx_begin(IB_TRX_SERIALIZABLE);
   struct item* ret= do_get_item(transaction, key, nkey);
@@ -475,7 +475,7 @@ bool delete_item(const void* key, size_t nkey) {
  * Flush the entire cache
  * @param when when the cache should be flushed (0 == immediately)
  */
-void flush(uint32_t when __attribute__((unused))) 
+void flush(uint32_t when __attribute__((unused)))
 {
   /* @TODO implement support for when != 0 */
   ib_trx_t transaction= ib_trx_begin(IB_TRX_REPEATABLE_READ);
@@ -486,7 +486,7 @@ void flush(uint32_t when __attribute__((unused)))
   checked(ib_cursor_first(cursor));
   checked(ib_cursor_lock(cursor, IB_LOCK_X));
 
-  do 
+  do
   {
     checked(ib_cursor_delete_row(cursor));
   } while ((err= ib_cursor_next(cursor)) == DB_SUCCESS);
@@ -518,7 +518,7 @@ void flush(uint32_t when __attribute__((unused)))
  * Update the cas ID in the item structure
  * @param item the item to update
  */
-void update_cas(struct item* item) 
+void update_cas(struct item* item)
 {
   item->cas= ++cas;
 }
@@ -527,7 +527,7 @@ void update_cas(struct item* item)
  * Release all the resources allocated by the item
  * @param item the item to release
  */
-void release_item(struct item* item) 
+void release_item(struct item* item)
 {
   free(item->key);
   free(item->data);

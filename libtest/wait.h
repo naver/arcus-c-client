@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -27,7 +27,7 @@
 
 namespace libtest {
 
-class Wait 
+class Wait
 {
 public:
 

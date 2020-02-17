@@ -199,7 +199,7 @@ static ssize_t timeout_io_op(memcached_socket_t fd, short direction, void *buf, 
     ret= recv(fd, buf, len, 0);
   }
 
-  if (ret == SOCKET_ERROR && get_socket_errno() == EWOULDBLOCK) 
+  if (ret == SOCKET_ERROR && get_socket_errno() == EWOULDBLOCK)
   {
     struct pollfd fds;
     memset(&fds, 0, sizeof(struct pollfd));

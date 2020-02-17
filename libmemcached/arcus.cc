@@ -185,7 +185,7 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
     return ARCUS_SUCCESS;
   }
   else if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR; 
+    return ARCUS_ERROR;
   }
 
   /* Be a proxy. */
@@ -238,7 +238,7 @@ arcus_return_t arcus_proxy_connect(memcached_st *mc,
     return ARCUS_SUCCESS;
   }
   else if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR; 
+    return ARCUS_ERROR;
   }
 
   arcus_set_log_stream(mc, proxy->logfile);
@@ -272,7 +272,7 @@ static inline arcus_return_t do_arcus_connect(memcached_st *mc,
     return ARCUS_SUCCESS;
   }
   else if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR; 
+    return ARCUS_ERROR;
   }
 
   /* Creates a new ZooKeeper client thread. */
@@ -883,9 +883,9 @@ __do_arcus_update_grouplist(memcached_st *mc,
   ZOO_LOG_INFO(("__do_arcus_update_grouplist: count=%u\n", servercount));
   for (x= 0; x < servercount; x++) {
     ZOO_LOG_INFO(("server[%u] groupname=%s %s hostname=%s port=%u\n",
-            x, serverinfo[x].groupname, 
+            x, serverinfo[x].groupname,
             serverinfo[x].master ? "master" : "slave",
-            serverinfo[x].hostname, 
+            serverinfo[x].hostname,
             serverinfo[x].port));
   }
 

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -107,7 +107,7 @@ static void options_parse(int argc, char *argv[])
   while (1)
   {
     int option_rv= getopt_long(argc, argv, "Vhvds:", long_options, &option_index);
-    if (option_rv == -1) 
+    if (option_rv == -1)
     {
       break;
     }

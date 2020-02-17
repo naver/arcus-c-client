@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -49,7 +49,7 @@ private:
 public:
   BlobslapWorker(in_port_t port_arg) :
     Server("localhost", port_arg)
-  { 
+  {
     set_pid_file();
   }
 

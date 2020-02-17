@@ -623,7 +623,7 @@ memcached_rgroup_sort(memcached_st *memc)
     /* sort rgoups */
     qsort(memc->rgroups, memc->number_of_hosts,
           sizeof(memcached_rgroup_st), do_rgroup_compare);
-    
+
     /* adjust group index */
     for (uint32_t x= 0; x < memcached_server_count(memc); x++)
       do_rgroup_index_set(&memc->rgroups[x], x);
