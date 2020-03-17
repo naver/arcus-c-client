@@ -78,6 +78,25 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_ coll _eflag_filte
   - MEMCACHED_COLL_COMP_GT
   - MEMCACHED_COLL_COMP_GE
 
+비교 연산을 취할 데이터 값인 fvalue는 여러 값을 지정할 수도 있으며, 다음과 같은 API를 사용한다.
+비교 데이터 값은 최대 100개 fvalues를 지정할 수 있으며, MEMCACHED_COLL_COMP_EQ 와 MEMCACHED_COLL_COMP_NE 연산자 만을 지원한다.
+
+``` c
+memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
+                                                    const size_t fwhere,
+                                                    const unsigned char *fvalues,
+                                                    const size_t fvalue_length,
+                                                    const size_t fvalue_count,
+                                                    memcached_coll_comp_t comp_op)
+```
+
+- fwhere: eflag에서 비교 연산을 취할 데이터의 시작 offset을 바이트 단위로 지정한다.
+- fvalues: 비교 연산을 취할 데이터 값을 array 형태로 지정한다.
+- fvalue_count: 비교 연산을 취할 데이터 값들의 개수를 지정한다.
+- comp_op: 비교 연산을 지정한다.
+  - MEMCACHED_COLL_COMP_EQ
+  - MEMCACHED_COLL_COMP_NE
+
 eflag의 전체/부분 값에 대해 어떤 operand로 bitwise 연산을 취함으로써 eflag의 특정 bits들만을 골라내어 compare할 수 있다.
 이와 같이 `eflag_filter`에 bitwise 연산을 추가할 경우에는 아래의 API를 이용할 수 있다.
 
