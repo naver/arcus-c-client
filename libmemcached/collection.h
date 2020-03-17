@@ -37,7 +37,7 @@
 #define MEMCACHED_COLL_UPD_FILTER_STR_LENGTH    80
 #define MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH    31  /* server maximum, not client limitation */
 #define MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH   MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH*2+1
-#define MEMCACHED_COLL_MAX_ELEMENT_SIZE         4*1024  /* server maximum, not client limitation */
+#define MEMCACHED_COLL_MAX_ELEMENT_SIZE         16*1024  /* server maximum, not client limitation */
 #define MEMCACHED_COLL_MAX_PIPED_CMD_SIZE       500
 #if 1 // MAP_COLLECTION_SUPPORT
 #define MEMCACHED_COLL_MAX_MOP_MKEY_LENG        250
