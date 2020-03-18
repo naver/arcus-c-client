@@ -62,6 +62,7 @@
 static inline bool _memcached_init(memcached_st *self)
 {
   self->state.is_purging= false;
+  self->state.is_pool_master= false;
   self->state.is_processing_input= false;
   self->state.is_time_for_rebuild= false;
 
@@ -171,6 +172,12 @@ static inline bool _memcached_init(memcached_st *self)
 
 static void _free(memcached_st *ptr, bool release_st)
 {
+  /* If ptr is being used as the master of the pool, do not free it */
+  if (ptr->state.is_pool_master) {
+    fprintf(stderr, "%s\n", "Failed free: used as the master of the pool");
+    return;
+  }
+
   /* If we have anything open, lets close it now */
   send_quit(ptr);
 #ifdef ENABLE_REPLICATION
