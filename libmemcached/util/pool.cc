@@ -229,6 +229,7 @@ memcached_pool_st *memcached_pool_create(memcached_st* master, uint32_t initial,
     return NULL;
   }
 
+  master->state.is_pool_master= true;
   return object;
 }
 
@@ -267,6 +268,10 @@ memcached_st*  memcached_pool_destroy(memcached_pool_st* pool)
   else
   {
     ret= pool->master;
+  }
+
+  if (pool->master != NULL) {
+    pool->master->state.is_pool_master= false;
   }
 
   delete pool;
