@@ -176,7 +176,6 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
                                   const char *ensemble_list,
                                   const char *svc_code)
 {
-  arcus_st *arcus;
   arcus_return_t rc;
 
   /* Initiate the Arcus. */
@@ -198,30 +197,6 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
   rc= do_arcus_zk_connect(mc);
   if (rc != ARCUS_SUCCESS) {
     return ARCUS_ERROR;
-  }
-
-  arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
-  if (arcus->is_initializing) {
-    struct timeval now;
-    struct timespec ts;
-
-    ZOO_LOG_WARN(("Waiting for the cache server list..."));
-
-    /* Wait for the cache list (timed out after 5 sec.) */
-    gettimeofday(&now, NULL);
-    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3);
-    ts.tv_nsec= now.tv_usec * 1000;
-
-    pthread_mutex_lock(&lock_arcus);
-    if (pthread_cond_timedwait(&cond_arcus, &lock_arcus, &ts)) {
-      ZOO_LOG_ERROR(("pthread_cond_timedwait failed. %s(%d)", strerror(errno), errno));
-      rc= ARCUS_ERROR;
-    }
-    pthread_mutex_unlock(&lock_arcus);
-
-    if (rc == ARCUS_SUCCESS) {
-      ZOO_LOG_WARN(("Done"));
-    }
   }
   return rc;
 }
@@ -263,7 +238,6 @@ static inline arcus_return_t do_arcus_connect(memcached_st *mc,
                                               const char *ensemble_list,
                                               const char *svc_code)
 {
-  arcus_st *arcus;
   arcus_return_t rc;
 
   /* Initiate the Arcus. */
@@ -279,30 +253,6 @@ static inline arcus_return_t do_arcus_connect(memcached_st *mc,
   rc= do_arcus_zk_connect(mc);
   if (rc != ARCUS_SUCCESS) {
     return ARCUS_ERROR;
-  }
-
-  ZOO_LOG_WARN(("Waiting for the cache server list..."));
-
-  pthread_mutex_lock(&lock_arcus);
-  arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-  if (arcus->is_initializing) {
-    struct timeval now;
-    struct timespec ts;
-
-    /* Wait for the cache list (timed out after 5 sec.) */
-    gettimeofday(&now, NULL);
-    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3);
-    ts.tv_nsec= now.tv_usec * 1000;
-
-    if (pthread_cond_timedwait(&cond_arcus, &lock_arcus, &ts)) {
-      ZOO_LOG_ERROR(("pthread_cond_timedwait failed. %s(%d)", strerror(errno), errno));
-      rc= ARCUS_ERROR;
-    }
-  }
-  pthread_mutex_unlock(&lock_arcus);
-
-  if (rc == ARCUS_SUCCESS) {
-    ZOO_LOG_WARN(("Done"));
   }
   return rc;
 }
@@ -586,6 +536,33 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
   } while(0);
   pthread_mutex_unlock(&lock_arcus);
 
+  if (rc != ARCUS_SUCCESS) {
+    return ARCUS_ERROR;
+  }
+
+  ZOO_LOG_WARN(("Waiting for the cache server list..."));
+
+  pthread_mutex_lock(&lock_arcus);
+  arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+  if (arcus && arcus->is_initializing) {
+    struct timeval now;
+    struct timespec ts;
+
+    /* Wait for the cache list (timed out after 5 sec.) */
+    gettimeofday(&now, NULL);
+    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3);
+    ts.tv_nsec= now.tv_usec * 1000;
+
+    if (pthread_cond_timedwait(&cond_arcus, &lock_arcus, &ts)) {
+      ZOO_LOG_ERROR(("pthread_cond_timedwait failed. %s(%d)", strerror(errno), errno));
+      rc= ARCUS_ERROR;
+    }
+  }
+  pthread_mutex_unlock(&lock_arcus);
+
+  if (rc == ARCUS_SUCCESS) {
+    ZOO_LOG_WARN(("Done"));
+  }
   return rc;
 }
 
