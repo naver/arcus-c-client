@@ -44,6 +44,7 @@ struct arcus_zk_st
   size_t     maxbytes;
   int        last_rc;
   struct String_vector last_strings;
+  bool       is_initializing;
 #ifdef ENABLE_REPLICATION
   bool       is_repl_enabled;
 #endif
@@ -72,7 +73,6 @@ typedef struct arcus_st {
 
   memcached_pool_st *pool;
 
-  bool is_initializing;
   bool is_proxy;
 } arcus_st;
 
