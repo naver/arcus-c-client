@@ -418,9 +418,9 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
     arcus->zk.session_timeout= ARCUS_ZK_SESSION_TIMEOUT_IN_MS;
     arcus->zk.maxbytes= 0;
     arcus->zk.last_rc= !ZOK;
+    arcus->zk.is_initializing= true;
 
     arcus->pool = pool;
-    arcus->is_initializing= true;
     arcus->is_proxy= false;
 
     /* Set ZooKeeper parameters */
@@ -544,7 +544,7 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
 
   pthread_mutex_lock(&lock_arcus);
   arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-  if (arcus && arcus->is_initializing) {
+  if (arcus && arcus->zk.is_initializing) {
     struct timeval now;
     struct timespec ts;
 
@@ -583,6 +583,9 @@ static inline arcus_return_t do_arcus_zk_close(memcached_st *mc)
 
     /* Delete the (expired) session. */
     arcus->zk.myid.client_id= 0;
+
+    /* Clear initializing flag */
+    arcus->zk.is_initializing= true;
 
     /* Close the ZooKeeper handle. */
     if (arcus->zk.handle) {
@@ -829,9 +832,9 @@ static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
   /* Unlock the data mutex */
   proc_mutex_unlock(&arcus->proxy.data->mutex);
 
-  unlikely (arcus->is_initializing)
+  unlikely (arcus->zk.is_initializing)
   {
-    arcus->is_initializing= false;
+    arcus->zk.is_initializing= false;
     pthread_cond_broadcast(&cond_arcus);
   }
 }
@@ -1015,9 +1018,9 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
 #endif
   error= __do_arcus_update_cachelist(mc, serverinfo, servercount, &serverlist_changed);
 
-  unlikely (arcus->is_initializing)
+  unlikely (arcus->zk.is_initializing)
   {
-    arcus->is_initializing= false;
+    arcus->zk.is_initializing= false;
     pthread_cond_broadcast(&cond_arcus);
   }
 
@@ -1274,7 +1277,7 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
       arcus->zk.myid= *id;
       ZOO_LOG_DEBUG(("Current sessionid  : 0x%llx", (long long) arcus->zk.myid.client_id));
     }
-    if (arcus->is_initializing) {
+    if (arcus->zk.is_initializing) {
       if (do_arcus_cluster_validation_check(mc, arcus) < 0) {
         pthread_mutex_unlock(&lock_arcus);
         return;
