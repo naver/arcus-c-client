@@ -424,12 +424,12 @@ memcached_return_t memcached_decrement_with_initial_by_key(memcached_st *ptr,
     value= &local_value;
 
   memcached_return_t rc;
-  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
+  if (memcached_failed(rc= initialize_query(ptr)))
   {
     return rc;
   }
 
-  if (memcached_failed(rc= initialize_query(ptr)))
+  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
   {
     return rc;
   }
