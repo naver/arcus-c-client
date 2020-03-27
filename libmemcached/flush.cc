@@ -88,6 +88,18 @@ memcached_return_t memcached_flush_by_prefix(memcached_st *ptr,
            memcached_literal_param("given prefix length == 0"));
   }
 
+  if (prefix_length > 250)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS,
+           MEMCACHED_AT,
+           memcached_literal_param("given prefix length > 250"));
+  }
+
+  if (memcached_failed(rc= memcached_key_test(*ptr, (const char **)&prefix, &prefix_length, 1)))
+  {
+    return rc;
+  }
+
   LIBMEMCACHED_MEMCACHED_FLUSH_START();
   if (ptr->flags.binary_protocol)
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS,
