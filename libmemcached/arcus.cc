@@ -489,9 +489,20 @@ static inline void do_add_client_info(arcus_st *arcus)
   result = zoo_exists(arcus->zk.handle, path, 0, NULL);
   if (result == ZNONODE) {
     result = zoo_create (arcus->zk.handle, path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, path, sizeof(path));
-    if (result != ZOK) {
-      ZOO_LOG_ERROR(("the znode of client info can not create"));
+  } else if (result == ZOK) {
+    int nops= 2;
+    zoo_op_t ops[2];
+    zoo_op_result_t results[2];
+    zoo_delete_op_init(&ops[0], path, -1);
+    zoo_create_op_init(&ops[1], path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, path, sizeof(path));
+
+    result = zoo_multi (arcus->zk.handle, nops, ops, results);
+    if (result == ZNONODE) {
+      result = zoo_create (arcus->zk.handle, path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, path, sizeof(path));
     }
+  }
+  if (result != ZOK) {
+    ZOO_LOG_ERROR(("the znode of client info can not create"));
   }
 }
 #endif
@@ -1271,6 +1282,7 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
   {
     ZOO_LOG_WARN(("SESSION_STATE=CONNECTED, to %s", arcus->zk.ensemble_list));
 
+    bool process_initializing= false;
     const clientid_t *id= zoo_client_id(zh);
     if (arcus->zk.myid.client_id == 0 or arcus->zk.myid.client_id != id->client_id) {
       ZOO_LOG_DEBUG(("Previous sessionid : 0x%llx", (long long) arcus->zk.myid.client_id));
@@ -1282,13 +1294,16 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
         pthread_mutex_unlock(&lock_arcus);
         return;
       }
+      process_initializing= true;
     }
-#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
-    do_add_client_info(arcus);
-#endif
     pthread_mutex_unlock(&lock_arcus);
 
-    do_arcus_zk_watch_and_update_cachelist(mc, do_arcus_zk_watcher_cachelist);
+    if (process_initializing) {
+#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
+      do_add_client_info(arcus);
+#endif
+      do_arcus_zk_watch_and_update_cachelist(mc, do_arcus_zk_watcher_cachelist);
+    }
   }
   else if (state == ZOO_CONNECTING_STATE or state == ZOO_ASSOCIATING_STATE)
   {
