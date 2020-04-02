@@ -118,6 +118,7 @@ static memcached_return_t fetch_value_header(memcached_server_write_instance_st 
 {
   memcached_return_t rc;
   ssize_t read_length= 0;
+  bool met_CR_char = false; /* met the `\r` */
 
   /* Read until meeting a space */
   for (size_t i=0; i<max_read_length; i++)
@@ -143,19 +144,17 @@ static memcached_return_t fetch_value_header(memcached_server_write_instance_st 
     /* met the "\r\n" */
     if (string[i] == '\r')
     {
-      rc= memcached_io_read(ptr, string+i, 1, &read_length); // search for '\n'
-      if (memcached_failed(rc))
-      {
-        if (rc == MEMCACHED_IN_PROGRESS) {
-          memcached_quit_server(ptr, true);
-          rc = memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
-        }
-        return rc;
-      }
+      if (met_CR_char)
+        break;
+
+      met_CR_char = true;
+      i--;
+    }
+    else if (met_CR_char)
+    {
       if (string[i] != '\n')
-      {
-        return MEMCACHED_PROTOCOL_ERROR;
-      }
+        break;
+
       string[i] = '\0';
       *string_length= i+1;
       return MEMCACHED_END; /* the end of line */
