@@ -224,6 +224,7 @@ memcached_return_t memcached_read_one_response(memcached_server_write_instance_s
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
            rc == MEMCACHED_PROTOCOL_ERROR or
            rc == MEMCACHED_CLIENT_ERROR or
+           rc == MEMCACHED_PARTIAL_READ or
            rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
     memcached_io_reset(ptr);
 
@@ -401,8 +402,6 @@ static memcached_return_t textual_value_fetch(memcached_server_write_instance_st
   return MEMCACHED_SUCCESS;
 
 read_error:
-  memcached_io_reset(ptr);
-
   return MEMCACHED_PARTIAL_READ;
 }
 
@@ -859,6 +858,7 @@ memcached_return_t memcached_read_one_coll_response(memcached_server_write_insta
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
            rc == MEMCACHED_PROTOCOL_ERROR ||
            rc == MEMCACHED_CLIENT_ERROR ||
+           rc == MEMCACHED_PARTIAL_READ ||
            rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
     memcached_io_reset(ptr);
 
@@ -984,7 +984,6 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
 
   if (not parse_response_header(buffer, "RESPONSE", 8, count, 1))
   {
-    memcached_io_reset(ptr);
     return MEMCACHED_PARTIAL_READ;
   }
 
@@ -1050,7 +1049,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
     {
       rc= fetch_value_header(ptr, to_read_string, &read_length, MAX_ELEMENT_BUFFER_SIZE);
       if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_END)
-        goto read_error;
+        return rc;
 
       if (read_length != header_size + 1) // +1 for a space
         goto read_error;
@@ -1063,7 +1062,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
       {
         rc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH); // with '0x'
         if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_END)
-          goto read_error;
+          return rc;
 
         /* byte array bkey : starts with 0x */
         if (to_read_string[0] == '0' && to_read_string[1] == 'x')
@@ -1083,7 +1082,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
       {
         rc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH+2); // with '0x'
         if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_END)
-          goto read_error;
+          return rc;
 
         /* if the number starts with 0x, it is EFLAG */
         if (to_read_string[0] == '0' && to_read_string[1] == 'x')
@@ -1102,7 +1101,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
       rc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
       if (rc != MEMCACHED_SUCCESS)
-        goto read_error;
+        return rc;
 
       result->sub_keys[i].mkey.string= (char*)libmemcached_malloc(ptr->root, sizeof(char) * read_length);
       memcpy((char*)result->sub_keys[i].mkey.string, to_read_string, read_length);
@@ -1122,7 +1121,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
       {
         rc= fetch_value_header(ptr, to_read_string, &read_length, BYTES_MAX_LENGTH);
         if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_END)
-          goto read_error;
+          return rc;
       }
 
       value_length= static_cast<size_t>(strtoull(to_read_string, &string_ptr, 10));
@@ -1173,8 +1172,6 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
   return MEMCACHED_SUCCESS;
 
 read_error:
-  memcached_io_reset(ptr);
-
   return MEMCACHED_PARTIAL_READ;
 }
 
@@ -1208,7 +1205,6 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
   if (not parse_response_header(buffer, "VALUE", 5, header_params, num_params) or
       not header_params[PARAM_COUNT] )
   {
-    memcached_io_reset(ptr);
     return MEMCACHED_PARTIAL_READ;
   }
 
@@ -1674,6 +1670,7 @@ memcached_return_t memcached_read_one_coll_smget_response(memcached_server_write
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
            rc == MEMCACHED_PROTOCOL_ERROR or
            rc == MEMCACHED_CLIENT_ERROR or
+           rc == MEMCACHED_PARTIAL_READ or
            rc == MEMCACHED_KEY_TOO_BIG or
            rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE )
     memcached_io_reset(ptr);
@@ -1750,7 +1747,6 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
   if (not parse_response_header(buffer, "VALUE", 5, header_params, 1))
 #endif
   {
-    memcached_io_reset(ptr);
     return MEMCACHED_PARTIAL_READ;
   }
 
@@ -1906,8 +1902,6 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
   return MEMCACHED_SUCCESS;
 
 read_error:
-  memcached_io_reset(ptr);
-
   return MEMCACHED_PARTIAL_READ;
 }
 
@@ -1938,7 +1932,6 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
 
   if (not parse_response_header(buffer, "MISSED_KEYS", 11, header_params, 1))
   {
-    memcached_io_reset(ptr);
     return MEMCACHED_PARTIAL_READ;
   }
 
@@ -2055,8 +2048,6 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
   return MEMCACHED_SUCCESS;
 
 read_error:
-  memcached_io_reset(ptr);
-
   return MEMCACHED_PARTIAL_READ;
 }
 
@@ -2078,7 +2069,6 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
 
   if (not parse_response_header(buffer, "TRIMMED_KEYS", 11, header_params, 1))
   {
-    memcached_io_reset(ptr);
     return MEMCACHED_PARTIAL_READ;
   }
 
@@ -2158,8 +2148,6 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
   return MEMCACHED_SUCCESS;
 
 read_error:
-  memcached_io_reset(ptr);
-
   return MEMCACHED_PARTIAL_READ;
 }
 #endif
