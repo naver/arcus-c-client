@@ -54,6 +54,8 @@
 #include <libmemcached/common.h>
 #include <libmemcached/string.hpp>
 
+#define MAX_UINT32_STRING_LENGTH (10+1) /* We add one to have it null terminated */
+
 static memcached_return_t textual_read_one_response(memcached_server_write_instance_st ptr,
                                                     char *buffer, size_t buffer_length,
                                                     memcached_result_st *result);
@@ -1027,7 +1029,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
 {
   memcached_return_t rc;
 #if 1 // MAP_COLLECTION_SUPPORT
-  const size_t MAX_ELEMENT_BUFFER_SIZE= 251;
+  const size_t MAX_ELEMENT_BUFFER_SIZE= MEMCACHED_MAX_KEY; /* MEMCACHED_COLL_MAX_MOP_MKEY_LENG(250)+1 */
 #else
   const size_t MAX_ELEMENT_BUFFER_SIZE= 100;
 #endif
@@ -1046,7 +1048,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
     /* Moves past the element header if it exists */
     if (header_size > 0)
     {
-      rc= fetch_value_header(ptr, to_read_string, &read_length, MAX_ELEMENT_BUFFER_SIZE);
+      rc= fetch_value_header(ptr, to_read_string, &read_length, header_size+1);
       if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_END)
         return rc;
 
@@ -1059,7 +1061,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
     {
       /* <bkey> */
       {
-        rc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH); // with '0x'
+        rc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH+2); // with '0x'
         if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_END)
           return rc;
 
@@ -1097,8 +1099,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
     if (result->type == COLL_MAP)
     {
       /* <mkey> */
-      rc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
+      rc= fetch_value_header(ptr, to_read_string, &read_length, MAX_ELEMENT_BUFFER_SIZE);
       if (rc != MEMCACHED_SUCCESS)
         return rc;
 
@@ -1118,7 +1119,7 @@ static memcached_return_t textual_coll_fetch_elements(memcached_server_write_ins
     {
       if (result->type != COLL_BTREE || has_eflag)
       {
-        rc= fetch_value_header(ptr, to_read_string, &read_length, BYTES_MAX_LENGTH);
+        rc= fetch_value_header(ptr, to_read_string, &read_length, MAX_UINT32_STRING_LENGTH);
         if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_END)
           return rc;
       }
@@ -1326,7 +1327,7 @@ static memcached_return_t textual_coll_multiple_value_fetch(memcached_server_wri
   /* <flags> */
   size_t flags= 0;
 
-  rc= fetch_value_header_with(buffer_ptr, to_read_string, &read_length, MEMCACHED_MAX_MGET_BUFFER_SIZE);
+  rc= fetch_value_header_with(buffer_ptr, to_read_string, &read_length, MAX_UINT32_STRING_LENGTH);
   buffer_ptr+= read_length;
   if (rc == MEMCACHED_SUCCESS or rc == MEMCACHED_END)
   {
@@ -1340,7 +1341,7 @@ static memcached_return_t textual_coll_multiple_value_fetch(memcached_server_wri
   /* <ecount> */
   size_t ecount= 0;
 
-  rc= fetch_value_header_with(buffer_ptr, to_read_string, &read_length, MEMCACHED_MAX_MGET_BUFFER_SIZE);
+  rc= fetch_value_header_with(buffer_ptr, to_read_string, &read_length, MAX_UINT32_STRING_LENGTH);
   buffer_ptr+= read_length;
   if (rc == MEMCACHED_SUCCESS or rc == MEMCACHED_END)
   {
@@ -1777,7 +1778,7 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
 
     /* <key> */
     {
-      rrc= fetch_value_header(ptr, to_read_string, &read_length, KEY_MAX_LENGTH);
+      rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY);
       if (rrc != MEMCACHED_SUCCESS && rrc != MEMCACHED_END)
       {
         fprintf(stderr, "[debug] key_fetch_error=%s\n", to_read_string);
@@ -1795,7 +1796,7 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
 
     /* <flags> */
     {
-      rrc= fetch_value_header(ptr, to_read_string, &read_length, FLAGS_MAX_LENGTH);
+      rrc= fetch_value_header(ptr, to_read_string, &read_length, MAX_UINT32_STRING_LENGTH);
       if (rrc != MEMCACHED_SUCCESS && rrc != MEMCACHED_END)
       {
         return rrc;
@@ -1847,7 +1848,7 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
     {
       if (has_eflag)
       {
-        rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH);
+        rrc= fetch_value_header(ptr, to_read_string, &read_length, MAX_UINT32_STRING_LENGTH);
         if (rrc != MEMCACHED_SUCCESS && rrc != MEMCACHED_END)
         {
           return rrc;

@@ -53,13 +53,6 @@
 
 #pragma once
 
-#define KEY_MAX_LENGTH                  MEMCACHED_MAX_KEY + 1
-#define FLAGS_MAX_LENGTH                10
-#define BYTE_ARRAY_BKEY_MAX_LENGTH      MEMCACHED_COLL_MAX_BKEY_EXT_LENGTH*2+3
-#define BKEY_MAX_LENGTH                 10
-#define EFLAG_MAX_LENGTH                MEMCACHED_COLL_MAX_BKEY_EXT_LENGTH*2+3
-#define BYTES_MAX_LENGTH                10
-
 #ifdef __cplusplus
 extern "C" {
 #endif
