@@ -1023,9 +1023,9 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   return rc;
 }
 
-static memcached_return_t textual_coll_fetch_elements(memcached_server_write_instance_st ptr,
-                                                      const char *header __attribute__((unused)), ssize_t header_size,
-                                                      size_t count, memcached_coll_result_st *result)
+static memcached_return_t textual_coll_element_fetch(memcached_server_write_instance_st ptr,
+                                                     const char *header __attribute__((unused)), ssize_t header_size,
+                                                     size_t count, memcached_coll_result_st *result)
 {
   memcached_return_t rc;
 #if 1 // MAP_COLLECTION_SUPPORT
@@ -1252,7 +1252,7 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
 #endif
 
   /* Fetch all values */
-  return textual_coll_fetch_elements(ptr, "", 0, count, result);
+  return textual_coll_element_fetch(ptr, "", 0, count, result);
 }
 
 /*
@@ -1386,7 +1386,7 @@ static memcached_return_t textual_coll_multiple_value_fetch(memcached_server_wri
   }
 
   /* Fetch all values */
-  return textual_coll_fetch_elements(ptr, "ELEMENT", 7, ecount, result);
+  return textual_coll_element_fetch(ptr, "ELEMENT", 7, ecount, result);
 }
 
 static memcached_return_t textual_read_one_coll_response(memcached_server_write_instance_st ptr,
