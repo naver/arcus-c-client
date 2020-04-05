@@ -54,8 +54,6 @@
 #include <libmemcached/common.h>
 #include <libmemcached/string.hpp>
 
-#define MAX_UINT32_STRING_LENGTH (10+1) /* We add one to have it null terminated */
-
 static memcached_return_t textual_read_one_response(memcached_server_write_instance_st ptr,
                                                     char *buffer, size_t buffer_length,
                                                     memcached_result_st *result);
@@ -70,101 +68,6 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
 static memcached_return_t textual_read_one_coll_smget_response(memcached_server_write_instance_st ptr,
                                                                char *buffer, size_t buffer_length,
                                                                memcached_coll_smget_result_st *result);
-
-static bool parse_response_header(char *buffer,
-                                  const char *header __attribute__((unused)),
-                                  size_t header_length,
-                                  uint32_t *values,
-                                  size_t value_length)
-{
-  char *string_ptr;
-  char *end_ptr;
-  char *next_ptr;
-  size_t i= 0;
-
-  end_ptr= buffer + MEMCACHED_DEFAULT_COMMAND_SIZE;
-
-  string_ptr= buffer;
-  string_ptr+= header_length;
-
-  for (i=0; i<value_length; i++)
-  {
-    /* fetch move past space */
-    string_ptr++;
-    if (end_ptr == string_ptr)
-      return false;
-
-    for (next_ptr= string_ptr; isdigit(*string_ptr); string_ptr++) {};
-    values[i]= (uint32_t) strtoul(next_ptr, &string_ptr, 10);
-
-    if (end_ptr == string_ptr)
-      return false;
-  }
-
-  /* Skip spaces */
-  if (*string_ptr == '\r')
-  {
-    /* Skip past the \r\n */
-    string_ptr+= 2;
-  }
-
-  if (end_ptr < string_ptr)
-    return false;
-
-  return true;
-}
-
-static memcached_return_t fetch_value_header(memcached_server_write_instance_st ptr,
-                                             char *string, ssize_t *string_length,
-                                             size_t max_read_length)
-{
-  memcached_return_t rc;
-  ssize_t read_length= 0;
-  bool met_CR_char = false; /* met the `\r` */
-
-  /* Read until meeting a space */
-  for (size_t i=0; i<max_read_length; i++)
-  {
-    rc= memcached_io_read(ptr, string+i, 1, &read_length);
-    if (memcached_failed(rc))
-    {
-      if (rc == MEMCACHED_IN_PROGRESS) {
-        memcached_quit_server(ptr, true);
-        rc = memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
-      }
-      return rc;
-    }
-
-    /* met a space */
-    if (string[i] == ' ')
-    {
-      string[i] = '\0';
-      *string_length= i+1;
-      return MEMCACHED_SUCCESS;
-    }
-
-    /* met the "\r\n" */
-    if (string[i] == '\r')
-    {
-      if (met_CR_char)
-        break;
-
-      met_CR_char = true;
-      i--;
-    }
-    else if (met_CR_char)
-    {
-      if (string[i] != '\n')
-        break;
-
-      string[i] = '\0';
-      *string_length= i+1;
-      return MEMCACHED_END; /* the end of line */
-    }
-  }
-
-  return MEMCACHED_PROTOCOL_ERROR;
-}
 
 memcached_return_t memcached_read_one_response(memcached_server_write_instance_st ptr,
                                                char *buffer, size_t buffer_length,
@@ -813,6 +716,11 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
   return rc;
 }
 
+/*
+ * Support Collections
+ */
+#define MAX_UINT32_STRING_LENGTH (10+1) /* We add one to have it null terminated */
+
 memcached_return_t memcached_read_one_coll_response(memcached_server_write_instance_st ptr,
                                                     char *buffer, size_t buffer_length,
                                                     memcached_coll_result_st *result)
@@ -906,6 +814,49 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
   }
 
   return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
+}
+
+static bool parse_response_header(char *buffer,
+                                  const char *header __attribute__((unused)),
+                                  size_t header_length,
+                                  uint32_t *values,
+                                  size_t value_length)
+{
+  char *string_ptr;
+  char *end_ptr;
+  char *next_ptr;
+  size_t i= 0;
+
+  end_ptr= buffer + MEMCACHED_DEFAULT_COMMAND_SIZE;
+
+  string_ptr= buffer;
+  string_ptr+= header_length;
+
+  for (i=0; i<value_length; i++)
+  {
+    /* fetch move past space */
+    string_ptr++;
+    if (end_ptr == string_ptr)
+      return false;
+
+    for (next_ptr= string_ptr; isdigit(*string_ptr); string_ptr++) {};
+    values[i]= (uint32_t) strtoul(next_ptr, &string_ptr, 10);
+
+    if (end_ptr == string_ptr)
+      return false;
+  }
+
+  /* Skip spaces */
+  if (*string_ptr == '\r')
+  {
+    /* Skip past the \r\n */
+    string_ptr+= 2;
+  }
+
+  if (end_ptr < string_ptr)
+    return false;
+
+  return true;
 }
 
 static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t response,
@@ -1005,6 +956,159 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   }
 #endif
   return rc;
+}
+
+static bool parse_response_uint32_value(char *buffer, int length,
+                                        int value_count, uint32_t *value_array)
+{
+  char *str_ptr= buffer;
+  char *end_ptr= buffer + length;
+  char *val_ptr;
+
+  for (int i=0; i<value_count; i++)
+  {
+    /* skip a space */
+    if (*str_ptr != ' ')
+      return false;
+    str_ptr++;
+
+   /* fetch uint32 value */
+    val_ptr= str_ptr;
+    for ( ; str_ptr < end_ptr && isdigit(*str_ptr); str_ptr++) {};
+    if ((str_ptr == val_ptr) || (str_ptr >= end_ptr) ||
+        (str_ptr - val_ptr) >= MAX_UINT32_STRING_LENGTH)
+      return false;
+    value_array[i]= (uint32_t) strtoul(val_ptr, &str_ptr, 10);
+  }
+
+  /* Skip spaces */
+  if (*str_ptr == '\r' && (str_ptr+1) < end_ptr && *(str_ptr+1) == '\n')
+  {
+    str_ptr+= 2; /* Skip past the \r\n */
+  }
+  return true;
+}
+
+static bool parse_response_string_value(char *buffer, int length,
+                                        char **string_ptr, int *string_len)
+{
+  if (buffer[0] != ' ')
+    return false;
+
+  for (int i=1; i<length; i++)
+  {
+    if (buffer[i] == ' ' || buffer[i] == '\r')
+    {
+      if (i == 1) break;
+
+      *string_ptr = &buffer[1];
+      *string_len = i-1;
+      return true;
+    }
+  }
+  return false;
+}
+
+static memcached_return_t get_status_of_coll_get_response(char *string_ptr, int string_len)
+{
+  switch (string_ptr[0])
+  {
+  case 'O':
+    if (string_len == 2 && memcmp(string_ptr, "OK", string_len) == 0)
+      return MEMCACHED_SUCCESS;
+    if (string_len == 12 && memcmp(string_ptr, "OUT_OF_RANGE", string_len) == 0)
+      return MEMCACHED_OUT_OF_RANGE;
+    break;
+  case 'N':
+    if (string_len == 9 && memcmp(string_ptr, "NOT_FOUND", string_len) == 0)
+      return MEMCACHED_NOTFOUND;
+    if (string_len == 17 && memcmp(string_ptr, "NOT_FOUND_ELEMENT", string_len) == 0)
+      return MEMCACHED_NOTFOUND_ELEMENT;
+    break;
+  case 'D':
+    if (string_len == 7 && memcmp(string_ptr, "DELETED", string_len) == 0)
+      return MEMCACHED_DELETED;
+    if (string_len == 15 && memcmp(string_ptr, "DELETED_DROPPED", string_len) == 0)
+      return MEMCACHED_DELETED_DROPPED;
+    break;
+  case 'T':
+    if (string_len == 7 && memcmp(string_ptr, "TRIMMED", string_len) == 0)
+      return MEMCACHED_TRIMMED;
+    if (string_len == 13 && memcmp(string_ptr, "TYPE_MISMATCH", string_len) == 0)
+      return MEMCACHED_TYPE_MISMATCH;
+    break;
+  case 'B':
+    if (string_len == 13 && memcmp(string_ptr, "BKEY_MISMATCH", string_len) == 0)
+      return MEMCACHED_BKEY_MISMATCH;
+    break;
+  case 'U':
+    if (string_len == 10 && memcmp(string_ptr, "UNREADABLE", string_len) == 0)
+      return MEMCACHED_UNREADABLE;
+    break;
+  case 'C':
+    if (string_len == 12 && memcmp(string_ptr, "CLIENT_ERROR", string_len) == 0)
+      return MEMCACHED_CLIENT_ERROR;
+    break;
+  case 'S':
+    if (string_len == 12 && memcmp(string_ptr, "SERVER_ERROR", string_len) == 0)
+      return MEMCACHED_SERVER_ERROR;
+    break;
+  default:
+    break;
+  }
+  return MEMCACHED_UNKNOWN_READ_FAILURE;
+}
+
+static memcached_return_t fetch_value_header(memcached_server_write_instance_st ptr,
+                                             char *string, ssize_t *string_length,
+                                             size_t max_read_length)
+{
+  memcached_return_t rc;
+  ssize_t read_length= 0;
+  bool met_CR_char = false; /* met the `\r` */
+
+  /* Read until meeting a space */
+  for (size_t i=0; i<max_read_length; i++)
+  {
+    rc= memcached_io_read(ptr, string+i, 1, &read_length);
+    if (memcached_failed(rc))
+    {
+      if (rc == MEMCACHED_IN_PROGRESS) {
+        memcached_quit_server(ptr, true);
+        rc = memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
+      }
+      return rc;
+    }
+
+    /* met a space */
+    if (string[i] == ' ')
+    {
+      string[i] = '\0';
+      *string_length= i+1;
+      return MEMCACHED_SUCCESS;
+    }
+
+    /* met the "\r\n" */
+    if (string[i] == '\r')
+    {
+      if (met_CR_char)
+        break;
+
+      met_CR_char = true;
+      i--;
+    }
+    else if (met_CR_char)
+    {
+      if (string[i] != '\n')
+        break;
+
+      string[i] = '\0';
+      *string_length= i+1;
+      return MEMCACHED_END; /* the end of line */
+    }
+  }
+
+  return MEMCACHED_PROTOCOL_ERROR;
 }
 
 static memcached_return_t textual_coll_element_fetch(memcached_server_write_instance_st ptr,
@@ -1172,107 +1276,6 @@ static memcached_return_t textual_coll_element_fetch(memcached_server_write_inst
 
 read_error:
   return MEMCACHED_PARTIAL_READ;
-}
-
-static bool parse_response_uint32_value(char *buffer, int length,
-                                        int value_count, uint32_t *value_array)
-{
-  char *str_ptr= buffer;
-  char *end_ptr= buffer + length;
-  char *val_ptr;
-
-  for (int i=0; i<value_count; i++)
-  {
-    /* skip a space */
-    if (*str_ptr != ' ')
-      return false;
-    str_ptr++;
-
-   /* fetch uint32 value */
-    val_ptr= str_ptr;
-    for ( ; str_ptr < end_ptr && isdigit(*str_ptr); str_ptr++) {};
-    if ((str_ptr == val_ptr) || (str_ptr >= end_ptr) ||
-        (str_ptr - val_ptr) >= MAX_UINT32_STRING_LENGTH)
-      return false;
-    value_array[i]= (uint32_t) strtoul(val_ptr, &str_ptr, 10);
-  }
-
-  /* Skip spaces */
-  if (*str_ptr == '\r' && (str_ptr+1) < end_ptr && *(str_ptr+1) == '\n')
-  {
-    str_ptr+= 2; /* Skip past the \r\n */
-  }
-  return true;
-}
-
-static bool parse_response_string_value(char *buffer, int length,
-                                        char **string_ptr, int *string_len)
-{
-  if (buffer[0] != ' ')
-    return false;
-
-  for (int i=1; i<length; i++)
-  {
-    if (buffer[i] == ' ' || buffer[i] == '\r')
-    {
-      if (i == 1) break;
-
-      *string_ptr = &buffer[1];
-      *string_len = i-1;
-      return true;
-    }
-  }
-  return false;
-}
-
-static memcached_return_t get_status_of_coll_get_response(char *string_ptr, int string_len)
-{
-  switch (string_ptr[0])
-  {
-  case 'O':
-    if (string_len == 2 && memcmp(string_ptr, "OK", string_len) == 0)
-      return MEMCACHED_SUCCESS;
-    if (string_len == 12 && memcmp(string_ptr, "OUT_OF_RANGE", string_len) == 0)
-      return MEMCACHED_OUT_OF_RANGE;
-    break;
-  case 'N':
-    if (string_len == 9 && memcmp(string_ptr, "NOT_FOUND", string_len) == 0)
-      return MEMCACHED_NOTFOUND;
-    if (string_len == 17 && memcmp(string_ptr, "NOT_FOUND_ELEMENT", string_len) == 0)
-      return MEMCACHED_NOTFOUND_ELEMENT;
-    break;
-  case 'D':
-    if (string_len == 7 && memcmp(string_ptr, "DELETED", string_len) == 0)
-      return MEMCACHED_DELETED;
-    if (string_len == 15 && memcmp(string_ptr, "DELETED_DROPPED", string_len) == 0)
-      return MEMCACHED_DELETED_DROPPED;
-    break;
-  case 'T':
-    if (string_len == 7 && memcmp(string_ptr, "TRIMMED", string_len) == 0)
-      return MEMCACHED_TRIMMED;
-    if (string_len == 13 && memcmp(string_ptr, "TYPE_MISMATCH", string_len) == 0)
-      return MEMCACHED_TYPE_MISMATCH;
-    break;
-  case 'B':
-    if (string_len == 13 && memcmp(string_ptr, "BKEY_MISMATCH", string_len) == 0)
-      return MEMCACHED_BKEY_MISMATCH;
-    break;
-  case 'U':
-    if (string_len == 10 && memcmp(string_ptr, "UNREADABLE", string_len) == 0)
-      return MEMCACHED_UNREADABLE;
-    break;
-  case 'C':
-    if (string_len == 12 && memcmp(string_ptr, "CLIENT_ERROR", string_len) == 0)
-      return MEMCACHED_CLIENT_ERROR;
-    break;
-  case 'S':
-    if (string_len == 12 && memcmp(string_ptr, "SERVER_ERROR", string_len) == 0)
-      return MEMCACHED_SERVER_ERROR;
-    break;
-  default:
-    break;
-  }
-  return MEMCACHED_UNKNOWN_READ_FAILURE;
 }
 
 static memcached_return_t textual_coll_value_fetch(memcached_server_write_instance_st ptr,
