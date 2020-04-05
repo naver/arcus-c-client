@@ -1543,9 +1543,9 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
   /* NOTREACHED */
 }
 
-memcached_return_t memcached_read_one_coll_response(memcached_server_write_instance_st ptr,
-                                                    char *buffer, size_t buffer_length,
-                                                    memcached_coll_result_st *result)
+static memcached_return_t memcached_read_one_coll_response(memcached_server_write_instance_st ptr,
+                                                           char *buffer, size_t buffer_length,
+                                                           memcached_coll_result_st *result)
 {
   memcached_server_response_decrement(ptr);
 
@@ -2286,9 +2286,9 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
   /* NOTREACHED */
 }
 
-memcached_return_t memcached_read_one_coll_smget_response(memcached_server_write_instance_st ptr,
-                                                          char *buffer, size_t buffer_length,
-                                                          memcached_coll_smget_result_st *result)
+static memcached_return_t memcached_read_one_coll_smget_response(memcached_server_write_instance_st ptr,
+                                                                 char *buffer, size_t buffer_length,
+                                                                 memcached_coll_smget_result_st *result)
 {
   memcached_server_response_decrement(ptr);
 

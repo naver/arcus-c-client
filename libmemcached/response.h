@@ -69,11 +69,6 @@ memcached_return_t memcached_response(memcached_server_write_instance_st ptr,
                                       memcached_result_st *result);
 
 LIBMEMCACHED_LOCAL
-memcached_return_t memcached_read_one_coll_response(memcached_server_write_instance_st ptr,
-                                                    char *buffer, size_t buffer_length,
-                                                    memcached_coll_result_st *result);
-
-LIBMEMCACHED_LOCAL
 memcached_return_t memcached_coll_response(memcached_server_write_instance_st ptr,
                                            char *buffer, size_t buffer_length,
                                            memcached_coll_result_st *result);
@@ -81,11 +76,6 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
 LIBMEMCACHED_LOCAL
  void              memcached_add_coll_pipe_return_code(memcached_server_write_instance_st ptr,
                                                        memcached_return_t return_code);
-
-LIBMEMCACHED_LOCAL
-memcached_return_t memcached_read_one_coll_smget_response(memcached_server_write_instance_st ptr,
-                                                          char *buffer, size_t buffer_length,
-                                                          memcached_coll_smget_result_st *result);
 
 LIBMEMCACHED_LOCAL
 memcached_return_t memcached_coll_smget_response(memcached_server_write_instance_st ptr,
