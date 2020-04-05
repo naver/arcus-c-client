@@ -54,21 +54,6 @@
 #include <libmemcached/common.h>
 #include <libmemcached/string.hpp>
 
-static memcached_return_t textual_read_one_response(memcached_server_write_instance_st ptr,
-                                                    char *buffer, size_t buffer_length,
-                                                    memcached_result_st *result);
-static memcached_return_t binary_read_one_response(memcached_server_write_instance_st ptr,
-                                                   char *buffer, size_t buffer_length,
-                                                   memcached_result_st *result);
-
-static memcached_return_t textual_read_one_coll_response(memcached_server_write_instance_st ptr,
-                                                         char *buffer, size_t buffer_length,
-                                                         memcached_coll_result_st *result);
-
-static memcached_return_t textual_read_one_coll_smget_response(memcached_server_write_instance_st ptr,
-                                                               char *buffer, size_t buffer_length,
-                                                               memcached_coll_smget_result_st *result);
-
 static memcached_return_t textual_value_fetch(memcached_server_write_instance_st ptr,
                                               char *buffer,
                                               memcached_result_st *result)
@@ -720,101 +705,6 @@ memcached_return_t memcached_response(memcached_server_write_instance_st ptr,
  * Support Collections
  */
 #define MAX_UINT32_STRING_LENGTH (10+1) /* We add one to have it null terminated */
-
-memcached_return_t memcached_read_one_coll_response(memcached_server_write_instance_st ptr,
-                                                    char *buffer, size_t buffer_length,
-                                                    memcached_coll_result_st *result)
-{
-  memcached_server_response_decrement(ptr);
-
-  if (result == NULL)
-  {
-    memcached_st *root= (memcached_st *)ptr->root;
-    result = &root->collection_result;
-  }
-  else
-  {
-    result->root= (memcached_st *)ptr->root;
-  }
-
-  memcached_return_t rc;
-  if (ptr->root->flags.binary_protocol)
-  {
-    fprintf(stderr, "Binary protocols for the collection are not supported.\n");
-    return MEMCACHED_INVALID_ARGUMENTS;
-  }
-  else
-  {
-    rc= textual_read_one_coll_response(ptr, buffer, buffer_length, result);
-  }
-
-  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
-           rc == MEMCACHED_PROTOCOL_ERROR ||
-           rc == MEMCACHED_CLIENT_ERROR ||
-           rc == MEMCACHED_PARTIAL_READ ||
-           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
-    memcached_io_reset(ptr);
-
-  return rc;
-}
-
-memcached_return_t memcached_coll_response(memcached_server_write_instance_st ptr,
-                                           char *buffer, size_t buffer_length,
-                                           memcached_coll_result_st *result)
-{
-  /* We may have old commands in the buffer not set, first purge */
-  if ((ptr->root->flags.no_block) && (memcached_is_processing_input(ptr->root) == false))
-  {
-    (void)memcached_io_write(ptr, NULL, 0, true);
-  }
-
-  if (ptr->root->flags.binary_protocol == true) {
-    fprintf(stderr, "Binary protocols for the collection are not supported.\n");
-    return MEMCACHED_INVALID_ARGUMENTS;
-  }
-
-  /* If the requests were piped, just return one response.
-   * The API should control the remaining responses properly.
-   */
-  if (ptr->root->flags.piped)
-  {
-    return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
-  }
-
-  /*
-   * The previous implementation purged all pending requests and just
-   * returned the last one. Purge all pending messages to ensure backwards
-   * compatibility.
-   */
-  while (memcached_server_response_count(ptr) > 1)
-  {
-    memcached_return_t rc= memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
-
-    unlikely (rc != MEMCACHED_END              and
-              rc != MEMCACHED_STORED           and
-              rc != MEMCACHED_SUCCESS          and
-              rc != MEMCACHED_STAT             and
-              rc != MEMCACHED_DELETED          and
-              rc != MEMCACHED_DELETED_DROPPED  and
-              rc != MEMCACHED_NOTFOUND         and
-              rc != MEMCACHED_NOTSTORED        and
-              rc != MEMCACHED_NOT_SUPPORTED    and
-              rc != MEMCACHED_DATA_EXISTS      and
-              rc != MEMCACHED_TYPE_MISMATCH    and
-              rc != MEMCACHED_EXIST            and
-              rc != MEMCACHED_NOT_EXIST        and
-              rc != MEMCACHED_TRIMMED          and
-              rc != MEMCACHED_DELETED_TRIMMED  and
-              rc != MEMCACHED_NOTFOUND_ELEMENT and
-              rc != MEMCACHED_ELEMENT_EXISTS   and
-              rc != MEMCACHED_UNREADABLE       and
-              rc != MEMCACHED_CREATED          and
-              rc != MEMCACHED_CREATED_STORED )
-      return rc;
-  }
-
-  return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
-}
 
 static bool parse_response_header(char *buffer,
                                   const char *header __attribute__((unused)),
@@ -1651,6 +1541,101 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
   }
 
   /* NOTREACHED */
+}
+
+memcached_return_t memcached_read_one_coll_response(memcached_server_write_instance_st ptr,
+                                                    char *buffer, size_t buffer_length,
+                                                    memcached_coll_result_st *result)
+{
+  memcached_server_response_decrement(ptr);
+
+  if (result == NULL)
+  {
+    memcached_st *root= (memcached_st *)ptr->root;
+    result = &root->collection_result;
+  }
+  else
+  {
+    result->root= (memcached_st *)ptr->root;
+  }
+
+  memcached_return_t rc;
+  if (ptr->root->flags.binary_protocol)
+  {
+    fprintf(stderr, "Binary protocols for the collection are not supported.\n");
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+  else
+  {
+    rc= textual_read_one_coll_response(ptr, buffer, buffer_length, result);
+  }
+
+  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
+           rc == MEMCACHED_PROTOCOL_ERROR ||
+           rc == MEMCACHED_CLIENT_ERROR ||
+           rc == MEMCACHED_PARTIAL_READ ||
+           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+    memcached_io_reset(ptr);
+
+  return rc;
+}
+
+memcached_return_t memcached_coll_response(memcached_server_write_instance_st ptr,
+                                           char *buffer, size_t buffer_length,
+                                           memcached_coll_result_st *result)
+{
+  /* We may have old commands in the buffer not set, first purge */
+  if ((ptr->root->flags.no_block) && (memcached_is_processing_input(ptr->root) == false))
+  {
+    (void)memcached_io_write(ptr, NULL, 0, true);
+  }
+
+  if (ptr->root->flags.binary_protocol == true) {
+    fprintf(stderr, "Binary protocols for the collection are not supported.\n");
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  /* If the requests were piped, just return one response.
+   * The API should control the remaining responses properly.
+   */
+  if (ptr->root->flags.piped)
+  {
+    return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
+  }
+
+  /*
+   * The previous implementation purged all pending requests and just
+   * returned the last one. Purge all pending messages to ensure backwards
+   * compatibility.
+   */
+  while (memcached_server_response_count(ptr) > 1)
+  {
+    memcached_return_t rc= memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
+
+    unlikely (rc != MEMCACHED_END              and
+              rc != MEMCACHED_STORED           and
+              rc != MEMCACHED_SUCCESS          and
+              rc != MEMCACHED_STAT             and
+              rc != MEMCACHED_DELETED          and
+              rc != MEMCACHED_DELETED_DROPPED  and
+              rc != MEMCACHED_NOTFOUND         and
+              rc != MEMCACHED_NOTSTORED        and
+              rc != MEMCACHED_NOT_SUPPORTED    and
+              rc != MEMCACHED_DATA_EXISTS      and
+              rc != MEMCACHED_TYPE_MISMATCH    and
+              rc != MEMCACHED_EXIST            and
+              rc != MEMCACHED_NOT_EXIST        and
+              rc != MEMCACHED_TRIMMED          and
+              rc != MEMCACHED_DELETED_TRIMMED  and
+              rc != MEMCACHED_NOTFOUND_ELEMENT and
+              rc != MEMCACHED_ELEMENT_EXISTS   and
+              rc != MEMCACHED_UNREADABLE       and
+              rc != MEMCACHED_CREATED          and
+              rc != MEMCACHED_CREATED_STORED )
+      return rc;
+  }
+
+  return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
 }
 
 void memcached_add_coll_pipe_return_code(memcached_server_write_instance_st ptr,
