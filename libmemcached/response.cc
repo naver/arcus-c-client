@@ -166,6 +166,8 @@ static memcached_return_t fetch_value_header(memcached_server_write_instance_st 
   return MEMCACHED_PROTOCOL_ERROR;
 }
 
+#if 1 // NEW_COLL_VALUE_FETCH
+#else
 static memcached_return_t fetch_value_header_with(char *buffer,
                                                   char *string, ssize_t *string_length,
                                                   size_t max_read_length)
@@ -199,6 +201,7 @@ static memcached_return_t fetch_value_header_with(char *buffer,
 
   return MEMCACHED_PROTOCOL_ERROR;
 }
+#endif
 
 memcached_return_t memcached_read_one_response(memcached_server_write_instance_st ptr,
                                                char *buffer, size_t buffer_length,
@@ -1190,6 +1193,236 @@ read_error:
   return MEMCACHED_PARTIAL_READ;
 }
 
+#if 1 // NEW_COLL_VALUE_FETCH
+static bool parse_response_uint32_value(char *buffer, int length,
+                                        int value_count, uint32_t *value_array)
+{
+  char *str_ptr= buffer;
+  char *end_ptr= buffer + length;
+  char *val_ptr;
+
+  for (int i=0; i<value_count; i++)
+  {
+    /* skip a space */
+    if (*str_ptr != ' ')
+      return false;
+    str_ptr++;
+
+   /* fetch uint32 value */
+    val_ptr= str_ptr;
+    for ( ; str_ptr < end_ptr && isdigit(*str_ptr); str_ptr++) {};
+    if ((str_ptr == val_ptr) || (str_ptr >= end_ptr) ||
+        (str_ptr - val_ptr) >= MAX_UINT32_STRING_LENGTH)
+      return false;
+    value_array[i]= (uint32_t) strtoul(val_ptr, &str_ptr, 10);
+  }
+
+  /* Skip spaces */
+  if (*str_ptr == '\r' && (str_ptr+1) < end_ptr && *(str_ptr+1) == '\n')
+  {
+    str_ptr+= 2; /* Skip past the \r\n */
+  }
+  return true;
+}
+
+static bool parse_response_string_value(char *buffer, int length,
+                                        char **string_ptr, int *string_len)
+{
+  if (buffer[0] != ' ')
+    return false;
+
+  for (int i=1; i<length; i++)
+  {
+    if (buffer[i] == ' ' || buffer[i] == '\r')
+    {
+      if (i == 1) break;
+
+      *string_ptr = &buffer[1];
+      *string_len = i-1;
+      return true;
+    }
+  }
+  return false;
+}
+
+static memcached_return_t get_status_of_coll_get_response(char *string_ptr, int string_len)
+{
+  switch (string_ptr[0])
+  {
+  case 'O':
+    if (string_len == 2 && memcmp(string_ptr, "OK", string_len) == 0)
+      return MEMCACHED_SUCCESS;
+    if (string_len == 12 && memcmp(string_ptr, "OUT_OF_RANGE", string_len) == 0)
+      return MEMCACHED_OUT_OF_RANGE;
+    break;
+  case 'N':
+    if (string_len == 9 && memcmp(string_ptr, "NOT_FOUND", string_len) == 0)
+      return MEMCACHED_NOTFOUND;
+    if (string_len == 17 && memcmp(string_ptr, "NOT_FOUND_ELEMENT", string_len) == 0)
+      return MEMCACHED_NOTFOUND_ELEMENT;
+    break;
+  case 'D':
+    if (string_len == 7 && memcmp(string_ptr, "DELETED", string_len) == 0)
+      return MEMCACHED_DELETED;
+    if (string_len == 15 && memcmp(string_ptr, "DELETED_DROPPED", string_len) == 0)
+      return MEMCACHED_DELETED_DROPPED;
+    break;
+  case 'T':
+    if (string_len == 7 && memcmp(string_ptr, "TRIMMED", string_len) == 0)
+      return MEMCACHED_TRIMMED;
+    if (string_len == 13 && memcmp(string_ptr, "TYPE_MISMATCH", string_len) == 0)
+      return MEMCACHED_TYPE_MISMATCH;
+    break;
+  case 'B':
+    if (string_len == 13 && memcmp(string_ptr, "BKEY_MISMATCH", string_len) == 0)
+      return MEMCACHED_BKEY_MISMATCH;
+    break;
+  case 'U':
+    if (string_len == 10 && memcmp(string_ptr, "UNREADABLE", string_len) == 0)
+      return MEMCACHED_UNREADABLE;
+    break;
+  case 'C':
+    if (string_len == 12 && memcmp(string_ptr, "CLIENT_ERROR", string_len) == 0)
+      return MEMCACHED_CLIENT_ERROR;
+    break;
+  case 'S':
+    if (string_len == 12 && memcmp(string_ptr, "SERVER_ERROR", string_len) == 0)
+      return MEMCACHED_SERVER_ERROR;
+    break;
+  default:
+    break;
+  }
+  return MEMCACHED_UNKNOWN_READ_FAILURE;
+}
+#endif
+
+#if 1 // NEW_COLL_VALUE_FETCH
+static memcached_return_t textual_coll_value_fetch(memcached_server_write_instance_st ptr,
+                                                   char *buffer, memcached_coll_result_st *result)
+{
+  uint32_t digit_params[4];
+  uint32_t count_params;
+  uint32_t ecount;
+  int PARAM_FLAGS;
+  int PARAM_COUNT;
+  int PARAM_POSITION;
+  int PARAM_RSTINDEX;
+  char *ehdr_string= NULL;
+  int   ehdr_length= 0;
+  int   buff_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  int   read_length= 5; /* skip "VALUE" */
+
+  if (memcmp(&ptr->root->last_op_code[1], "op g", 4) == 0) /* coll get, bop gbp */
+  {
+    /* VALUE <flags> <ecount>\r\n
+     * <bytes> <data>\r\n                  (List/Set)
+     * <mkey> <bytes> <data>\r\n           (Map)
+     * <bkey> [<eflag>] <bytes> <data>\r\n (B+Tree)
+     */
+    count_params= 2;
+    PARAM_FLAGS= 0;
+    PARAM_COUNT= 1;
+  }
+  else if (memcmp(&ptr->root->last_op_code[0], "bop pwg", 7) == 0)
+  {
+    /* VALUE <position> <flags> <ecount> <resultidx>r\n
+     * <bkey> [<eflag>] <bytes> <data>\r\n
+     * ...
+     */
+    count_params= 4;
+    PARAM_POSITION= 0;
+    PARAM_FLAGS= 1;
+    PARAM_COUNT= 2;
+    PARAM_RSTINDEX= 3;
+  }
+  else if (memcmp(&ptr->root->last_op_code[0], "bop mget", 8) == 0)
+  {
+    char *string_ptr;
+    int   string_len;
+    memcached_return_t status;
+
+    /* VALUE <key> <status> [<flags> <ecount>]\r\n
+     * [ELEMENT <bkey> [<eflag>] <bytes> <data>\r\n
+     * ...]
+     */
+    /* <key> */
+    if (! parse_response_string_value(&buffer[read_length], buff_length-read_length,
+                                      &string_ptr, &string_len))
+    {
+      return MEMCACHED_PARTIAL_READ;
+    }
+    read_length+= (1+string_len);
+    memcpy(result->item_key, string_ptr, string_len);
+    result->item_key[string_len]= '\0';
+    result->key_length= (string_len+1); /* add one to include '\0' */
+
+    /* <status> */
+    if (! parse_response_string_value(&buffer[read_length], buff_length-read_length,
+                                      &string_ptr, &string_len))
+    {
+      return MEMCACHED_PARTIAL_READ;
+    }
+    read_length+= (1+string_len);
+    status= get_status_of_coll_get_response(string_ptr, string_len);
+    if (status != MEMCACHED_SUCCESS && status != MEMCACHED_TRIMMED)
+    {
+      if (status != MEMCACHED_UNKNOWN_READ_FAILURE)
+      {
+        if (buffer[read_length] != '\r') /* NOT "\r\n" */
+          status= MEMCACHED_PARTIAL_READ;
+      }
+      return status;
+    }
+
+    /* <flags> <ecount> */
+    count_params= 2;
+    PARAM_FLAGS= 0;
+    PARAM_COUNT= 1;
+    ehdr_string= (char*)"ELEMENT";
+    ehdr_length= 7;
+  }
+  else
+  {
+    return MEMCACHED_UNKNOWN_READ_FAILURE;
+  }
+
+  if (! parse_response_uint32_value(&buffer[read_length], buff_length-read_length,
+                                    count_params, digit_params))
+  {
+    return MEMCACHED_PARTIAL_READ;
+  }
+
+  ecount= digit_params[PARAM_COUNT];
+  result->collection_flags= digit_params[PARAM_FLAGS];
+  if (PARAM_FLAGS == 1) /* bop pwg */
+  {
+    result->btree_position= digit_params[PARAM_POSITION];
+    result->result_position= digit_params[PARAM_RSTINDEX];
+  }
+  if (ecount == 0)
+  {
+      return MEMCACHED_PROTOCOL_ERROR;
+  }
+
+  /* Prepare memory for the returning values */
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->values, memcached_string_st, ecount);
+
+  if (result->type == COLL_BTREE)
+  {
+    ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, ecount);
+    ALLOCATE_ARRAY_OR_RETURN(result->root, result->eflags,   memcached_hexadecimal_st,  ecount);
+  }
+#if 1 // MAP_COLLECTION_SUPPORT
+  else if (result->type == COLL_MAP)
+  {
+    ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, ecount);
+  }
+#endif
+
+  /* Fetch all elements */
+  return textual_coll_element_fetch(ptr, ehdr_string, ehdr_length, ecount, result);
+}
+#else
 /*
  * Fetching collection values.
  *
@@ -1388,6 +1621,7 @@ static memcached_return_t textual_coll_multiple_value_fetch(memcached_server_wri
   /* Fetch all values */
   return textual_coll_element_fetch(ptr, "ELEMENT", 7, ecount, result);
 }
+#endif
 
 static memcached_return_t textual_read_one_coll_response(memcached_server_write_instance_st ptr,
                                                          char *buffer, size_t buffer_length,
@@ -1418,6 +1652,15 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
   case 'V': /* VALUE */
     if (buffer[1] == 'A') /* VALUE */
     {
+#if 1 // NEW_COLL_VALUE_FETCH
+      rc= textual_coll_value_fetch(ptr, buffer, result);
+      if (rc == MEMCACHED_SUCCESS)
+      {
+        /* We add back in one to search for END or next VALUE */
+        memcached_server_response_increment(ptr);
+      }
+      return rc;
+#else
       if (ptr->root->last_op_code[4] == 'm')
       {
         /* multiple value fetch */
@@ -1436,6 +1679,7 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
       }
 
       return rc;
+#endif
     }
     else
     {
