@@ -386,132 +386,150 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
 
   switch(buffer[0])
   {
-  case 'V': /* VALUE || VERSION */
-    if (buffer[1] == 'A') /* VALUE */
+  case 'V':
+    if (memcmp(buffer, "VALUE", 5) == 0)
     {
       /* We add back in one because we will need to search for END */
       memcached_server_response_increment(ptr);
       return textual_value_fetch(ptr, buffer, result);
     }
-    else if (buffer[1] == 'E') /* VERSION */
+    else if (memcmp(buffer, "VERSION", 7) == 0)
     {
       return MEMCACHED_SUCCESS;
     }
-    else
+    break;
+
+  case 'O':
+    if (memcmp(buffer, "OK", 2) == 0)
     {
-      WATCHPOINT_STRING(buffer);
-      return MEMCACHED_UNKNOWN_READ_FAILURE;
+      return MEMCACHED_SUCCESS;
     }
-  case 'O': /* OK */
-    return MEMCACHED_SUCCESS;
-  case 'S': /* STORED STATS SERVER_ERROR */
+    break;
+
+  case 'S':
+    if (memcmp(buffer, "STAT", 4) == 0) /* STORED STATS */
     {
-      if (buffer[2] == 'A') /* STORED STATS */
-      {
-        memcached_server_response_increment(ptr);
-        return MEMCACHED_STAT;
-      }
-      else if (buffer[1] == 'E') /* SERVER_ERROR */
-      {
-        if (total_read == memcached_literal_param_size("SERVER_ERROR"))
-        {
-          return MEMCACHED_SERVER_ERROR;
-        }
-
-        if (total_read > memcached_literal_param_size("SERVER_ERROR object too large for cache") and
-            (memcmp(buffer, memcached_literal_param("SERVER_ERROR object too large for cache")) == 0))
-        {
-          return MEMCACHED_E2BIG;
-        }
-
-        // Move past the basic error message and whitespace
-        char *startptr= buffer + memcached_literal_param_size("SERVER_ERROR");
-        if (startptr[0] == ' ')
-        {
-          startptr++;
-        }
-
-        char *endptr= startptr;
-        while (*endptr != '\r' && *endptr != '\n') endptr++;
-
-        return memcached_set_error(*ptr, MEMCACHED_SERVER_ERROR, MEMCACHED_AT, startptr, size_t(endptr - startptr));
-      }
-      else if (buffer[1] == 'T')
-      {
-        return MEMCACHED_STORED;
-      }
-#ifdef ENABLE_REPLICATION
-      else if (buffer[1] == 'W')
-      {
-        return MEMCACHED_SWITCHOVER;
-      }
-#endif
-      else
-      {
-        WATCHPOINT_STRING(buffer);
-        return MEMCACHED_UNKNOWN_READ_FAILURE;
-      }
+      memcached_server_response_increment(ptr);
+      return MEMCACHED_STAT;
     }
-  case 'D': /* DELETED */
-    return MEMCACHED_DELETED;
-
-  case 'N': /* NOT_FOUND */
+    else if (memcmp(buffer, "SERVER_ERROR", 12) == 0)
     {
-      if (buffer[4] == 'F')
-        return MEMCACHED_NOTFOUND;
-      else if (buffer[4] == 'S')
+      if (total_read == memcached_literal_param_size("SERVER_ERROR"))
       {
-        if (buffer[5] == 'T')
-          return MEMCACHED_NOTSTORED;
-        if (buffer[5] == 'U')
-          return MEMCACHED_NOT_SUPPORTED;
+        return MEMCACHED_SERVER_ERROR;
       }
-      else
+
+      if (total_read > memcached_literal_param_size("SERVER_ERROR object too large for cache") and
+          (memcmp(buffer, memcached_literal_param("SERVER_ERROR object too large for cache")) == 0))
       {
-        WATCHPOINT_STRING(buffer);
-        return MEMCACHED_UNKNOWN_READ_FAILURE;
+        return MEMCACHED_E2BIG;
       }
+
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("SERVER_ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_SERVER_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
+    else if (memcmp(buffer, "STORED", 6) == 0)
+    {
+      return MEMCACHED_STORED;
     }
 #ifdef ENABLE_REPLICATION
-  case 'R': /* REPL_SLAVE */
-    return MEMCACHED_REPL_SLAVE;
-#endif
-  case 'U': /* UNREADABLE */
-    return MEMCACHED_UNREADABLE;
-  case 'E': /* PROTOCOL ERROR or END */
+    else if (memcmp(buffer, "SWITCHOVER", 10) == 0)
     {
-      if (buffer[1] == 'N')
-        return MEMCACHED_END;
-      else if (buffer[1] == 'R')
-        return MEMCACHED_PROTOCOL_ERROR;
-      else if (buffer[1] == 'X')
-        return MEMCACHED_DATA_EXISTS;
-      else
-      {
-        WATCHPOINT_STRING(buffer);
-        return MEMCACHED_UNKNOWN_READ_FAILURE;
-      }
-
+      return MEMCACHED_SWITCHOVER;
     }
-  case 'I': /* CLIENT ERROR */
-    /* We add back in one because we will need to search for END */
-    memcached_server_response_increment(ptr);
-    return MEMCACHED_ITEM;
+#endif
+    break;
+
+  case 'D':
+    if (memcmp(buffer, "DELETED", 7) == 0)
+    {
+      return MEMCACHED_DELETED;
+    }
+    break;
+
+  case 'N':
+    if (memcmp(buffer, "NOT_FOUND", 9) == 0)
+    {
+      return MEMCACHED_NOTFOUND;
+    }
+    else if (memcmp(buffer, "NOT_STORED", 10) == 0)
+    {
+      return MEMCACHED_NOTSTORED;
+    }
+    else if (memcmp(buffer, "NOT_SUPPORTED", 13) == 0)
+    {
+      return MEMCACHED_NOT_SUPPORTED;
+    }
+    break;
+
+  case 'R':
+#ifdef ENABLE_REPLICATION
+    if (memcmp(buffer, "REPL_SLAVE", 10) == 0)
+    {
+      return MEMCACHED_REPL_SLAVE;
+    }
+#endif
+    break;
+
+  case 'U':
+    if (memcmp(buffer, "UNREADABLE", 10) == 0)
+    {
+      return MEMCACHED_UNREADABLE;
+    }
+    break;
+
+  case 'E':
+    if (memcmp(buffer, "END", 3) == 0)
+    {
+      return MEMCACHED_END;
+    }
+    else if (memcmp(buffer, "ERROR", 5) == 0)
+    {
+      return MEMCACHED_PROTOCOL_ERROR;
+    }
+    else if (memcmp(buffer, "EXISTS", 6) == 0)
+    {
+      return MEMCACHED_DATA_EXISTS;
+    }
+    break;
+
+  case 'I':
+    if (memcmp(buffer, "ITEM", 4) == 0) /* ITEM STATS */
+    {
+      /* We add back in one because we will need to search for END */
+      memcached_server_response_increment(ptr);
+      return MEMCACHED_ITEM;
+    }
+    break;
+
   case 'C': /* CLIENT ERROR */
-    return MEMCACHED_CLIENT_ERROR;
+    if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
+    {
+      return MEMCACHED_CLIENT_ERROR;
+    }
+    break;
+
   default:
     {
       unsigned long long auto_return_value;
-
       if (sscanf(buffer, "%llu", &auto_return_value) == 1)
         return MEMCACHED_SUCCESS;
-
-      WATCHPOINT_STRING(buffer);
-      return MEMCACHED_UNKNOWN_READ_FAILURE;
     }
+    break;
   }
 
-  /* NOTREACHED */
+  WATCHPOINT_STRING(buffer);
+  return MEMCACHED_UNKNOWN_READ_FAILURE;
 }
 
 static memcached_return_t binary_read_one_response(memcached_server_write_instance_st ptr,
