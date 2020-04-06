@@ -1666,36 +1666,36 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
   ssize_t read_length= 0;
 
   uint32_t header_params[1];
-  const size_t PARAM_COUNT= 0;
+  uint32_t ecount;
+  const int PARAM_COUNT= 0;
 
   if (not parse_response_header(buffer, header, header_length, header_params, 1))
   {
     return MEMCACHED_PARTIAL_READ;
   }
 
-  size_t count= header_params[PARAM_COUNT];
-  if (count < 1)
+  ecount= header_params[PARAM_COUNT];
+  if (ecount < 1)
   {
     return MEMCACHED_SUCCESS;
   }
 
   /* Prepare memory for the returning values */
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->keys,     memcached_string_st,       count);
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->values,   memcached_string_st,       count);
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->flags,    uint32_t,                  count);
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, count);
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->eflags,   memcached_hexadecimal_st,  count);
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->bytes,    size_t,                    count);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->keys,     memcached_string_st,       ecount);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->values,   memcached_string_st,       ecount);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->flags,    uint32_t,                  ecount);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, ecount);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->eflags,   memcached_hexadecimal_st,  ecount);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->bytes,    size_t,                    ecount);
 
   /* Fetch all values */
-  size_t i;
-  size_t value_length;
+  size_t i, value_length;
   memcached_return_t rrc;
 
   char *value_ptr;
   char to_read_string[MEMCACHED_MAX_KEY+1];
 
-  for (i=0; i<count; i++)
+  for (i=0; i<ecount; i++)
   {
     bool has_eflag= false;
 
@@ -1861,29 +1861,30 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
   char *value_ptr;
 
   uint32_t header_params[1];
-  const size_t PARAM_COUNT= 0;
+  uint32_t kcount;
+  const int PARAM_COUNT= 0;
 
   if (not parse_response_header(buffer, "MISSED_KEYS", 11, header_params, 1))
   {
     return MEMCACHED_PARTIAL_READ;
   }
 
-  size_t count= header_params[PARAM_COUNT];
-  if (count < 1)
+  kcount= header_params[PARAM_COUNT];
+  if (kcount < 1)
   {
     return MEMCACHED_SUCCESS;
   }
 
   /* Prepare memory for the returning values */
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->missed_keys, memcached_string_st, count);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->missed_keys, memcached_string_st, kcount);
 #ifdef SUPPORT_NEW_SMGET_INTERFACE
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->missed_causes, memcached_return_t, count);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->missed_causes, memcached_return_t, kcount);
 #endif
 
   /* Fetch all values */
   memcached_return_t rrc;
 
-  for (size_t i=0; i<count; i++)
+  for (size_t i=0; i<kcount; i++)
   {
     char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
 #ifdef SUPPORT_NEW_SMGET_INTERFACE
@@ -1997,27 +1998,28 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
   char *value_ptr;
   char *string_ptr;
   uint32_t header_params[1];
-  const size_t PARAM_COUNT= 0;
+  uint32_t kcount;
+  const int PARAM_COUNT= 0;
 
   if (not parse_response_header(buffer, "TRIMMED_KEYS", 11, header_params, 1))
   {
     return MEMCACHED_PARTIAL_READ;
   }
 
-  size_t count= header_params[PARAM_COUNT];
-  if (count < 1)
+  kcount= header_params[PARAM_COUNT];
+  if (kcount < 1)
   {
     return MEMCACHED_SUCCESS;
   }
 
   /* Prepare memory for the returning values */
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->trimmed_keys, memcached_string_st, count);
-  ALLOCATE_ARRAY_OR_RETURN(result->root, result->trimmed_sub_keys, memcached_coll_sub_key_st, count);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->trimmed_keys, memcached_string_st, kcount);
+  ALLOCATE_ARRAY_OR_RETURN(result->root, result->trimmed_sub_keys, memcached_coll_sub_key_st, kcount);
 
   /* Fetch all values */
   memcached_return_t rrc;
 
-  for (size_t i=0; i<count; i++)
+  for (size_t i=0; i<kcount; i++)
   {
     char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
     ssize_t read_length= 0;
