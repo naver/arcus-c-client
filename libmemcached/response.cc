@@ -1881,10 +1881,6 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
 #endif
 
   /* Fetch all values */
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
-#else
-  size_t value_length;
-#endif
   memcached_return_t rrc;
 
   for (size_t i=0; i<count; i++)
@@ -1946,6 +1942,7 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
       }
     }
 #else
+    size_t value_length;
     size_t total_read= 0;
     rrc= memcached_io_readline(ptr, to_read_string, MEMCACHED_MAX_KEY+2, total_read);
 
