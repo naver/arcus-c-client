@@ -16,31 +16,29 @@
  */
 
 #include "libmemcached/common.h"
+#include "libmemcached/arcus_priv.h"
 
+#include <sys/file.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <pthread.h>
+
+#define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
+#define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
+#define ZOO_NO_FLAGS 0
 
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
 #ifdef ENABLE_REPLICATION
 #define ARCUS_REPL_ZK_CACHE_LIST              "/arcus_repl/cache_list"
 #endif
-#define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
-#define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
-#define ARCUS_ZK_ADDING_CLEINT_INFO           1
-#define ZOO_NO_FLAGS 0
 
-#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #define ARCUS_ZK_CLIENT_INFO_NODE             "/arcus/client_list"
 #ifdef ENABLE_REPLICATION
 #define ARCUS_REPL_ZK_CLIENT_INFO_NODE        "/arcus_repl/client_list"
 #endif
-#endif
-#include <sys/file.h>
-#include "libmemcached/arcus_priv.h"
 
 /**
  * ARCUS
@@ -453,7 +451,6 @@ static inline void do_arcus_exit(memcached_st *mc)
   exit(1);
 }
 
-#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
 static inline void do_add_client_info(arcus_st *arcus)
 {
   int result;
@@ -505,7 +502,6 @@ static inline void do_add_client_info(arcus_st *arcus)
     ZOO_LOG_ERROR(("the znode of client info can not create"));
   }
 }
-#endif
 
 /**
  * Creates a new ZooKeeper client thread.
@@ -1299,9 +1295,7 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
     pthread_mutex_unlock(&lock_arcus);
 
     if (process_initializing) {
-#ifdef ARCUS_ZK_ADDING_CLEINT_INFO
       do_add_client_info(arcus);
-#endif
       do_arcus_zk_watch_and_update_cachelist(mc, do_arcus_zk_watcher_cachelist);
     }
   }
