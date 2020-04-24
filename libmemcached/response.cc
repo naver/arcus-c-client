@@ -1269,10 +1269,6 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
     if (responses[offset+i] == MEMCACHED_SWITCHOVER or responses[offset+i] == MEMCACHED_REPL_SLAVE)
     {
       switchover_rc= responses[offset+i];
-      for (size_t j= i+1; j< count[0]; j++) {
-        memcached_server_response_increment(ptr);
-        (void)memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-      }
       break;
     }
 #endif
@@ -1287,7 +1283,8 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
 
   rc= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 #ifdef ENABLE_REPLICATION
-  if (switchover_rc != MEMCACHED_SUCCESS && rc == MEMCACHED_END) {
+  /* Pipe operation is stopped if switchover is done. */
+  if (switchover_rc != MEMCACHED_SUCCESS && rc == MEMCACHED_PIPE_ERROR_BAD_ERROR) {
     return switchover_rc;
   }
 #endif
