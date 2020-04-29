@@ -800,7 +800,7 @@ static bool parse_response_string_value(char *buffer, int length,
   return false;
 }
 
-static memcached_return_t get_status_of_coll_get_response(char *string_ptr, int string_len)
+static memcached_return_t get_status_of_bop_mget_response(char *string_ptr, int string_len)
 {
   switch (string_ptr[0])
   {
@@ -816,12 +816,6 @@ static memcached_return_t get_status_of_coll_get_response(char *string_ptr, int 
     if (string_len == 17 && memcmp(string_ptr, "NOT_FOUND_ELEMENT", string_len) == 0)
       return MEMCACHED_NOTFOUND_ELEMENT;
     break;
-  case 'D':
-    if (string_len == 7 && memcmp(string_ptr, "DELETED", string_len) == 0)
-      return MEMCACHED_DELETED;
-    if (string_len == 15 && memcmp(string_ptr, "DELETED_DROPPED", string_len) == 0)
-      return MEMCACHED_DELETED_DROPPED;
-    break;
   case 'T':
     if (string_len == 7 && memcmp(string_ptr, "TRIMMED", string_len) == 0)
       return MEMCACHED_TRIMMED;
@@ -835,14 +829,6 @@ static memcached_return_t get_status_of_coll_get_response(char *string_ptr, int 
   case 'U':
     if (string_len == 10 && memcmp(string_ptr, "UNREADABLE", string_len) == 0)
       return MEMCACHED_UNREADABLE;
-    break;
-  case 'C':
-    if (string_len == 12 && memcmp(string_ptr, "CLIENT_ERROR", string_len) == 0)
-      return MEMCACHED_CLIENT_ERROR;
-    break;
-  case 'S':
-    if (string_len == 12 && memcmp(string_ptr, "SERVER_ERROR", string_len) == 0)
-      return MEMCACHED_SERVER_ERROR;
     break;
   default:
     break;
@@ -1135,7 +1121,7 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
       return MEMCACHED_PARTIAL_READ;
     }
     read_length+= (1+string_len);
-    status= get_status_of_coll_get_response(string_ptr, string_len);
+    status= get_status_of_bop_mget_response(string_ptr, string_len);
     if (status != MEMCACHED_SUCCESS && status != MEMCACHED_TRIMMED)
     {
       if (status != MEMCACHED_UNKNOWN_READ_FAILURE)
