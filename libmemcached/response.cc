@@ -837,11 +837,13 @@ static memcached_return_t get_status_of_coll_get_response(char *string_ptr, int 
       return MEMCACHED_UNREADABLE;
     break;
   case 'C':
-    if (string_len == 12 && memcmp(string_ptr, "CLIENT_ERROR", string_len) == 0)
+    /* error messages follow after CLIENT_ERROR. so don't compare string_len */
+    if (memcmp(string_ptr, "CLIENT_ERROR", 12) == 0)
       return MEMCACHED_CLIENT_ERROR;
     break;
   case 'S':
-    if (string_len == 12 && memcmp(string_ptr, "SERVER_ERROR", string_len) == 0)
+    /* error messages follow after SERVER_ERROR. so don't compare string_len */
+    if (memcmp(string_ptr, "SERVER_ERROR", 12) == 0)
       return MEMCACHED_SERVER_ERROR;
     break;
   default:
