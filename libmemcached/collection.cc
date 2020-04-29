@@ -2269,34 +2269,19 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
     }
     else
     {
-      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char response[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, response, MEMCACHED_DEFAULT_COMMAND_SIZE, &ptr->collection_result);
       memcached_set_last_response_code(ptr, rc);
 
-      if (rc == MEMCACHED_POSITION)
-      {
-        rc= MEMCACHED_SUCCESS;
-      }
-      else
+      if (rc != MEMCACHED_POSITION)
       {
         return rc;
       }
 
-      /* <position> */
-      char *string_ptr= result;
-      char *end_ptr= result + MEMCACHED_DEFAULT_COMMAND_SIZE;
-      char *next_ptr;
-
-      string_ptr+= 9;  // "POSITION="
-
-      if (end_ptr == string_ptr)
-        goto read_error;
-
-      for (next_ptr = string_ptr; isdigit(*string_ptr); string_ptr++) {};
-      *position = (size_t) strtoull(next_ptr, &string_ptr, 10);
-
-      if (*string_ptr != '\r')
-        goto read_error;
+      *position= ptr->collection_result.btree_position;
+      /* reset btree_position because it is intended for use in bop pwg */
+      ptr->collection_result.btree_position= 0;
+      rc= MEMCACHED_SUCCESS;
     }
   }
 
@@ -2306,10 +2291,6 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
   }
 
   return rc;
-
-read_error:
-  memcached_io_reset(instance);
-  return MEMCACHED_PARTIAL_READ;
 }
 
 static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
@@ -3693,34 +3674,19 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     }
     else
     {
-      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-      rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+      char response[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      rc= memcached_coll_response(instance, response, MEMCACHED_DEFAULT_COMMAND_SIZE, &ptr->collection_result);
       memcached_set_last_response_code(ptr, rc);
 
-      if (rc == MEMCACHED_COUNT)
-      {
-        rc= MEMCACHED_SUCCESS;
-      }
-      else
+      if (rc != MEMCACHED_COUNT)
       {
         return rc;
       }
 
-      /* <count> */
-      char *string_ptr= result;
-      char *end_ptr= result + MEMCACHED_DEFAULT_COMMAND_SIZE;
-      char *next_ptr;
-
-      string_ptr+= 6; // "COUNT="
-
-      if (end_ptr == string_ptr)
-        goto read_error;
-
-      for (next_ptr= string_ptr; isdigit(*string_ptr); string_ptr++) {};
-      *count = (size_t) strtoull(next_ptr, &string_ptr, 10);
-
-      if (*string_ptr != '\r')
-        goto read_error;
+      *count= ptr->collection_result.collection_count;
+      /* reset collection because it is used in memcached_coll_result_reset(collection_result.cc)*/
+      ptr->collection_result.collection_count= 0;
+      rc= MEMCACHED_SUCCESS;
     }
   }
 
@@ -3730,10 +3696,6 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   }
 
   return rc;
-
-read_error:
-  memcached_io_reset(instance);
-  return MEMCACHED_PARTIAL_READ;
 }
 
 /* APIs : insert, upsert, update */

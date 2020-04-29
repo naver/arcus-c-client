@@ -1334,8 +1334,18 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
     break;
 
   case 'P':
-    if (memcmp(buffer, "POSITION", 8) == 0)
+    if (memcmp(buffer, "POSITION=", 9) == 0)
+    {
+      uint32_t position= 0;
+      /* parse_response_uint32_value() assumes that the first character of the buffer is blank. */
+      buffer[8]= ' ';
+      if (! parse_response_uint32_value(&buffer[8], buffer_length-8, 1, &position))
+      {
+        return MEMCACHED_PARTIAL_READ;
+      }
+      result->btree_position= (size_t)position;
       return MEMCACHED_POSITION;
+    }
     else if (memcmp(buffer, "PIPE_ERROR", 10) == 0)
     {
       if (memcmp(buffer + 10, " command overflow", 17) == 0)
@@ -1494,8 +1504,18 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
       else if (memcmp(buffer + 7, "_STORED", 7) == 0)
         return MEMCACHED_CREATED_STORED;
     }
-    else if (memcmp(buffer, "COUNT", 5) == 0)
+    else if (memcmp(buffer, "COUNT=", 6) == 0)
+    {
+      uint32_t count= 0;
+      /* parse_response_uint32_value() assumes that the first character of the buffer is blank. */
+      buffer[5]= ' ';
+      if (! parse_response_uint32_value(&buffer[5], buffer_length-5, 1, &count))
+      {
+        return MEMCACHED_PARTIAL_READ;
+      }
+      result->collection_count= (size_t)count;
       return MEMCACHED_COUNT;
+    }
     else if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
       return MEMCACHED_CLIENT_ERROR;
     break;
