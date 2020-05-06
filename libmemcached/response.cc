@@ -836,6 +836,115 @@ static memcached_return_t get_status_of_bop_mget_response(char *string_ptr, int 
   return MEMCACHED_UNKNOWN_READ_FAILURE;
 }
 
+static memcached_return_t get_status_of_coll_pipe_response(char *string_ptr, int string_len)
+{
+  switch (string_ptr[0])
+  {
+    case 'P':
+      if (memcmp(string_ptr, "PIPE_ERROR", 10) == 0)
+      {
+        if (string_len == 27 && memcmp(string_ptr + 10, " command overflow", string_len - 10) == 0)
+          return MEMCACHED_PIPE_ERROR_COMMAND_OVERFLOW;
+        else if (string_len == 26 && memcmp(string_ptr + 10, " memory overflow", string_len - 10) == 0)
+          return MEMCACHED_PIPE_ERROR_MEMORY_OVERFLOW;
+        else if (string_len == 20 && memcmp(string_ptr + 10, " bad error", string_len - 10) == 0)
+          return MEMCACHED_PIPE_ERROR_BAD_ERROR;
+      }
+      break;
+
+    case 'O':
+      if (string_len == 12 && memcmp(string_ptr, "OUT_OF_RANGE", string_len) == 0)
+        return MEMCACHED_OUT_OF_RANGE;
+      else if (string_len == 10 && memcmp(string_ptr, "OVERFLOWED", string_len) == 0)
+        return MEMCACHED_OVERFLOWED;
+      break;
+
+    case 'S':
+      if (string_len == 6 && memcmp(string_ptr, "STORED", string_len) == 0)
+        return MEMCACHED_STORED;
+#ifdef ENABLE_REPLICATION
+      else if (string_len == 10 && memcmp(string_ptr, "SWITCHOVER", string_len) == 0)
+        return MEMCACHED_SWITCHOVER;
+#endif
+      /* error message will follow after SERVER_ERROR */
+      else if (string_len > 12 && memcmp(string_ptr, "SERVER_ERROR", 12) == 0)
+        return MEMCACHED_SERVER_ERROR;
+      break;
+
+    case 'D':
+      if (string_len == 7 && memcmp(string_ptr, "DELETED", string_len) == 0)
+        return MEMCACHED_DELETED;
+      else if (string_len == 15 && memcmp(string_ptr, "DELETED_DROPPED", string_len) == 0)
+        return MEMCACHED_DELETED_DROPPED;
+      break;
+
+    case 'N':
+      if (string_len == 17 && memcmp(string_ptr, "NOT_FOUND_ELEMENT", string_len) == 0)
+        return MEMCACHED_NOTFOUND_ELEMENT;
+      else if (string_len == 9 && memcmp(string_ptr, "NOT_FOUND", string_len) == 0)
+        return MEMCACHED_NOTFOUND;
+      else if (string_len == 13 && memcmp(string_ptr, "NOT_SUPPORTED", string_len) == 0)
+        return MEMCACHED_NOT_SUPPORTED;
+      else if (string_len == 9 && memcmp(string_ptr, "NOT_EXIST", string_len) == 0)
+        return MEMCACHED_NOT_EXIST;
+      break;
+
+    case 'R':
+      if (string_len == 8 && memcmp(string_ptr, "REPLACED", string_len) == 0)
+        /* REPLACED in response to bop upsert. */
+        return MEMCACHED_REPLACED;
+#ifdef ENABLE_REPLICATION
+      else if (string_len == 10 && memcmp(string_ptr, "REPL_SLAVE", string_len) == 0)
+        return MEMCACHED_REPL_SLAVE;
+#endif
+      break;
+
+    case 'U':
+      if (string_len == 7 && memcmp(string_ptr, "UPDATED", string_len) == 0)
+        return MEMCACHED_UPDATED;
+      else if (string_len == 10 && memcmp(string_ptr, "UNREADABLE", string_len) == 0)
+        return MEMCACHED_UNREADABLE;
+      break;
+
+    case 'E':
+      if (string_len == 3 && memcmp(string_ptr, "END", string_len) == 0)
+        return MEMCACHED_END;
+      else if (string_len == 14 && memcmp(string_ptr, "EFLAG_MISMATCH", string_len) == 0)
+        return MEMCACHED_EFLAG_MISMATCH;
+      else if (string_len == 5 && memcmp(string_ptr, "EXIST", string_len) == 0)
+        return MEMCACHED_EXIST; /* COLLECTION SET MEMBERSHIP CHECK */
+      else if (string_len == 14 && memcmp(string_ptr, "ELEMENT_EXISTS", string_len) == 0)
+        return MEMCACHED_ELEMENT_EXISTS;
+      /* error message will follow after ERROR */
+      else if (string_len > 5 && memcmp(string_ptr, "ERROR", 5) == 0)
+        return MEMCACHED_PROTOCOL_ERROR;
+      break;
+
+    case 'T':
+      if (string_len == 13 && memcmp(string_ptr, "TYPE_MISMATCH", string_len) == 0)
+        return MEMCACHED_TYPE_MISMATCH;
+      break;
+
+    case 'C':
+      /* error message will follow after CLIENT_ERROR */
+      if (string_len > 12 && memcmp(string_ptr, "CLIENT_ERROR", 12) == 0)
+        return MEMCACHED_CLIENT_ERROR;
+      else if (string_len == 14 && memcmp(string_ptr, "CREATED_STORED", string_len) == 0)
+        return MEMCACHED_CREATED_STORED;
+      break;
+
+    case 'B':
+      if (string_len == 13 && memcmp(string_ptr, "BKEY_MISMATCH", string_len) == 0)
+        return MEMCACHED_BKEY_MISMATCH;
+      break;
+
+    default:
+      break;
+  }
+
+  return MEMCACHED_UNKNOWN_READ_FAILURE;
+}
+
 static memcached_return_t fetch_value_header(memcached_server_write_instance_st ptr,
                                              char *string, ssize_t *string_length,
                                              size_t max_read_length)
@@ -1230,7 +1339,8 @@ static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t res
  * Fetching the piped responses : RESPONSE <count>\r\n
  * (works only for same kind of operations)
  */
-static memcached_return_t textual_coll_piped_response_fetch(memcached_server_write_instance_st ptr, char *buffer)
+static memcached_return_t textual_coll_piped_response_fetch(memcached_server_write_instance_st ptr, char *buffer,
+                                                            size_t buffer_length)
 {
 #ifdef ENABLE_REPLICATION
   memcached_return_t switchover_rc= MEMCACHED_SUCCESS;
@@ -1239,35 +1349,49 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   memcached_return_t *responses= ptr->root->pipe_responses;
   size_t i, offset= ptr->root->pipe_responses_length;
   uint32_t count[1];
+  size_t total_read= 0;
 
   if (not parse_response_header(buffer, "RESPONSE", 8, count, 1))
   {
     return MEMCACHED_PARTIAL_READ;
   }
 
-  ptr->root->flags.piped= true;
-
   for (i= 0; i< count[0]; i++)
   {
-    memcached_server_response_increment(ptr);
-    responses[offset+i]= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-#ifdef ENABLE_REPLICATION
-    if (responses[offset+i] == MEMCACHED_SWITCHOVER or responses[offset+i] == MEMCACHED_REPL_SLAVE)
+    rc= memcached_io_readline(ptr, buffer, buffer_length, total_read);
+    if (rc != MEMCACHED_SUCCESS)
     {
-      switchover_rc= responses[offset+i];
       break;
     }
+    rc= get_status_of_coll_pipe_response(buffer, total_read-2);
+    if (rc == MEMCACHED_UNKNOWN_READ_FAILURE)
+    {
+      break;
+    }
+#ifdef ENABLE_REPLICATION
+    if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+    {
+      switchover_rc= rc;
+      rc= MEMCACHED_SUCCESS;
+      break; /* Let's skip aggregate_pipe_return_code() */
+    }
 #endif
+    responses[offset+i]= rc;
     aggregate_pipe_return_code(ptr->root, responses[offset+i], &ptr->root->pipe_return_code);
   }
+
   ptr->root->pipe_responses_length+= i; /* i can be smaller than count[0] */
+  if (i < count[0] && rc != MEMCACHED_SUCCESS)
+  {
+    return rc;
+  }
 
-  ptr->root->flags.piped= false;
-
-  /* We add back in one because we will need to search for END */
-  memcached_server_response_increment(ptr);
-
-  rc= memcached_coll_response(ptr, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  rc= memcached_io_readline(ptr, buffer, buffer_length, total_read);
+  if (rc != MEMCACHED_SUCCESS)
+  {
+    return rc;
+  }
+  rc= get_status_of_coll_pipe_response(buffer, total_read-2);
 #ifdef ENABLE_REPLICATION
   /* Pipe operation is stopped if switchover is done. */
   if (switchover_rc != MEMCACHED_SUCCESS && rc == MEMCACHED_PIPE_ERROR_BAD_ERROR) {
@@ -1438,7 +1562,7 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
     else if(memcmp(buffer, "RESPONSE", 8) == 0)
     {
       /* Assume RESPONSE for piped operations */
-      return textual_coll_piped_response_fetch(ptr, buffer);
+      return textual_coll_piped_response_fetch(ptr, buffer, buffer_length);
     }
     break;
 
@@ -1576,14 +1700,6 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
   if (ptr->root->flags.binary_protocol == true) {
     fprintf(stderr, "Binary protocols for the collection are not supported.\n");
     return MEMCACHED_INVALID_ARGUMENTS;
-  }
-
-  /* If the requests were piped, just return one response.
-   * The API should control the remaining responses properly.
-   */
-  if (ptr->root->flags.piped)
-  {
-    return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
   }
 
   /*
