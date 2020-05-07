@@ -2381,7 +2381,6 @@ static memcached_return_t memcached_read_one_coll_smget_response(memcached_serve
            rc == MEMCACHED_PROTOCOL_ERROR or
            rc == MEMCACHED_CLIENT_ERROR or
            rc == MEMCACHED_PARTIAL_READ or
-           rc == MEMCACHED_KEY_TOO_BIG or
            rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE )
     memcached_io_reset(ptr);
 
