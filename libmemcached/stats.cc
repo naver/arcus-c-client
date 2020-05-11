@@ -378,7 +378,6 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
 
     unlikely (rc != MEMCACHED_SUCCESS)
     {
-      memcached_io_reset(instance);
       return rc;
     }
 
@@ -403,8 +402,8 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
   } while (1);
 
   /* shit... memcached_response will decrement the counter, so I need to
-   ** reset it.. todo: look at this and try to find a better solution.
- */
+   * reset it.. todo: look at this and try to find a better solution.
+   */
   instance->cursor_active= 0;
 
   return MEMCACHED_SUCCESS;
