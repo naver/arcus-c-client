@@ -57,12 +57,11 @@ memcached_return_t memcached_purge(memcached_server_write_instance_st ptr)
        * Purge doesn't care for what kind of command results that is received.
        * The only kind of errors I care about if is I'm out of sync with the
        * protocol or have problems reading data from the network..
-     */
-      if (rc== MEMCACHED_PROTOCOL_ERROR || rc == MEMCACHED_UNKNOWN_READ_FAILURE)
+       */
+      if (rc == MEMCACHED_PROTOCOL_ERROR || rc == MEMCACHED_UNKNOWN_READ_FAILURE)
       {
         WATCHPOINT_ERROR(rc);
         ret= rc;
-        memcached_io_reset(ptr);
         memcached_set_error(*ptr, rc, MEMCACHED_AT);
       }
 

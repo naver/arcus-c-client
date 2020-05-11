@@ -204,7 +204,6 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
       rrc= memcached_response(instance, buffer, sizeof(buffer), NULL);
       if (rrc != MEMCACHED_SUCCESS) 
       {
-        memcached_io_reset(instance);
         rc= MEMCACHED_SOME_ERRORS;
         continue;
       }
