@@ -24,7 +24,6 @@
 #include <zookeeper_log.h>
 
 #define ARCUS_MAX_PROXY_FILE_LENGTH 10240
-#define ARCUS_ZK_MANAGER 1
 
 struct arcus_proc_mutex
 {
@@ -44,9 +43,7 @@ struct arcus_zk_st
   uint32_t   session_timeout;
   size_t     maxbytes;
   int        last_rc;
-#ifdef ARCUS_ZK_MANAGER
   int        conn_result;
-#endif
   struct String_vector last_strings;
   bool       is_initializing;
 #ifdef ENABLE_REPLICATION
@@ -54,7 +51,6 @@ struct arcus_zk_st
 #endif
 };
 
-#ifdef ARCUS_ZK_MANAGER
 /* arcus zk request structure */
 struct arcus_zk_request_st {
   bool reconnect_process;
@@ -76,7 +72,6 @@ struct arcus_zk_manager_st {
 
   pthread_t tid;
 };
-#endif
 
 typedef struct arcus_proxy_data_st
 {
@@ -91,9 +86,7 @@ typedef struct arcus_st {
    * @note zookeeper configurations
    */
   struct arcus_zk_st zk;
-#ifdef ARCUS_ZK_MANAGER
   struct arcus_zk_manager_st zk_mgr;
-#endif
 
   struct arcus_proxy_st
   {

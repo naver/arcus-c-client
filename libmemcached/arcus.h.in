@@ -24,8 +24,6 @@
 #include <libmemcached/memcached.h>
 #include <libmemcached/memcached_util.h>
 
-#define ARCUS_ZK_MANAGER 1
-
 /**
  * Function return code.  The names are self descriptive.
  * In case of an error (non-success), most functions leave log messages.
@@ -35,9 +33,7 @@ typedef enum arcus_return_t
 {
   ARCUS_SUCCESS,
   ARCUS_ERROR,
-#ifdef ARCUS_ZK_MANAGER
   ARCUS_AUTH_FAILED,
-#endif
   ARCUS_ALREADY_INITIATED
 } arcus_return_t;
 

@@ -28,9 +28,7 @@
 
 #define ARCUS_ZK_SESSION_TIMEOUT_IN_MS        15000
 #define ARCUS_ZK_HEARTBEAT_INTERVAL_IN_SEC    1
-#ifdef ARCUS_ZK_MANAGER
 #define ARCUS_ZK_RETRY_RECONNECT_DELAY_IN_MS  1000 /* 1 sec */
-#endif
 #define ZOO_NO_FLAGS 0
 
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
@@ -50,10 +48,6 @@ static inline arcus_return_t do_arcus_connect(memcached_st *mc, memcached_pool_s
                                               const char *ensemble_list, const char *svc_code);
 static inline arcus_return_t do_arcus_init(memcached_st *mc, memcached_pool_st *pool,
                                            const char *ensemble_list, const char *svc_code);
-#ifdef ARCUS_ZK_MANAGER
-#else
-static inline void           do_arcus_exit(memcached_st *mc);
-#endif
 
 /**
  * ARCUS_PROXY
@@ -80,14 +74,9 @@ static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh, int type, int st
  */
 static inline void do_arcus_zk_update_cachelist(memcached_st *mc, const struct String_vector *strings);
 static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc, char *serverlist, const size_t size);
-#ifdef ARCUS_ZK_MANAGER
 static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, bool *retry);
 static inline int  do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *arcus);
-#else
-static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, watcher_fn watcher);
-#endif
 
-#ifdef ARCUS_ZK_MANAGER
 /**
  * ARCUS_ZK_MANAGER
  */
@@ -96,7 +85,6 @@ static inline arcus_return_t  do_arcus_zk_manager_start(memcached_st *mc);
 static inline void            do_arcus_zk_manager_stop(memcached_st *mc);
 static void                   do_arcus_zk_manager_wakeup(memcached_st *mc, bool locked);
 static void                  *arcus_zk_manager_thread_main(void *arg);
-#endif
 
 /**
  * UTILITIES
@@ -110,12 +98,10 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
 static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached_st *master);
 #endif
 
-#ifdef ARCUS_ZK_MANAGER
 /* async routine synchronization */
 static pthread_mutex_t azk_mtx  = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  azk_cond = PTHREAD_COND_INITIALIZER;
 static int             azk_count;
-#endif
 
 pthread_mutex_t lock_arcus = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  cond_arcus = PTHREAD_COND_INITIALIZER;
@@ -146,10 +132,10 @@ arcus_return_t arcus_close(memcached_st *mc)
   arcus_st *arcus;
   arcus_return_t rc;
 
-  /* Close the ZooKeeper client. */
-#ifdef ARCUS_ZK_MANAGER
+  /* Stop the ZooKeeper manager */
   do_arcus_zk_manager_stop(mc);
-#endif
+
+  /* Close the ZooKeeper client. */
   rc= do_arcus_zk_close(mc);
   if (rc != ARCUS_SUCCESS) {
     ZOO_LOG_ERROR(("Failed to close zookeeper client"));
@@ -229,13 +215,11 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
     return ARCUS_ERROR;
   }
 
-#ifdef ARCUS_ZK_MANAGER
   /* Creates a new ZooKeeper Manager thread. */
   rc= do_arcus_zk_manager_start(mc);
   if (rc != ARCUS_SUCCESS) {
     return ARCUS_ERROR;
   }
-#endif
   return rc;
 }
 
@@ -293,13 +277,11 @@ static inline arcus_return_t do_arcus_connect(memcached_st *mc,
     return ARCUS_ERROR;
   }
 
-#ifdef ARCUS_ZK_MANAGER
   /* Creates a new ZooKeeper Manager thread. */
   rc= do_arcus_zk_manager_start(mc);
   if (rc != ARCUS_SUCCESS) {
     return ARCUS_ERROR;
   }
-#endif
   return rc;
 }
 
@@ -403,10 +385,8 @@ const char *arcus_strerror(arcus_return_t rc)
     return "ARCUS_SUCCESS";
   case ARCUS_ERROR:
     return "ARCUS_ERROR";
-#ifdef ARCUS_ZK_MANAGER
   case ARCUS_AUTH_FAILED:
     return "ARCUS_AUTH_FAILED";
-#endif
   case ARCUS_ALREADY_INITIATED:
     return "arcus is already initiated";
   default:
@@ -468,9 +448,7 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
     arcus->zk.session_timeout= ARCUS_ZK_SESSION_TIMEOUT_IN_MS;
     arcus->zk.maxbytes= 0;
     arcus->zk.last_rc= !ZOK;
-#ifdef ARCUS_ZK_MANAGER
     arcus->zk.conn_result= ARCUS_SUCCESS;
-#endif
     arcus->zk.is_initializing= true;
 
     arcus->pool = pool;
@@ -487,7 +465,6 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
     /* Set the Arcus to memcached as a server manager.  */
     memcached_set_server_manager(mc, (void *)arcus);
 
-#ifdef ARCUS_ZK_MANAGER
     /* clear zk_manager structure */
     memset(&arcus->zk_mgr.request, 0, sizeof(struct arcus_zk_request_st));
     pthread_mutex_init(&arcus->zk_mgr.lock, NULL);
@@ -495,35 +472,13 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
     arcus->zk_mgr.notification= false;
     arcus->zk_mgr.reqstop= false;
     arcus->zk_mgr.running= false;
-#endif
   } while(0);
   pthread_mutex_unlock(&lock_arcus);
 
   return rc;
 }
 
-#ifdef ARCUS_ZK_MANAGER
-#else
-/**
- * Clean up the Arcus and exit the program.
- */
-static inline void do_arcus_exit(memcached_st *mc)
-{
-  ZOO_LOG_ERROR(("Shutting down the application"));
-
-  arcus_close(mc);
-  memcached_free(mc);
-  mc= NULL;
-
-  exit(1);
-}
-#endif
-
-#ifdef ARCUS_ZK_MANAGER
 static inline int do_add_client_info(arcus_st *arcus)
-#else
-static inline void do_add_client_info(arcus_st *arcus)
-#endif
 {
   int result;
   char path[250];
@@ -537,16 +492,11 @@ static inline void do_add_client_info(arcus_st *arcus)
   gethostname(hostname, 50);
   host = (struct hostent *) gethostbyname(hostname);
 
-#ifdef ARCUS_ZK_MANAGER
   /* create the ephemeral znode
    * "/arcus or arcus_repl/client_list/{service_code}/
    *  {client hostname}_{ip address}_{pool count}_c_{client version}_{YYYYMMDDHHIISS}_{zk session id}"
    * it means administrator has to create the {service_code} node before using.
    */
-#else
-  // create the ephemeral znode "/arcus or arcus_repl/client_list/{service_code}/{client hostname}_{ip address}_{pool count}_{client language}_{client version}_{YYYYMMDDHHIISS}_{zk session id}"
-  // it means administrator has to create the {service_code} node before using.
-#endif
   char* client_info_znode = (char*)ARCUS_ZK_CLIENT_INFO_NODE;
 #ifdef ENABLE_REPLICATION
   if (arcus->zk.is_repl_enabled) {
@@ -580,16 +530,11 @@ static inline void do_add_client_info(arcus_st *arcus)
   }
   if (result != ZOK) {
     ZOO_LOG_ERROR(("the znode of client info can not create"));
-#ifdef ARCUS_ZK_MANAGER
     return -1;
-#endif
   }
-#ifdef ARCUS_ZK_MANAGER
   return 0;
-#endif
 }
 
-#ifdef ARCUS_ZK_MANAGER
 /* mutex for async operations */
 static void inc_count(int delta)
 {
@@ -626,7 +571,6 @@ static int wait_count(int timeout)
     pthread_mutex_unlock(&azk_mtx);
     return rc;
 }
-#endif
 
 /**
  * Creates a new ZooKeeper client thread.
@@ -636,9 +580,8 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
   arcus_st *arcus;
   arcus_return_t rc= ARCUS_SUCCESS;
 
-#ifdef ARCUS_ZK_MANAGER
   inc_count(1);
-#endif
+
   pthread_mutex_lock(&lock_arcus);
   do {
     arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
@@ -675,7 +618,6 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
     return ARCUS_ERROR;
   }
 
-#ifdef ARCUS_ZK_MANAGER
   /* Wait for zk connected
    * We need to wait until ZOO_CONNECTED_STATE
    */
@@ -710,34 +652,6 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
       arcus->zk.handle= NULL;
       pthread_mutex_unlock(&lock_arcus);
   }
-#endif
-
-#ifdef ARCUS_ZK_MANAGER
-#else
-  ZOO_LOG_WARN(("Waiting for the cache server list..."));
-
-  pthread_mutex_lock(&lock_arcus);
-  arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-  if (arcus && arcus->zk.is_initializing) {
-    struct timeval now;
-    struct timespec ts;
-
-    /* Wait for the cache list (timed out after 5 sec.) */
-    gettimeofday(&now, NULL);
-    ts.tv_sec= now.tv_sec + (ARCUS_ZK_SESSION_TIMEOUT_IN_MS / 1000 / 3);
-    ts.tv_nsec= now.tv_usec * 1000;
-
-    if (pthread_cond_timedwait(&cond_arcus, &lock_arcus, &ts)) {
-      ZOO_LOG_ERROR(("pthread_cond_timedwait failed. %s(%d)", strerror(errno), errno));
-      rc= ARCUS_ERROR;
-    }
-  }
-  pthread_mutex_unlock(&lock_arcus);
-
-  if (rc == ARCUS_SUCCESS) {
-    ZOO_LOG_WARN(("Done"));
-  }
-#endif
   return rc;
 }
 
@@ -749,9 +663,7 @@ static inline arcus_return_t do_arcus_zk_close(memcached_st *mc)
   arcus_st *arcus;
   arcus_return_t rc= ARCUS_SUCCESS;
 
-#ifdef ARCUS_ZK_MANAGER
   clear_count();
-#endif
 
   pthread_mutex_lock(&lock_arcus);
   do {
@@ -763,13 +675,8 @@ static inline arcus_return_t do_arcus_zk_close(memcached_st *mc)
     /* Delete the (expired) session. */
     arcus->zk.myid.client_id= 0;
 
-#ifdef ARCUS_ZK_MANAGER
     /* Clear connect result */
     arcus->zk.conn_result= ARCUS_SUCCESS;
-#else
-    /* Clear initializing flag */
-    arcus->zk.is_initializing= true;
-#endif
 
     /* Close the ZooKeeper handle. */
     if (arcus->zk.handle) {
@@ -1345,7 +1252,6 @@ static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached
 }
 #endif
 
-#ifdef ARCUS_ZK_MANAGER
 static inline int do_arcus_zk_process_reconnect(memcached_st *mc, bool *retry)
 {
   int ret= 0;
@@ -1377,7 +1283,6 @@ static inline int do_arcus_zk_process_reconnect(memcached_st *mc, bool *retry)
   }
   return ret;
 }
-#endif
 
 /**
  * Rebuild the memcached server list.
@@ -1419,13 +1324,8 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc,
   pthread_mutex_unlock(&lock_arcus);
 }
 
-#ifdef ARCUS_ZK_MANAGER
 static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
                                                           bool *retry)
-#else
-static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
-                                                          watcher_fn watcher)
-#endif
 {
   arcus_st *arcus;
   struct String_vector strings = { 0, NULL };
@@ -1438,33 +1338,25 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
   }
 
   /* Make a new watch on Arcus cache list. */
-#ifdef ARCUS_ZK_MANAGER
   zkrc= zoo_wget_children(arcus->zk.handle, arcus->zk.path,
                           do_arcus_zk_watcher_cachelist,
                           (void *)mc, &strings);
-#else
-  zkrc= zoo_wget_children(arcus->zk.handle, arcus->zk.path, watcher, (void *)mc, &strings);
-#endif
   if (zkrc == ZOK) {
-#ifdef ARCUS_ZK_MANAGER
     /* TODO (next commit)
      * Error handling of update_chacelist process,
      * must distinguish retrys by failure and by event.
      * If it is retrys by failure, watcher should not register.
      */
-#endif
     /* Update the cache server list. */
     do_arcus_zk_update_cachelist(mc, &strings);
     deallocate_String_vector(&strings);
   } else {
     ZOO_LOG_ERROR(("zoo_wget_children() failed, reason=%s, zookeeper=%s",
                   zerror(zkrc), arcus->zk.ensemble_list));
-#ifdef ARCUS_ZK_MANAGER
     pthread_mutex_lock(&arcus->zk_mgr.lock);
     arcus->zk_mgr.request.update_cache_list= true;
     pthread_mutex_unlock(&arcus->zk_mgr.lock);
     *retry= true;
-#endif
   }
 }
 
@@ -1477,7 +1369,6 @@ static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh __attribute__((un
                                                  const char *path __attribute__((unused)),
                                                  void *ctx_mc)
 {
-#ifdef ARCUS_ZK_MANAGER
   if (type == ZOO_CHILD_EVENT) {
     ZOO_LOG_INFO(("ZOO_CHILD_EVENT from ZK cache list"));
 
@@ -1497,12 +1388,6 @@ static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh __attribute__((un
   } else {
     ZOO_LOG_WARN(("Unexpected event gotten by watcher_cachelist"));
   }
-#else
-  if (type == ZOO_CHILD_EVENT) {
-    memcached_st *mc= static_cast<memcached_st *>(ctx_mc);
-    do_arcus_zk_watch_and_update_cachelist(mc, do_arcus_zk_watcher_cachelist);
-  }
-#endif
 }
 
 /**
@@ -1516,10 +1401,6 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
 {
   memcached_st *mc= static_cast<memcached_st *>(ctx_mc);
   arcus_st *arcus;
-#ifdef ARCUS_ZK_MANAGER
-#else
-  arcus_return_t rc;
-#endif
 
   if (type != ZOO_SESSION_EVENT) {
     return;
@@ -1527,11 +1408,7 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
 
   pthread_mutex_lock(&lock_arcus);
   arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-#ifdef ARCUS_ZK_MANAGER
   if (not arcus || not arcus->zk.handle) {
-#else
-  if (not arcus) {
-#endif
     ZOO_LOG_ERROR(("arcus is null"));
     pthread_mutex_unlock(&lock_arcus);
     return;
@@ -1541,36 +1418,15 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
   {
     ZOO_LOG_WARN(("SESSION_STATE=CONNECTED, to %s", arcus->zk.ensemble_list));
 
-#ifdef ARCUS_ZK_MANAGER
-#else
-    bool process_initializing= false;
-#endif
     const clientid_t *id= zoo_client_id(zh);
     if (arcus->zk.myid.client_id == 0 or arcus->zk.myid.client_id != id->client_id) {
       ZOO_LOG_DEBUG(("Previous sessionid : 0x%llx", (long long) arcus->zk.myid.client_id));
       arcus->zk.myid= *id;
       ZOO_LOG_DEBUG(("Current sessionid  : 0x%llx", (long long) arcus->zk.myid.client_id));
     }
-#ifdef ARCUS_ZK_MANAGER
-#else
-    if (arcus->zk.is_initializing) {
-      if (do_arcus_cluster_validation_check(mc, arcus) < 0) {
-        pthread_mutex_unlock(&lock_arcus);
-        return;
-      }
-      process_initializing= true;
-    }
-#endif
     pthread_mutex_unlock(&lock_arcus);
-#ifdef ARCUS_ZK_MANAGER
-    inc_count(-1);
-#else
 
-    if (process_initializing) {
-      do_add_client_info(arcus);
-      do_arcus_zk_watch_and_update_cachelist(mc, do_arcus_zk_watcher_cachelist);
-    }
-#endif
+    inc_count(-1);
   }
   else if (state == ZOO_CONNECTING_STATE or state == ZOO_ASSOCIATING_STATE)
   {
@@ -1579,13 +1435,8 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
   }
   else if (state == ZOO_AUTH_FAILED_STATE)
   {
-#ifdef ARCUS_ZK_MANAGER
     arcus->zk.conn_result= ARCUS_AUTH_FAILED;
-#else
-    ZOO_LOG_WARN(("SESSION_STATE=AUTH_FAILED, shutting down the application"));
-#endif
     pthread_mutex_unlock(&lock_arcus);
-#ifdef ARCUS_ZK_MANAGER
     if (arcus->zk_mgr.running) {
       ZOO_LOG_WARN(("SESSION_STATE=AUTH_FAILED, create a new client after closing failed one"));
       pthread_mutex_lock(&arcus->zk_mgr.lock);
@@ -1596,34 +1447,20 @@ static inline void do_arcus_zk_watcher_global(zhandle_t *zh,
       ZOO_LOG_WARN(("SESSION_STATE=AUTH_FAILED, close the failed client on the first connection"));
     }
     inc_count(-1);
-#else
-    do_arcus_exit(mc);
-#endif
   }
   else if (state == ZOO_EXPIRED_SESSION_STATE)
   {
     ZOO_LOG_WARN(("SESSION_STATE=EXPIRED_SESSION, create a new client after closing expired one"));
     pthread_mutex_unlock(&lock_arcus);
-#ifdef ARCUS_ZK_MANAGER
     if (arcus->zk_mgr.running) {
       pthread_mutex_lock(&arcus->zk_mgr.lock);
       arcus->zk_mgr.request.reconnect_process= true;
       do_arcus_zk_manager_wakeup(mc, true);
       pthread_mutex_unlock(&arcus->zk_mgr.lock);
     }
-#else
-
-    /* Respawn the expired zookeeper client. */
-    rc= do_arcus_zk_close(mc);
-    rc= do_arcus_zk_connect(mc);
-    if (rc != ARCUS_SUCCESS) {
-      ZOO_LOG_ERROR((arcus_strerror(rc)));
-    }
-#endif
   }
 }
 
-#ifdef ARCUS_ZK_MANAGER
 /**
  * ZooKeeper manager
  */
@@ -1801,7 +1638,6 @@ static void *arcus_zk_manager_thread_main(void *arg)
 
   return NULL;
 }
-#endif
 
 /* flock is modified from Apache Portable Runtime */
 /* Licensed to the Apache Software Foundation (ASF) under one or more
