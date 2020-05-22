@@ -32,12 +32,9 @@
 #define ZOO_NO_FLAGS 0
 
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
-#ifdef ENABLE_REPLICATION
-#define ARCUS_REPL_ZK_CACHE_LIST              "/arcus_repl/cache_list"
-#endif
-
 #define ARCUS_ZK_CLIENT_INFO_NODE             "/arcus/client_list"
 #ifdef ENABLE_REPLICATION
+#define ARCUS_REPL_ZK_CACHE_LIST              "/arcus_repl/cache_list"
 #define ARCUS_REPL_ZK_CLIENT_INFO_NODE        "/arcus_repl/client_list"
 #endif
 
