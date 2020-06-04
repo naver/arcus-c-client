@@ -297,7 +297,7 @@ RETRY_TIMEOUT이 0이면, connection timeout이 발생할 때마다 즉시 재�
 mc = memcached_create(NULL);
 memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_RETRY_TIMEOUT, (uint64_t)timeout);
 ```
-timeout 시간은 초(s) 단위이며, 기본 값은 MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT (2초) 이다.
+timeout 시간은 초(s) 단위이며, 기본 값은 MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT (1초) 이다.
 
 참고 사항으로, 재연결 시도는 무한히 반복한다. 만약 해당 캐시 노드가 failure 상태라면,
 ARCUS의 admin인 ZooKeeper에 의해 failed 캐시 노드로 감지되어 cache node list에서 제거되어,
