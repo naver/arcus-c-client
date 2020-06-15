@@ -186,21 +186,11 @@ struct memcached_st {
   size_t pipe_responses_length;
   memcached_return_t pipe_return_code;
 
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
   struct {
     bool weighted;
     time_t next_distribution_rebuild;
     memcached_ketama_info_st *info;
   } ketama;
-#else
-  struct {
-    bool weighted;
-    uint32_t continuum_count; // Ketama
-    uint32_t continuum_points_counter; // Ketama
-    time_t next_distribution_rebuild; // Ketama
-    memcached_continuum_item_st *continuum; // Ketama
-  } ketama;
-#endif
 
   struct memcached_virtual_bucket_t *virtual_bucket;
 
@@ -291,13 +281,11 @@ memcached_return_t memcached_get_last_response_code(memcached_st *ptr);
 LIBMEMCACHED_API
 void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc);
 
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
 LIBMEMCACHED_API
 void memcached_ketama_reference(memcached_st *dest, memcached_st *src);
 
 LIBMEMCACHED_API
 void memcached_ketama_release(memcached_st *ptr);
-#endif
 
 #ifdef __cplusplus
 } // extern "C"

@@ -61,7 +61,6 @@ static uint32_t dispatch_host(const memcached_st *ptr, uint32_t hash)
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY:
     {
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
       WATCHPOINT_ASSERT(ptr->ketama.info);
 
       uint32_t num= ptr->ketama.info->continuum_points_counter;
@@ -70,14 +69,6 @@ static uint32_t dispatch_host(const memcached_st *ptr, uint32_t hash)
       memcached_continuum_item_st *begin, *end, *left, *right, *middle;
       begin= left= ptr->ketama.info->continuum;
       end= right= ptr->ketama.info->continuum + num;
-#else
-      uint32_t num= ptr->ketama.continuum_points_counter;
-      WATCHPOINT_ASSERT(ptr->ketama.continuum);
-
-      memcached_continuum_item_st *begin, *end, *left, *right, *middle;
-      begin= left= ptr->ketama.continuum;
-      end= right= ptr->ketama.continuum + num;
-#endif
 
       while (left < right)
       {

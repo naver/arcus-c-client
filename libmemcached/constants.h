@@ -58,7 +58,6 @@
 #define ENABLE_REPLICATION 1
 #endif
 
-#define USE_SHARED_HASHRING_IN_ARCUS_MC_POOL 1
 #define UPDATE_HASH_RING_OF_FETCHED_MC 1
 
 /* Public defines */

@@ -52,15 +52,12 @@
  */
 
 #include <libmemcached/common.h>
-
-#include <cmath>
-#include <sys/time.h>
-
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 #include <libmemcached/arcus_priv.h>
 #endif
-#endif
+
+#include <cmath>
+#include <sys/time.h>
 
 /* Protoypes (static) */
 static memcached_return_t update_continuum(memcached_st *ptr);
@@ -217,7 +214,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   uint32_t pointer_per_hash= 1;
   uint32_t live_servers= 0;
   struct timeval now;
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
   memcached_pool_st *pool = NULL;
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
@@ -229,7 +225,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     }
     pool = arcus->pool;
   }
-#endif
 #endif
 
   if (gettimeofday(&now, NULL))
@@ -275,7 +270,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     return MEMCACHED_SUCCESS;
   }
 
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
   memcached_ketama_info_st *new_info= static_cast<memcached_ketama_info_st*>(libmemcached_malloc(ptr, sizeof(memcached_ketama_info_st)));
   if (new_info == 0)
   {
@@ -290,23 +284,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     libmemcached_free(ptr, new_info);
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
-#else
-  if (live_servers > ptr->ketama.continuum_count)
-  {
-    memcached_continuum_item_st *new_ptr;
-
-    new_ptr= static_cast<memcached_continuum_item_st*>(libmemcached_realloc(ptr, ptr->ketama.continuum,
-                                                                            sizeof(memcached_continuum_item_st) * (live_servers + MEMCACHED_CONTINUUM_ADDITION) * points_per_server));
-
-    if (new_ptr == 0)
-    {
-      return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
-    }
-
-    ptr->ketama.continuum= new_ptr;
-    ptr->ketama.continuum_count= live_servers + MEMCACHED_CONTINUUM_ADDITION;
-  }
-#endif
 
   uint64_t total_weight= 0;
   uint32_t total_server= 0;
@@ -400,25 +377,15 @@ static memcached_return_t update_continuum(memcached_st *ptr)
           for (uint32_t x= 0; x < pointer_per_hash; x++)
           {
             uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
             new_continuum[continuum_index].index= host_index;
             new_continuum[continuum_index++].value= value;
-#else
-            ptr->ketama.continuum[continuum_index].index= host_index;
-            ptr->ketama.continuum[continuum_index++].value= value;
-#endif
           }
         }
         else
         {
           uint32_t value= hashkit_digest(&ptr->hashkit, sort_host, (size_t)sort_host_length);
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
           new_continuum[continuum_index].index= host_index;
           new_continuum[continuum_index++].value= value;
-#else
-          ptr->ketama.continuum[continuum_index].index= host_index;
-          ptr->ketama.continuum[continuum_index++].value= value;
-#endif
         }
       }
     }
@@ -457,25 +424,15 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         {
           for (uint32_t x = 0; x < pointer_per_hash; x++) {
             uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
             new_continuum[continuum_index].index= host_index;
             new_continuum[continuum_index++].value= value;
-#else
-            ptr->ketama.continuum[continuum_index].index= host_index;
-            ptr->ketama.continuum[continuum_index++].value= value;
-#endif
           }
         }
         else
         {
           uint32_t value= hashkit_digest(&ptr->hashkit, sort_host, (size_t)sort_host_length);
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
           new_continuum[continuum_index].index= host_index;
           new_continuum[continuum_index++].value= value;
-#else
-          ptr->ketama.continuum[continuum_index].index= host_index;
-          ptr->ketama.continuum[continuum_index++].value= value;
-#endif
         }
       }
     }
@@ -483,7 +440,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     pointer_counter+= pointer_per_server;
   }
 
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
   WATCHPOINT_ASSERT(ptr);
   WATCHPOINT_ASSERT(new_info);
   WATCHPOINT_ASSERT(new_continuum);
@@ -499,14 +455,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   memcached_ketama_release(ptr);
   ptr->ketama.info= new_info;
   if (pool != NULL) memcached_pool_unlock(pool);
-#else
-  WATCHPOINT_ASSERT(ptr);
-  WATCHPOINT_ASSERT(ptr->ketama.continuum);
-  WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
-  ptr->ketama.continuum_points_counter= pointer_counter;
-  qsort(ptr->ketama.continuum, ptr->ketama.continuum_points_counter,
-        sizeof(memcached_continuum_item_st), continuum_item_cmp);
-#endif
 
   if (DEBUG)
   {
@@ -514,14 +462,9 @@ static memcached_return_t update_continuum(memcached_st *ptr)
          pointer_index < ((live_servers * MEMCACHED_POINTS_PER_SERVER) - 1) && memcached_server_count(ptr);
          pointer_index++)
     {
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
       WATCHPOINT_ASSERT(ptr->ketama.info->continuum[pointer_index].value <= ptr->ketama.info->continuum[pointer_index+1].value);
-#else
-      WATCHPOINT_ASSERT(ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index+1].value);
-#endif
     }
   }
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
 #if 0 /* Print hash continuum */
   if (1) {
     uint32_t pointer_index;
@@ -543,29 +486,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         fprintf(stderr, "update_continuum success.\n");
   }
 #endif
-#else
-#if 0 /* Print hash continuum */
-  if (1) {
-    uint32_t pointer_index;
-    fprintf(stderr, "update_continuum: node_count=%d hash_count=%d\n",
-            live_servers, ptr->ketama.continuum_points_counter);
-    for (pointer_index= 0; pointer_index < ptr->ketama.continuum_points_counter; pointer_index++) {
-      if (pointer_index > 0 &&
-          ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index - 1].value) {
-          break;
-      }
-      fprintf(stderr, "continuum[%d]: hash=%08x, server=%s:%d\n",
-              pointer_index, ptr->ketama.continuum[pointer_index].value,
-              list[ptr->ketama.continuum[pointer_index].index].hostname,
-              list[ptr->ketama.continuum[pointer_index].index].port);
-    }
-    if (pointer_index < ptr->ketama.continuum_points_counter)
-        fprintf(stderr, "update_continuum fails.\n");
-    else
-        fprintf(stderr, "update_continuum success.\n");
-  }
-#endif
-#endif
 
   return MEMCACHED_SUCCESS;
 }
@@ -580,7 +500,6 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   uint32_t pointer_per_hash= 1;
   uint32_t live_servers= 0;
   struct timeval now;
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
   memcached_pool_st *pool = NULL;
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
@@ -592,7 +511,6 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
     }
     pool = arcus->pool;
   }
-#endif
 #endif
 
   if (gettimeofday(&now, NULL))
@@ -612,7 +530,6 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
                                                              : MEMCACHED_POINTS_PER_SERVER);
 
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
   memcached_ketama_info_st *new_info= static_cast<memcached_ketama_info_st*>(libmemcached_malloc(ptr, sizeof(memcached_ketama_info_st)));
   if (new_info == 0)
   {
@@ -627,23 +544,6 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
     libmemcached_free(ptr, new_info);
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
-#else
-  if (live_servers > ptr->ketama.continuum_count)
-  {
-    memcached_continuum_item_st *new_ptr;
-
-    new_ptr= static_cast<memcached_continuum_item_st*>(libmemcached_realloc(ptr, ptr->ketama.continuum,
-                         sizeof(memcached_continuum_item_st) * (live_servers + MEMCACHED_CONTINUUM_ADDITION) * points_per_server));
-
-    if (new_ptr == 0)
-    {
-      return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
-    }
-
-    ptr->ketama.continuum= new_ptr;
-    ptr->ketama.continuum_count= live_servers + MEMCACHED_CONTINUUM_ADDITION;
-  }
-#endif
 
   uint64_t total_weight= 0;
   bool all_weights_same= true;
@@ -714,31 +614,20 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
         for (uint32_t x= 0; x < pointer_per_hash; x++)
         {
           uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
           new_continuum[continuum_index].index= host_index;
           new_continuum[continuum_index++].value= value;
-#else
-          ptr->ketama.continuum[continuum_index].index= host_index;
-          ptr->ketama.continuum[continuum_index++].value= value;
-#endif
         }
       }
       else
       {
         uint32_t value= hashkit_digest(&ptr->hashkit, sort_host, (size_t)sort_host_length);
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
         new_continuum[continuum_index].index= host_index;
         new_continuum[continuum_index++].value= value;
-#else
-        ptr->ketama.continuum[continuum_index].index= host_index;
-        ptr->ketama.continuum[continuum_index++].value= value;
-#endif
       }
     }
     pointer_counter+= pointer_per_server;
   }
 
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
   WATCHPOINT_ASSERT(ptr);
   WATCHPOINT_ASSERT(new_info);
   WATCHPOINT_ASSERT(new_continuum);
@@ -754,14 +643,6 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   memcached_ketama_release(ptr);
   ptr->ketama.info= new_info;
   if (pool != NULL) memcached_pool_unlock(pool);
-#else
-  WATCHPOINT_ASSERT(ptr);
-  WATCHPOINT_ASSERT(ptr->ketama.continuum);
-  WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
-  ptr->ketama.continuum_points_counter= pointer_counter;
-  qsort(ptr->ketama.continuum, ptr->ketama.continuum_points_counter,
-        sizeof(memcached_continuum_item_st), continuum_item_cmp);
-#endif
 
   if (DEBUG)
   {
@@ -769,14 +650,9 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
          pointer_index < ((live_servers * MEMCACHED_POINTS_PER_SERVER) - 1) && memcached_server_count(ptr);
          pointer_index++)
     {
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
       WATCHPOINT_ASSERT(ptr->ketama.info->continuum[pointer_index].value <= ptr->ketama.info->continuum[pointer_index+1].value);
-#else
-      WATCHPOINT_ASSERT(ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index+1].value);
-#endif
     }
   }
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
 #if 0 /* Print hash continuum */
   if (1) {
     uint32_t pointer_index;
@@ -796,28 +672,6 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
     else
         fprintf(stderr, "update_continuum success.\n");
   }
-#endif
-#else
-#if 0 /* Print hash continuum */
-  if (1) {
-    uint32_t pointer_index;
-    fprintf(stderr, "update_continuum: node_count=%d hash_count=%d\n",
-            live_servers, ptr->ketama.continuum_points_counter);
-    for (pointer_index= 0; pointer_index < ptr->ketama.continuum_points_counter; pointer_index++) {
-      if (pointer_index > 0 &&
-          ptr->ketama.continuum[pointer_index].value <= ptr->ketama.continuum[pointer_index - 1].value) {
-          break;
-      }
-      fprintf(stderr, "continuum[%d]: hash=%08x, rgroup=%s\n",
-              pointer_index, ptr->ketama.continuum[pointer_index].value,
-              list[ptr->ketama.continuum[pointer_index].index].groupname);
-    }
-    if (pointer_index < ptr->ketama.continuum_points_counter)
-        fprintf(stderr, "update_continuum fails.\n");
-    else
-        fprintf(stderr, "update_continuum success.\n");
-  }
-#endif
 #endif
 
   return MEMCACHED_SUCCESS;

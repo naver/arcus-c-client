@@ -75,9 +75,7 @@ typedef struct memcached_callback_st memcached_callback_st;
 typedef struct memcached_string_st memcached_string_st;
 typedef struct memcached_string_t memcached_string_t;
 typedef struct memcached_continuum_item_st memcached_continuum_item_st;
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
 typedef struct memcached_ketama_info_st memcached_ketama_info_st;
-#endif
 
 typedef struct memcached_coll_create_attrs_st memcached_coll_create_attrs_st;
 typedef struct memcached_coll_result_st memcached_coll_result_st;

@@ -95,13 +95,11 @@ memcached_return_t memcached_pool_behavior_get(memcached_pool_st *ptr,
                                                memcached_behavior_t flag,
                                                uint64_t *value);
 
-#ifdef USE_SHARED_HASHRING_IN_ARCUS_MC_POOL
 LIBMEMCACHED_API
 void memcached_pool_lock(memcached_pool_st *ptr);
 
 LIBMEMCACHED_API
 void memcached_pool_unlock(memcached_pool_st *ptr);
-#endif
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 /**
