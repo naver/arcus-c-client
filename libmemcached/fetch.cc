@@ -53,8 +53,6 @@
 
 #include <libmemcached/common.h>
 
-#define FIX_SMGET_BUG 1
-
 char *memcached_fetch(memcached_st *ptr, char *key, size_t *key_length,
                       size_t *value_length,
                       uint32_t *flags,
@@ -419,7 +417,6 @@ merge_smget_results(memcached_coll_smget_result_st **results,
   memcached_coll_sub_key_st *curr_sub_key;
 #endif
 
-#ifdef FIX_SMGET_BUG
   size_t merged_count= 0;
 #ifdef SUPPORT_NEW_SMGET_INTERFACE
   size_t found_count= 0;
@@ -428,10 +425,6 @@ merge_smget_results(memcached_coll_smget_result_st **results,
   bool byte_array_bkey= (merged->sub_key_type == MEMCACHED_COLL_QUERY_BOP_EXT or
                          merged->sub_key_type == MEMCACHED_COLL_QUERY_BOP_EXT_RANGE)
                       ? true : false;
-#else
-  int merged_count= 0;
-  int last_merged_index= 0;
-#endif
 
 #if 0 /* FOR DEBUGGING */
   fprintf(stderr, "merged: offset=%ld count=%ld value_count=%ld, num_results=%ld\n",
@@ -452,7 +445,6 @@ merge_smget_results(memcached_coll_smget_result_st **results,
 #endif
 
   /* 1. Merge bkeys */
-#ifdef FIX_SMGET_BUG
   for (size_t i=0; i<merged->value_count; i++)
   {
     // find a smallest value.
@@ -641,152 +633,9 @@ merge_smget_results(memcached_coll_smget_result_st **results,
 
   // set the count
   merged->value_count= merged_count;
-#else
-  for (size_t i=0; i<merged->value_count; i++)
-  {
-    // find a smallest value.
-    int smallest_result_idx= 0;
-    bool found_smallest_element= false;
-    for (size_t j=0; j<num_results; j++)
-    {
-      if (results[j]->value_count == 0)
-      {
-        // no more elements in this result.
-        if (not found_smallest_element)
-        {
-          smallest_result_idx++;
-        }
-        continue;
-      }
-
-      if (MEMCACHED_COLL_QUERY_BOP_EXT       == merged->sub_key_type or
-          MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == merged->sub_key_type )
-      {
-        memcached_hexadecimal_st *smallest_bkey= &results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey_ext;
-        memcached_hexadecimal_st *current_bkey= &results[j]->sub_keys[result_idx[j]].bkey_ext;
-
-        if (memcached_is_descending(merged))
-        {
-          if (memcached_compare_two_hexadecimal(smallest_bkey, current_bkey) == -1)
-          {
-            smallest_result_idx= j;
-          }
-        }
-        else
-        {
-          if (memcached_compare_two_hexadecimal(smallest_bkey, current_bkey) > -1)
-          {
-            smallest_result_idx= j;
-          }
-        }
-
-        found_smallest_element= true;
-      }
-      else
-      {
-        uint64_t smallest_bkey= results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey;
-        uint64_t current_bkey= results[j]->sub_keys[result_idx[j]].bkey;
-
-        if (memcached_is_descending(merged))
-        {
-          if (smallest_bkey < current_bkey)
-          {
-            smallest_result_idx= j;
-          }
-        }
-        else
-        {
-          if (smallest_bkey >= current_bkey)
-          {
-            smallest_result_idx= j;
-          }
-        }
-
-        found_smallest_element= true;
-      }
-    }
-
-    // merge or free
-    if (i >= merged->offset and i < merged->offset+merged->count)
-    {
-      // merge
-      merged->keys  [merged_count]= results[smallest_result_idx]->keys  [result_idx[smallest_result_idx]];
-      merged->values[merged_count]= results[smallest_result_idx]->values[result_idx[smallest_result_idx]];
-      merged->flags [merged_count]= results[smallest_result_idx]->flags [result_idx[smallest_result_idx]];
-      merged->eflags[merged_count]= results[smallest_result_idx]->eflags[result_idx[smallest_result_idx]];
-      merged->bytes [merged_count]= results[smallest_result_idx]->bytes [result_idx[smallest_result_idx]];
-
-      if (MEMCACHED_COLL_QUERY_BOP_EXT       == results[smallest_result_idx]->sub_key_type or
-          MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == results[smallest_result_idx]->sub_key_type )
-      {
-        merged->sub_keys[merged_count].bkey_ext= results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey_ext;
-
-        if (merged_count > 0 and
-            memcached_compare_two_hexadecimal(&merged->sub_keys[merged_count  ].bkey_ext,
-                                              &merged->sub_keys[merged_count-1].bkey_ext) == 0)
-        {
-          rc= MEMCACHED_DUPLICATED;
-        }
-      }
-      else
-      {
-        merged->sub_keys[merged_count].bkey = results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey;
-
-        if (merged_count > 0 and
-            merged->sub_keys[merged_count].bkey == merged->sub_keys[merged_count -1].bkey)
-        {
-          rc= MEMCACHED_DUPLICATED;
-        }
-      }
-
-      merged_count++;
-      last_merged_index= smallest_result_idx;
-    }
-    else
-    {
-      // free
-      memcached_string_free(&results[smallest_result_idx]->keys[result_idx[smallest_result_idx]]);
-      memcached_string_free(&results[smallest_result_idx]->values[result_idx[smallest_result_idx]]);
-      libmemcached_free(results[smallest_result_idx]->root,
-                        results[smallest_result_idx]->eflags[result_idx[smallest_result_idx]].array);
-
-      if (MEMCACHED_COLL_QUERY_BOP_EXT       == results[smallest_result_idx]->sub_key_type or
-          MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == results[smallest_result_idx]->sub_key_type )
-      {
-        libmemcached_free(results[smallest_result_idx]->root,
-                          results[smallest_result_idx]->sub_keys[result_idx[smallest_result_idx]].bkey_ext.array);
-      }
-    }
-
-    // if there are no more elements in this result.
-    if (++result_idx[smallest_result_idx] >= results[smallest_result_idx]->value_count)
-    {
-      results[smallest_result_idx]->value_count = 0;
-    }
-  }
-
-  // set the count
-  merged->value_count= merged_count;
-
-  // determine the response message
-  if (results[last_merged_index] and results[last_merged_index]->value_count == 0 and
-      (MEMCACHED_TRIMMED == responses[last_merged_index] or
-       MEMCACHED_DUPLICATED_TRIMMED == responses[last_merged_index]))
-  {
-    if (MEMCACHED_DUPLICATED == rc)
-    {
-      rc= MEMCACHED_DUPLICATED_TRIMMED;
-    }
-    else
-    {
-      rc= MEMCACHED_TRIMMED;
-    }
-  }
-#endif
 
   /* 2. Merge missed keys */
 
-#ifdef FIX_SMGET_BUG
   /* no sorting needed */
   merged_count= 0;
   for (size_t j=0; j<num_results; j++)
@@ -894,49 +743,6 @@ merge_smget_results(memcached_coll_smget_result_st **results,
   }
 
   merged->trimmed_key_count = merged_count;
-#endif
-#else
-  memset(result_idx, 0, 256*sizeof(size_t));
-
-  for (size_t i=0; i<merged->missed_key_count; i++)
-  {
-    int smallest_result_idx = 0;
-    bool found_smallest_element = false;
-    for (size_t j=0; j<num_results; j++)
-    {
-      if (results[j]->missed_key_count == 0)
-      {
-        // no elements in this result.
-        if (not found_smallest_element)
-        {
-          smallest_result_idx++;
-        }
-        continue;
-      }
-
-      const char *smallest_missed_key= memcached_string_value(&results[smallest_result_idx]->missed_keys[result_idx[smallest_result_idx]]);
-      const char *current_missed_key= memcached_string_value(&results[j]->missed_keys[result_idx[j]]);
-
-      size_t smallest_length= memcached_string_length(&results[smallest_result_idx]->missed_keys[result_idx[smallest_result_idx]]);
-      size_t current_length= memcached_string_length(&results[j]->missed_keys[result_idx[j]]);
-
-      if ((smallest_length > current_length) or
-          (smallest_length == current_length and strcmp(smallest_missed_key, current_missed_key) >= 0))
-      {
-        smallest_result_idx = j;
-      }
-
-      found_smallest_element = true;
-    }
-
-    merged->missed_keys[i]= results[smallest_result_idx]->missed_keys[result_idx[smallest_result_idx]];
-
-    // no more elements in this result.
-    if (++result_idx[smallest_result_idx] >= results[smallest_result_idx]->missed_key_count)
-    {
-      results[smallest_result_idx]->missed_key_count = 0;
-    }
-  }
 #endif
 
   return rc;
