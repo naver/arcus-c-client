@@ -234,9 +234,7 @@ static inline void _coll_smget_result_init(memcached_coll_smget_result_st *self,
 {
   self->value_count= 0;
   self->missed_key_count= 0;
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   self->trimmed_key_count= 0;
-#endif
   self->keys= NULL;
   self->values= NULL;
   self->flags= NULL;
@@ -245,16 +243,12 @@ static inline void _coll_smget_result_init(memcached_coll_smget_result_st *self,
   self->eflags= NULL;
   self->bytes= NULL;
   self->missed_keys= NULL;
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   self->missed_causes= NULL;
   self->trimmed_keys= NULL;
   self->trimmed_sub_keys= NULL;
-#endif
   self->offset= 0;
   self->count= 0;
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   self->smgmode= MEMCACHED_COLL_SMGET_NONE;
-#endif
   self->root= memc;
   self->options.is_initialized= true;
   self->options.is_descending= false;
@@ -328,10 +322,6 @@ void memcached_coll_smget_result_reset(memcached_coll_smget_result_st *ptr)
         ptr->sub_keys[i].bkey_ext.array = NULL;
         ptr->sub_keys[i].bkey_ext.length = 0;
       }
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
-#else
-      ptr->sub_key_type= MEMCACHED_COLL_QUERY_UNKNOWN;
-#endif
     }
 
     libmemcached_free(ptr->root, ptr->sub_keys);
@@ -366,7 +356,6 @@ void memcached_coll_smget_result_reset(memcached_coll_smget_result_st *ptr)
     libmemcached_free(ptr->root, ptr->missed_keys);
     ptr->missed_keys= NULL;
   }
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   if (ptr->missed_causes)
   {
     libmemcached_free(ptr->root, ptr->missed_causes);
@@ -395,7 +384,6 @@ void memcached_coll_smget_result_reset(memcached_coll_smget_result_st *ptr)
     libmemcached_free(ptr->root, ptr->trimmed_sub_keys);
     ptr->trimmed_sub_keys= NULL;
   }
-#endif
 
   _coll_smget_result_init(ptr, ptr->root);
 }
@@ -482,7 +470,6 @@ size_t memcached_coll_smget_result_get_missed_key_length(memcached_coll_smget_re
   return (not result->missed_keys)? 0 : result->missed_keys[index].current_size;
 }
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 memcached_return_t memcached_coll_smget_result_get_missed_cause(memcached_coll_smget_result_st *result, size_t index)
 {
   assert_msg_with_return(result, "result is null", MEMCACHED_FAILURE);
@@ -518,4 +505,3 @@ memcached_hexadecimal_st *memcached_coll_smget_result_get_trimmed_bkey_ext(memca
   assert_msg_with_return(result, "result is null", 0);
   return &result->trimmed_sub_keys[index].bkey_ext;
 }
-#endif

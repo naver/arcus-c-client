@@ -2534,7 +2534,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("'offset + count' should be <= 1000"));
   }
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   if (query->smgmode != MEMCACHED_COLL_SMGET_NONE &&
       query->smgmode != MEMCACHED_COLL_SMGET_DUPLICATE &&
       query->smgmode != MEMCACHED_COLL_SMGET_UNIQUE)
@@ -2542,7 +2541,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("invalid smget mode"));
   }
-#endif
 
   if (memcached_server_count(ptr) > MAX_SERVERS_FOR_BOP_SMGET)
   {
@@ -2625,7 +2623,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     result->count= query->count;
   }
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   /* smget mode */
   if (query->smgmode != MEMCACHED_COLL_SMGET_NONE)
   {
@@ -2633,7 +2630,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
                     (query->smgmode == MEMCACHED_COLL_SMGET_DUPLICATE ?  "duplicate" : "unique"));
     result->smgmode= query->smgmode;
   }
-#endif
 
   /* Command */
   const char *command= coll_op_string(BOP_SMGET_OP);
@@ -4474,9 +4470,7 @@ static void memcached_coll_query_init(memcached_coll_query_st *ptr)
   ptr->offset = 0;
   ptr->count = 0;
   ptr->eflag_filter = NULL;
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   ptr->smgmode = MEMCACHED_COLL_SMGET_NONE;
-#endif
 
   return;
 }
@@ -4620,7 +4614,6 @@ memcached_return_t memcached_bop_ext_range_query_init(memcached_bop_query_st *pt
   return MEMCACHED_SUCCESS;
 }
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 memcached_return_t memcached_bop_smget_query_init(memcached_bop_query_st *ptr,
                                                   const uint64_t bkey_from, const uint64_t bkey_to,
                                                   memcached_coll_eflag_filter_st *eflag_filter,
@@ -4659,7 +4652,6 @@ memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *pt
 
   return MEMCACHED_SUCCESS;
 }
-#endif
 
 /* APIs : memcached_coll_eflag_filter_st */
 

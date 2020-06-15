@@ -73,22 +73,19 @@ struct memcached_coll_smget_result_st {
   /* MISSED_KEYS */
   uint32_t missed_key_count;
   memcached_string_st *missed_keys;
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   memcached_return_t  *missed_causes;
 
   /* TRIMMED_KEYS */
   uint32_t trimmed_key_count;
   memcached_string_st       *trimmed_keys;
   memcached_coll_sub_key_st *trimmed_sub_keys;
-#endif
 
   /* OFFSET, COUNT */
   size_t offset;
   size_t count;
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
+
   /* smget mode */
   memcached_coll_smget_mode_t smgmode;
-#endif
 
   struct {
     bool is_allocated:1;
@@ -366,7 +363,6 @@ const char *memcached_coll_smget_result_get_missed_key(memcached_coll_smget_resu
 LIBMEMCACHED_API
 size_t memcached_coll_smget_result_get_missed_key_length(memcached_coll_smget_result_st *result, size_t idx);
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 /**
  * Get the missed cause of the individual missed key.
  * @param result  smget result structure
@@ -419,7 +415,6 @@ uint64_t memcached_coll_smget_result_get_trimmed_bkey(memcached_coll_smget_resul
  */
 LIBMEMCACHED_API
 memcached_hexadecimal_st *memcached_coll_smget_result_get_trimmed_bkey_ext(memcached_coll_smget_result_st *result, size_t index);
-#endif
 
 /**
  * Create and initialize the smget result.

@@ -1937,23 +1937,19 @@ read_error:
   return MEMCACHED_PARTIAL_READ;
 }
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 /*
  * Fetching the smget missed_keys.
  *
- * MISSED_KEYS <missed_key_count>\r\n
- * <missed_key> [<missed cause>]\r\n
- * ...
- */
-#else
-/*
- * Fetching the smget missed_keys.
+ * New smget
+ *   MISSED_KEYS <missed_key_count>\r\n
+ *   <missed_key> [<missed cause>]\r\n
+ *   ...
  *
- * MISSED_KEYS <missed_key_count>\r\n
- * <missed_key>\r\n
- * ...
+ * Old smget
+ *   MISSED_KEYS <missed_key_count>\r\n
+ *   <missed_key>\r\n
+ *   ...
  */
-#endif
 static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_write_instance_st ptr,
                                                               char *buffer, memcached_coll_smget_result_st *result)
 {
@@ -1976,9 +1972,7 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
 
   /* Prepare memory for the returning values */
   ALLOCATE_ARRAY_OR_RETURN(result->root, result->missed_keys, memcached_string_st, kcount);
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   ALLOCATE_ARRAY_OR_RETURN(result->root, result->missed_causes, memcached_return_t, kcount);
-#endif
 
   /* Fetch all values */
   memcached_return_t rrc;
@@ -1986,7 +1980,6 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
   for (size_t i=0; i<kcount; i++)
   {
     char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
     ssize_t read_length= 0;
 
     /* <missed key> */
@@ -2041,38 +2034,6 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
         result->missed_causes[i] = MEMCACHED_FAILURE;
       }
     }
-#else
-    size_t value_length;
-    size_t total_read= 0;
-    rrc= memcached_io_readline(ptr, to_read_string, MEMCACHED_MAX_KEY+2, total_read);
-
-    if (rrc != MEMCACHED_SUCCESS)
-    {
-      return rrc;
-    }
-
-    /* actual string size */
-    value_length= total_read - 2;
-
-    if (value_length > MEMCACHED_MAX_KEY)
-    {
-      goto read_error;
-    }
-
-    /* prepare memory for a value (+2 bytes to walk the \r\n) */
-    if (not memcached_string_create(ptr->root, &result->missed_keys[i], value_length+2))
-    {
-      return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
-    }
-
-    value_ptr= memcached_string_value_mutable(&result->missed_keys[i]);
-    strncpy(value_ptr, to_read_string, value_length);
-    {
-      value_ptr[value_length]= 0;
-      value_ptr[value_length+1]= 0;
-      memcached_string_set_length(&result->missed_keys[i], value_length);
-    }
-#endif
 
     result->missed_key_count++;
   }
@@ -2083,7 +2044,6 @@ read_error:
   return MEMCACHED_PARTIAL_READ;
 }
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 /*
  * Fetching the smget trimmed_keys.
  *
@@ -2187,7 +2147,6 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
 read_error:
   return MEMCACHED_PARTIAL_READ;
 }
-#endif
 
 static memcached_return_t textual_read_one_coll_smget_response(memcached_server_write_instance_st ptr,
                                                                char *buffer, size_t buffer_length,
@@ -2248,7 +2207,6 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
   case 'E':
     if (memcmp(buffer, "END", 3) == 0)
       return MEMCACHED_END;
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
     else if (memcmp(buffer, "ELEMENTS", 8) == 0)
     {
       /* We add back in one because we will need to search for MISSED_KEYS */
@@ -2260,7 +2218,6 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
        * rc == one of return values of memcached_io_readline()
        */
     }
-#endif
     else if (memcmp(buffer, "ERROR", 5) == 0)
       return MEMCACHED_PROTOCOL_ERROR;
     break;
@@ -2283,13 +2240,11 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
   case 'T':
     if (memcmp(buffer, "TRIMMED", 7) == 0)
     {
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
-      if (memcmp(buffer + 7, "_KEYS", 5) == 0) {
+      if (memcmp(buffer + 7, "_KEYS", 5) == 0) { /* TRIMMED_KEYS */
         /* We add back in one because we will need to search for END */
         memcached_server_response_increment(ptr);
         return textual_coll_smget_trimmed_key_fetch(ptr, buffer, result);
       }
-#endif
       return MEMCACHED_TRIMMED;
     }
     else if (memcmp(buffer, "TYPE_MISMATCH", 13) == 0)

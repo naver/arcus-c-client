@@ -9664,7 +9664,6 @@ static test_return_t arcus_btree_find_position_with_get(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 static test_return_t arcus_1_9_btree_new_smget(memcached_st *memc)
 {
   memcached_return_t rc;
@@ -11045,7 +11044,6 @@ static test_return_t arcus_1_9_btree_new_smget_duptrim2(memcached_st *memc)
 
   return TEST_SUCCESS;
 }
-#endif
 
 #if 1 // MAP_COLLECTION_SUPPORT
 static test_return_t arcus_1_10_map_create(memcached_st *memc)
@@ -11594,7 +11592,6 @@ test_st arcus_1_8_tests[] ={
   {0, 0, (test_callback_fn*)0}
 };
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 test_st arcus_1_9_tests[] ={
   {"arcus_1_9_btree_new_smget", true, (test_callback_fn*)arcus_1_9_btree_new_smget},
   {"arcus_1_9_btree_new_smget_more", true, (test_callback_fn*)arcus_1_9_btree_new_smget_more},
@@ -11604,7 +11601,6 @@ test_st arcus_1_9_tests[] ={
   {"arcus_1_9_btree_new_smget_duptrim2", true, (test_callback_fn*)arcus_1_9_btree_new_smget_duptrim2},
   {0, 0, (test_callback_fn*)0}
 };
-#endif
 
 #if 1 // MAP_COLLECTION_SUPPORT
 test_st arcus_1_10_tests[] ={
@@ -11697,9 +11693,7 @@ collection_st collection[] ={
   {"incr_decr", 0, 0, incr_decr},
   {"flags_filter", 0, 0, flags_filter},
   {"arcus_1_8_tests", 0, 0, arcus_1_8_tests},
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   {"arcus_1_9_tests", 0, 0, arcus_1_9_tests},
-#endif
 #if 1 // MAP_COLLECTION_SUPPORT
   {"arcus_1_10_tests", 0, 0, arcus_1_10_tests},
 #endif

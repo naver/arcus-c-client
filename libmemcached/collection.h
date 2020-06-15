@@ -100,14 +100,12 @@ typedef enum {
   MEMCACHED_COLL_QUERY_UNKNOWN
 } memcached_coll_sub_key_type_t;
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 /* smget mode */
 typedef enum {
   MEMCACHED_COLL_SMGET_NONE,
   MEMCACHED_COLL_SMGET_DUPLICATE,
   MEMCACHED_COLL_SMGET_UNIQUE
 } memcached_coll_smget_mode_t;
-#endif
 
 /* order criteria of position in collection: ASC or DESC */
 typedef enum {
@@ -468,9 +466,8 @@ struct memcached_coll_query_st {
 
   memcached_coll_eflag_filter_st *eflag_filter;
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
   memcached_coll_smget_mode_t smgmode; /* smget mode */
-#endif
+
   struct {
     bool is_initialized:1;
   } options;
@@ -593,7 +590,6 @@ memcached_return_t memcached_bop_ext_range_query_init(memcached_bop_query_st *pt
                                                       memcached_coll_eflag_filter_st *eflag_filter,
                                                       size_t offset, size_t count);
 
-#ifdef SUPPORT_NEW_SMGET_INTERFACE
 /**
  * Initialize the query structure for b+tree sort merge get operation.
  * @param ptr  query structure for b+tree sort merge get operation.
@@ -624,7 +620,6 @@ memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *pt
                                                       const unsigned char *bkey_to, size_t bkey_to_length,
                                                       memcached_coll_eflag_filter_st *eflag_filter,
                                                       size_t count, bool unique);
-#endif
 
 /**
  * B+tree item support eflag (element flag).  It is an arbitrary byte array

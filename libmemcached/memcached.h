@@ -111,7 +111,6 @@
 #define PATH_MAX        4096  /* # chars in a path name including nul */
 #endif
 #endif
-#define SUPPORT_NEW_SMGET_INTERFACE 1
 #include <libmemcached/arcus.h>
 #include <libmemcached/collection.h>
 #include <libmemcached/collection_result.h>
