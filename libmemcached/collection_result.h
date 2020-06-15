@@ -214,7 +214,6 @@ memcached_hexadecimal_st *memcached_coll_result_get_bkey_ext(memcached_coll_resu
 LIBMEMCACHED_API
 memcached_hexadecimal_st *memcached_coll_result_get_eflag(memcached_coll_result_st *result, size_t idx);
 
-#if 1 // MAP_COLLECTION_SUPPORT
 /**
  * Get the map element's mkey.
  * @param result  collection result structure
@@ -232,7 +231,6 @@ const char *memcached_coll_result_get_mkey(memcached_coll_result_st* result, siz
  */
 LIBMEMCACHED_API
 size_t memcached_coll_result_get_mkey_length(memcached_coll_result_st* result, size_t idx);
-#endif
 
 /**
  * Get the element's value.

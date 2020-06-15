@@ -1002,11 +1002,7 @@ static memcached_return_t textual_coll_element_fetch(memcached_server_write_inst
                                                      size_t count, memcached_coll_result_st *result)
 {
   memcached_return_t rc;
-#if 1 // MAP_COLLECTION_SUPPORT
   const size_t MAX_ELEMENT_BUFFER_SIZE= MEMCACHED_MAX_KEY; /* MEMCACHED_COLL_MAX_MOP_MKEY_LENG(250)+1 */
-#else
-  const size_t MAX_ELEMENT_BUFFER_SIZE= 100;
-#endif
 
   char *string_ptr;
   size_t i= 0, to_read= 0, value_length= 0;
@@ -1077,7 +1073,6 @@ static memcached_return_t textual_coll_element_fetch(memcached_server_write_inst
       }
     }
 
-#if 1 // MAP_COLLECTION_SUPPORT
     /* Map value starts with <mkey> */
     if (result->type == COLL_MAP)
     {
@@ -1099,7 +1094,6 @@ static memcached_return_t textual_coll_element_fetch(memcached_server_write_inst
       }
       result->sub_key_type = MEMCACHED_COLL_QUERY_MOP;
     }
-#endif
 
     /* <bytes> */
     {
@@ -1279,12 +1273,10 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
     ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, ecount);
     ALLOCATE_ARRAY_OR_RETURN(result->root, result->eflags,   memcached_hexadecimal_st,  ecount);
   }
-#if 1 // MAP_COLLECTION_SUPPORT
   else if (result->type == COLL_MAP)
   {
     ALLOCATE_ARRAY_OR_RETURN(result->root, result->sub_keys, memcached_coll_sub_key_st, ecount);
   }
-#endif
 
   /* Fetch all elements */
   return textual_coll_element_fetch(ptr, ehdr_string, ehdr_length, ecount, result);

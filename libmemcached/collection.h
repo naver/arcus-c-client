@@ -39,9 +39,7 @@
 #define MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH   MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH*2+1
 #define MEMCACHED_COLL_MAX_ELEMENT_SIZE         16*1024  /* server maximum, not client limitation */
 #define MEMCACHED_COLL_MAX_PIPED_CMD_SIZE       500
-#if 1 // MAP_COLLECTION_SUPPORT
 #define MEMCACHED_COLL_MAX_MOP_MKEY_LENG        250
-#endif
 #define MEMCACHED_COLL_MAX_BOP_SMGET_KEY_COUNT  2000
 #define MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT 1000
 #define MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE    10240
@@ -79,9 +77,7 @@ typedef enum {
   COLL_KV,
   COLL_LIST,
   COLL_SET,
-#if 1 // MAP_COLLECTION_SUPPORT
   COLL_MAP,
-#endif
   COLL_BTREE
 } memcached_coll_type_t;
 
@@ -89,10 +85,8 @@ typedef enum {
   MEMCACHED_COLL_QUERY_LOP,
   MEMCACHED_COLL_QUERY_LOP_RANGE,
   MEMCACHED_COLL_QUERY_SOP,
-#if 1 // MAP_COLLECTION_SUPPORT
   MEMCACHED_COLL_QUERY_MOP,
   MEMCACHED_COLL_QUERY_MOP_RANGE,
-#endif
   MEMCACHED_COLL_QUERY_BOP,
   MEMCACHED_COLL_QUERY_BOP_RANGE,
   MEMCACHED_COLL_QUERY_BOP_EXT,
@@ -125,7 +119,6 @@ struct memcached_hexadecimal_st {
   } options;
 };
 
-#if 1 // MAP_COLLECTION_SUPPORT
 struct memcached_mkey_st {
   const char *string;
   size_t length;
@@ -138,7 +131,6 @@ struct memcached_mkey_st {
     bool array_is_allocated:1;
   } options;
 };
-#endif
 
 /**
  * Convert the numerical number in memcached_hexadecimal_st to a string.
@@ -177,9 +169,7 @@ union memcached_coll_sub_key_st{
   uint64_t bkey_range[2];
   memcached_hexadecimal_st bkey_ext;
   memcached_hexadecimal_st bkey_ext_range[2];
-#if 1 // MAP_COLLECTION_SUPPORT
   memcached_mkey_st mkey;
-#endif
 };
 
 /**
@@ -511,7 +501,6 @@ LIBMEMCACHED_API
 memcached_return_t memcached_sop_value_query_init(memcached_coll_query_st *ptr,
                                                   const char *value, size_t value_length);
 
-#if 1 // MAP_COLLECTION_SUPPORT
 /**
  * Initialize the query structure for a single map element.
  * @param ptr  query structure for collection items.
@@ -533,7 +522,6 @@ LIBMEMCACHED_API
 memcached_return_t memcached_mop_mkey_list_query_init(memcached_coll_query_st *ptr,
                                                   const char * const *mkeys, const size_t *mkeys_length,
                                                   size_t number_of_mkeys);
-#endif
 
 /**
  * Initialize the query structure for a b+tree element.
@@ -933,7 +921,6 @@ memcached_return_t memcached_sop_get(memcached_st *ptr, const char *key, size_t 
                                      size_t count, bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result);
 
-#if 1 // MAP_COLLECTION_SUPPORT
 /**
  * Map API.
  */
@@ -1050,7 +1037,6 @@ memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key,
                                              size_t number_of_mkeys,
                                              bool with_delete, bool drop_if_empty,
                                              memcached_coll_result_st *result);
-#endif
 
 /**
  * B+tree API.
@@ -1520,7 +1506,6 @@ LIBMEMCACHED_API
 memcached_return_t memcached_sop_create(memcached_st *ptr, const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attrs);
 
-#if 1 // MAP_COLLECTION_SUPPORT
 /**
  * Create an empty map item.
  * @param ptr  memcached handle.
@@ -1531,7 +1516,6 @@ memcached_return_t memcached_sop_create(memcached_st *ptr, const char *key, size
 LIBMEMCACHED_API
 memcached_return_t memcached_mop_create(memcached_st *ptr, const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attrs);
-#endif
 
 /**
  * Create an empty b+tree item.
@@ -1708,7 +1692,6 @@ memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key
                                               memcached_coll_create_attrs_st *attrs,
                                               memcached_return_t *results, memcached_return_t *piped_rc);
 
-#if 1 // MAP_COLLECTION_SUPPORT
 /**
  * Insert multiple elements into the map item in a pipelined fashion.
  * @param ptr  memcached handle.
@@ -1730,7 +1713,6 @@ memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attrs,
                                               memcached_return_t *results, memcached_return_t *piped_rc);
-#endif
 
 /**
  * Insert multiple elements into the b+tree item in a pipelined fashion.
@@ -1825,7 +1807,6 @@ memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                                    memcached_return_t *results,
                                                    memcached_return_t *piped_rc);
 
-#if 1 // MAP_COLLECTION_SUPPORT
 /**
  * Insert a single element into multiple map items in a pipelined fashion.
  * @param ptr  memcached handle.
@@ -1849,7 +1830,6 @@ memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                                    memcached_coll_create_attrs_st *attrs,
                                                    memcached_return_t *results,
                                                    memcached_return_t *piped_rc);
-#endif
 
 /**
  * Insert a single element into multiple b+tree items in a pipelined fashion.

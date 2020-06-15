@@ -11045,7 +11045,6 @@ static test_return_t arcus_1_9_btree_new_smget_duptrim2(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 static test_return_t arcus_1_10_map_create(memcached_st *memc)
 {
   uint32_t flags= 10;
@@ -11512,7 +11511,6 @@ static test_return_t arcus_1_10_map_piped_insert_bulk(memcached_st *memc)
 
   return TEST_SUCCESS;
 }
-#endif
 
 test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_flush_by_prefix", true, (test_callback_fn*)arcus_1_6_flush_by_prefix},
@@ -11602,7 +11600,6 @@ test_st arcus_1_9_tests[] ={
   {0, 0, (test_callback_fn*)0}
 };
 
-#if 1 // MAP_COLLECTION_SUPPORT
 test_st arcus_1_10_tests[] ={
   {"arcus_1_10_map_create", true, (test_callback_fn*)arcus_1_10_map_create},
   {"arcus_1_10_map_insert", true, (test_callback_fn*)arcus_1_10_map_insert},
@@ -11618,7 +11615,6 @@ test_st arcus_1_10_tests[] ={
   {"arcus_1_10_map_piped_insert_bulk", true, (test_callback_fn*)arcus_1_10_map_piped_insert_bulk},
   {0, 0, (test_callback_fn*)0}
 };
-#endif
 
 collection_st collection[] ={
 #if 0
@@ -11694,9 +11690,7 @@ collection_st collection[] ={
   {"flags_filter", 0, 0, flags_filter},
   {"arcus_1_8_tests", 0, 0, arcus_1_8_tests},
   {"arcus_1_9_tests", 0, 0, arcus_1_9_tests},
-#if 1 // MAP_COLLECTION_SUPPORT
   {"arcus_1_10_tests", 0, 0, arcus_1_10_tests},
-#endif
   {0, 0, 0, 0}
 };
 

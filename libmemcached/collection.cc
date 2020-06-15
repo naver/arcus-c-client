@@ -27,12 +27,10 @@ typedef enum {
   SOP_GET_OP,
   SOP_DELETE_OP,
   SOP_EXIST_OP,
-#if 1 // MAP_COLLECTION_SUPPORT
   MOP_INSERT_OP,
   MOP_UPDATE_OP,
   MOP_GET_OP,
   MOP_DELETE_OP,
-#endif
   BOP_INSERT_OP,
   BOP_GET_OP,
   BOP_DELETE_OP,
@@ -40,9 +38,7 @@ typedef enum {
   GETATTRS_OP,
   LOP_CREATE_OP,
   SOP_CREATE_OP,
-#if 1 // MAP_COLLECTION_SUPPORT
   MOP_CREATE_OP,
-#endif
   BOP_CREATE_OP,
   BOP_UPSERT_OP,
   BOP_UPDATE_OP,
@@ -68,12 +64,10 @@ static inline const char *coll_op_string(memcached_coll_action_t verb)
   case SOP_GET_OP:              return "sop get ";
   case SOP_DELETE_OP:           return "sop delete ";
   case SOP_EXIST_OP:            return "sop exist ";
-#if 1 // MAP_COLLECTION_SUPPORT
   case MOP_INSERT_OP:           return "mop insert ";
   case MOP_UPDATE_OP:           return "mop update ";
   case MOP_GET_OP:              return "mop get ";
   case MOP_DELETE_OP:           return "mop delete ";
-#endif
   case BOP_INSERT_OP:           return "bop insert ";
   case BOP_GET_OP:              return "bop get ";
   case BOP_DELETE_OP:           return "bop delete ";
@@ -81,9 +75,7 @@ static inline const char *coll_op_string(memcached_coll_action_t verb)
   case GETATTRS_OP:             return "getattr ";
   case LOP_CREATE_OP:           return "lop create ";
   case SOP_CREATE_OP:           return "sop create ";
-#if 1 // MAP_COLLECTION_SUPPORT
   case MOP_CREATE_OP:           return "mop create ";
-#endif
   case BOP_CREATE_OP:           return "bop create ";
   case BOP_UPSERT_OP:           return "bop upsert ";
   case BOP_UPDATE_OP:           return "bop update ";
@@ -112,12 +104,10 @@ static inline int coll_op_length(memcached_coll_action_t verb)
   case SOP_GET_OP:              return 8;
   case SOP_DELETE_OP:           return 11;
   case SOP_EXIST_OP:            return 10;
-#if 1 // MAP_COLLECTION_SUPPORT
   case MOP_INSERT_OP:           return 11;
   case MOP_UPDATE_OP:           return 11;
   case MOP_GET_OP:              return 8;
   case MOP_DELETE_OP:           return 11;
-#endif
   case BOP_INSERT_OP:           return 11;
   case BOP_GET_OP:              return 8;
   case BOP_DELETE_OP:           return 11;
@@ -125,9 +115,7 @@ static inline int coll_op_length(memcached_coll_action_t verb)
   case GETATTRS_OP:             return 8;
   case LOP_CREATE_OP:           return 11;
   case SOP_CREATE_OP:           return 11;
-#if 1 // MAP_COLLECTION_SUPPORT
   case MOP_CREATE_OP:           return 11;
-#endif
   case BOP_CREATE_OP:           return 11;
   case BOP_UPSERT_OP:           return 11;
   case BOP_UPDATE_OP:           return 11;
@@ -151,9 +139,7 @@ memcached_coll_type_t find_collection_type_by_opcode(const char *opcode)
   {
   case 'l': return COLL_LIST;
   case 's': return COLL_SET;
-#if 1 // MAP_COLLECTION_SUPPORT
   case 'm': return COLL_MAP;
-#endif
   case 'b': return COLL_BTREE;
   default : return COLL_NONE;
   }
@@ -196,9 +182,7 @@ static inline memcached_coll_type_t str_to_type(const char *value, size_t value_
        if (strncmp("kv",     value, value_length) == 0) return COLL_KV;
   else if (strncmp("list",   value, value_length) == 0) return COLL_LIST;
   else if (strncmp("set",    value, value_length) == 0) return COLL_SET;
-#if 1 // MAP_COLLECTION_SUPPORT
   else if (strncmp("map",    value, value_length) == 0) return COLL_MAP;
-#endif
   else if (strncmp("b+tree", value, value_length) == 0) return COLL_BTREE;
   else
   {
@@ -896,16 +880,10 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
   size_t write_length= 0;
 
   /* Query header */
-#if 1 // MAP_COLLECTION_SUPPORT
   bool set_overflowaction= verb != SOP_CREATE_OP and
                            verb != MOP_CREATE_OP and
                            attributes->overflowaction and
                            attributes->overflowaction != OVERFLOWACTION_NONE;
-#else
-  bool set_overflowaction= verb != SOP_CREATE_OP and
-                           attributes->overflowaction and
-                           attributes->overflowaction != OVERFLOWACTION_NONE;
-#endif
 
   write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                    " %u %d %u%s%s%s%s",
@@ -1018,7 +996,6 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   {
     /* no sub key */
   }
-#if 1 // MAP_COLLECTION_SUPPORT
   else if (verb == MOP_INSERT_OP)
   {
     size_t mkey_length = query->sub_key.mkey.length;
@@ -1029,7 +1006,6 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
     write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                     " %s", query->sub_key.mkey.string);
   }
-#endif
   else if (verb == BOP_INSERT_OP)
   {
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
@@ -1068,16 +1044,10 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   /* 3. creation attributes */
   if (attributes)
   {
-#if 1 // MAP_COLLECTION_SUPPORT
     bool set_overflowaction= verb != SOP_INSERT_OP &&
                              verb != MOP_INSERT_OP
                                   && attributes->overflowaction
                                   && attributes->overflowaction != OVERFLOWACTION_NONE;
-#else
-    bool set_overflowaction= verb != SOP_INSERT_OP
-                                  && attributes->overflowaction
-                                  && attributes->overflowaction != OVERFLOWACTION_NONE;
-#endif
 
     write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                      " create %u %d %u%s%s%s",
@@ -1243,7 +1213,6 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   {
     /* no sub key */
   }
-#if 1 // MAP_COLLECTION_SUPPORT
   else if (verb == MOP_INSERT_OP)
   {
     size_t mkey_length = query->sub_key.mkey.length;
@@ -1254,7 +1223,6 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
     write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                     " %s", query->sub_key.mkey.string);
   }
-#endif
   else if (verb == BOP_INSERT_OP || verb == BOP_UPSERT_OP)
   {
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
@@ -1290,16 +1258,10 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   /* 3. creation attributes */
   if (attributes)
   {
-#if 1 // MAP_COLLECTION_SUPPORT
     bool set_overflowaction= verb != SOP_INSERT_OP &&
                              verb != MOP_INSERT_OP
                                   && attributes->overflowaction
                                   && attributes->overflowaction != OVERFLOWACTION_NONE;
-#else
-    bool set_overflowaction= verb != SOP_INSERT_OP
-                                  && attributes->overflowaction
-                                  && attributes->overflowaction != OVERFLOWACTION_NONE;
-#endif
 
     write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                      " create %u %d %u%s%s%s%s",
@@ -1432,7 +1394,6 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
                                     drop_if_empty ? " drop" :"",
                                     ptr->flags.no_reply ? " noreply" :"");
   }
-#if 1 // MAP_COLLECTION_SUPPORT
   else if (verb == MOP_DELETE_OP)
   {
     size_t mkey_length = query->sub_key.mkey.length;
@@ -1455,7 +1416,6 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
                                       ptr->flags.no_reply ? " noreply" :"");
     }
   }
-#endif
   else if (verb == BOP_DELETE_OP)
   {
     char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
@@ -1534,7 +1494,6 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     vector[4].length= 2;              vector[4].buffer= "\r\n";
     veclen= 5;
   }
-#if 1 // MAP_COLLECTION_SUPPORT
   else if (MOP_DELETE_OP == verb && query->sub_key.mkey.length != 0)
   {
     /* delete by mkey */
@@ -1545,7 +1504,6 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     vector[4].length= 2;              vector[4].buffer= "\r\n";
     veclen= 5;
   }
-#endif
   else
   {
     /* delete by sub key(index or bkey) */
@@ -1634,11 +1592,9 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
 
   char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
   size_t buffer_length= 0;
-#if 1 // MAP_COLLECTION_SUPPORT
   char  *mkey_buffer= NULL;
   size_t mkey_buffer_length= 0;
   size_t mkey_array_size= 0;
-#endif
 
   /* Query header */
 
@@ -1667,7 +1623,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
                                      " %u", (int)query->count);
   }
-#if 1 // MAP_COLLECTION_SUPPORT
   else if (verb == MOP_GET_OP)
   {
     if (MEMCACHED_COLL_QUERY_MOP == query->type)
@@ -1733,7 +1688,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       return MEMCACHED_INVALID_ARGUMENTS;
     }
   }
-#endif
   else if (verb == BOP_GET_OP)
   {
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
@@ -1806,13 +1760,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
 
   if (buffer_length >= MEMCACHED_MAXIMUM_COMMAND_SIZE)
   {
-#if 1 // MAP_COLLECTION_SUPPORT
     if (mkey_buffer)
     {
         libmemcached_free(ptr, mkey_buffer);
         mkey_buffer= NULL;
     }
-#endif
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
   }
@@ -1820,7 +1772,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
 
-#if 1 // MAP_COLLECTION_SUPPORT
   struct libmemcached_io_vector_st vector[6];
   size_t veclen;
 
@@ -1851,15 +1802,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     vector[3].length= 2;              vector[3].buffer= "\r\n";
     veclen= 4;
   }
-#else
-  struct libmemcached_io_vector_st vector[]=
-  {
-    { command_length, command },
-    { key_length, key },
-    { buffer_length, buffer },
-    { 2, "\r\n" }
-  };
-#endif
 
   /* Find a memcached */
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
@@ -1868,11 +1810,7 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
-#if 1 // MAP_COLLECTION_SUPPORT
   rc= memcached_vdo(instance, vector, veclen, to_write);
-#else
-  rc= memcached_vdo(instance, vector, 4, to_write);
-#endif
 
   if (rc == MEMCACHED_SUCCESS)
   {
@@ -1916,13 +1854,11 @@ do_action:
     }
   }
 
-#if 1 // MAP_COLLECTION_SUPPORT
   if (mkey_buffer)
   {
     libmemcached_free(ptr, mkey_buffer);
     mkey_buffer= NULL;
   }
-#endif
 
   if (rc == MEMCACHED_WRITE_FAILURE)
   {
@@ -3278,22 +3214,13 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
 
   /* Query header */
 
-#if 1 // MAP_COLLECTION
   if (verb != BOP_UPDATE_OP && verb != MOP_UPDATE_OP)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("Not a b+tree or map operation"));
   }
-#else
-  if (verb != BOP_UPDATE_OP)
-  {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("Not a b+tree operation"));
-  }
-#endif
 
   /* 1. sub key */
-#if 1 // MAP_COLLECTION_SUPPORT
   if (verb == MOP_UPDATE_OP)
   {
     size_t mkey_length = query->sub_key.mkey.length;
@@ -3320,21 +3247,6 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
                                        " 0x%s", bkey_str);
     }
   }
-#else
-  if (MEMCACHED_COLL_QUERY_BOP == query->type)
-  {
-    buffer_length= (size_t) snprintf(buffer, 30, " %llu", (unsigned long long) query->sub_key.bkey);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-  {
-    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
-                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " 0x%s", bkey_str);
-  }
-#endif
 
   /* 2. update filter */
   if (update_filter)
@@ -3721,7 +3633,6 @@ memcached_return_t memcached_sop_insert(memcached_st *ptr, const char *key, size
                         &query, NULL, attributes, SOP_INSERT_OP);
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 memcached_return_t memcached_mop_insert(memcached_st *ptr, const char *key, size_t key_length,
                                         const char *mkey, size_t mkey_length,
                                         const char *value, size_t value_length,
@@ -3746,7 +3657,6 @@ memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size
   return do_coll_update(ptr, key, key_length,
                         &query, NULL, value, value_length, MOP_UPDATE_OP);
 }
-#endif
 
 memcached_return_t memcached_bop_ext_insert(memcached_st *ptr, const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
@@ -3885,7 +3795,6 @@ memcached_return_t memcached_sop_delete(memcached_st *ptr, const char *key, size
                         SOP_DELETE_OP);
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 memcached_return_t memcached_mop_delete(memcached_st *ptr, const char *key, size_t key_length,
                                         const char *mkey, size_t mkey_length, bool drop_if_empty)
 {
@@ -3907,7 +3816,6 @@ memcached_return_t memcached_mop_delete_all(memcached_st *ptr, const char *key, 
                         &query, 0, drop_if_empty,
                         MOP_DELETE_OP);
 }
-#endif
 
 memcached_return_t memcached_bop_delete(memcached_st *ptr, const char *key, size_t key_length,
                                         const uint64_t bkey, memcached_coll_eflag_filter_st *eflag_filter,
@@ -4043,10 +3951,8 @@ memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key
   case MEMCACHED_COLL_QUERY_LOP:
   case MEMCACHED_COLL_QUERY_LOP_RANGE:
   case MEMCACHED_COLL_QUERY_SOP:
-#if 1 // MAP_COLLECTION_SUPPORT
   case MEMCACHED_COLL_QUERY_MOP:
   case MEMCACHED_COLL_QUERY_MOP_RANGE:
-#endif
        return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                   memcached_literal_param("Invalid query type.\n"));
   case MEMCACHED_COLL_QUERY_BOP:
@@ -4103,7 +4009,6 @@ memcached_return_t memcached_sop_get(memcached_st *ptr, const char *key, size_t 
                      SOP_GET_OP);
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 memcached_return_t memcached_mop_get(memcached_st *ptr, const char *key, size_t key_length,
                                      const char *mkey, size_t mkey_length,
                                      bool with_delete, bool drop_if_empty,
@@ -4142,7 +4047,6 @@ memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key,
                      &query, with_delete, drop_if_empty, result,
                      MOP_GET_OP);
 }
-#endif
 
 memcached_return_t memcached_bop_get(memcached_st *ptr, const char *key, size_t key_length,
                                      const uint64_t bkey,
@@ -4322,13 +4226,11 @@ memcached_return_t memcached_sop_create(memcached_st *ptr, const char *key, size
   return do_coll_create(ptr, key, key_length, attributes, SOP_CREATE_OP);
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 memcached_return_t memcached_mop_create(memcached_st *ptr, const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attributes)
 {
   return do_coll_create(ptr, key, key_length, attributes, MOP_CREATE_OP);
 }
-#endif
 
 memcached_return_t memcached_bop_create(memcached_st *ptr, const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attributes)
@@ -4521,7 +4423,6 @@ memcached_return_t memcached_sop_value_query_init(memcached_coll_query_st *ptr,
   return MEMCACHED_SUCCESS;
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 memcached_return_t memcached_mop_query_init(memcached_coll_query_st *ptr,
                                             const char *mkey, size_t mkey_length)
 {
@@ -4547,7 +4448,6 @@ memcached_return_t memcached_mop_mkey_list_query_init(memcached_coll_query_st *p
 
   return MEMCACHED_SUCCESS;
 }
-#endif
 
 memcached_return_t memcached_bop_query_init(memcached_bop_query_st *ptr,
                                             const uint64_t bkey,
@@ -4877,7 +4777,6 @@ memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key
   return rc;
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const char * const *mkeys, const size_t *mkeys_length,
@@ -4901,7 +4800,6 @@ memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key
 
   return rc;
 }
-#endif
 
 memcached_return_t memcached_bop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
@@ -4988,7 +4886,6 @@ memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                    SOP_INSERT_OP);
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
                                                    const size_t *key_length, size_t number_of_keys,
@@ -5007,7 +4904,6 @@ memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                    &query_obj, NULL, 0, attributes, results, piped_rc,
                                    MOP_INSERT_OP);
 }
-#endif
 
 memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,

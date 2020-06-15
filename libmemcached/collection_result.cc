@@ -81,7 +81,6 @@ void memcached_coll_result_reset(memcached_coll_result_st *ptr)
       }
       ptr->sub_key_type= MEMCACHED_COLL_QUERY_UNKNOWN;
     }
-#if 1 // MAP_COLLECTION_SUPPORT
     else if (MEMCACHED_COLL_QUERY_MOP == ptr->sub_key_type)
     {
       for (size_t i=0; i<ptr->collection_count; i++)
@@ -92,7 +91,6 @@ void memcached_coll_result_reset(memcached_coll_result_st *ptr)
       }
       ptr->sub_key_type= MEMCACHED_COLL_QUERY_UNKNOWN;
     }
-#endif
     libmemcached_free(ptr->root, ptr->sub_keys);
     ptr->sub_keys= NULL;
   }
@@ -201,7 +199,6 @@ memcached_hexadecimal_st *memcached_coll_result_get_eflag(memcached_coll_result_
   return (not result->eflags)? NULL : &result->eflags[index];
 }
 
-#if 1 // MAP_COLLECTION_SUPPORT
 const char *memcached_coll_result_get_mkey(memcached_coll_result_st *result, size_t index)
 {
   assert_msg_with_return(result, "result is null", NULL);
@@ -215,7 +212,6 @@ size_t memcached_coll_result_get_mkey_length(memcached_coll_result_st *result, s
   assert_msg_with_return(result->type == COLL_MAP, "not a map", 0);
   return (not result->sub_keys[index].mkey.length)? 0 : result->sub_keys[index].mkey.length;
 }
-#endif
 
 const char *memcached_coll_result_get_value(memcached_coll_result_st *result, size_t index)
 {
