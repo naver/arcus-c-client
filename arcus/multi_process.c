@@ -29,24 +29,38 @@ static const char *service_code = "test";
 
 #define NUM_OF_CHILDREN 10
 #define NUM_OF_PIPED_ITEMS 100
+#define NUM_OF_USERS 10
 
 #define SAMPLE_PIPE  1
 #define SAMPLE_MGET  0
 #define SAMPLE_MGET2 0
 
+#define USE_MC_POOL 1
+
 static inline void process_child(memcached_st *proxy_mc)
 {
   fprintf(stderr, "[pid:%d] begin : child_process\n", getpid());
 
+#ifdef USE_MC_POOL
+  memcached_st *mc;
+  memcached_st *master_mc = memcached_create(NULL);
+  memcached_pool_st *pool = memcached_pool_create(master_mc, NUM_OF_CHILDREN/2, NUM_OF_CHILDREN);
+  arcus_proxy_connect(master_mc, pool, proxy_mc);
+#else
   memcached_st *mc = memcached_create(NULL);
   arcus_proxy_connect(mc, NULL, proxy_mc);
+#endif
 
   memcached_return_t rc;
   int userid, i;
   int pid = getpid();
   sleep(1);
 
-  for (userid=0; userid<10; userid++) {
+  for (userid=0; userid<NUM_OF_USERS; userid++) {
+
+#ifdef USE_MC_POOL
+      mc = memcached_pool_fetch(pool, NULL, &rc);
+#endif
 
     if (SAMPLE_PIPE) {
       fprintf(stderr, "test piped_insert()\n");
@@ -214,11 +228,20 @@ static inline void process_child(memcached_st *proxy_mc)
       fprintf(stderr, "\n");
     }
 
+#ifdef USE_MC_POOL
+    rc = memcached_pool_release(pool, mc);
+#endif
     sleep(1);
   }
 
   fprintf(stderr, "[pid:%d] end : child_process\n", getpid());
+#ifdef USE_MC_POOL
+  arcus_proxy_close(master_mc);
+  memcached_pool_destroy(pool);
+  memcached_free(master_mc);
+#else
   arcus_proxy_close(mc);
+#endif
 }
 
 int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
