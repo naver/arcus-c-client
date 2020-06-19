@@ -36,23 +36,24 @@ static const char *service_code = "test";
 
 static inline void process_child(memcached_st *proxy_mc)
 {
-  memcached_st *mc = memcached_create(NULL);
   fprintf(stderr, "[pid:%d] begin : child_process\n", getpid());
+
+  memcached_st *mc = memcached_create(NULL);
   arcus_proxy_connect(mc, NULL, proxy_mc);
 
+  memcached_return_t rc;
   int userid, i;
-  int id = getpid();
+  int pid = getpid();
   sleep(1);
 
   for (userid=0; userid<10; userid++) {
 
     if (SAMPLE_PIPE) {
       fprintf(stderr, "test piped_insert()\n");
-      memcached_return_t rc;
 
       // key
       char key[256];
-      snprintf(key, sizeof(key), "ntalk_userid:btree:id%d_%d", id, userid);
+      snprintf(key, sizeof(key), "ntalk_userid:btree:id%d_%d", pid, userid);
 
       // bkeys
       uint64_t bkey = 0;
@@ -136,7 +137,6 @@ static inline void process_child(memcached_st *proxy_mc)
 
     if (SAMPLE_MGET) {
       fprintf(stderr, "test mget()\n");
-      memcached_return_t rc;
       const char *keys[] = {
         "sinf:deletetest0",
         "sinf:deletetest1",
@@ -176,7 +176,8 @@ static inline void process_child(memcached_st *proxy_mc)
       {
         string = memcached_fetch(mc, key, &key_length, &string_length, &flags, &rc);
         key[key_length] = '\0';
-        fprintf(stderr, "fetch[%d] key=%s, value=%s, rc = %s\n", i, key, string, memcached_strerror(mc, rc));
+        fprintf(stderr, "fetch[%d] key=%s, value=%s, rc = %s\n",
+                i, key, string, memcached_strerror(mc, rc));
         free(string);
       }
       fprintf(stderr, "\n");
@@ -184,7 +185,6 @@ static inline void process_child(memcached_st *proxy_mc)
 
     if (SAMPLE_MGET2) {
       fprintf(stderr, "test mget()\n");
-      memcached_return_t rc;
       const char *keys[] = {"foo1", "foo2", "foo3", "foo4", "foo5"};
       size_t lengths[] = { 4, 4, 4, 4, 4 };
 
@@ -207,7 +207,8 @@ static inline void process_child(memcached_st *proxy_mc)
       for (i=0; i<5; i++)
       {
         string = memcached_fetch(mc, key, &key_length, &string_length, &flags, &rc);
-        fprintf(stderr, "fetch[%d] key=%s, value=%s, rc = %s\n", i, key, string, memcached_strerror(mc, rc));
+        fprintf(stderr, "fetch[%d] key=%s, value=%s, rc = %s\n",
+                i, key, string, memcached_strerror(mc, rc));
         free(string);
       }
       fprintf(stderr, "\n");
@@ -224,7 +225,6 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
 {
   memcached_st *proxy_mc;
   arcus_return_t rc; 
-
   int i;
 
   proxy_mc = memcached_create(NULL);

@@ -152,7 +152,9 @@ sample_sop(memcached_st *mc)
   // 3. PIPED EXIST
   memcached_return_t responses[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
   memcached_return_t piped_rc;
-  rc= memcached_sop_piped_exist(mc, "set:b_set", 9, maxcount, (const char * const*)values, values_length, responses, &piped_rc);
+  rc= memcached_sop_piped_exist(mc, "set:b_set", 9,
+                                maxcount, (const char * const*)values, values_length,
+                                responses, &piped_rc);
   fprintf(stderr, "DEBUG : %s, %s\n", memcached_strerror(NULL, rc), memcached_strerror(NULL, piped_rc));
   //test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   //test_true_got(piped_rc == MEMCACHED_SOME_EXIST, memcached_strerror(NULL, piped_rc));
@@ -209,10 +211,13 @@ sample_sop_piped_exist(memcached_st *mc, int id, uint32_t userid)
   struct timeval s_time, e_time;
   gettimeofday(&s_time, NULL);
 
-  rc= memcached_sop_piped_exist(mc, key, strlen(key), maxcount, (const char * const*)values, valuelengths, results, &piped_rc);
+  rc= memcached_sop_piped_exist(mc, key, strlen(key),
+                                maxcount, (const char * const*)values, valuelengths,
+                                results, &piped_rc);
 
   gettimeofday(&e_time, NULL);
-  double elapsed_ms = ((e_time.tv_sec - s_time.tv_sec) * 1000.0) + ((e_time.tv_usec - s_time.tv_usec) / 1000.0);
+  double elapsed_ms = ((e_time.tv_sec - s_time.tv_sec) * 1000.0)
+                    + ((e_time.tv_usec - s_time.tv_usec) / 1000.0);
   
   if (rc != MEMCACHED_SUCCESS && piped_rc != MEMCACHED_ALL_EXIST)
     fprintf(stderr, "sop_piped_exist failed, reason=%s\n", memcached_strerror(NULL, rc));
