@@ -311,7 +311,18 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     }
     else if (memcmp(buffer, "ERROR", 5) == 0)
     {
-      return MEMCACHED_PROTOCOL_ERROR;
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_PROTOCOL_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
     }
     else if (memcmp(buffer, "EXISTS", 6) == 0)
     {
@@ -331,7 +342,18 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
   case 'C': /* CLIENT ERROR */
     if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
     {
-      return MEMCACHED_CLIENT_ERROR;
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("CLIENT_ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_CLIENT_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
     }
     break;
 
@@ -836,7 +858,8 @@ static memcached_return_t get_status_of_bop_mget_response(char *string_ptr, int 
   return MEMCACHED_UNKNOWN_READ_FAILURE;
 }
 
-static memcached_return_t get_status_of_coll_pipe_response(char *string_ptr, int string_len)
+static memcached_return_t get_status_of_coll_pipe_response(memcached_server_write_instance_st ptr,
+                                                           char *string_ptr, int string_len)
 {
   switch (string_ptr[0])
   {
@@ -868,7 +891,20 @@ static memcached_return_t get_status_of_coll_pipe_response(char *string_ptr, int
 #endif
       /* error message will follow after SERVER_ERROR */
       else if (string_len > 12 && memcmp(string_ptr, "SERVER_ERROR", 12) == 0)
-        return MEMCACHED_SERVER_ERROR;
+      {
+        // Move past the basic error message and whitespace
+        char *startptr= string_ptr + memcached_literal_param_size("SERVER_ERROR");
+        if (startptr[0] == ' ')
+        {
+          startptr++;
+        }
+
+        char *endptr= startptr;
+        while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+        return memcached_set_error(*ptr, MEMCACHED_SERVER_ERROR, MEMCACHED_AT,
+                                   startptr, size_t(endptr - startptr));
+      }
       break;
 
     case 'D':
@@ -917,7 +953,20 @@ static memcached_return_t get_status_of_coll_pipe_response(char *string_ptr, int
         return MEMCACHED_ELEMENT_EXISTS;
       /* error message will follow after ERROR */
       else if (string_len > 5 && memcmp(string_ptr, "ERROR", 5) == 0)
-        return MEMCACHED_PROTOCOL_ERROR;
+      {
+        // Move past the basic error message and whitespace
+        char *startptr= string_ptr + memcached_literal_param_size("ERROR");
+        if (startptr[0] == ' ')
+        {
+          startptr++;
+        }
+
+        char *endptr= startptr;
+        while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+        return memcached_set_error(*ptr, MEMCACHED_PROTOCOL_ERROR, MEMCACHED_AT,
+                                   startptr, size_t(endptr - startptr));
+      }
       break;
 
     case 'T':
@@ -928,7 +977,20 @@ static memcached_return_t get_status_of_coll_pipe_response(char *string_ptr, int
     case 'C':
       /* error message will follow after CLIENT_ERROR */
       if (string_len > 12 && memcmp(string_ptr, "CLIENT_ERROR", 12) == 0)
-        return MEMCACHED_CLIENT_ERROR;
+      {
+        // Move past the basic error message and whitespace
+        char *startptr= string_ptr + memcached_literal_param_size("CLIENT_ERROR");
+        if (startptr[0] == ' ')
+        {
+          startptr++;
+        }
+
+        char *endptr= startptr;
+        while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+        return memcached_set_error(*ptr, MEMCACHED_CLIENT_ERROR, MEMCACHED_AT,
+                                   startptr, size_t(endptr - startptr));
+      }
       else if (string_len == 14 && memcmp(string_ptr, "CREATED_STORED", string_len) == 0)
         return MEMCACHED_CREATED_STORED;
       break;
@@ -1355,7 +1417,7 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
     {
       break;
     }
-    rc= get_status_of_coll_pipe_response(buffer, total_read-2);
+    rc= get_status_of_coll_pipe_response(ptr, buffer, total_read-2);
     if (rc == MEMCACHED_UNKNOWN_READ_FAILURE)
     {
       break;
@@ -1383,7 +1445,7 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
   {
     return rc;
   }
-  rc= get_status_of_coll_pipe_response(buffer, total_read-2);
+  rc= get_status_of_coll_pipe_response(ptr, buffer, total_read-2);
 #ifdef ENABLE_REPLICATION
   /* Pipe operation is stopped if switchover is done. */
   if (switchover_rc != MEMCACHED_SUCCESS && rc == MEMCACHED_PIPE_ERROR_BAD_ERROR) {
@@ -1571,7 +1633,20 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
     else if (memcmp(buffer, "EFLAG_MISMATCH", 14) == 0)
       return MEMCACHED_EFLAG_MISMATCH;
     else if (memcmp(buffer, "ERROR", 5) == 0)
-      return MEMCACHED_PROTOCOL_ERROR;
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_PROTOCOL_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     else if (memcmp(buffer, "EXISTS", 6) == 0)
       return MEMCACHED_EXISTS;
     else if (memcmp(buffer, "EXIST\r", 6) == 0)
@@ -1619,7 +1694,20 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
       return MEMCACHED_COUNT;
     }
     else if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
-      return MEMCACHED_CLIENT_ERROR;
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("CLIENT_ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_CLIENT_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     break;
 
   case 'B':
@@ -2211,7 +2299,20 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
        */
     }
     else if (memcmp(buffer, "ERROR", 5) == 0)
-      return MEMCACHED_PROTOCOL_ERROR;
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_PROTOCOL_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     break;
 
   case 'O':
@@ -2274,12 +2375,38 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
 
   case 'C':
     if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
-      return MEMCACHED_CLIENT_ERROR;
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("CLIENT_ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_CLIENT_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     break;
 
   case 'S':
     if (memcmp(buffer, "SERVER_ERROR", 12) == 0)
-      return MEMCACHED_SERVER_ERROR;
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("SERVER_ERROR");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_SERVER_ERROR, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     break;
 
   default:
