@@ -381,3 +381,33 @@ const char *memcached_server_type(const memcached_server_instance_st ptr)
 
   return "UNKNOWN";
 }
+
+uint8_t memcached_server_major_version(const memcached_server_instance_st ptr)
+{
+  if (ptr)
+  {
+    return ptr->major_version;
+  }
+
+  return UINT8_MAX;
+}
+
+uint8_t memcached_server_minor_version(const memcached_server_instance_st ptr)
+{
+  if (ptr)
+  {
+    return ptr->minor_version;
+  }
+
+  return UINT8_MAX;
+}
+
+uint8_t memcached_server_micro_version(const memcached_server_instance_st ptr)
+{
+  if (ptr)
+  {
+    return ptr->micro_version;
+  }
+
+  return UINT8_MAX;
+}

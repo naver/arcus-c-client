@@ -56,10 +56,13 @@ static memcached_return_t check_server_version(const memcached_st *ptr,
   struct local_context *check= (struct local_context *)context;
   (void)ptr;
 
-  if (instance->major_version != UINT8_MAX &&
-      instance->major_version >= check->major_version &&
-      instance->minor_version >= check->minor_version &&
-      instance->micro_version >= check->micro_version )
+  if (memcached_server_major_version(instance) != UINT8_MAX &&
+      (memcached_server_major_version(instance) > check->major_version ||
+      (memcached_server_major_version(instance) == check->major_version &&
+       memcached_server_minor_version(instance) > check->minor_version) ||
+      (memcached_server_major_version(instance) == check->major_version &&
+       memcached_server_minor_version(instance) == check->minor_version &&
+       memcached_server_micro_version(instance) >= check->micro_version)))
   {
     return MEMCACHED_SUCCESS;
   }
