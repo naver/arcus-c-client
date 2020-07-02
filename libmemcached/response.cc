@@ -235,6 +235,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
         return MEMCACHED_SERVER_ERROR;
       }
 
+      // ensure compatibility. old cache server returns this error as SERVER_ERROR
       if (total_read > memcached_literal_param_size("SERVER_ERROR object too large for cache") and
           (memcmp(buffer, memcached_literal_param("SERVER_ERROR object too large for cache")) == 0))
       {
@@ -342,6 +343,12 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
   case 'C': /* CLIENT ERROR */
     if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
     {
+      if (total_read > memcached_literal_param_size("CLIENT_ERROR object too large for cache") and
+          (memcmp(buffer, memcached_literal_param("CLIENT_ERROR object too large for cache")) == 0))
+      {
+        return MEMCACHED_E2BIG;
+      }
+
       // Move past the basic error message and whitespace
       char *startptr= buffer + memcached_literal_param_size("CLIENT_ERROR");
       if (startptr[0] == ' ')
@@ -1547,8 +1554,9 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
         return MEMCACHED_SERVER_ERROR;
       }
 
+      // ensure compatibility. old cache server returns this error as SERVER_ERROR
       if (total_read > memcached_literal_param_size("SERVER_ERROR object too large for cache") and
-            (memcmp(buffer, memcached_literal_param("SERVER_ERROR object too large for cache")) == 0))
+          (memcmp(buffer, memcached_literal_param("SERVER_ERROR object too large for cache")) == 0))
       {
         return MEMCACHED_E2BIG;
       }
@@ -1695,6 +1703,12 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
     }
     else if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
     {
+      if (total_read > memcached_literal_param_size("CLIENT_ERROR object too large for cache") and
+          (memcmp(buffer, memcached_literal_param("CLIENT_ERROR object too large for cache")) == 0))
+      {
+        return MEMCACHED_E2BIG;
+      }
+
       // Move past the basic error message and whitespace
       char *startptr= buffer + memcached_literal_param_size("CLIENT_ERROR");
       if (startptr[0] == ' ')
