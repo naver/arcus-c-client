@@ -88,6 +88,9 @@ struct memcached_server_st {
   struct addrinfo *address_info;
   struct addrinfo *address_info_next;
   time_t next_retry;
+#ifdef IMMEDIATELY_RECONNECT
+  bool immediate_reconnect; /* about ERROR, CLIENT_ERROR, SERVER_ERROR, PARTIAL_READ_ERROR */
+#endif
 #ifdef ENABLE_REPLICATION
   /* In replication, a group may have one master and one slave.
    */
@@ -191,6 +194,11 @@ uint8_t memcached_server_micro_version(const memcached_server_instance_st ptr);
 
 LIBMEMCACHED_LOCAL
 void __server_free(memcached_server_st *);
+
+#ifdef IMMEDIATELY_RECONNECT
+LIBMEMCACHED_API
+void memcached_server_set_immediate_reconnect(memcached_server_st *ptr);
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

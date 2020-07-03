@@ -71,6 +71,9 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
 
   self->state= MEMCACHED_SERVER_STATE_NEW;
   self->next_retry= 0;
+#ifdef IMMEDIATELY_RECONNECT
+  self->immediate_reconnect= false;
+#endif
 
   self->root= root;
   if (root)
@@ -381,6 +384,17 @@ const char *memcached_server_type(const memcached_server_instance_st ptr)
 
   return "UNKNOWN";
 }
+
+#ifdef IMMEDIATELY_RECONNECT
+void memcached_server_set_immediate_reconnect(memcached_server_st *self)
+{
+  WATCHPOINT_ASSERT(self);
+  if (not self)
+    return;
+
+  self->immediate_reconnect= true;
+}
+#endif
 
 uint8_t memcached_server_major_version(const memcached_server_instance_st ptr)
 {

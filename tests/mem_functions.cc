@@ -408,6 +408,22 @@ static test_return_t connection_test(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+#ifdef IMMEDIATELY_RECONNECT
+static test_return_t immediate_reconnect_test(memcached_st *memc)
+{
+  memcached_return_t rc;
+  const char *key= "bad key";
+  for (int i= 0; i < 2; i++) {
+    rc= memcached_set(memc, key, strlen(key), NULL, 0, 0, 0);
+    /* immediate reconnect about CLIENT_ERROR.
+       so don't occur MEMCACHED_SERVER_TEMPORARILY_DISABLED.
+    */
+    test_compare(MEMCACHED_CLIENT_ERROR, rc);
+  }
+  return TEST_SUCCESS;
+}
+#endif
+
 static test_return_t libmemcached_string_behavior_test(memcached_st *)
 {
   for (int x= MEMCACHED_BEHAVIOR_NO_BLOCK; x < int(MEMCACHED_BEHAVIOR_MAX); ++x)
@@ -6363,6 +6379,13 @@ test_st memcached_server_add_tests[] ={
   {0, 0, (test_callback_fn*)0}
 };
 
+#ifdef IMMEDIATELY_RECONNECT
+test_st immediate_reconnect[] ={
+  {"immediate_reconnect", false, (test_callback_fn*)immediate_reconnect_test },
+  {0, 0, (test_callback_fn*)0}
+};
+#endif
+
 test_st namespace_tests[] ={
   {"basic tests", true, (test_callback_fn*)selection_of_namespace_tests },
   {"increment", true, (test_callback_fn*)memcached_increment_namespace },
@@ -11625,6 +11648,9 @@ collection_st collection[] ={
   {"hsieh_availability", 0, 0, hsieh_availability},
   {"murmur_availability", 0, 0, murmur_availability},
   {"memcached_server_add", 0, 0, memcached_server_add_tests},
+#ifdef IMMEDIATELY_RECONNECT
+  {"immediate_reconnect", 0, 0, immediate_reconnect},
+#endif
   {"block", 0, 0, tests},
   {"binary", (test_callback_fn*)pre_binary, 0, tests},
   {"nonblock", (test_callback_fn*)pre_nonblock, 0, tests},
