@@ -59,6 +59,7 @@
 #endif
 
 #define UPDATE_HASH_RING_OF_FETCHED_MC 1
+#define IMMEDIATELY_RECONNECT 1
 
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211

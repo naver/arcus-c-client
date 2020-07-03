@@ -107,6 +107,13 @@ static inline void memcached_mark_server_for_timeout(memcached_server_write_inst
     {
       server->next_retry= 1; // Setting the value to 1 causes the timeout to occur immediatly
     }
+#ifdef IMMEDIATELY_RECONNECT
+    if (server->immediate_reconnect)
+    {
+      server->next_retry= 1; // Setting the value to 1 causes the timeout to occur immediately
+      server->immediate_reconnect= false;
+    }
+#endif
 
     server->state= MEMCACHED_SERVER_STATE_IN_TIMEOUT;
     if (server->server_failure_counter_query_id != server->root->query_id)
