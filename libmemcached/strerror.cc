@@ -297,9 +297,6 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
   case MEMCACHED_DELETED_DROPPED:
     return "COLLECTION DELETED DROPPED";
 
-  case MEMCACHED_LENGTH_MISMATCH:
-    return "COLLECTION LENGTH MISMATCH";
-
   case MEMCACHED_PIPE_ERROR_COMMAND_OVERFLOW:
     return "PIPE ERROR : COMMAND OVERFLOW";
 

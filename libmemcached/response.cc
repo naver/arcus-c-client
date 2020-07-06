@@ -1612,9 +1612,6 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
     }
     break;
 
-  case 'L':
-    return MEMCACHED_LENGTH_MISMATCH;
-
   case 'N':
     if (memcmp(buffer, "NOT_FOUND_ELEMENT", 17) == 0)
       return MEMCACHED_NOTFOUND_ELEMENT;
