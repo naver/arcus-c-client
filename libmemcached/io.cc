@@ -531,7 +531,8 @@ memcached_return_t memcached_io_read(memcached_server_write_instance_st ptr,
           WATCHPOINT_STRING("We had a zero length recv()");
           memcached_quit_server(ptr, true);
           *nread= -1;
-          return memcached_set_error(*ptr, MEMCACHED_UNKNOWN_READ_FAILURE, MEMCACHED_AT);
+          return memcached_set_error(*ptr, MEMCACHED_CONNECTION_FAILURE, MEMCACHED_AT,
+                                     memcached_literal_param("recv() returned zero, server has disconnected"));
         }
       } while (data_read <= 0);
 
