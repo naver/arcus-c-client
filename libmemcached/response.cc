@@ -679,32 +679,17 @@ memcached_return_t memcached_read_one_response(memcached_server_write_instance_s
   {
     rc= textual_read_one_response(ptr, buffer, buffer_length, result);
   }
-#ifdef IMMEDIATELY_RECONNECT
-  if (rc == MEMCACHED_UNKNOWN_READ_FAILURE or
-      rc == MEMCACHED_PROTOCOL_ERROR or
-      rc == MEMCACHED_CLIENT_ERROR or
-      rc == MEMCACHED_SERVER_ERROR or
-      rc == MEMCACHED_PARTIAL_READ)
-  {
-    memcached_server_set_immediate_reconnect(ptr);
-  }
-#endif
 
+  unlikely(memcached_fatal(rc))
+  {
 #ifdef IMMEDIATELY_RECONNECT
-  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
-           rc == MEMCACHED_PROTOCOL_ERROR or
-           rc == MEMCACHED_CLIENT_ERROR or
-           rc == MEMCACHED_SERVER_ERROR or
-           rc == MEMCACHED_PARTIAL_READ or
-           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
-#else
-  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
-           rc == MEMCACHED_PROTOCOL_ERROR or
-           rc == MEMCACHED_CLIENT_ERROR or
-           rc == MEMCACHED_PARTIAL_READ or
-           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+    if (memcached_immediate_reconnect(rc))
+    {
+      memcached_server_set_immediate_reconnect(ptr);
+    }
 #endif
     memcached_io_reset(ptr);
+  }
 
   return rc;
 }
@@ -1786,32 +1771,17 @@ static memcached_return_t memcached_read_one_coll_response(memcached_server_writ
   {
     rc= textual_read_one_coll_response(ptr, buffer, buffer_length, result);
   }
-#ifdef IMMEDIATELY_RECONNECT
-  if (rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
-      rc == MEMCACHED_PROTOCOL_ERROR ||
-      rc == MEMCACHED_CLIENT_ERROR ||
-      rc == MEMCACHED_SERVER_ERROR ||
-      rc == MEMCACHED_PARTIAL_READ)
-  {
-    memcached_server_set_immediate_reconnect(ptr);
-  }
-#endif
 
+  unlikely(memcached_fatal(rc))
+  {
 #ifdef IMMEDIATELY_RECONNECT
-  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
-           rc == MEMCACHED_PROTOCOL_ERROR ||
-           rc == MEMCACHED_CLIENT_ERROR ||
-           rc == MEMCACHED_SERVER_ERROR ||
-           rc == MEMCACHED_PARTIAL_READ ||
-           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
-#else
-  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
-           rc == MEMCACHED_PROTOCOL_ERROR ||
-           rc == MEMCACHED_CLIENT_ERROR ||
-           rc == MEMCACHED_PARTIAL_READ ||
-           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+    if (memcached_immediate_reconnect(rc))
+    {
+      memcached_server_set_immediate_reconnect(ptr);
+    }
 #endif
     memcached_io_reset(ptr);
+  }
 
   return rc;
 }
@@ -2499,32 +2469,17 @@ static memcached_return_t memcached_read_one_coll_smget_response(memcached_serve
   {
     rc= textual_read_one_coll_smget_response(ptr, buffer, buffer_length, result);
   }
-#ifdef IMMEDIATELY_RECONNECT
-  if (rc == MEMCACHED_UNKNOWN_READ_FAILURE or
-      rc == MEMCACHED_PROTOCOL_ERROR or
-      rc == MEMCACHED_CLIENT_ERROR or
-      rc == MEMCACHED_SERVER_ERROR or
-      rc == MEMCACHED_PARTIAL_READ)
-  {
-    memcached_server_set_immediate_reconnect(ptr);
-  }
-#endif
 
+  unlikely(memcached_fatal(rc))
+  {
 #ifdef IMMEDIATELY_RECONNECT
-  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
-           rc == MEMCACHED_PROTOCOL_ERROR or
-           rc == MEMCACHED_CLIENT_ERROR or
-           rc == MEMCACHED_SERVER_ERROR or
-           rc == MEMCACHED_PARTIAL_READ or
-           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE )
-#else
-  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
-           rc == MEMCACHED_PROTOCOL_ERROR or
-           rc == MEMCACHED_CLIENT_ERROR or
-           rc == MEMCACHED_PARTIAL_READ or
-           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE )
+    if (memcached_immediate_reconnect(rc))
+    {
+      memcached_server_set_immediate_reconnect(ptr);
+    }
 #endif
     memcached_io_reset(ptr);
+  }
 
   return rc;
 }

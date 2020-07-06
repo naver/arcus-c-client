@@ -174,13 +174,25 @@ static inline bool memcached_failed(memcached_return_t rc)
 
 static inline bool memcached_fatal(memcached_return_t rc)
 {
-  return (rc != MEMCACHED_SUCCESS && 
-          rc != MEMCACHED_END && 
-          rc != MEMCACHED_STORED && 
-          rc != MEMCACHED_STAT && 
-          rc != MEMCACHED_DELETED &&
-          rc != MEMCACHED_BUFFERED &&
-          rc != MEMCACHED_VALUE);
+  return (rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
+          rc == MEMCACHED_PROTOCOL_ERROR ||
+          rc == MEMCACHED_CLIENT_ERROR ||
+#ifdef IMMEDIATELY_RECONNECT
+          rc == MEMCACHED_SERVER_ERROR ||
+#endif
+          rc == MEMCACHED_PARTIAL_READ ||
+          rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE);
 }
+
+#ifdef IMMEDIATELY_RECONNECT
+static inline bool memcached_immediate_reconnect(memcached_return_t rc)
+{
+  return (rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
+          rc == MEMCACHED_PROTOCOL_ERROR ||
+          rc == MEMCACHED_CLIENT_ERROR ||
+          rc == MEMCACHED_SERVER_ERROR ||
+          rc == MEMCACHED_PARTIAL_READ);
+}
+#endif
 
 #define memcached_continue(__memcached_return_t) ((__memcached_return_t) == MEMCACHED_IN_PROGRESS)
