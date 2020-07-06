@@ -689,14 +689,20 @@ memcached_return_t memcached_read_one_response(memcached_server_write_instance_s
   }
 #endif
 
+#ifdef IMMEDIATELY_RECONNECT
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
            rc == MEMCACHED_PROTOCOL_ERROR or
            rc == MEMCACHED_CLIENT_ERROR or
-#ifdef IMMEDIATELY_RECONNECT
            rc == MEMCACHED_SERVER_ERROR or
-#endif
            rc == MEMCACHED_PARTIAL_READ or
            rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+#else
+  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
+           rc == MEMCACHED_PROTOCOL_ERROR or
+           rc == MEMCACHED_CLIENT_ERROR or
+           rc == MEMCACHED_PARTIAL_READ or
+           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+#endif
     memcached_io_reset(ptr);
 
   return rc;
@@ -1792,14 +1798,20 @@ static memcached_return_t memcached_read_one_coll_response(memcached_server_writ
   }
 #endif
 
+#ifdef IMMEDIATELY_RECONNECT
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
            rc == MEMCACHED_PROTOCOL_ERROR ||
            rc == MEMCACHED_CLIENT_ERROR ||
-#ifdef IMMEDIATELY_RECONNECT
            rc == MEMCACHED_SERVER_ERROR ||
-#endif
            rc == MEMCACHED_PARTIAL_READ ||
            rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+#else
+  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE ||
+           rc == MEMCACHED_PROTOCOL_ERROR ||
+           rc == MEMCACHED_CLIENT_ERROR ||
+           rc == MEMCACHED_PARTIAL_READ ||
+           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE)
+#endif
     memcached_io_reset(ptr);
 
   return rc;
@@ -2498,14 +2510,20 @@ static memcached_return_t memcached_read_one_coll_smget_response(memcached_serve
   }
 #endif
 
+#ifdef IMMEDIATELY_RECONNECT
   unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
            rc == MEMCACHED_PROTOCOL_ERROR or
            rc == MEMCACHED_CLIENT_ERROR or
-#ifdef IMMEDIATELY_RECONNECT
            rc == MEMCACHED_SERVER_ERROR or
-#endif
            rc == MEMCACHED_PARTIAL_READ or
            rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE )
+#else
+  unlikely(rc == MEMCACHED_UNKNOWN_READ_FAILURE or
+           rc == MEMCACHED_PROTOCOL_ERROR or
+           rc == MEMCACHED_CLIENT_ERROR or
+           rc == MEMCACHED_PARTIAL_READ or
+           rc == MEMCACHED_MEMORY_ALLOCATION_FAILURE )
+#endif
     memcached_io_reset(ptr);
 
   return rc;
