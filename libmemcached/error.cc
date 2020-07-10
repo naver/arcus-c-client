@@ -39,6 +39,9 @@
 #include <cstdarg>
 
 #define MAX_ERROR_LENGTH 2048
+#ifdef REFACTORING_ERROR_PRINT
+#define ERROR_HDR_LENGTH 128
+#endif
 struct memcached_error_t
 {
   memcached_st *root;
@@ -134,6 +137,51 @@ static void _set(memcached_st& memc, memcached_string_t *str, memcached_return_t
   }
 
 
+#ifdef REFACTORING_ERROR_PRINT
+  struct timeval time;
+  struct tm *tm_info;
+  gettimeofday(&time, NULL);
+  tm_info= localtime(&time.tv_sec);
+  char errmsg_header[ERROR_HDR_LENGTH];
+  snprintf(errmsg_header, ERROR_HDR_LENGTH,
+           "[%04d-%02d-%02d %02d:%02d:%02d.%06ld] mc_id:%"PRIu64" mc_qid:%"PRIu64" er_qid:%"PRIu64"",
+           tm_info->tm_year+1900, tm_info->tm_mon+1, tm_info->tm_mday,
+           tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec, time.tv_usec,
+           memc.mc_id, memc.query_id, error->query_id);
+  if (str and str->size and local_errno)
+  {
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s(%s), %.*s -> %s",
+                               errmsg_header,
+                               memcached_strerror(&memc, rc), 
+                               errmsg_ptr,
+                               memcached_string_printf(*str), at);
+  }
+  else if (local_errno)
+  {
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s(%s) -> %s",
+                               errmsg_header,
+                               memcached_strerror(&memc, rc), 
+                               errmsg_ptr,
+                               at);
+  }
+  else if (rc == MEMCACHED_PARSE_ERROR and str and str->size)
+  {
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %.*s -> %s",
+                               errmsg_header, int(str->size), str->c_str, at);
+  }
+  else if (str and str->size)
+  {
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s, %.*s -> %s", 
+                               errmsg_header,
+                               memcached_strerror(&memc, rc), 
+                               int(str->size), str->c_str, at);
+  }
+  else
+  {
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s -> %s", 
+                               errmsg_header, memcached_strerror(&memc, rc), at);
+  }
+#else
   if (str and str->size and local_errno)
   {
     error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s(%s), %.*s -> %s", 
@@ -164,6 +212,7 @@ static void _set(memcached_st& memc, memcached_string_t *str, memcached_return_t
     error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s -> %s", 
                                memcached_strerror(&memc, rc), at);
   }
+#endif
 
   error->next= memc.error_messages;
   memc.error_messages= error;
@@ -359,6 +408,85 @@ memcached_return_t memcached_set_errno(memcached_server_st& self, int local_errn
   return rc;
 }
 
+#ifdef REFACTORING_ERROR_PRINT
+static bool _error_msg_buffer_alloc(memcached_st *self)
+{
+  size_t buffer_size= 0;
+  size_t size= ERROR_HDR_LENGTH;
+  char *buffer= NULL;
+
+  memcached_error_t *error= self->error_messages;
+  while (error != NULL)
+  {
+    size += (error->size + 1);
+    error= error->next;
+  }
+
+  buffer_size= MAX_ERROR_LENGTH + (MAX_ERROR_LENGTH * (int)(size/MAX_ERROR_LENGTH));
+  if (self->error_msg_buffer)
+  {
+    if (self->error_msg_buffer_size > size)
+    {
+      return true;
+    }
+    buffer= static_cast<char *>(libmemcached_realloc(self, self->error_msg_buffer, buffer_size * sizeof(char)));
+  }
+  else
+  {
+    buffer= static_cast<char *>(libmemcached_malloc(self, buffer_size * sizeof(char)));
+  }
+  if (not buffer)
+  {
+    return false;
+  }
+
+  self->error_msg_buffer= buffer;
+  self->error_msg_buffer_size= buffer_size;
+  return true;
+}
+
+static void _error_msg_buffer_free(memcached_st& self)
+{
+  if (self.error_msg_buffer != NULL)
+  {
+    free(self.error_msg_buffer);
+    self.error_msg_buffer= NULL;
+    self.error_msg_buffer_size= 0;
+  }
+}
+
+const char *memcached_detail_error_message(memcached_st *self, memcached_return_t rc)
+{
+  if (not self)
+  {
+    return memcached_strerror(NULL, MEMCACHED_INVALID_ARGUMENTS);
+  }
+
+  if (not self->error_messages)
+  {
+    return memcached_strerror(NULL, rc);
+  }
+
+  if (_error_msg_buffer_alloc(self) == false)
+  {
+    return memcached_strerror(NULL, MEMCACHED_MEMORY_ALLOCATION_FAILURE);
+  }
+
+  int write_length= 0;
+  char *buffer= self->error_msg_buffer;
+  size_t buffer_size= self->error_msg_buffer_size;
+  memcached_error_t *error= self->error_messages;
+
+  write_length= (int)snprintf(buffer, ERROR_HDR_LENGTH, "rc(%s)\n", memcached_strerror(NULL, rc));
+  while (error != NULL)
+  {
+    write_length += (int)snprintf(buffer+write_length, buffer_size-write_length, "%s\n", error->message);
+    error= error->next;
+  }
+  return self->error_msg_buffer;
+}
+#endif
+
 static void _error_print(const memcached_error_t *error)
 {
   if (error == NULL)
@@ -407,6 +535,11 @@ void memcached_error_free(memcached_st& self)
 {
   _error_free(self.error_messages);
   self.error_messages= NULL;
+#ifdef REFACTORING_ERROR_PRINT
+  if (self.query_id == 0) { /* by memcached_free */
+    _error_msg_buffer_free(self);
+  }
+#endif
 }
 
 void memcached_error_free(memcached_server_st& self)
