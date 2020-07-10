@@ -174,6 +174,9 @@ struct memcached_st {
   int send_size;
   int recv_size;
   void *user_data;
+#ifdef REFACTORING_ERROR_PRINT
+  uint64_t mc_id;
+#endif
   uint64_t query_id;
   uint32_t number_of_replicas;
   memcached_result_st result;
@@ -203,6 +206,10 @@ struct memcached_st {
   memcached_callback_st *callbacks;
   struct memcached_sasl_st sasl;
   struct memcached_error_t *error_messages;
+#ifdef REFACTORING_ERROR_PRINT
+  char  *error_msg_buffer;
+  size_t error_msg_buffer_size;
+#endif
   struct memcached_array_st *_namespace;
   struct {
     uint32_t initial_pool_size;

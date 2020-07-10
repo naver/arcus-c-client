@@ -58,6 +58,22 @@
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 #include "libmemcached/arcus_priv.h"
 #endif
+#ifdef REFACTORING_ERROR_PRINT
+#include <pthread.h>
+
+static uint64_t        mc_id= 0;
+static pthread_mutex_t lock_mcid= PTHREAD_MUTEX_INITIALIZER;
+
+static inline uint64_t _memcached_get_id(void)
+{
+  uint64_t id= 0;
+  pthread_mutex_lock(&lock_mcid);
+  id= mc_id;
+  mc_id= (mc_id < UINT64_MAX-1 ? mc_id+1 : 0);
+  pthread_mutex_unlock(&lock_mcid);
+  return id;
+}
+#endif
 
 static inline bool _memcached_init(memcached_st *self)
 {
@@ -111,6 +127,9 @@ static inline bool _memcached_init(memcached_st *self)
   self->snd_timeout= 0;
   self->rcv_timeout= 0;
   self->server_failure_limit= MEMCACHED_SERVER_FAILURE_LIMIT;
+#ifdef REFACTORING_ERROR_PRINT
+  self->mc_id= _memcached_get_id();
+#endif
   self->query_id= 1; // 0 is considered invalid
 
   /* TODO, Document why we picked these defaults */
@@ -141,6 +160,10 @@ static inline bool _memcached_init(memcached_st *self)
   self->sasl.is_allocated= false;
 
   self->error_messages= NULL;
+#ifdef REFACTORING_ERROR_PRINT
+  self->error_msg_buffer= NULL;
+  self->error_msg_buffer_size= 0;
+#endif
   self->_namespace= NULL;
   self->configure.initial_pool_size= 1;
   self->configure.max_pool_size= 1;
@@ -196,6 +219,9 @@ static void _free(memcached_st *ptr, bool release_st)
   memcached_array_free(ptr->_namespace);
   ptr->_namespace= NULL;
 
+#ifdef REFACTORING_ERROR_PRINT
+  ptr->query_id= 0;
+#endif
   memcached_error_free(*ptr);
 
   if (LIBMEMCACHED_WITH_SASL_SUPPORT and ptr->sasl.callbacks)

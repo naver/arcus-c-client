@@ -44,6 +44,11 @@ extern "C" {
 LIBMEMCACHED_API
   const char *memcached_last_error_message(memcached_st *);
 
+#ifdef REFACTORING_ERROR_PRINT
+LIBMEMCACHED_API
+  const char *memcached_detail_error_message(memcached_st *, memcached_return_t rc);
+#endif
+
 LIBMEMCACHED_API
   void memcached_error_print(const memcached_st *);
 
