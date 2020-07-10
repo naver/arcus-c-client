@@ -141,7 +141,7 @@ static void *my_app_thread(void *ctx_pool)
             snprintf(key, 100, "test:kv_%d", getpid());
             rc = memcached_set(mc, key, strlen(key), (char *)&value, sizeof(value), 600, 0);
             if (rc != MEMCACHED_SUCCESS) {
-                fprintf(stderr, "memcached_set: %s\n", memcached_strerror(NULL, rc));
+                fprintf(stderr, "memcached_set: %s", memcached_detail_error_message(mc, rc));
             }
         }
 
@@ -265,6 +265,37 @@ Arcus 관련 로그를 기록하기 위한 FILE stream을 지정한다.
 ``` c
 mc = memcached_create(NULL);
 arcus_set_log_stream(mc, logfile);
+```
+
+Operation 수행 중 발생하는 오류는 Arcus C client 내부에서 보관하며,
+서비스의 로깅 시스템을 통해 출력할 수 있도록 아래와 같은 API를 제공한다.
+
+``` c
+const char *memcached_strerror(memcached_st *, memcached_return_t rc);
+const char *memcached_last_error_message(memcached_st *mc);
+const char *memcached_detail_error_message(memcached_st *mc, memcached_return_t rc);
+```
+
+  - `memcached_strerror` : memcached return code인 rc에 대응하는 return message 출력을 위해 사용한다.
+    - 출력 형식은 `<rc string>` 형태이다.
+    - `memcached_st *` 인자는 사용되지 않는 값이며, NULL로 설정해 사용한다.
+  - `memcached_last_error_message` : 하나의 operation 수행 중 마지막으로 발생한 error message 출력을 위해 사용한다.
+  - `memcached_detail_error_message` : 하나의 operation 수행 중 발생한 모든 error message 출력을 위해 사용한다.
+    - 출력 형식은 `<time> <mc_id> <mc_qid> <er_qid> <error message>` 형태이다.
+    - time : error message가 생성된 시각
+    - mc_id : 서로다른 mc를 구분하기 위해 사용하는 구분자로, mc 생성마다 1 씩 증가하는 값
+    - mc_qid : mc가 현재 수행하는 operation의 query id
+    - er_qid : error message를 생성한 operation의 query id
+    - error mssage : 실제 오류 원인이 되는 error message string
+
+위 API는 아래와 같은 방법으로 사용이 가능하며,
+정확한 오류 출력을 위해 `memcached_detail_error_message(memcached_st *mc, memcached_return_t rc)`의 사용을 추천한다.
+
+``` c
+rc = memcached_set(mc, key, strlen(key), (char *)&value, sizeof(value), 600, 0);
+if (rc != MEMCACHED_SUCCESS) {
+    fprintf(stderr, "memcached_set: %s", memcached_detail_error_message(mc, rc));
+}
 ```
 
 #### 캐시 명령에 대한 OPERATION TIMEOUT 지정
