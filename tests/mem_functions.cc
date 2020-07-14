@@ -11535,6 +11535,47 @@ static test_return_t arcus_1_10_map_piped_insert_bulk(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+static test_return_t arcus_coll_piped_insert_bad_error(memcached_st *memc)
+{
+  size_t val_len= 32 * 1024 - 2;
+  char *too_large_str= (char*)malloc(sizeof(char) * val_len);
+  for (uint32_t i=0; i<val_len; i++) {
+    too_large_str[i]= 'a';
+  }
+
+  char **values= (char **)malloc(sizeof(char *) * 2);
+  values[0]= (char*)malloc(sizeof(char) * 10);
+  values[1]= (char*)malloc(sizeof(char) * val_len);
+  strncpy(values[0], "value", 5);
+  strncpy(values[1], too_large_str, val_len);
+
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 4000;
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  int32_t indexes[2]= {0, 1};
+  size_t value_lengths[2]= {5, val_len};
+  memcached_return_t results[3];
+  memcached_return_t piped_rc;
+  memcached_return_t rc= memcached_lop_piped_insert(memc, test_literal_param("list:a_list"),
+                                 2, indexes, values, value_lengths,
+                                 &attributes, results, &piped_rc);
+
+  test_true_got(rc == MEMCACHED_PIPE_ERROR_BAD_ERROR, memcached_strerror(NULL, rc));
+  test_true_got(piped_rc == MEMCACHED_SOME_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(results[0] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[0]));
+  test_true_got(results[1] == MEMCACHED_CLIENT_ERROR, memcached_strerror(NULL, results[1]));
+
+  free(values[0]);
+  free(values[1]);
+  free(values);
+  free(too_large_str);
+
+  return TEST_SUCCESS;
+}
+
 test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_flush_by_prefix", true, (test_callback_fn*)arcus_1_6_flush_by_prefix},
   {"arcus_1_6_list_create", true, (test_callback_fn*)arcus_1_6_list_create},
@@ -11636,6 +11677,7 @@ test_st arcus_1_10_tests[] ={
   {"arcus_1_10_map_piped_insert_one", true, (test_callback_fn*)arcus_1_10_map_piped_insert_one},
   {"arcus_1_10_map_piped_insert_many", true, (test_callback_fn*)arcus_1_10_map_piped_insert_many},
   {"arcus_1_10_map_piped_insert_bulk", true, (test_callback_fn*)arcus_1_10_map_piped_insert_bulk},
+  {"arcus_coll_piped_insert_bad_error", true, (test_callback_fn*)arcus_coll_piped_insert_bad_error},
   {0, 0, (test_callback_fn*)0}
 };
 
