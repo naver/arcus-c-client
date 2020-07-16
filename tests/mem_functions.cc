@@ -11535,6 +11535,34 @@ static test_return_t arcus_1_10_map_piped_insert_bulk(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+static test_return_t arcus_piped_insert_MEMCACHED_PIPE_ERROR_BAD_ERROR(memcached_st *memc)
+{
+  size_t val_len= MEMCACHED_COLL_MAX_ELEMENT_SIZE;
+  char too_large_val[MEMCACHED_COLL_MAX_ELEMENT_SIZE]= {0};
+  const char *values[2]= {"value", too_large_val};
+
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 4000;
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  int32_t indexes[2]= {0, 1};
+  size_t value_lengths[2]= {5, val_len};
+  memcached_return_t results[2];
+  memcached_return_t piped_rc;
+  memcached_return_t rc= memcached_lop_piped_insert(memc, test_literal_param("list:a_list"),
+                                                    2, indexes, values, value_lengths,
+                                                    &attributes, results, &piped_rc);
+
+  test_true_got(rc == MEMCACHED_PIPE_ERROR_BAD_ERROR, memcached_strerror(NULL, rc));
+  test_true_got(piped_rc == MEMCACHED_SOME_SUCCESS, memcached_strerror(NULL, piped_rc));
+  test_true_got(results[0] == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, results[0]));
+  test_true_got(results[1] == MEMCACHED_CLIENT_ERROR, memcached_strerror(NULL, results[1]));
+
+  return TEST_SUCCESS;
+}
+
 test_st arcus_1_6_collection_tests[] ={
   {"arcus_1_6_flush_by_prefix", true, (test_callback_fn*)arcus_1_6_flush_by_prefix},
   {"arcus_1_6_list_create", true, (test_callback_fn*)arcus_1_6_list_create},
@@ -11639,6 +11667,11 @@ test_st arcus_1_10_tests[] ={
   {0, 0, (test_callback_fn*)0}
 };
 
+test_st arcus_error_tests[] ={
+  {"arcus_piped_insert_MEMCACHED_PIPE_ERROR_BAD_ERROR", true, (test_callback_fn*)arcus_piped_insert_MEMCACHED_PIPE_ERROR_BAD_ERROR},
+  {0, 0, (test_callback_fn*)0}
+};
+
 collection_st collection[] ={
 #if 0
   {"hash_sanity", 0, 0, hash_sanity},
@@ -11717,6 +11750,7 @@ collection_st collection[] ={
   {"arcus_1_8_tests", 0, 0, arcus_1_8_tests},
   {"arcus_1_9_tests", 0, 0, arcus_1_9_tests},
   {"arcus_1_10_tests", 0, 0, arcus_1_10_tests},
+  {"arcus_error_tests", 0, 0, arcus_error_tests},
   {0, 0, 0, 0}
 };
 
