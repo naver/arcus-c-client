@@ -118,6 +118,10 @@ static void options_parse(int argc, char *argv[])
       opt_help= true;
       break;
 
+    case OPT_VERSION: /* --version or -v */
+      opt_version= true;
+      break;
+
     case OPT_QUIET:
       close_stdio();
       break;
