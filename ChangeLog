@@ -1,3 +1,25 @@
+2020-08-04 [version 1.10.4]
+	* [FEATURE] Added memcached_detail_error_message() API.
+	* [FEATURE] Immediate reconnect according to error responses.
+	* [FEATURE] Changed max element bytes. 4KB => 16KB.
+	* [FEATURE] Returned E2BIG if CLIENT_ERROR object too large.
+	* [FEATURE] Changed MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT. 2sec => 1sec.
+	* [ENHANCE] Enlarged the contents of error messages in detail.
+	* [ENHANCE] Stored detail error message in error_messages field.
+	* [ENHANCE] Added arcus ZK manager for processing ZK events.
+	* [FIX] pipe operation is stopped if switchover is done.
+	* [FIX] Fixed version check condition.
+	* [FIX] Fixed several bugs in handling response strings.
+	* [FIX] Added the key test where needed.
+	* [FIX] Do client_info and watcher registration only when needed.
+	* [FIX] Prevent master_mc from being freed while using pool.
+	* [FIX] Changed to create version using m4 file.
+	* [FIX] Fixed simple null pointer dereferencing.
+	* [DOC] Added multi eflag filter description.
+	* [Test] Added test case for PIPE_ERROR bad error.
+	* [OTHERS] Refactored the response module for handling responses.
+	* [OTHERS] Refactored much code for readabiblity.
+
 2019-12-17 [version 1.10.3] (revised)
 	* [FIX] master failover issue by setting serverlist_changed corretly.
 	* [Fix] enable replication by referencing ZK in multi process mode.
