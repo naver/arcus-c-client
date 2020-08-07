@@ -340,6 +340,13 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     }
     break;
 
+  case 'T': /* TYPE MISMATCH */
+    if (memcmp(buffer, "TYPE_MISMATCH", 13) == 0)
+    {
+      return MEMCACHED_TYPE_MISMATCH;
+    }
+    break;
+
   case 'C': /* CLIENT ERROR */
     if (memcmp(buffer, "CLIENT_ERROR", 12) == 0)
     {
