@@ -1,6 +1,6 @@
-## Appendix
+# Appendix
 
-### 문제 해결
+## 문제 해결
 
 32-bit 환경에서는 ./configure 옵션에 다음을 추가한다.
 
@@ -20,7 +20,7 @@ CC=gcc4 CXX=g++4
 $ for i in `ipcs -s | awk '/USERID/ {print $2}'`; do (ipcrm -s $i); done
 ```
 
-### 설치 확인 : 샘플 프로그램을 정적 링크하기
+## 설치 확인 : 샘플 프로그램을 정적 링크하기
 
 (sample applications can be found in $SRC/arcus)
 

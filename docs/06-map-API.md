@@ -1,4 +1,4 @@
-## Map Item
+# Map Item
 
 Map item은 하나의 key에 대해 hash 구조 기반으로 mkey & value 쌍을 data 집합으로 가진다.
 
@@ -20,7 +20,7 @@ Map item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 - [Map Element 일괄 삽입](06-map-API.md#map-element-일괄-삽입)
 
 
-### Map Item 생성
+## Map Item 생성
 
 
 새로운 empty map item을 생성한다.
@@ -103,7 +103,7 @@ void arcus_map_item_create(memcached_st *memc)
 }
 ```
 
-### Map Element 삽입
+## Map Element 삽입
 
 
 Map에 하나의 element를 삽입하는 함수이다.
@@ -162,7 +162,7 @@ void arcus_map_element_insert(memcached_st *memc)
 }
 ```
 
-### Map Element 변경
+## Map Element 변경
 
 
 Map에 하나의 element를 변경하는 함수이다. 주어진 mkey를 가진 element의 value를 변경한다.
@@ -211,7 +211,7 @@ void arcus_map_element_update(memcached_st *memc)
 }
 ```
 
-### Map Element 삭제
+## Map Element 삭제
 
 Map element를 삭제하는 함수는 두 가지가 있다.
 
@@ -276,7 +276,7 @@ void arcus_map_element_delete(memcached_st *memc)
 }
 ```
 
-### Map Element 조회
+## Map Element 조회
 
 Map element를 조회하는 함수는 세 가지가 있다.
 
@@ -408,7 +408,7 @@ void arcus_map_element_get(memcached_st *memc)
 }
 ```
 
-### Map Element 일괄 삽입
+## Map Element 일괄 삽입
 
 Map에 여러 element를 한번에 삽입하는 함수는 두 가지가 있다.
 
