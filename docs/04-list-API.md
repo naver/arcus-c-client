@@ -1,4 +1,4 @@
-## List Item
+# List Item
 
 List item은 하나의 key에 대해 여러 value들을 double linked list 구조로 유지한다.
 
@@ -20,7 +20,7 @@ List item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 - [List Element 일괄 삽입](04-list-API.md#list-element-%EC%9D%BC%EA%B4%84-%EC%82%BD%EC%9E%85)
 
 
-### List Item 생성
+## List Item 생성
 
 
 새로운 empty list item을 생성한다.
@@ -103,7 +103,7 @@ void arcus_list_item_create(memcached_st *memc)
 }
 ```
 
-### List Element 삽입
+## List Element 삽입
 
 
 List에 하나의 element를 삽입하는 함수이다.
@@ -168,7 +168,7 @@ void arcus_list_element_insert(memcached_st *memc)
 }
 ```
 
-### List Element 삭제
+## List Element 삭제
 
 List element를 삭제하는 함수는 두 가지가 있다.
 
@@ -240,7 +240,7 @@ void arcus_list_element_delete(memcached_st *memc)
 }
 ```
 
-### List Element 조회
+## List Element 조회
 
 List element를 조회하는 함수는 두 가지가 있다.
 
@@ -351,7 +351,7 @@ void arcus_list_element_get(memcached_st *memc)
 }
 ```
 
-### List Element 일괄 삽입
+## List Element 일괄 삽입
 
 List에 여러 element를 한번에 삽입하는 함수는 두 가지가 있다.
 

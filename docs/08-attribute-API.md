@@ -1,4 +1,4 @@
-## Item Attributes
+# Item Attributes
 
 Item attributes는 각 cache item의 메타데이터를 의미한다.
 Item attributes의 기본 설명은 [Arcus cache server의 item attributes 부분](https://github.com/naver/arcus-memcached/blob/master/doc/arcus-item-attribute.md)을 참고하길 바란다.
@@ -9,7 +9,7 @@ Item attributes를 변경하거나 조회하는 함수들을 설명한다.
 - [Attribute 조회](08-attribute-API.md#attribute-%EC%A1%B0%ED%9A%8C)
 
 
-### Attribute 변경
+## Attribute 변경
 
 주어진 key의 attributes를 변경하는 함수이다.
 
@@ -51,7 +51,7 @@ memcached_return_t memcached_coll_attrs_set_readable(memcached_coll_attrs_st *at
 - memcached_coll_attrs_set_readable : Attribute를 Readable 상태로 변경하도록 설정한다.
 
 
-### Attribute 조회
+## Attribute 조회
 
 주어진 key의 attributes를 조회하는 함수이다.
 

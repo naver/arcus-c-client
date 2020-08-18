@@ -1,4 +1,4 @@
-## Arcus C Client
+# Arcus C Client
 
 Arcus client는 Arcus admin과 Arcus cache server군 들과의 연결을 유지하며 client로 들어온 명령을 처리하여 그 결과를 반환한다
 
@@ -18,7 +18,7 @@ Arcus cache server에서 제공하는 failover 기능과 collection 기능 등�
 - [서버 모델에 따른 초기화](02-arcus-c-client.md#%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8D%B8%EC%97%90-%EB%94%B0%EB%A5%B8-%EC%B4%88%EA%B8%B0%ED%99%94)
 - [Client 설정과 사용](02-arcus-c-client.md#client-%EC%84%A4%EC%A0%95%EA%B3%BC-%EC%82%AC%EC%9A%A9)
 
-### 서버 모델에 따른 초기화
+## 서버 모델에 따른 초기화
 
 서버 모델에 따른 초기화 메소드는 아래와 같다.
 
@@ -60,7 +60,7 @@ consistent hashing을 위한 초기화 작업을 수행한다.
 * ensemble_list : Arcus admin의 주소.
 * svc_code : 부여 받은 서비스코드.
 
-#### Multi-Threaded Example
+### Multi-Threaded Example
 
 많은 서비스에서 사용되는 Multi-threaded 서버에서는 다음과 같이 초기화 할 수 있다.
 
@@ -102,7 +102,7 @@ int main(int argc, char** argv)
 memcached_st 구조체는 Arcus cache server 연결 정보 및 각종 설정이 포함된 기본 자료구조로서 모든 캐시 요청 API에서 사용된다.
 완전한 예제는 소스 패키지에 포함된 arcus/multi_threaded.c를 참고하기 바란다.
 
-#### Multi-Process Example
+### Multi-Process Example
 
 일부 서비스에서는 Apache와 비슷한 프로세스 prefork 모델을 이용하기도 한다.
 이 같은 멀티 프로세스 방식의 서버에서 Arcus C client를 초기화 하는 방법은 다음과 같다.
@@ -244,9 +244,9 @@ RELEASE:
 자식 프로세스에서는 부모의 memcached_st 구조체를 이용하여 Arcus admin과의 연결 없이 캐시 서버 리스트를 얻어 온다.
 특히, 각 자식 프로세스가 내부적으로 멀티 쓰레드로 동작하는 상황에서 pool을 사용하는 방법도 확인할 수 있다.
 
-### Client 설정과 사용
+## Client 설정과 사용
 
-#### 로그 남기기
+### 로그 남기기
 
 Arcus C client는 Arcus admin과의 연결 상태 및 Arcus cache server 리스트의 변경 사항에 대해 로그를 남긴다.
 로그는 ZooKeeper client에 내장된 로깅 API를 사용하고 있으며 기본적으로 표준 에러(stderr )로 출력된다.
@@ -298,7 +298,7 @@ if (rc != MEMCACHED_SUCCESS) {
 }
 ```
 
-#### 캐시 명령에 대한 OPERATION TIMEOUT 지정
+### 캐시 명령에 대한 OPERATION TIMEOUT 지정
 
 캐시 명령을 보내고 응답을 받기까지의 timeout 시간을 지정할 수 있다.
 
@@ -309,7 +309,7 @@ memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_POLL_TIMEOUT, (uint64_t)timeout);
 
 timeout 시간은 밀리초(ms) 단위이며, 기본 값은 MEMCACHED_DEFAULT_TIMEOUT (500ms) 이다.
 
-#### 캐시 노드에 대한 CONNECTION TIMEOUT 지정
+### 캐시 노드에 대한 CONNECTION TIMEOUT 지정
 
 캐시연결이 끊어진 후 재연결 요청 시의 timeout 시간을 지정할 수 있다.
 
@@ -337,7 +337,7 @@ ARCUS의 admin인 ZooKeeper에 의해 failed 캐시 노드로 감지되어 cache
 그리고, 정상적으로 연결되지 않은 캐시 노드로의 요청에 대해서는
 MEMCACHED_SERVER_TEMPORARILY_DISABLED (“SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY”) 오류가 발생한다.
  
-#### 캐시 API의 응답코드 확인
+### 캐시 API의 응답코드 확인
 
 캐시 명령을 실행한 후에 캐시 서버로부터 받은 응답 코드를 확인할 수 있다.
 이 응답코드는 명령의 실행 결과에 대한 추가 정보를 제공한다.
