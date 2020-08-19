@@ -44,7 +44,7 @@ memcached_return_t memcached_append(memcached_st *ptr, const char *key, size_t k
 Key-value item 저장 연산에서 주요 파라미터는 아래와 같다.
 - expiration: key가 현재 시간부터 expire 될 때까지의 시간(초 단위). 시간이 30일을 초과하는 경우 expire 될 unix time을 입력한다.
   - 0: key가 expire 되지 않도록 설정한다.
-       하지만 Arcus cache server의 메모리가 부족한 경우 LRU에 의해 언제든지 삭제될 수 있다.
+       하지만 ARCUS cache server의 메모리가 부족한 경우 LRU에 의해 언제든지 삭제될 수 있다.
   - -1: key를 sticky item으로 만든다. Sticky item은 expire 되지 않으며 LRU에 의해 삭제되지도 않는다.
 - flags: value와는 별도로 저장할 수 있는 값으로서 Java client 등에서 내부적으로 사용하는 경우가 많으므로 사용하지 않기를 권한다.
 

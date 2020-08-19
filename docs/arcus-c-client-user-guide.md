@@ -1,14 +1,14 @@
-Arcus C Client User Guide
+ARCUS C Client User Guide
 
 [Content]
 
-- [Arcus Cloud 기본 사항](01-arcus-cloud-basics.md)
+- [ARCUS Cloud 기본 사항](01-arcus-cloud-basics.md)
   - [서비스코드](01-arcus-cloud-basics.md#%EC%84%9C%EB%B9%84%EC%8A%A4%EC%BD%94%EB%93%9C)
-  - [Arcus Admin](01-arcus-cloud-basics.md#arcus-admin)
+  - [ARCUS Admin](01-arcus-cloud-basics.md#arcus-admin)
   - [Cache Key](01-arcus-cloud-basics.md#cache-key)
   - [Cache Item](01-arcus-cloud-basics.md#cache-item)
   - [Expiration, Eviction, and Sticky Item](01-arcus-cloud-basics.md#expiration-eviction-and-sticky-item)
-- [Arcus C Client](02-arcus-c-client.md)
+- [ARCUS C Client](02-arcus-c-client.md)
   - [서버 모델에 따른 초기화](02-arcus-c-client.md#%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8D%B8%EC%97%90-%EB%94%B0%EB%A5%B8-%EC%B4%88%EA%B8%B0%ED%99%94)
   - [Client 설정과 사용](02-arcus-c-client.md#client-%EC%84%A4%EC%A0%95%EA%B3%BC-%EC%82%AC%EC%9A%A9)
 - [Key-Value Item 연산](03-key-value-API.md)

@@ -1,19 +1,19 @@
-# Arcus C Client
+# ARCUS C Client
 
-Arcus client는 Arcus admin과 Arcus cache server군 들과의 연결을 유지하며 client로 들어온 명령을 처리하여 그 결과를 반환한다
+ARCUS client는 ARCUS admin과 ARCUS cache server군 들과의 연결을 유지하며 client로 들어온 명령을 처리하여 그 결과를 반환한다
 
-Arcus C client는 C/C++ 개발환경에서 Arcus를 사용하기 위한 라이브러리로서,
+ARCUS C client는 C/C++ 개발환경에서 ARCUS를 사용하기 위한 라이브러리로서,
 대표적인 memcached C client인 [libmemcached](https://code.launchpad.net/libmemcached)를 기반으로 개발하였다. 
 따라서 libmemcached의 기능을 대부분 사용할 수 있으며,
-Arcus cache server에서 제공하는 failover 기능과 collection 기능 등을 추가로 지원한다.
+ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등을 추가로 지원한다.
 
 지원되는 추가 기능은 다음과 같다.
 
-* Cache Cluster-awareness: Arcus admin 서버에 연결하여 자신이 사용하는 캐시 서버 클러스터의 변경사항을 자동으로 인식한다.
-* Collection APIs: Arcus cache server에서 지원하는 List, Set, B+tree 형태의 자료구조를 사용할 수 있다.
+* Cache Cluster-awareness: ARCUS admin 서버에 연결하여 자신이 사용하는 캐시 서버 클러스터의 변경사항을 자동으로 인식한다.
+* Collection APIs: ARCUS cache server에서 지원하는 List, Set, B+tree 형태의 자료구조를 사용할 수 있다.
 * Prefix: 특정 prefix를 가지는 모든 item을 삭제할 수 있다.
 
-아래의 순서로 Arcus C Client 사용법을 설명한다.
+아래의 순서로 ARCUS C Client 사용법을 설명한다.
 
 - [서버 모델에 따른 초기화](02-arcus-c-client.md#%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8D%B8%EC%97%90-%EB%94%B0%EB%A5%B8-%EC%B4%88%EA%B8%B0%ED%99%94)
 - [Client 설정과 사용](02-arcus-c-client.md#client-%EC%84%A4%EC%A0%95%EA%B3%BC-%EC%82%AC%EC%9A%A9)
@@ -27,7 +27,7 @@ Arcus cache server에서 제공하는 failover 기능과 collection 기능 등�
   ```C
   arcus_return_t arcus_connect(memcached_st *mc, const char *ensemble_list, const char *svc_code)
   ```
-  싱글 스레드 서버에서 Arcus에 연결하기 위해 사용한다.
+  싱글 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
   
 - Multi-Threaded
  
@@ -35,7 +35,7 @@ Arcus cache server에서 제공하는 failover 기능과 collection 기능 등�
   arcus_return_t arcus_pool_connect(memcached_pool_st *pool, const char *ensemble_list, const char *svc_code) 
   ```
 
-  멀티 스레드 서버에서 Arcus에 연결하기 위해 사용한다.
+  멀티 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
   
 - Multi-Process
 
@@ -45,19 +45,19 @@ Arcus cache server에서 제공하는 failover 기능과 collection 기능 등�
   ```
  
   `arcus_proxy_create` 함수는 
-  멀티 프로세스 서버의 부모 프로세스가 Arcus에 연결한 뒤, 자식 프로세스들이 사용할 proxy를 생성하기 위해 사용한다.
+  멀티 프로세스 서버의 부모 프로세스가 ARCUS에 연결한 뒤, 자식 프로세스들이 사용할 proxy를 생성하기 위해 사용한다.
   `arcus_proxy_connect` 함수는
   멀티 프로세스 서버의 자식 프로세스에서 부모 프로세스가 생성한 proxy에 연결하기 위해 사용한다.
   참고 사항으로, 멀티 프로세스 서버이지만 각 자식 프로세스가 멀티 쓰레드로 동작하는 경우에는
   pool을 생성하여 사용할 수 있다.
 
-Arcus C client는 서비스에서 채용한 서버 모델에 따라 다양한 초기화 API를 제공한다.
-초기화 API는 Arcus admin에 접속하여 주어진 서비스코드에 해당하는 Arcus cache server 리스트를 가져와서,
+ARCUS C client는 서비스에서 채용한 서버 모델에 따라 다양한 초기화 API를 제공한다.
+초기화 API는 ARCUS admin에 접속하여 주어진 서비스코드에 해당하는 ARCUS cache server 리스트를 가져와서,
 consistent hashing을 위한 초기화 작업을 수행한다.
 
 초기화 API에서 공통적으로 사용되는 파라미터의 의미는 다음과 같다.
 
-* ensemble_list : Arcus admin의 주소.
+* ensemble_list : ARCUS admin의 주소.
 * svc_code : 부여 받은 서비스코드.
 
 ### Multi-Threaded Example
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
     // 2. Pool을 구성한다. 기준 memcached_st 구조체의 포인터와 pool의 초기 및 최대 크기를 입력한다.
     pool = memcached_pool_create(master_mc, initial, max);
 
-    // 3. Arcus admin에 연결한다.
+    // 3. ARCUS admin에 연결한다.
     arcus_return_t error = arcus_pool_connect(pool, "dev.arcuscloud.nhncorp.com:17288", "dev");
 
     if (error != ARCUS_SUCCESS) {
@@ -98,14 +98,14 @@ int main(int argc, char** argv)
 }
 ```
 
-위 코드는 Multi-threaded 서버에서 Arcus를 사용하기 위해 memcached_st 구조체에 대한 pool을 구성한다.
-memcached_st 구조체는 Arcus cache server 연결 정보 및 각종 설정이 포함된 기본 자료구조로서 모든 캐시 요청 API에서 사용된다.
+위 코드는 Multi-threaded 서버에서 ARCUS를 사용하기 위해 memcached_st 구조체에 대한 pool을 구성한다.
+memcached_st 구조체는 ARCUS cache server 연결 정보 및 각종 설정이 포함된 기본 자료구조로서 모든 캐시 요청 API에서 사용된다.
 완전한 예제는 소스 패키지에 포함된 arcus/multi_threaded.c를 참고하기 바란다.
 
 ### Multi-Process Example
 
 일부 서비스에서는 Apache와 비슷한 프로세스 prefork 모델을 이용하기도 한다.
-이 같은 멀티 프로세스 방식의 서버에서 Arcus C client를 초기화 하는 방법은 다음과 같다.
+이 같은 멀티 프로세스 방식의 서버에서 ARCUS C client를 초기화 하는 방법은 다음과 같다.
 
 ```C
 #include <unistd.h>
@@ -201,7 +201,7 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
     // 부모 프로세스가 사용할 memcached_st 구조체를 생성한다.
     proxy_mc = memcached_create(NULL);
 
-    // Arcus admin과 연결을 유지하는 쓰레드를 생성하여 캐시 서버 정보를 업데이트 받는다.
+    // ARCUS admin과 연결을 유지하는 쓰레드를 생성하여 캐시 서버 정보를 업데이트 받는다.
     rc = arcus_proxy_create(proxy_mc, "dev.arcuscloud.nhncorp.com:17288", "test1_6");
 
     if (rc != ARCUS_SUCCESS) {
@@ -239,18 +239,18 @@ RELEASE:
 }
 ```
 
-위 코드는 멀티 프로세스 서버에서 Arcus를 사용하기 위한 기본 초기화 방법이다.
-부모 프로세스에서 Arcus admin과 연결을 유지하는 쓰레드를 생성하여 캐시 서버 리스트의 변경 사항을 업데이트 받도록 하고,
-자식 프로세스에서는 부모의 memcached_st 구조체를 이용하여 Arcus admin과의 연결 없이 캐시 서버 리스트를 얻어 온다.
+위 코드는 멀티 프로세스 서버에서 ARCUS를 사용하기 위한 기본 초기화 방법이다.
+부모 프로세스에서 ARCUS admin과 연결을 유지하는 쓰레드를 생성하여 캐시 서버 리스트의 변경 사항을 업데이트 받도록 하고,
+자식 프로세스에서는 부모의 memcached_st 구조체를 이용하여 ARCUS admin과의 연결 없이 캐시 서버 리스트를 얻어 온다.
 특히, 각 자식 프로세스가 내부적으로 멀티 쓰레드로 동작하는 상황에서 pool을 사용하는 방법도 확인할 수 있다.
 
 ## Client 설정과 사용
 
 ### 로그 남기기
 
-Arcus C client는 Arcus admin과의 연결 상태 및 Arcus cache server 리스트의 변경 사항에 대해 로그를 남긴다.
+ARCUS C client는 ARCUS admin과의 연결 상태 및 ARCUS cache server 리스트의 변경 사항에 대해 로그를 남긴다.
 로그는 ZooKeeper client에 내장된 로깅 API를 사용하고 있으며 기본적으로 표준 에러(stderr )로 출력된다.
-Arcus cache server 리스트 변경에 대한 로그는 문제 상황 발생 시 귀중한 힌트가 될 수 있으므로
+ARCUS cache server 리스트 변경에 대한 로그는 문제 상황 발생 시 귀중한 힌트가 될 수 있으므로
 별도의 파일로 남기는 것을 추천한다.
 
 만약 표준 에러를 파일로 남기기 힘들거나 다른 로그 파일과 분리하여 기록하고 싶은 경우에는 다음과 같이 설정할 수 있다.
@@ -259,7 +259,7 @@ Arcus cache server 리스트 변경에 대한 로그는 문제 상황 발생 시
 void arcus_set_log_stream(memcached_st *mc, FILE *logfile);
 ```
 
-Arcus 관련 로그를 기록하기 위한 FILE stream을 지정한다.
+ARCUS 관련 로그를 기록하기 위한 FILE stream을 지정한다.
 위 API는 아래와 같이 memcached_st 구조체 생성 코드 바로 다음에 추가한다.
 
 ``` c
@@ -267,7 +267,7 @@ mc = memcached_create(NULL);
 arcus_set_log_stream(mc, logfile);
 ```
 
-Operation 수행 중 발생하는 오류는 Arcus C client 내부에서 보관하며,
+Operation 수행 중 발생하는 오류는 ARCUS C client 내부에서 보관하며,
 서비스의 로깅 시스템을 통해 출력할 수 있도록 아래와 같은 API를 제공한다.
 
 ``` c
