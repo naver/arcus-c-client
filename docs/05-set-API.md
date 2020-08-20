@@ -292,7 +292,7 @@ Response code는 아래와 같다.
   - MEMCACHED_END: Set에서 정상적으로 element를 조회하였음.
   - MEMCACHED_DELETED: Set에서 정상적으로 element를 조회하였으며, 동시에 이들을 삭제하였음.
   - MEMCACHED_DELETED_DROPPED: Set에서 정상적으로 element를 조회하였으며, 동시에 이들을 삭제하였음.
-                               이 결과 empty 상태가 된 Set을 삭제함.
+    이 결과 empty 상태가 된 Set을 삭제함.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 Set이 없음.
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 value를 가지는 element가 없음.

@@ -563,9 +563,8 @@ Response code는 아래와 같다.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 B+tree가 아님.
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형과 해당 B+tree의 bkey 유형이 다름.
   - MEMCACHED_UNREADABLE: 주어진 key에 해당하는 B+tree가 unreadable 상태임.
-  - MEMCACHED_OUT_OF_RANGE : 주어진 조회 범위에 해당하는 element가 없으나, 조회 범위가 overflow 정책에 의해
-                             삭제되는 영역에 걸쳐 있음. 즉, B+tree 크기 제한으로 인해 삭제되어 조회되지 않은
-                             element가 어딘가(DB)에 존재할 수도 있음을 뜻함.
+  - MEMCACHED_OUT_OF_RANGE : 주어진 조회 범위에 해당하는 element가 없으나, 조회 범위가 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음. 즉, B+tree 크기 제한으로 인해 삭제되어 조회되지 않은
+element가 어딘가(DB)에 존재할 수도 있음을 뜻함.
 
 B+tree element 값의 증감을 수행하는 예제는 아래와 같다.
 
@@ -769,7 +768,7 @@ Response code는 아래와 같다.
     - 즉, B+tree 크기 제한으로 인해 삭제되어 조회되지 않은 element가 어딘가(DB)에 존재할 수도 있음을 뜻함.
   - MEMCACHED_DELETED: B+tree에서 정상적으로 element를 조회하였으며, 동시에 이들을 삭제하였음.
   - MEMCACHED_DELETED_DROPPED: B+tree에서 정상적으로 element를 조회하였으며, 동시에 이들을 삭제하였음.
-                               이 결과 empty 상태가 된 B+tree를 삭제함.
+이 결과 empty 상태가 된 B+tree를 삭제함.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 B+tree가 없음.
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 bkey또는 bkey 범위에 해당하는 element가 없음.
@@ -1008,15 +1007,14 @@ memcached_coll_result_st *memcached_coll_fetch_result(memcached_st *ptr, memcach
 
 - result != null
   - MEMCACHED_SUCCESS: 정상적으로 element를 조회함.
-  - MEMCACHED_TRIMMED: 정상적으로 element를 조회하였으나, 조회 범위가 특정 B+tree의 overflow 정책에 의해
-                       삭제되는 영역에 걸쳐 있음. 즉, 해당 B+tree 크기 제한으로 인해 삭제되어
-                       조회되지 않은 element가 존재할 수 있음.
+  - MEMCACHED_TRIMMED: 정상적으로 element를 조회하였으나, 조회 범위가 특정 B+tree의 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음. 즉, 해당 B+tree 크기 제한으로 인해 삭제되어
+조회되지 않은 element가 존재할 수 있음.
 - result == null
   - MEMCACHED_NOT_FOUND: 주어진 key를 찾을 수 없음.
   - MEMCACHED_NOT_FOUND_ELEMENT: 조회 조건에 해당하는 element를 찾을 수 없음.
   - MEMCACHED_OUT_OF_RANGE: 주어진 조회 조건에 해당하는 element가 없으나,
-                            조회 범위가 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음.
-                            즉, 해당 B+tree 크기 제한으로 인해 삭제되어 조회되지 않은 element가 존재할 수 있음.
+조회 범위가 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음.
+즉, 해당 B+tree 크기 제한으로 인해 삭제되어 조회되지 않은 element가 존재할 수 있음.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 B+tree가 아님.
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형과 해당 B+tree의 bkey 유형이 다름.
 

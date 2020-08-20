@@ -279,7 +279,7 @@ Response code는 아래와 같다.
   - MEMCACHED_END: List에서 정상적으로 element를 조회하였음.
   - MEMCACHED_DELETED: List에서 정상적으로 element를 조회하였으며, 동시에 이들을 삭제하였음.
   - MEMCACHED_DELETED_DROPPED: List에서 정상적으로 element를 조회하였으며, 동시에 이들을 삭제하였음.
-                               이 결과 empty 상태가 된 List를 삭제함.
+    이 결과 empty 상태가 된 List를 삭제함.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 List가 없음.
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 index 또는 index 범위에 해당하는 element가 없음.
