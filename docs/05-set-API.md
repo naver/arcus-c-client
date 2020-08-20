@@ -54,7 +54,7 @@ memcached_return_t memcached_coll_create_attrs_init(memcached_coll_create_attrs_
 그 외에, 선택적 속성들은 attributes 구조체를 초기화한 이후,
 아래의 함수를 이용하여 개별적으로 지정할 수 있다.
 
-```C
+```c
 memcached_return_t memcached_coll_create_attrs_set_flags(memcached_coll_create_attrs_st *attributes, uint32_t flags)
 memcached_return_t memcached_coll_create_attrs_set_expiretime(memcached_coll_create_attrs_st *attributes, uint32_t expiretime)
 memcached_return_t memcached_coll_create_attrs_set_maxcount(memcached_coll_create_attrs_st *attributes,

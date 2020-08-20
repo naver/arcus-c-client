@@ -52,14 +52,14 @@ Key-value item 저장 연산에서 주요 파라미터는 아래와 같다.
 
 Key-value item을 조회하는 API는 두 가지가 있다.
 
-```C
+```c
 char *             memcached_get(memcached_st *ptr, const char *key, size_t key_length, size_t *value_length,
                                  uint32_t *flags, memcached_return_t *error);
 ```
 
 주어진 key에 대한 value를 조회한다. 반환된 결과는 NULL이 아닌 경우 반드시 free 해주어야 한다.
 
-```C
+```c
 memcached_return_t memcached_mget(memcached_st *ptr, const char * const *keys,  const size_t *key_length,
                                   size_t number_of_keys);
 char *             memcached_fetch(memcached_st *ptr, char *key, size_t *key_length, size_t *value_length,
@@ -87,7 +87,7 @@ memcached_return_t memcached_decrement(memcached_st *ptr, const char *key, size_
 주어진 key의 value를 offset 만큼 증가/감소 시킨다.
 주어진 key가 존재하지 않으면, 오류를 낸다.
 
-```C
+```c
 memcached_return_t memcached_increment_with_initial(memcached_st *ptr, const char *key, size_t key_length, 
                                                     uint64_t offset, uint64_t initial, uint32_t flags,
                                                     time_t expiration, uint64_t *value)
@@ -102,7 +102,7 @@ memcached_return_t memcached_decrement_with_initial(memcached_st *ptr, const cha
 
 ## Key-Value Item 삭제
 
-```C
+```c
 memcached_return_t memcached_delete(memcached_st *ptr, const char *key, size_t key_length, time_t expiration);
 ```
 
