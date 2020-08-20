@@ -24,14 +24,14 @@ ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등�
 
 - Single-Threaded
 
-  ```C
+  ```c
   arcus_return_t arcus_connect(memcached_st *mc, const char *ensemble_list, const char *svc_code)
   ```
   싱글 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
   
 - Multi-Threaded
  
-  ```C
+  ```c
   arcus_return_t arcus_pool_connect(memcached_pool_st *pool, const char *ensemble_list, const char *svc_code) 
   ```
 
@@ -39,7 +39,7 @@ ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등�
   
 - Multi-Process
 
-  ```C
+  ```c
   arcus_return_t arcus_proxy_create(memcached_st *mc, const char *ensemble_list, const char *svc_code)
   arcus_return_t arcus_proxy_connect(memcached_st *mc, memcached_pool_st *pool, memcached_st *proxy)
   ```
@@ -64,7 +64,7 @@ consistent hashing을 위한 초기화 작업을 수행한다.
 
 많은 서비스에서 사용되는 Multi-threaded 서버에서는 다음과 같이 초기화 할 수 있다.
 
-```C
+```c
 #include "libmemcached/memcached.h"
 
 int main(int argc, char** argv)
@@ -107,7 +107,7 @@ memcached_st 구조체는 ARCUS cache server 연결 정보 및 각종 설정이 
 일부 서비스에서는 Apache와 비슷한 프로세스 prefork 모델을 이용하기도 한다.
 이 같은 멀티 프로세스 방식의 서버에서 ARCUS C client를 초기화 하는 방법은 다음과 같다.
 
-```C
+```c
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
