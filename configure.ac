@@ -193,6 +193,14 @@ AC_SUBST(ARCUS_CLUSTER_API_ENABLED)
 AC_DEFINE([ARCUS_VERSION_STRING],["VERSION_NUMBER"],[Arcus Version String])
 
 if test "x$enable_zk_integration" = "xyes"; then
+  # If --without-zk-reconfig is not set, enable LIBMEMCACHED_WITH_ZK_RECONFIG.
+  # For this, the third parameter of AC_ARG_WITH is left empty.
+  AC_ARG_WITH(zk-reconfig,
+      [AS_HELP_STRING([--without-zk-reconfig],[Disable zookeeper dynamic reconfiguration])], ,
+      [LIBMEMCACHED_WITH_ZK_RECONFIG="#define LIBMEMCACHED_WITH_ZK_RECONFIG 1"]
+  )
+  AC_SUBST(LIBMEMCACHED_WITH_ZK_RECONFIG)
+
   tryzookeeperdir=""
   AC_ARG_WITH(zookeeper,
       [  --with-zookeeper[=DIR]     search for zookeeper in DIR/include and DIR/lib ],
@@ -202,6 +210,7 @@ if test "x$enable_zk_integration" = "xyes"; then
         fi
       ]
   )
+  AC_DEFINE([THREADED],1,[Enable ZooKeeper multi thread mode])
 
   AC_CACHE_CHECK([for zookeeper directory], ac_cv_zookeeper_dir, [
     saved_LIBS="$LIBS"

@@ -49,12 +49,21 @@ struct arcus_zk_st
 #ifdef ENABLE_REPLICATION
   bool       is_repl_enabled;
 #endif
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+  bool       is_reconfig_enabled;
+  char       *config_data_buffer;
+  char       *config_host_buffer;
+  long       config_version;
+#endif
 };
 
 /* arcus zk request structure */
 struct arcus_zk_request_st {
   bool reconnect_process;
   bool update_cache_list;
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+  bool update_zkconfig;
+#endif
 };
 
 /* arcus zk manager structure */

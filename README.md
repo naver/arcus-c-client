@@ -25,6 +25,10 @@ The use of ZooKeeper based clustering is optional.  To enable it, use
 `--enable-zk-integration` along with `--with-zookeeper` when running configure.
 Make sure to install the ZooKeeper C library from arcus-zookeeper.
 
+Note that ZooKeeper dynamic reconfig was included in it.
+So, you must use the ZooKeeper library 3.5.7 or higher version with Arcus modifications.
+If you want to turn off the ZooKeeper dynamic reconfig, add `--without-zk-reconfig` to the above configure options.
+
 Set up a ZooKeeper ensemble and a directory structure for memcached
 instances.  For instance, the following shows the configuration for
 a single-server ZooKeeper ensemble listening at port 2181.
