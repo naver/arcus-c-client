@@ -31,6 +31,13 @@
 #define ARCUS_ZK_RETRY_RECONNECT_DELAY_IN_MS  1000 /* 1 sec */
 #define ZOO_NO_FLAGS 0
 
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+/* The maximum config data size per ZK server is 600.
+ * Therefore, config data of about 26 ZK servers can be stored.
+ */
+#define ARCUS_ZK_MAX_CONFIG_DATA_LENGTH       (16 * 1024)
+#endif
+
 #define ARCUS_ZK_CACHE_LIST                   "/arcus/cache_list"
 #define ARCUS_ZK_CLIENT_INFO_NODE             "/arcus/client_list"
 #ifdef ENABLE_REPLICATION
@@ -65,6 +72,9 @@ static inline arcus_return_t do_arcus_zk_close(memcached_st *mc);
  */
 static inline void do_arcus_zk_watcher_global(zhandle_t *zh, int type, int state, const char *path, void *ctx_arcus);
 static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh, int type, int state, const char *path, void *ctx_arcus);
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+static inline void do_arcus_zk_watcher_zkconfig(zhandle_t *zh, int type, int state, const char *path, void *ctx_arcus);
+#endif
 
 /**
  * ARCUS_ZK_OPERATIONS
@@ -73,6 +83,10 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc, const struct S
 static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc, char *serverlist, const size_t size);
 static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, bool *retry);
 static inline int  do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *arcus);
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+static inline void do_arcus_zk_watch_and_update_zkconfig(memcached_st *mc, bool *retry);
+static inline int  do_arcus_check_zoo_getconfig_supported(memcached_st *mc, arcus_st *arcus);
+#endif
 
 /**
  * ARCUS_ZK_MANAGER
@@ -142,6 +156,14 @@ arcus_return_t arcus_close(memcached_st *mc)
   pthread_mutex_lock(&lock_arcus);
   arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
   if (arcus) {
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+    if (arcus->zk.config_data_buffer != NULL) {
+      libmemcached_free(mc, arcus->zk.config_data_buffer);
+    }
+    if (arcus->zk.config_host_buffer != NULL) {
+      libmemcached_free(mc, arcus->zk.config_host_buffer);
+    }
+#endif
     arcus->pool= NULL;
     free(arcus);
     arcus= NULL;
@@ -447,6 +469,12 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
     arcus->zk.last_rc= !ZOK;
     arcus->zk.conn_result= ARCUS_SUCCESS;
     arcus->zk.is_initializing= true;
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+    arcus->zk.is_reconfig_enabled= false;
+    arcus->zk.config_data_buffer= NULL;
+    arcus->zk.config_host_buffer= NULL;
+    arcus->zk.config_version= 0;
+#endif
 
     arcus->pool = pool;
     arcus->is_proxy= false;
@@ -632,6 +660,13 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
       rc= ARCUS_ERROR; break;
     }
 
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+    if (do_arcus_check_zoo_getconfig_supported(mc, arcus) < 0) {
+      pthread_mutex_unlock(&lock_arcus);
+      rc= ARCUS_ERROR; break;
+    }
+#endif
+
     if (do_arcus_cluster_validation_check(mc, arcus) < 0) {
       pthread_mutex_unlock(&lock_arcus);
       rc= ARCUS_ERROR; break;
@@ -774,6 +809,48 @@ void arcus_server_check_for_update(memcached_st *ptr)
   }
 #endif
 }
+
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+static inline int do_arcus_check_zoo_getconfig_supported(memcached_st *mc, arcus_st *arcus)
+{
+  int zkrc;
+  int len= 256;
+  char buf[256];
+  struct Stat stat;
+
+  arcus->zk.is_reconfig_enabled= false;
+  arcus->zk.config_version= 0;
+
+  zkrc= zoo_getconfig(arcus->zk.handle, 0, buf, &len, &stat);
+  if (zkrc == ZOK && len > 0) {
+    arcus->zk.is_reconfig_enabled= true;
+    if (arcus->zk.config_data_buffer == NULL) {
+      arcus->zk.config_data_buffer= (char*)libmemcached_malloc(mc, ARCUS_ZK_MAX_CONFIG_DATA_LENGTH);
+      if (arcus->zk.config_data_buffer == NULL) {
+        ZOO_LOG_ERROR(("Failed to allocate zkconfig data buffer"));
+        return -1;
+      }
+    }
+    /* The ZK server address is displayed twice in the zkconfig data,
+     * so only needs half the size.
+     */
+    if (arcus->zk.config_host_buffer == NULL) {
+      arcus->zk.config_host_buffer= (char*)libmemcached_malloc(mc, ARCUS_ZK_MAX_CONFIG_DATA_LENGTH/2);
+      if (arcus->zk.config_host_buffer == NULL) {
+        ZOO_LOG_ERROR(("Failed to allocate zkconfig host buffer"));
+        libmemcached_free(mc, arcus->zk.config_data_buffer);
+        return -1;
+      }
+    }
+    ZOO_LOG_WARN(("Enable ZooKeeper dynamic reconfiguration"));
+  } else {
+    ZOO_LOG_WARN(("Disable ZooKeeper dynamic reconfiguration"
+      " error=%s config length=%d", zerror(zkrc), len));
+  }
+
+  return 0;
+}
+#endif
 
 static inline int do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *arcus)
 {
@@ -1271,6 +1348,11 @@ static inline int do_arcus_zk_process_reconnect(memcached_st *mc, bool *retry)
 
     pthread_mutex_lock(&arcus->zk_mgr.lock);
     arcus->zk_mgr.request.update_cache_list= true;
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+    if (arcus->zk.is_reconfig_enabled) {
+      arcus->zk_mgr.request.update_zkconfig= true;
+    }
+#endif
     pthread_mutex_unlock(&arcus->zk_mgr.lock);
     *retry= true;
     ret= 0;
@@ -1280,6 +1362,153 @@ static inline int do_arcus_zk_process_reconnect(memcached_st *mc, bool *retry)
   }
   return ret;
 }
+
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+static int get_client_config_data(char *buf, int buff_len, char *host_buf, long *version)
+{
+  char *startp, *endp, *serverp, *versionp, *versionerrp;
+  int length, server_length;
+  int host_buf_length = 0;
+
+  startp= &buf[0];
+  buf[buff_len]= '\0';
+  while ((endp= (char*)memchr(startp, '\n', buff_len)) != NULL) {
+    length= (endp - startp);
+
+    /* go to the starting point of the server host string */
+    serverp= (char*)memchr(startp, ';', length);
+    if (!serverp) {
+      ZOO_LOG_WARN(("starting point of the server host string was not found"));
+      return -1;
+    }
+    serverp++;
+    server_length= (endp - serverp);
+
+    /* make server host list */
+    memcpy(host_buf + host_buf_length, serverp, server_length);
+    host_buf_length += server_length;
+    memcpy(host_buf + host_buf_length, ",", 1);
+    host_buf_length++;
+
+    /* next server id */
+    startp += length + 1;
+    buff_len -= length + 1;
+  }
+  /* [host_buf_length-1] is last comma character */
+  if (host_buf_length > 0) {
+    host_buf[host_buf_length-1]= '\0';
+  }
+
+  /* make config version */
+  versionp= (char*)memchr(startp, '=', buff_len);
+  if (!versionp) {
+    ZOO_LOG_WARN(("starting point of the version string was not found"));
+    return -1;
+  }
+  versionp++;
+  *version= 0;
+  *version= strtol(versionp, &versionerrp, 16);
+  if ((errno == ERANGE && (*version == LONG_MAX || *version == LONG_MIN)) ||
+      (errno != 0 && *version == 0)) {
+      ZOO_LOG_WARN(("invalid version string"));
+      return -1;
+  }
+  return 0;
+}
+
+static inline void do_arcus_zk_watch_and_update_zkconfig(memcached_st *mc,
+                                                         bool *retry)
+{
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+  if (not arcus) {
+    ZOO_LOG_ERROR(("Arcus is null"));
+    return;
+  }
+
+  int   zkrc;
+  char *buf= arcus->zk.config_data_buffer;
+  int   buff_len= ARCUS_ZK_MAX_CONFIG_DATA_LENGTH;
+  char *host_buf= arcus->zk.config_host_buffer;
+  long  version;
+  struct Stat stat;
+
+  /* Make a new watch on ZK config. */
+  zkrc= zoo_wgetconfig(arcus->zk.handle, do_arcus_zk_watcher_zkconfig,
+                       (void *)mc, buf, &buff_len, &stat);
+  if (zkrc == ZOK) {
+    /* zookeeper config format generated by the zk server.
+     * server.1=127.0.0.1:2888:3888:participant;0.0.0.0:2181\n
+     * server.2=127.0.0.1:2889:3889:participant;0.0.0.0:2182\n
+     * version=10000000d
+     */
+    if (buff_len <= 0 || buff_len >= ARCUS_ZK_MAX_CONFIG_DATA_LENGTH) {
+      ZOO_LOG_WARN(("Failed to update ZK servers."
+        " unexpected ZK config data length(%d).", buff_len));
+      return;
+    }
+
+    if (get_client_config_data(buf, buff_len, host_buf, &version) < 0) {
+      ZOO_LOG_WARN(("Failed to update ZK servers. invalid config data"));
+      return;
+    }
+
+    if (arcus->zk.config_version == 0) {
+      arcus->zk.config_version= version;
+    } else if (version > arcus->zk.config_version) {
+      ZOO_LOG_WARN(("update ZK servers... ZK servers[%s], version[%ld]\n", host_buf, version));
+      /* set server host list to zookeeper library */
+      int rc= zoo_set_servers(arcus->zk.handle, host_buf);
+      if (rc != ZOK) {
+        /* Will retry next event.
+         * If need more complete error handling,
+         * save the list of services and try again.
+         */
+        ZOO_LOG_WARN(("Failed to update ZK servers. zoo_set_servers() failed: %s\n", zerror(rc)));
+      }
+      arcus->zk.config_version= version;
+    } else {
+      ZOO_LOG_WARN(("Unexpected version. zkconfig_version=%ld, version=%ld",
+        arcus->zk.config_version, version));
+    }
+  } else {
+    ZOO_LOG_ERROR(("zoo_wgetconfig() failed, reason=%s", zerror(zkrc)));
+    pthread_mutex_lock(&arcus->zk_mgr.lock);
+    arcus->zk_mgr.request.update_zkconfig= true;
+    pthread_mutex_unlock(&arcus->zk_mgr.lock);
+    *retry= true;
+  }
+}
+
+/**
+ * ZooKeeper watcher for ZK config.
+ */
+static inline void do_arcus_zk_watcher_zkconfig(zhandle_t *zh __attribute__((unused)),
+                                                int type __attribute__((unused)),
+                                                int state __attribute__((unused)),
+                                                const char *path,
+                                                void *ctx_mc)
+{
+  if (path != NULL && strcmp(path, ZOO_CONFIG_NODE) == 0) {
+    ZOO_LOG_INFO(("ZOO_CONFIG_EVENT from ZK config"));
+
+    memcached_st *mc= static_cast<memcached_st *>(ctx_mc);
+    pthread_mutex_lock(&lock_arcus);
+    arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+    pthread_mutex_unlock(&lock_arcus);
+    if (not arcus || not arcus->zk.handle) {
+      ZOO_LOG_ERROR(("arcus is null"));
+      return;
+    }
+
+    pthread_mutex_lock(&arcus->zk_mgr.lock);
+    arcus->zk_mgr.request.update_zkconfig= true;
+    do_arcus_zk_manager_wakeup(mc, true);
+    pthread_mutex_unlock(&arcus->zk_mgr.lock);
+  } else {
+    ZOO_LOG_WARN(("Unexpected event gotten by watcher_zkconfig"));
+  }
+}
+#endif
 
 /**
  * Rebuild the memcached server list.
@@ -1488,6 +1717,11 @@ static inline arcus_return_t do_arcus_zk_manager_start(memcached_st *mc)
 
     pthread_mutex_lock(&arcus->zk_mgr.lock);
     arcus->zk_mgr.request.update_cache_list= true;
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+    if (arcus->zk.is_reconfig_enabled) {
+      arcus->zk_mgr.request.update_zkconfig= true;
+    }
+#endif
     do_arcus_zk_manager_wakeup(mc, true);
     pthread_mutex_unlock(&arcus->zk_mgr.lock);
   } while(0);
@@ -1625,6 +1859,12 @@ static void *arcus_zk_manager_thread_main(void *arg)
         reconnect_retry= true;
       }
     } else {
+#ifdef LIBMEMCACHED_WITH_ZK_RECONFIG
+      if (zkreq.update_zkconfig) {
+        do_arcus_zk_watch_and_update_zkconfig(manager_mc, &zk_retry);
+      }
+#endif
+
       if (zkreq.update_cache_list) {
         do_arcus_zk_watch_and_update_cachelist(manager_mc, &zk_retry);
       }
