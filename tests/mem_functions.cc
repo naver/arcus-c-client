@@ -97,6 +97,7 @@ using namespace libtest;
 #define GLOBAL2_COUNT 100
 #define SERVERS_TO_CREATE 3
 #define IMPROVEMENT_TRIMMED_STATUS 1
+#define BOP_ARITHMETIC_INITIAL 1
 static uint32_t global_count;
 
 static pairs_st *global_pairs;
@@ -7058,6 +7059,53 @@ static test_return_t bop_incr(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+#ifdef BOP_ARITHMETIC_INITIAL
+static test_return_t bop_incr_decr_with_initial(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+  uint64_t value;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  memcached_hexadecimal_st eflag_hex;
+  eflag_hex.array= (unsigned char *)&flags;
+  eflag_hex.length= sizeof(flags);
+  memcached_return_t rc;
+
+  rc= memcached_bop_create(memc, test_literal_param("btree:a_btree_incr_with_initial"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+
+  rc= memcached_bop_incr_with_initial(memc, "btree:a_btree_incr_with_initial", 31, 1, 1, 10, eflag_hex.array, eflag_hex.length, &value);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_compare(uint64_t(10), value);
+
+  memcached_coll_result_st *result= memcached_coll_result_create(memc, NULL);
+  rc= memcached_bop_get(memc, "btree:a_btree_incr_with_initial", 31, 1, NULL, false, false, result);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true(memcached_compare_two_hexadecimal(&result->eflags[0], &eflag_hex) == 0);
+  memcached_coll_result_free(result);
+
+  rc= memcached_bop_incr_with_initial(memc, "btree:a_btree_incr_with_initial", 31, 1, 1, 10, NULL, 0, &value);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_compare(uint64_t(11), value);
+
+  rc= memcached_bop_decr_with_initial(memc, "btree:a_btree_incr_with_initial", 31, 2, 1, 10, NULL, 0, &value);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_compare(uint64_t(10), value);
+
+  rc= memcached_bop_decr_with_initial(memc, "btree:a_btree_incr_with_initial", 31, 2, 1, 10, NULL, 0, &value);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_compare(uint64_t(9), value);
+
+  // key error
+  rc= memcached_bop_incr_with_initial(memc, "btree:a_btree_incr2_with_initial", 32, 2, 1, 10, NULL, 0, &value);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  return TEST_SUCCESS;
+}
+#endif
 static test_return_t arcus_1_6_btree_get(memcached_st *memc)
 {
   uint32_t flags= 10;
@@ -11619,6 +11667,9 @@ test_st arcus_1_6_collection_tests[] ={
 
 test_st bop_incr_decr[] = {
   {"bop_incr", true, (test_callback_fn*)bop_incr},
+#ifdef BOP_ARITHMETIC_INITIAL
+  {"bop_incr_decr_with_initial", true, (test_callback_fn*)bop_incr_decr_with_initial },
+#endif
   {0, 0, (test_callback_fn*)0}
 };
 test_st incr_decr[] = {

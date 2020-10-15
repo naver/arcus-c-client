@@ -3345,12 +3345,23 @@ do_action:
   return rc;
 }
 
+#ifdef BOP_ARITHMETIC_INITIAL
+static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
+                                             const char *key, size_t key_length,
+                                             memcached_coll_query_st *query,
+                                             const uint64_t delta,
+                                             bool with_initial, uint64_t initial,
+                                             memcached_hexadecimal_st *eflag,
+                                             uint64_t *value,
+                                             memcached_coll_action_t verb)
+#else
 static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
                                          const char *key, size_t key_length,
                                          memcached_coll_query_st *query,
                                          const uint64_t delta,
                                          uint64_t *value,
                                          memcached_coll_action_t verb)
+#endif
 {
   arcus_server_check_for_update(ptr);
 
@@ -3391,7 +3402,25 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   /* 2. delta */
   buffer_length+= (size_t) snprintf(buffer+buffer_length, 30, " %llu", (unsigned long long) delta);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+  /* 3. initial */
+  if (with_initial)
+  {
+    buffer_length+= (size_t) snprintf(buffer+buffer_length, 30, " %llu", (unsigned long long) initial);
+    if (eflag && eflag->array)
+    {
+      char eflag_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+      memcached_conv_hex_to_str(ptr, eflag,
+                                eflag_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
+                                       " 0x%s", eflag_str);
+    }
+  }
+
+  /* 4. options */
+#else
   /* 3. options */
+#endif
   buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
                                     "%s", (ptr->flags.no_reply)? " noreply":"");
 
@@ -3877,10 +3906,34 @@ memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t
   memcached_coll_query_st query;
   memcached_bop_query_init(&query, bkey, NULL);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            false, 0, NULL, value, BOP_INCR_OP);
+#else
   return do_coll_arithmetic(ptr, key, key_length,
                             &query, delta, value, BOP_INCR_OP);
+#endif
 }
 
+#ifdef BOP_ARITHMETIC_INITIAL
+memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                   const uint64_t bkey, const uint64_t delta,
+                                                   const uint64_t initial,
+                                                   const unsigned char *eflag, size_t eflag_length,
+                                                   uint64_t *value)
+{
+  memcached_coll_query_st query;
+  memcached_bop_query_init(&query, bkey, NULL);
+
+  memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
+  eflag_hex.array= (unsigned char *)eflag;
+  eflag_hex.length= eflag_length;
+
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            true, initial, &eflag_hex, value, BOP_INCR_OP);
+}
+
+#endif
 memcached_return_t memcached_bop_ext_incr(memcached_st *ptr, const char *key, size_t key_length,
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value)
@@ -3888,20 +3941,68 @@ memcached_return_t memcached_bop_ext_incr(memcached_st *ptr, const char *key, si
   memcached_coll_query_st query;
   memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            false, 0, NULL, value, BOP_INCR_OP);
+#else
   return do_coll_arithmetic(ptr, key, key_length,
                             &query, delta, value, BOP_INCR_OP);
+#endif
 }
 
+#ifdef BOP_ARITHMETIC_INITIAL
+memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                       const unsigned char *bkey, size_t bkey_length,
+                                                       const uint64_t delta, const uint64_t initial,
+                                                       const unsigned char *eflag, size_t eflag_length,
+                                                       uint64_t *value)
+{
+  memcached_coll_query_st query;
+  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+
+  memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
+  eflag_hex.array= (unsigned char *)eflag;
+  eflag_hex.length= eflag_length;
+
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            true, initial, &eflag_hex, value, BOP_INCR_OP);
+}
+
+#endif
 memcached_return_t memcached_bop_decr(memcached_st *ptr, const char *key, size_t key_length,
                                       const uint64_t bkey, const uint64_t delta, uint64_t *value)
 {
   memcached_coll_query_st query;
   memcached_bop_query_init(&query, bkey, NULL);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            false, 0, NULL, value, BOP_DECR_OP);
+#else
   return do_coll_arithmetic(ptr, key, key_length,
                             &query, delta, value, BOP_DECR_OP);
+#endif
 }
 
+#ifdef BOP_ARITHMETIC_INITIAL
+memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                   const uint64_t bkey, const uint64_t delta,
+                                                   const uint64_t initial,
+                                                   const unsigned char *eflag, size_t eflag_length,
+                                                   uint64_t *value)
+{
+  memcached_coll_query_st query;
+  memcached_bop_query_init(&query, bkey, NULL);
+
+  memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
+  eflag_hex.array= (unsigned char *)eflag;
+  eflag_hex.length= eflag_length;
+
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            true, initial, &eflag_hex, value, BOP_DECR_OP);
+}
+
+#endif
 memcached_return_t memcached_bop_ext_decr(memcached_st *ptr, const char *key, size_t key_length,
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value)
@@ -3909,10 +4010,34 @@ memcached_return_t memcached_bop_ext_decr(memcached_st *ptr, const char *key, si
   memcached_coll_query_st query;
   memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            false, 0, NULL, value, BOP_DECR_OP);
+#else
   return do_coll_arithmetic(ptr, key, key_length,
                             &query, delta, value, BOP_DECR_OP);
+#endif
 }
 
+#ifdef BOP_ARITHMETIC_INITIAL
+memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                       const unsigned char *bkey, size_t bkey_length,
+                                                       const uint64_t delta, const uint64_t initial,
+                                                       const unsigned char *eflag, size_t eflag_length,
+                                                       uint64_t *value)
+{
+  memcached_coll_query_st query;
+  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+
+  memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
+  eflag_hex.array= (unsigned char *)eflag;
+  eflag_hex.length= eflag_length;
+
+  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                            true, initial, &eflag_hex, value, BOP_DECR_OP);
+}
+
+#endif
 /* APIs : exist */
 
 memcached_return_t memcached_sop_exist(memcached_st *ptr, const char *key, size_t key_length,

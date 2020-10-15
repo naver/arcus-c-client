@@ -1241,6 +1241,28 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t key_length,
                                       const uint64_t bkey, const uint64_t delta, uint64_t *value);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+/**
+ * If an element in the b+tree item exists, increment the value,
+ * otherwise created new element with @initial value.
+ *
+ * @param ptr  memcached handle.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  element bkey.
+ * @param delta  increment amount.
+ * @param initial  initial value.
+ * @param eflag  optional eflag, maybe NULL.
+ * @param eflag_length  eflag length (number of bytes).
+ * @param value  incremented or initial value, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                   const uint64_t bkey, const uint64_t delta,
+                                                   const uint64_t initial,
+                                                   const unsigned char *eflag, size_t eflag_length,
+                                                   uint64_t *value);
+#endif
 /**
  * Increment the value of an existing element in the b+tree item using byte-array bkey.
  * @param ptr  memcached handle.
@@ -1256,6 +1278,29 @@ memcached_return_t memcached_bop_ext_incr(memcached_st *ptr, const char *key, si
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+/**
+ * If an element in the b+tree item using byte-array bkey exists, increment the value,
+ * otherwise created new element with @initial value.
+ *
+ * @param ptr  memcached handle.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  byte-array bkey.
+ * @param bkey_length  bkey length (number of bytes).
+ * @param delta  increment amount.
+ * @param initial  initial value.
+ * @param eflag  optional eflag, maybe NULL.
+ * @param eflag_length  eflag length (number of bytes).
+ * @param value  incremented or initial value, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                       const unsigned char *bkey, size_t bkey_length,
+                                                       const uint64_t delta, const uint64_t initial,
+                                                       const unsigned char *eflag, size_t eflag_length,
+                                                       uint64_t *value);
+#endif
 /**
  * Decrement the value of an existing element in the b+tree item.
  * @param ptr  memcached handle.
@@ -1269,6 +1314,28 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_decr(memcached_st *ptr, const char *key, size_t key_length,
                                       const uint64_t bkey, const uint64_t delta, uint64_t *value);
 
+#ifdef BOP_ARITHMETIC_INITIAL
+/**
+ * If an element in the b+tree item exists, decrement the value,
+ * otherwise created new element with @initial value.
+ *
+ * @param ptr  memcached handle.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  element bkey.
+ * @param delta  decrement amount.
+ * @param initial  initial value.
+ * @param eflag  optional eflag, maybe NULL.
+ * @param eflag_length  eflag length (number of bytes).
+ * @param value  decremented or initial value, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                   const uint64_t bkey, const uint64_t delta,
+                                                   const uint64_t initial,
+                                                   const unsigned char *eflag, size_t eflag_length,
+                                                   uint64_t *value);
+#endif
 /**
  * Decrement the value of an existing element in the b+tree item using byte-array bkey.
  * @param ptr  memcached handle.
@@ -1283,6 +1350,29 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_ext_decr(memcached_st *ptr, const char *key, size_t key_length,
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value);
+#ifdef BOP_ARITHMETIC_INITIAL
+/**
+ * If an element in the b+tree item using byte-array bkey exists, increment the value,
+ * otherwise created new element with @initial value.
+ *
+ * @param ptr  memcached handle.
+ * @param key  b+tree item's key.
+ * @param key_length  key length (number of bytes).
+ * @param bkey  byte-array bkey.
+ * @param bkey_length  bkey length (number of bytes).
+ * @param delta  decrement amount.
+ * @param initial  initial value.
+ * @param eflag  optional eflag, maybe NULL.
+ * @param eflag_length  eflag length (number of bytes).
+ * @param value  decremented or initial value, filled upon return.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+                                                       const unsigned char *bkey, size_t bkey_length,
+                                                       const uint64_t delta, const uint64_t initial,
+                                                       const unsigned char *eflag, size_t eflag_length,
+                                                       uint64_t *value);
+#endif
 
 /**
  * Fetch an element from the b+tree item.
