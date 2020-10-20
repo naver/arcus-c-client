@@ -1097,7 +1097,7 @@ static memcached_return_t textual_coll_element_fetch(memcached_server_write_inst
                                                      size_t count, memcached_coll_result_st *result)
 {
   memcached_return_t rc;
-  const size_t MAX_ELEMENT_BUFFER_SIZE= MEMCACHED_MAX_KEY; /* MEMCACHED_COLL_MAX_MOP_MKEY_LENG(250)+1 */
+  const size_t MAX_ELEMENT_BUFFER_SIZE= MEMCACHED_COLL_MAX_MOP_MKEY_LENG+1; /* add one to have it null terminated */
 
   char *string_ptr;
   size_t i= 0, to_read= 0, value_length= 0;
