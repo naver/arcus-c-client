@@ -479,15 +479,18 @@ static inline int do_add_client_info(arcus_st *arcus)
 {
   int result;
   char path[250];
-  char hostname[50];
-  struct hostent * host;
+  char hostname[256];
+  struct hostent *host = NULL;
   time_t timer;
   struct tm *ti;
 
   timer = time(NULL);
   ti = localtime(&timer);
-  gethostname(hostname, 50);
-  host = (struct hostent *) gethostbyname(hostname);
+  if (gethostname(hostname, sizeof(hostname)) < 0) {
+    memcpy(hostname, "NULL", 5);
+  } else {
+    host = (struct hostent *) gethostbyname(hostname);
+  }
 
   /* create the ephemeral znode
    * "/arcus or arcus_repl/client_list/{service_code}/
@@ -500,11 +503,11 @@ static inline int do_add_client_info(arcus_st *arcus)
     client_info_znode = (char*)ARCUS_REPL_ZK_CLIENT_INFO_NODE;
   }
 #endif
-  snprintf(path, sizeof(path), "%s/%s/%s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx",
+  snprintf(path, sizeof(path), "%s/%s/%.*s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx",
                               client_info_znode,
                               arcus->zk.svc_code,
-                              hostname,
-                              inet_ntoa(*((struct in_addr *)host->h_addr)),
+                              50, hostname,
+                              (host == NULL ? "NULL" : inet_ntoa(*((struct in_addr *)host->h_addr))),
                               (unsigned int)get_memcached_pool_size(arcus->pool),
                               ARCUS_VERSION_STRING,
                               ti->tm_year+1900, ti->tm_mon+1, ti->tm_mday, ti->tm_hour, ti->tm_min, ti->tm_sec,
