@@ -1,3 +1,10 @@
+2020-10-22 [version 1.10.5]
+	* [FEATURE] bop incr/decr with initial option.
+	* [FIX] registered "NULL" if hostname lookup fails in do_add_client_info().
+	* [FIX] added the TYPE_MISMATCH handling in kv response
+	* [DOC] changed the description of the max item size
+	* [DOC] refactored the document format and some content.
+
 2020-08-04 [version 1.10.4]
 	* [FEATURE] Added memcached_detail_error_message() API.
 	* [FEATURE] Immediate reconnect according to error responses.
