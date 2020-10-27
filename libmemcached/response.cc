@@ -1180,14 +1180,10 @@ static memcached_return_t textual_coll_element_fetch(memcached_server_write_inst
       }
 
       result->sub_keys[i].mkey.string= (char*)libmemcached_malloc(ptr->root, sizeof(char) * read_length);
+      /* to_read_string is already null-terminated string. */
       memcpy((char*)result->sub_keys[i].mkey.string, to_read_string, read_length);
-      /* This next bit blows the API, but this is internal....*/
-      {
-        char *char_ptr= (char*)result->sub_keys[i].mkey.string;
-        char_ptr[read_length]= 0;
-        result->sub_keys[i].mkey.length= strlen(char_ptr);
-      }
-      result->sub_key_type = MEMCACHED_COLL_QUERY_MOP;
+      result->sub_keys[i].mkey.length= strlen(to_read_string);
+      result->sub_key_type= MEMCACHED_COLL_QUERY_MOP;
     }
 
     /* <bytes> */
