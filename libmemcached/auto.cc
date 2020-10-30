@@ -57,20 +57,15 @@
 
 static memcached_return_t text_incr_decr(memcached_st *ptr,
                                          const char *verb,
-                                         const char *group_key, size_t group_key_length,
-                                         const char *key, size_t key_length,
-                                         uint64_t offset,
-                                         bool create,
-                                         uint64_t initial,
-                                         uint32_t flags,
-                                         time_t expiration,
+                                         const char *group_key, const size_t group_key_length,
+                                         const char *key, const size_t key_length,
+                                         const uint64_t offset,
+                                         const bool create,
+                                         const uint64_t initial,
+                                         const uint32_t flags,
+                                         const time_t expiration,
                                          uint64_t *value)
 {
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  uint32_t server_key;
-  memcached_server_write_instance_st instance;
-  bool no_reply= ptr->flags.no_reply;
-
   arcus_server_check_for_update(ptr);
 
   if (memcached_failed(memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
@@ -78,49 +73,58 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_BAD_KEY_PROVIDED, MEMCACHED_AT);
   }
 
-  int send_length;
-  if (create)
+  char offset_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH +1];
+  int offset_buffer_length= snprintf(offset_buffer, sizeof(offset_buffer), " %" PRIu64, offset);
+  if (size_t(offset_buffer_length) >= sizeof(offset_buffer) or offset_buffer_length < 0)
   {
-    send_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                          "%s %.*s%.*s %" PRIu64 " %u %lld %" PRIu64 "%s\r\n", verb,
-                          memcached_print_array(ptr->_namespace),
-                          (int)key_length, key,
-                          offset,
-                          flags,
-                          (long long)expiration,
-                          initial,
-                          no_reply ? " noreply" : "");
-  }
-  else
-  {
-    send_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                          "%s %.*s%.*s %" PRIu64 "%s\r\n", verb,
-                          memcached_print_array(ptr->_namespace),
-                          (int)key_length, key,
-                          offset, no_reply ? " noreply" : "");
-  }
-  if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)
-  {
-    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
-                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH)"));
   }
 
-  server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
-  instance= memcached_server_instance_fetch(ptr, server_key);
+  char initial_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH*3 +3];
+  int initial_buffer_length= 0;
+  if (create)
+  {
+    initial_buffer_length= snprintf(initial_buffer, sizeof(initial_buffer), " %u %lld %" PRIu64,
+                                    flags, (long long)expiration, initial);
+    if (size_t(initial_buffer_length) >= sizeof(initial_buffer) or initial_buffer_length < 0)
+    {
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                 memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH*3)"));
+    }
+  }
+
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { strlen(verb), verb },
+    { memcached_array_size(ptr->_namespace), memcached_array_string(ptr->_namespace) },
+    { size_t(key_length), key },
+    { size_t(offset_buffer_length), offset_buffer },
+    { size_t(initial_buffer_length), initial_buffer },
+    { (ptr->flags.no_reply ? memcached_literal_param_size(" noreply") : 0), " noreply" },
+    { 2, "\r\n" }
+  };
+
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
-  memcached_return_t rc= memcached_do(instance, buffer, (size_t)send_length, true);
-  if (no_reply or memcached_failed(rc))
+  /* Send command header */
+  memcached_return_t rc= memcached_vdo(instance, vector, 7, true);
+  if (ptr->flags.no_reply or memcached_failed(rc))
+  {
     return rc;
+  }
 
   char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
   rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
   if (rc != MEMCACHED_SUCCESS)
   {
 #ifdef ENABLE_REPLICATION
-    if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
+    if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+    {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
       memcached_rgroup_switchover(ptr, instance);
@@ -156,7 +160,7 @@ do_action:
   else
   {
     *value= strtoull(result, (char **)NULL, 10);
-    rc= MEMCACHED_SUCCESS;
+    return MEMCACHED_SUCCESS;
   }
 
   return memcached_set_error(*instance, rc, MEMCACHED_AT);
@@ -280,7 +284,7 @@ memcached_return_t memcached_increment_by_key(memcached_st *ptr,
   }
   else
   {
-    rc= text_incr_decr(ptr, "incr", group_key, group_key_length, key, key_length,
+    rc= text_incr_decr(ptr, "incr ", group_key, group_key_length, key, key_length,
                        offset, false, 0, 0, 0, value);
   }
 
@@ -320,7 +324,7 @@ memcached_return_t memcached_decrement_by_key(memcached_st *ptr,
   }
   else
   {
-    rc= text_incr_decr(ptr, "decr", group_key, group_key_length, key, key_length,
+    rc= text_incr_decr(ptr, "decr ", group_key, group_key_length, key, key_length,
                        offset, false, 0, 0, 0, value);
   }
   LIBMEMCACHED_MEMCACHED_DECREMENT_END();
@@ -382,7 +386,7 @@ memcached_return_t memcached_increment_with_initial_by_key(memcached_st *ptr,
   }
   else
   {
-    rc= text_incr_decr(ptr, "incr", group_key, group_key_length, key, key_length, offset,
+    rc= text_incr_decr(ptr, "incr ", group_key, group_key_length, key, key_length, offset,
                        true, initial, flags, expiration, value);
   }
   LIBMEMCACHED_MEMCACHED_INCREMENT_WITH_INITIAL_END();
@@ -444,7 +448,7 @@ memcached_return_t memcached_decrement_with_initial_by_key(memcached_st *ptr,
   }
   else
   {
-    rc= text_incr_decr(ptr, "decr", group_key, group_key_length, key, key_length,
+    rc= text_incr_decr(ptr, "decr ", group_key, group_key_length, key, key_length,
                        offset, true, initial, flags, expiration, value);
   }
   LIBMEMCACHED_MEMCACHED_INCREMENT_WITH_INITIAL_END();
