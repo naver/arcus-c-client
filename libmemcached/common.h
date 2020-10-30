@@ -153,6 +153,7 @@ memcached_return_t memcached_server_execute(memcached_st *ptr,
 #endif
 
 #define MEMCACHED_BLOCK_SIZE 1024
+#define MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH 20
 #define MEMCACHED_DEFAULT_COMMAND_SIZE 512  /* maybe, enough */
 #define MEMCACHED_MAXIMUM_COMMAND_SIZE 6812 /* 512 + 6300(100 filter values) */
 #define SMALL_STRING_LEN 1024
