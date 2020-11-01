@@ -456,12 +456,79 @@ memcached_return_t memcached_io_wait_for_write(memcached_server_write_instance_s
   return io_wait(ptr, MEM_WRITE);
 }
 
+static memcached_return_t _io_fill(memcached_server_write_instance_st ptr)
+{
+  ssize_t data_read;
+  do
+  {
+    data_read= recv(ptr->fd, ptr->read_buffer, MEMCACHED_MAX_BUFFER, MSG_DONTWAIT);
+    if (data_read == SOCKET_ERROR)
+    {
+      switch (get_socket_errno())
+      {
+      case EINTR: // We just retry
+        continue;
+
+      case ETIMEDOUT: // OSX
+      case EWOULDBLOCK:
+#ifdef USE_EAGAIN
+      case EAGAIN:
+#endif
+#ifdef TARGET_OS_LINUX
+      case ERESTART:
+#endif
+        if (memcached_success(io_wait(ptr, MEM_READ)))
+        {
+          continue;
+        }
+        return MEMCACHED_IN_PROGRESS;
+
+      /* fall through */
+      case ENOTCONN: // Programmer Error
+        WATCHPOINT_ASSERT(0);
+      case ENOTSOCK:
+        WATCHPOINT_ASSERT(0);
+      case EBADF:
+        assert_msg(ptr->fd != INVALID_SOCKET, "Programmer error, invalid socket");
+      case EINVAL:
+      case EFAULT:
+      case ECONNREFUSED:
+      default:
+        int local_errno= get_socket_errno(); // We cache in case memcached_quit_server() modifies errno
+        memcached_quit_server(ptr, true);
+        return memcached_set_errno(*ptr, local_errno, MEMCACHED_AT);
+      }
+    }
+    else if (data_read == 0)
+    {
+      /*
+        EOF. Any data received so far is incomplete
+        so discard it. This always reads by byte in case of TCP
+        and protocol enforcement happens at memcached_response()
+        looking for '\n'. We do not care for UDB which requests 8 bytes
+        at once. Generally, this means that connection went away. Since
+        for blocking I/O we do not return 0 and for non-blocking case
+        it will return EGAIN if data is not immediatly available.
+      */
+      WATCHPOINT_STRING("We had a zero length recv()");
+      memcached_quit_server(ptr, true);
+      return memcached_set_error(*ptr, MEMCACHED_CONNECTION_FAILURE, MEMCACHED_AT,
+                                 memcached_literal_param("recv() returned zero, server has disconnected"));
+    }
+  } while (data_read <= 0);
+
+  ptr->io_bytes_sent= 0;
+  ptr->read_data_length= (size_t)data_read;
+  ptr->read_buffer_length= (size_t)data_read;
+  ptr->read_ptr= ptr->read_buffer;
+
+  return MEMCACHED_SUCCESS;
+}
+
 memcached_return_t memcached_io_read(memcached_server_write_instance_st ptr,
                                      void *buffer, size_t length, ssize_t *nread)
 {
   assert_msg(ptr, "Programmer error, memcached_io_read() recieved an invalid memcached_server_write_instance_st"); // Programmer error
-  char *buffer_ptr= static_cast<char *>(buffer);
-
   if (ptr->fd == INVALID_SOCKET)
   {
     //assert_msg(int(ptr->state) <= int(MEMCACHED_SERVER_STATE_ADDRINFO), "Programmer error, invalid socket state");
@@ -469,87 +536,24 @@ memcached_return_t memcached_io_read(memcached_server_write_instance_st ptr,
     return MEMCACHED_CONNECTION_FAILURE;
   }
 
+  char *buffer_ptr= static_cast<char *>(buffer);
   while (length)
   {
-    if (not ptr->read_buffer_length)
+    if (ptr->read_buffer_length == 0)
     {
-      ssize_t data_read;
-      do
+      memcached_return_t io_fill_ret= _io_fill(ptr);
+      if (io_fill_ret != MEMCACHED_SUCCESS)
       {
-        data_read= recv(ptr->fd, ptr->read_buffer, MEMCACHED_MAX_BUFFER, MSG_DONTWAIT);
-        if (data_read == SOCKET_ERROR)
-        {
-          switch (get_socket_errno())
-          {
-          case EINTR: // We just retry
-            continue;
-
-          case ETIMEDOUT: // OSX
-          case EWOULDBLOCK:
-#ifdef USE_EAGAIN
-          case EAGAIN:
-#endif
-#ifdef TARGET_OS_LINUX
-          case ERESTART:
-#endif
-            if (memcached_success(io_wait(ptr, MEM_READ)))
-            {
-              continue;
-            }
-            return MEMCACHED_IN_PROGRESS;
-
-            /* fall through */
-
-          case ENOTCONN: // Programmer Error
-            WATCHPOINT_ASSERT(0);
-          case ENOTSOCK:
-            WATCHPOINT_ASSERT(0);
-          case EBADF:
-            assert_msg(ptr->fd != INVALID_SOCKET, "Programmer error, invalid socket");
-          case EINVAL:
-          case EFAULT:
-          case ECONNREFUSED:
-          default:
-            {
-              memcached_quit_server(ptr, true);
-              *nread= -1;
-              return memcached_set_errno(*ptr, get_socket_errno(), MEMCACHED_AT);
-            }
-          }
-        }
-        else if (data_read == 0)
-        {
-          /*
-            EOF. Any data received so far is incomplete
-            so discard it. This always reads by byte in case of TCP
-            and protocol enforcement happens at memcached_response()
-            looking for '\n'. We do not care for UDB which requests 8 bytes
-            at once. Generally, this means that connection went away. Since
-            for blocking I/O we do not return 0 and for non-blocking case
-            it will return EGAIN if data is not immediatly available.
-          */
-          WATCHPOINT_STRING("We had a zero length recv()");
-          memcached_quit_server(ptr, true);
-          *nread= -1;
-          return memcached_set_error(*ptr, MEMCACHED_CONNECTION_FAILURE, MEMCACHED_AT,
-                                     memcached_literal_param("recv() returned zero, server has disconnected"));
-        }
-      } while (data_read <= 0);
-
-      ptr->io_bytes_sent = 0;
-      ptr->read_data_length= (size_t) data_read;
-      ptr->read_buffer_length= (size_t) data_read;
-      ptr->read_ptr= ptr->read_buffer;
+        *nread= -1;
+        return io_fill_ret;
+      }
     }
-
     if (length > 1)
     {
-      size_t difference;
-
-      difference= (length > ptr->read_buffer_length) ? ptr->read_buffer_length : length;
-
+      size_t difference= (length > ptr->read_buffer_length) ? ptr->read_buffer_length : length;
       memcpy(buffer_ptr, ptr->read_ptr, difference);
-      length -= difference;
+
+      length-= difference;
       ptr->read_ptr+= difference;
       ptr->read_buffer_length-= difference;
       buffer_ptr+= difference;
