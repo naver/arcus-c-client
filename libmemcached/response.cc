@@ -55,7 +55,7 @@
 #include <libmemcached/string.hpp>
 
 static memcached_return_t textual_value_fetch(memcached_server_write_instance_st ptr,
-                                              char *buffer,
+                                              char *buffer, size_t buffer_length,
                                               memcached_result_st *result)
 {
   char *string_ptr;
@@ -69,7 +69,7 @@ static memcached_return_t textual_value_fetch(memcached_server_write_instance_st
     return memcached_set_error(*ptr, MEMCACHED_NOT_SUPPORTED, MEMCACHED_AT);
 
   WATCHPOINT_ASSERT(ptr->root);
-  end_ptr= buffer + MEMCACHED_DEFAULT_COMMAND_SIZE;
+  end_ptr= buffer + buffer_length;
 
   memcached_result_reset(result);
 
@@ -207,7 +207,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     {
       /* We add back in one because we will need to search for END */
       memcached_server_response_increment(ptr);
-      return textual_value_fetch(ptr, buffer, result);
+      return textual_value_fetch(ptr, buffer, buffer_length, result);
     }
     else if (memcmp(buffer, "VERSION", 7) == 0)
     {
