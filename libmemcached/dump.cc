@@ -39,19 +39,18 @@ static memcached_return_t ascii_dump(memcached_st *ptr, memcached_dump_fn *callb
     /* 200 : the upper limit of slabs */
     for (uint32_t x= 0; x < 200; x++)
     {
-      char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-      int send_length;
-      send_length= snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                            "stats cachedump %u 0\r\n", x);
+      const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+      char buffer[buffer_length];
+      int write_length= 0;
+      write_length= snprintf(buffer, buffer_length, "stats cachedump %u 0\r\n", x);
 
-      if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)
+      if ((size_t)write_length >= buffer_length || write_length < 0)
       {
         return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
                                    memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
       }
 
-      rc= memcached_do(instance, buffer, (size_t)send_length, true);
+      rc= memcached_do(instance, buffer, (size_t)write_length, true);
 
       if (rc != MEMCACHED_SUCCESS)
       {
@@ -61,6 +60,7 @@ static memcached_return_t ascii_dump(memcached_st *ptr, memcached_dump_fn *callb
       while (1)
       {
         uint32_t callback_counter;
+        char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
         rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 
         if (rc == MEMCACHED_ITEM)
