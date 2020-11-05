@@ -414,25 +414,26 @@ static memcached_return_t ascii_stats_fetch(memcached_stat_st *memc_stat,
                                             memcached_server_write_instance_st instance,
                                             struct local_context *check)
 {
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  int send_length;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length;
 
   if (args)
   {
-    send_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, "stats %s\r\n", args);
+    write_length= snprintf(buffer, buffer_length, "stats %s\r\n", args);
   }
   else
   {
-    send_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, "stats\r\n");
+    write_length= snprintf(buffer, buffer_length, "stats\r\n");
   }
 
-  if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*instance, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
-  memcached_return_t rc= memcached_do(instance, buffer, (size_t)send_length, true);
+  memcached_return_t rc= memcached_do(instance, buffer, (size_t)write_length, true);
   if (memcached_success(rc))
   {
     char result[MEMCACHED_DEFAULT_COMMAND_SIZE];

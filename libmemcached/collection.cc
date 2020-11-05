@@ -319,7 +319,7 @@ static inline const char *comp_to_str(memcached_coll_comp_t comp)
   }
 }
 
-static inline size_t memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter_st *filter, char *buffer, size_t buffer_length)
+static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter_st *filter, char *buffer, size_t buffer_length)
 {
   if (not filter)
   {
@@ -327,40 +327,43 @@ static inline size_t memcached_coll_eflag_filter_to_str(memcached_coll_eflag_fil
     return 0;
   }
 
-  size_t length;
+  const size_t bkey_hex_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
+  int write_length= 0;
 
   if (filter->options.is_bitwised)
   {
-    char foperand_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(NULL, &filter->bitwise.foperand,
-                              foperand_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+    char foperand_str[bkey_hex_length];
+    memcached_conv_hex_to_str(NULL, &filter->bitwise.foperand, foperand_str, bkey_hex_length);
 
-    length = (size_t)snprintf(buffer, buffer_length, " %u %s 0x%s %s ",
-                      (int)filter->fwhere,
-                      bitwise_to_str(filter->bitwise.op), foperand_str,
-                      comp_to_str(filter->comp.op));
+    write_length= snprintf(buffer, buffer_length, " %u %s 0x%s %s ",
+                           (int)filter->fwhere,
+                           bitwise_to_str(filter->bitwise.op), foperand_str,
+                           comp_to_str(filter->comp.op));
   }
   else
   {
-    length = (size_t)snprintf(buffer, buffer_length, " %u %s ",
-                      (int)filter->fwhere,
-                      comp_to_str(filter->comp.op));
+    write_length= snprintf(buffer, buffer_length, " %u %s ",
+                           (int)filter->fwhere,
+                           comp_to_str(filter->comp.op));
   }
 
-  char fvalue_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+  char fvalue_str[bkey_hex_length];
   for (int i = 0; i < (int)filter->comp.count; i++)
   {
-    memcached_conv_hex_to_str(NULL, &filter->comp.fvalue[i],
-                              fvalue_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+    memcached_conv_hex_to_str(NULL, &filter->comp.fvalue[i], fvalue_str, bkey_hex_length);
 
-    length += (size_t)snprintf(buffer+length, buffer_length, "%s0x%s",
-                      ((i == 0)?"":","), fvalue_str);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s0x%s",
+                            ((i == 0)?"":","), fvalue_str);
   }
 
-  return length;
+  if ((size_t)write_length >= buffer_length || write_length < 0)
+  {
+    return -1;
+  }
+  return write_length;
 }
 
-static inline size_t memcached_coll_update_filter_to_str(memcached_coll_update_filter_st *filter, char *buffer, size_t buffer_length)
+static inline int memcached_coll_update_filter_to_str(memcached_coll_update_filter_st *filter, char *buffer, size_t buffer_length)
 {
   if (not filter)
   {
@@ -368,25 +371,28 @@ static inline size_t memcached_coll_update_filter_to_str(memcached_coll_update_f
     return 0;
   }
 
-  size_t length;
+  const size_t bkey_hex_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
+  int write_length= 0;
 
-  char fvalue_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-  memcached_conv_hex_to_str(NULL, &filter->comp.fvalue,
-                            fvalue_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+  char fvalue_str[bkey_hex_length];
+  memcached_conv_hex_to_str(NULL, &filter->comp.fvalue, fvalue_str, bkey_hex_length);
 
   if (filter->options.is_bitwised)
   {
-    length = snprintf(buffer, buffer_length, " %u %s 0x%s",
-                      (int)filter->fwhere,
-                      bitwise_to_str(filter->bitwise.op), fvalue_str);
+    write_length= snprintf(buffer, buffer_length, " %u %s 0x%s",
+                           (int)filter->fwhere,
+                           bitwise_to_str(filter->bitwise.op), fvalue_str);
   }
   else
   {
-    length = snprintf(buffer, buffer_length, " 0x%s",
-                      fvalue_str);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", fvalue_str);
   }
 
-  return length;
+  if ((size_t)write_length >= buffer_length || write_length < 0)
+  {
+    return -1;
+  }
+  return write_length;
 }
 
 /* Attributes getters/setters */
@@ -578,43 +584,44 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
   uint8_t command_length= coll_op_length(SETATTRS_OP);
 
   /* Attributes */
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t write_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   if (attrs->options.set_maxcount)
-    write_length+= (size_t) snprintf(buffer + write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " maxcount=%u", attrs->maxcount);
+    write_length= snprintf(buffer, buffer_length,
+                           " maxcount=%u", attrs->maxcount);
 
   if (attrs->options.set_expiretime)
-    write_length+= (size_t) snprintf(buffer + write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " expiretime=%d", attrs->expiretime);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " expiretime=%d", attrs->expiretime);
 
   if (attrs->options.set_overflowaction)
-    write_length+= (size_t) snprintf(buffer + write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " overflowaction=%s", coll_overflowaction_string(attrs->overflowaction));
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " overflowaction=%s", coll_overflowaction_string(attrs->overflowaction));
 
   if (attrs->options.set_readable)
-    write_length+= (size_t) snprintf(buffer + write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " readable=on");
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " readable=on");
 
   if (attrs->options.set_maxbkeyrange)
   {
     if (attrs->options.subkey_type == MEMCACHED_COLL_QUERY_BOP)
     {
-      write_length+= (size_t) snprintf(buffer + write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                       " maxbkeyrange=%" PRIu64, attrs->maxbkeyrange.bkey);
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                              " maxbkeyrange=%" PRIu64, attrs->maxbkeyrange.bkey);
     }
     else if (attrs->options.subkey_type == MEMCACHED_COLL_QUERY_BOP_EXT)
     {
       char hex_string[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
       memcached_conv_hex_to_str(ptr, &attrs->maxbkeyrange.bkey_ext,
                                 hex_string, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      " maxbkeyrange=0x%s", hex_string);
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                              " maxbkeyrange=0x%s", hex_string);
     }
   }
 
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
@@ -626,7 +633,7 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { write_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" }
   };
 
@@ -876,8 +883,9 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t write_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   /* Query header */
   bool set_overflowaction= verb != SOP_CREATE_OP and
@@ -885,15 +893,15 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
                            attributes->overflowaction and
                            attributes->overflowaction != OVERFLOWACTION_NONE;
 
-  write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                   " %u %d %u%s%s%s%s",
-                                   attributes->flags, attributes->expiretime, attributes->maxcount,
-                                   (set_overflowaction)? " " : "",
-                                   (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
-                                   (attributes->is_unreadable)? " unreadable" : "",
-                                   (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
+  write_length= snprintf(buffer, buffer_length,
+                         " %u %d %u%s%s%s%s",
+                         attributes->flags, attributes->expiretime, attributes->maxcount,
+                         (set_overflowaction)? " " : "",
+                         (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
+                         (attributes->is_unreadable)? " unreadable" : "",
+                         (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
 
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
@@ -906,7 +914,7 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { write_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" }
   };
 
@@ -982,15 +990,16 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t write_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   /* Query header */
 
   /* 1. sub key */
   if (verb == LOP_INSERT_OP)
   {
-    write_length= (size_t) snprintf(buffer, 30, " %d", query->sub_key.index);
+    write_length= snprintf(buffer, buffer_length, " %d", query->sub_key.index);
   }
   else if (verb == SOP_INSERT_OP)
   {
@@ -1003,14 +1012,13 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
     {
         return MEMCACHED_INVALID_ARGUMENTS;
     }
-    write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    " %s", query->sub_key.mkey.string);
+    write_length= snprintf(buffer, buffer_length, " %s", query->sub_key.mkey.string);
   }
   else if (verb == BOP_INSERT_OP)
   {
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
-      write_length= (size_t) snprintf(buffer, 30, " %llu", (unsigned long long) query->sub_key.bkey);
+      write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
     {
@@ -1018,8 +1026,7 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      " 0x%s", bkey_str);
+      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
     }
 
     if (eflag && eflag->array)
@@ -1028,8 +1035,7 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, eflag,
                                 eflag_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                       " 0x%s", eflag_str);
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length, " 0x%s", eflag_str);
     }
   }
   else
@@ -1038,8 +1044,7 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   }
 
   /* 2. value length */
-  write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                   " %u", (int)query->value_length);
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %u", (int)query->value_length);
 
   /* 3. creation attributes */
   if (attributes)
@@ -1049,31 +1054,31 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
                                   && attributes->overflowaction
                                   && attributes->overflowaction != OVERFLOWACTION_NONE;
 
-    write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " create %u %d %u%s%s%s",
-                                     attributes->flags, attributes->expiretime, attributes->maxcount,
-                                     (set_overflowaction)? " " : "",
-                                     (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
-                                     (attributes->is_unreadable)? " unreadable" : "");
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " create %u %d %u%s%s%s",
+                            attributes->flags, attributes->expiretime, attributes->maxcount,
+                            (set_overflowaction)? " " : "",
+                            (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
+                            (attributes->is_unreadable)? " unreadable" : "");
   }
 
-  write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                   "%s", (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                          "%s", (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
 
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
-  int request_length= write_length + command_length + key_length + query->value_length + 4;
-
+  size_t request_length= write_length + command_length + key_length + query->value_length + 4;
+  size_t pipe_buffer_length= MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE;
   if (ptr->flags.piped &&
-      ptr->pipe_buffer_pos + request_length < MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE)
+      ptr->pipe_buffer_pos + request_length < pipe_buffer_length)
   {
     /* buffering */
     ptr->pipe_buffer_pos += snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
-                                     MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE - ptr->pipe_buffer_pos,
+                                     pipe_buffer_length-ptr->pipe_buffer_pos,
                                      "%s%s%s\r\n", command, key, buffer);
     memcpy(ptr->pipe_buffer+ptr->pipe_buffer_pos, query->value, query->value_length);
     ptr->pipe_buffer_pos += query->value_length;
@@ -1088,7 +1093,7 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
     { ptr->pipe_buffer_pos, ptr->pipe_buffer }, /* pipe_buffer_pos can be 0. */
     { command_length, command },
     { key_length, key },
-    { write_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" },
     { query->value_length, query->value },
     { 2, "\r\n" }
@@ -1128,27 +1133,28 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
   ptr->last_op_code= command;
 
   /* Query header */
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t write_length= 0;
-  write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                  " %u%s\r\n",
-                                  (int)value_length,
-                                  (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
+  write_length= snprintf(buffer, buffer_length,
+                         " %u%s\r\n",
+                         (int)value_length,
+                         (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
 
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
-  int request_length= write_length + command_length + key_length + value_length + 2;
-
+  size_t request_length= write_length + command_length + key_length + value_length + 2;
+  size_t pipe_buffer_length= MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE;
   if (ptr->flags.piped &&
-      ptr->pipe_buffer_pos + request_length < MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE)
+      ptr->pipe_buffer_pos + request_length < pipe_buffer_length)
   {
     /* buffering */
     ptr->pipe_buffer_pos += snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
-                                     MEMCACHED_COLL_MAX_PIPED_BUFFER_SIZE - ptr->pipe_buffer_pos,
+                                     pipe_buffer_length-ptr->pipe_buffer_pos,
                                      "%s%s%s", command, key, buffer);
     memcpy(ptr->pipe_buffer+ptr->pipe_buffer_pos, value, value_length);
     ptr->pipe_buffer_pos += value_length;
@@ -1163,7 +1169,7 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
     { ptr->pipe_buffer_pos, ptr->pipe_buffer }, /* pipe_buffer_pos can be 0. */
     { command_length, command },
     { key_length, key },
-    { write_length, buffer },
+    { (size_t)write_length, buffer },
     { value_length, value },
     { 2, "\r\n" }
   };
@@ -1199,15 +1205,16 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t write_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   /* Query header */
 
   /* 1. sub key */
   if (verb == LOP_INSERT_OP)
   {
-    write_length= (size_t) snprintf(buffer, 30, " %d", query->sub_key.index);
+    write_length= snprintf(buffer, buffer_length, " %d", query->sub_key.index);
   }
   else if (verb == SOP_INSERT_OP)
   {
@@ -1220,21 +1227,20 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
     {
         return MEMCACHED_INVALID_ARGUMENTS;
     }
-    write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    " %s", query->sub_key.mkey.string);
+    write_length= snprintf(buffer, buffer_length, " %s", query->sub_key.mkey.string);
   }
   else if (verb == BOP_INSERT_OP || verb == BOP_UPSERT_OP)
   {
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
-      write_length= (size_t) snprintf(buffer, 30, " %llu", (unsigned long long) query->sub_key.bkey);
+      write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
     {
       char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, " 0x%s", bkey_str);
+      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
     }
 
     if (eflag && eflag->array)
@@ -1242,8 +1248,7 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
       char eflag_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
       memcached_conv_hex_to_str(ptr, eflag,
                                 eflag_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                       " 0x%s", eflag_str);
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length, " 0x%s", eflag_str);
     }
   }
   else
@@ -1252,8 +1257,7 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   }
 
   /* 2. value length */
-  write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                   " %u", (int)query->value_length);
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %u", (int)query->value_length);
 
   /* 3. creation attributes */
   if (attributes)
@@ -1263,16 +1267,16 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
                                   && attributes->overflowaction
                                   && attributes->overflowaction != OVERFLOWACTION_NONE;
 
-    write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " create %u %d %u%s%s%s%s",
-                                     attributes->flags, attributes->expiretime, attributes->maxcount,
-                                     (set_overflowaction)? " " : "",
-                                     (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
-                                     (attributes->is_unreadable)? " unreadable" : "",
-                                     (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " create %u %d %u%s%s%s%s",
+                            attributes->flags, attributes->expiretime, attributes->maxcount,
+                            (set_overflowaction)? " " : "",
+                            (set_overflowaction)? coll_overflowaction_string(attributes->overflowaction) : "",
+                            (attributes->is_unreadable)? " unreadable" : "",
+                            (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
   }
 
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
@@ -1284,7 +1288,7 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { write_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" },
     { query->value_length, query->value },
     { 2, "\r\n" }
@@ -1362,37 +1366,38 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
-  size_t write_length= 0;
+  const size_t buffer_length= MEMCACHED_MAXIMUM_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   /* Query header */
   if (verb == LOP_DELETE_OP)
   {
     if (MEMCACHED_COLL_QUERY_LOP == query->type)
     {
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %d%s%s",
-                                      query->sub_key.index,
-                                      drop_if_empty ? " drop" :"",
-                                      ptr->flags.no_reply ? " noreply" :"");
+      write_length= snprintf(buffer, buffer_length,
+                             " %d%s%s",
+                             query->sub_key.index,
+                             drop_if_empty ? " drop" :"",
+                             ptr->flags.no_reply ? " noreply" :"");
     }
     else if (MEMCACHED_COLL_QUERY_LOP_RANGE == query->type)
     {
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %d..%d%s%s",
-                                      query->sub_key.index_range[0],
-                                      query->sub_key.index_range[1],
-                                      drop_if_empty ? " drop" :"",
-                                      ptr->flags.no_reply ? " noreply" :"");
+      write_length= snprintf(buffer, buffer_length,
+                             " %d..%d%s%s",
+                             query->sub_key.index_range[0],
+                             query->sub_key.index_range[1],
+                             drop_if_empty ? " drop" :"",
+                             ptr->flags.no_reply ? " noreply" :"");
     }
   }
   else if (verb == SOP_DELETE_OP)
   {
-    write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                    " %u%s%s\r\n",
-                                    (int)query->value_length,
-                                    drop_if_empty ? " drop" :"",
-                                    ptr->flags.no_reply ? " noreply" :"");
+    write_length= snprintf(buffer, buffer_length,
+                          " %u%s%s\r\n",
+                          (int)query->value_length,
+                          drop_if_empty ? " drop" :"",
+                          ptr->flags.no_reply ? " noreply" :"");
   }
   else if (verb == MOP_DELETE_OP)
   {
@@ -1403,39 +1408,44 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     }
     if (mkey_length == 0) /* delete all */
     {
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " 0 0%s%s",
-                                      drop_if_empty ? " drop" :"",
-                                      ptr->flags.no_reply ? " noreply" :"");
+      write_length= snprintf(buffer, buffer_length,
+                             " 0 0%s%s",
+                             drop_if_empty ? " drop" :"",
+                             ptr->flags.no_reply ? " noreply" :"");
     }
     else /* delete with mkey */
     {
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %lu 1%s%s\r\n", mkey_length,
-                                      drop_if_empty ? " drop" :"",
-                                      ptr->flags.no_reply ? " noreply" :"");
+      write_length= snprintf(buffer, buffer_length,
+                             " %lu 1%s%s\r\n", mkey_length,
+                             drop_if_empty ? " drop" :"",
+                             ptr->flags.no_reply ? " noreply" :"");
     }
   }
   else if (verb == BOP_DELETE_OP)
   {
-    char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
-    memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+    const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
+    char filter_str[filter_length];
+    if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+    {
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                 memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
+    }
 
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %llu%s",
-                                      (unsigned long long)query->sub_key.bkey,
-                                      filter_str);
+      write_length= snprintf(buffer, buffer_length,
+                             " %llu%s",
+                             (unsigned long long)query->sub_key.bkey,
+                             filter_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
     {
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %llu..%llu%s %u",
-                                      (unsigned long long)query->sub_key.bkey_range[0],
-                                      (unsigned long long)query->sub_key.bkey_range[1],
-                                      filter_str,
-                                      (int)count);
+      write_length= snprintf(buffer, buffer_length,
+                             " %llu..%llu%s %u",
+                             (unsigned long long)query->sub_key.bkey_range[0],
+                             (unsigned long long)query->sub_key.bkey_range[1],
+                             filter_str,
+                             (int)count);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
     {
@@ -1443,8 +1453,7 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " 0x%s%s", bkey_str, filter_str);
+      write_length= snprintf(buffer, buffer_length, " 0x%s%s", bkey_str, filter_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
     {
@@ -1456,23 +1465,23 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[1],
                                 bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      write_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " 0x%s..0x%s%s %u", bkey_str_from, bkey_str_to,
-                                      filter_str, (int)count);
+      write_length= snprintf(buffer, buffer_length,
+                             " 0x%s..0x%s%s %u", bkey_str_from, bkey_str_to,
+                             filter_str, (int)count);
     }
 
     // drop & noreply
-    write_length+= (size_t) snprintf(buffer+write_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                     "%s%s",
-                                     drop_if_empty ? " drop" :"",
-                                     ptr->flags.no_reply ? " noreply" :"");
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            "%s%s",
+                            drop_if_empty ? " drop" :"",
+                            ptr->flags.no_reply ? " noreply" :"");
   }
   else
   {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-  if (write_length >= MEMCACHED_MAXIMUM_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
@@ -1487,30 +1496,30 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   if (SOP_DELETE_OP == verb)
   {
     /* delete by value */
-    vector[0].length= command_length; vector[0].buffer= command;
-    vector[1].length= key_length;     vector[1].buffer= key;
-    vector[2].length= write_length;   vector[2].buffer= buffer;
-    vector[3].length= query->value_length; vector[3].buffer= query->value;
-    vector[4].length= 2;              vector[4].buffer= "\r\n";
+    vector[0].length= command_length;       vector[0].buffer= command;
+    vector[1].length= key_length;           vector[1].buffer= key;
+    vector[2].length= (size_t)write_length; vector[2].buffer= buffer;
+    vector[3].length= query->value_length;  vector[3].buffer= query->value;
+    vector[4].length= 2;                    vector[4].buffer= "\r\n";
     veclen= 5;
   }
   else if (MOP_DELETE_OP == verb && query->sub_key.mkey.length != 0)
   {
     /* delete by mkey */
-    vector[0].length= command_length; vector[0].buffer= command;
-    vector[1].length= key_length;     vector[1].buffer= key;
-    vector[2].length= write_length;   vector[2].buffer= buffer;
+    vector[0].length= command_length;             vector[0].buffer= command;
+    vector[1].length= key_length;                 vector[1].buffer= key;
+    vector[2].length= (size_t)write_length;       vector[2].buffer= buffer;
     vector[3].length= query->sub_key.mkey.length; vector[3].buffer= query->sub_key.mkey.string;
-    vector[4].length= 2;              vector[4].buffer= "\r\n";
+    vector[4].length= 2;                          vector[4].buffer= "\r\n";
     veclen= 5;
   }
   else
   {
     /* delete by sub key(index or bkey) */
-    vector[0].length= command_length; vector[0].buffer= command;
-    vector[1].length= key_length;     vector[1].buffer= key;
-    vector[2].length= write_length;   vector[2].buffer= buffer;
-    vector[3].length= 2;              vector[3].buffer= "\r\n";
+    vector[0].length= command_length;       vector[0].buffer= command;
+    vector[1].length= key_length;           vector[1].buffer= key;
+    vector[2].length= (size_t)write_length; vector[2].buffer= buffer;
+    vector[3].length= 2;                    vector[3].buffer= "\r\n";
     veclen= 4;
   }
 
@@ -1590,10 +1599,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_MAXIMUM_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
   char  *mkey_buffer= NULL;
-  size_t mkey_buffer_length= 0;
+  int mkey_write_length= 0;
   size_t mkey_array_size= 0;
 
   /* Query header */
@@ -1603,15 +1613,14 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   {
     if (MEMCACHED_COLL_QUERY_LOP == query->type)
     {
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                       " %d", query->sub_key.index);
+      write_length= snprintf(buffer, buffer_length, " %d", query->sub_key.index);
     }
     else if (MEMCACHED_COLL_QUERY_LOP_RANGE == query->type)
     {
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                       " %d..%d",
-                                       query->sub_key.index_range[0],
-                                       query->sub_key.index_range[1]);
+      write_length= snprintf(buffer, buffer_length,
+                             " %d..%d",
+                             query->sub_key.index_range[0],
+                             query->sub_key.index_range[1]);
     }
     else
     {
@@ -1620,8 +1629,7 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   }
   else if (verb == SOP_GET_OP)
   {
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                     " %u", (int)query->count);
+    write_length= snprintf(buffer, buffer_length, " %u", (int)query->count);
   }
   else if (verb == MOP_GET_OP)
   {
@@ -1634,13 +1642,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       }
       if (mkey_length == 0) /* get all */
       {
-        buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                         " 0 0");
+        write_length= snprintf(buffer, buffer_length, " 0 0");
       }
       else /* get with single mkey */
       {
-        buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                        " %lu 1", mkey_length);
+        write_length= snprintf(buffer, buffer_length, " %lu 1", mkey_length);
         mkey_array_size= 1;
       }
     }
@@ -1658,28 +1664,27 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
         length_of_mkeys += mkey_length;
       }
       length_of_mkeys += number_of_mkeys-1;
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                       " %lu %lu",
-                                       length_of_mkeys, number_of_mkeys);
+      write_length= snprintf(buffer, buffer_length, " %lu %lu", length_of_mkeys, number_of_mkeys);
 
       // mkeys
-      mkey_buffer= (char*)libmemcached_malloc(ptr, sizeof(char) * length_of_mkeys);
-      for (size_t i=0; i<number_of_mkeys; i++)
+      size_t mkey_buffer_length= sizeof(char) * length_of_mkeys + 1;
+      mkey_buffer= (char*)libmemcached_malloc(ptr, mkey_buffer_length);
+      for (size_t i=0; i<number_of_mkeys-1; i++)
       {
-        size_t mkey_length= 0;
-        if (i == number_of_mkeys-1)
-        {
-          mkey_length= (size_t) snprintf(mkey_buffer+mkey_buffer_length,
-                                         MEMCACHED_MAXIMUM_COMMAND_SIZE, "%s",
-                                         query->sub_key.mkey.string_array[i]);
-        }
-        else
-        {
-          mkey_length= (size_t) snprintf(mkey_buffer+mkey_buffer_length,
-                                                 MEMCACHED_MAXIMUM_COMMAND_SIZE, "%s,",
-                                                 query->sub_key.mkey.string_array[i]);
-        }
-        mkey_buffer_length += mkey_length;
+        mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
+                                     mkey_buffer_length-mkey_write_length, "%s,",
+                                     query->sub_key.mkey.string_array[i]);
+      }
+      mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
+                                   mkey_buffer_length-mkey_write_length, "%s",
+                                   query->sub_key.mkey.string_array[number_of_mkeys-1]);
+
+      if ((size_t)mkey_write_length >= mkey_buffer_length || mkey_write_length < 0)
+      {
+        libmemcached_free(ptr, mkey_buffer);
+        mkey_buffer= NULL;
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                   memcached_literal_param("snprintf(length_of_mkeys)"));
       }
       mkey_array_size= number_of_mkeys;
     }
@@ -1692,16 +1697,16 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   {
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                       " %llu",
-                                       (unsigned long long)query->sub_key.bkey);
+      write_length= snprintf(buffer, buffer_length,
+                             " %llu",
+                             (unsigned long long)query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
     {
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                       " %llu..%llu",
-                                       (unsigned long long)query->sub_key.bkey_range[0],
-                                       (unsigned long long)query->sub_key.bkey_range[1]);
+      write_length= snprintf(buffer, buffer_length,
+                             " %llu..%llu",
+                             (unsigned long long)query->sub_key.bkey_range[0],
+                             (unsigned long long)query->sub_key.bkey_range[1]);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
     {
@@ -1709,8 +1714,7 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " 0x%s", bkey_str);
+      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
     {
@@ -1722,9 +1726,9 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[1],
                                 bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " 0x%s..0x%s",
-                                      bkey_str_from, bkey_str_to);
+      write_length= snprintf(buffer, buffer_length,
+                             " 0x%s..0x%s",
+                             bkey_str_from, bkey_str_to);
     }
     else
     {
@@ -1734,16 +1738,20 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     /* Filter */
     if (query->eflag_filter)
     {
-      char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
-      memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+      const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
+      char filter_str[filter_length];
+      if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+      {
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                   memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
+      }
 
-      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                        "%s", filter_str);
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
     }
 
     /* Options */
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %u %u", (int)query->offset, (int)query->count);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " %u %u", (int)query->offset, (int)query->count);
   }
   else
   {
@@ -1753,12 +1761,11 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   /* 2. delete or drop */
   if (with_delete or drop_if_empty)
   {
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      "%s",
-                                      (with_delete && drop_if_empty)?" drop":" delete");
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            "%s", (with_delete && drop_if_empty)?" drop":" delete");
   }
 
-  if (buffer_length >= MEMCACHED_MAXIMUM_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     if (mkey_buffer)
     {
@@ -1777,13 +1784,13 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
 
   if (MOP_GET_OP == verb && mkey_array_size != 0)
   {
-    vector[0].length= command_length; vector[0].buffer= command;
-    vector[1].length= key_length;     vector[1].buffer= key;
-    vector[2].length= buffer_length;  vector[2].buffer= buffer;
-    vector[3].length= 2;              vector[3].buffer= "\r\n";
+    vector[0].length= command_length;        vector[0].buffer= command;
+    vector[1].length= key_length;            vector[1].buffer= key;
+    vector[2].length= (size_t)write_length;  vector[2].buffer= buffer;
+    vector[3].length= 2;                     vector[3].buffer= "\r\n";
     if (mkey_buffer)
     {
-      vector[4].length= mkey_buffer_length;
+      vector[4].length= (size_t)mkey_write_length;
       vector[4].buffer= mkey_buffer;
     }
     else
@@ -1796,10 +1803,10 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   }
   else
   {
-    vector[0].length= command_length; vector[0].buffer= command;
-    vector[1].length= key_length;     vector[1].buffer= key;
-    vector[2].length= buffer_length;  vector[2].buffer= buffer;
-    vector[3].length= 2;              vector[3].buffer= "\r\n";
+    vector[0].length= command_length;       vector[0].buffer= command;
+    vector[1].length= key_length;           vector[1].buffer= key;
+    vector[2].length= (size_t)write_length; vector[2].buffer= buffer;
+    vector[3].length= 2;                    vector[3].buffer= "\r\n";
     veclen= 4;
   }
 
@@ -1911,24 +1918,25 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   }
 
   /* Prepare the request header */
-  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_MAXIMUM_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   if (verb == BOP_MGET_OP)
   {
     /* 1. <bkey or "bkey range"> */
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
-      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                        " %llu",
-                                        (unsigned long long)query->sub_key.bkey);
+      write_length= snprintf(buffer, buffer_length,
+                             " %llu",
+                             (unsigned long long)query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
     {
-      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                        " %llu..%llu",
-                                        (unsigned long long)query->sub_key.bkey_range[0],
-                                        (unsigned long long)query->sub_key.bkey_range[1]);
+      write_length= snprintf(buffer, buffer_length,
+                             " %llu..%llu",
+                             (unsigned long long)query->sub_key.bkey_range[0],
+                             (unsigned long long)query->sub_key.bkey_range[1]);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
     {
@@ -1936,8 +1944,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                        " 0x%s", bkey_str);
+      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
     {
@@ -1948,9 +1955,9 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
                                 bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                        " 0x%s..0x%s",
-                                        bkey_str_from, bkey_str_to);
+      write_length= snprintf(buffer, buffer_length,
+                             " 0x%s..0x%s",
+                             bkey_str_from, bkey_str_to);
     }
     else
     {
@@ -1961,16 +1968,25 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     /* 2. [<eflag_filter>] */
     if (query->eflag_filter)
     {
-      char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
-      memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+      const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
+      char filter_str[filter_length];
+      if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+      {
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                   memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
+      }
 
-      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                        "%s", filter_str);
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
     }
 
     /* 3. [<offset>] <count> */
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %lu %lu", (unsigned long)query->offset, (unsigned long)query->count);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " %lu %lu", (unsigned long)query->offset, (unsigned long)query->count);
+    if ((size_t)write_length >= buffer_length || write_length < 0)
+    {
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                 memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
+    }
   }
   else
   {
@@ -2035,7 +2051,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       // request header
       { command_length, command },
       { lenkeys_numkeys_length[key_to_serverkey[i]], lenkeys_numkeys_str[key_to_serverkey[i]] },
-      { buffer_length, buffer },
+      { (size_t)write_length, buffer },
       { 2, "\r\n" },
       { key_length[i], keys[i] },
       // comma-seperated request keys
@@ -2144,8 +2160,9 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
   uint8_t command_length= coll_op_length(BOP_POSI_OP);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   if (verb != BOP_POSI_OP)
   {
@@ -2155,8 +2172,7 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
 
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " %llu", (unsigned long long)query->sub_key.bkey);
+    write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long)query->sub_key.bkey);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
   {
@@ -2164,8 +2180,7 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " 0x%s", bkey_str);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
   }
   else
   {
@@ -2173,8 +2188,12 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
                                memcached_literal_param("An invalid query was provided"));
   }
 
-  buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    " %s", order_to_str(order));
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %s", order_to_str(order));
+  if ((size_t)write_length >= buffer_length || write_length < 0)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+  }
 
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
@@ -2183,7 +2202,7 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { buffer_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" }
   };
 
@@ -2248,8 +2267,9 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
   uint8_t command_length= coll_op_length(BOP_GBP_OP);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   if (verb != BOP_GBP_OP)
   {
@@ -2258,18 +2278,23 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
   }
 
   /* order */
-  buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                   " %s", order_to_str(order));
+  write_length= snprintf(buffer, buffer_length, " %s", order_to_str(order));
+
   /* position range */
   if (from_position == to_position)
   {
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      " %u", (int)from_position);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %u", (int)from_position);
   }
   else
   {
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      " %u..%u", (int)from_position, (int)to_position);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                            " %u..%u", (int)from_position, (int)to_position);
+  }
+
+  if ((size_t)write_length >= buffer_length || write_length < 0)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 
   /* Request */
@@ -2279,7 +2304,7 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { buffer_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" }
   };
 
@@ -2345,8 +2370,9 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
   uint8_t command_length= coll_op_length(BOP_PWG_OP);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   if (verb != BOP_PWG_OP)
   {
@@ -2356,8 +2382,7 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
 
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " %llu", (unsigned long long)query->sub_key.bkey);
+    write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long)query->sub_key.bkey);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
   {
@@ -2365,8 +2390,7 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " 0x%s", bkey_str);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
   }
   else
   {
@@ -2375,11 +2399,16 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
   }
 
   /* order */
-  buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    " %s", order_to_str(order));
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %s", order_to_str(order));
+
   /* count */
-  buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    " %u", (int)count);
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %u", (int)count);
+
+  if ((size_t)write_length >= buffer_length || write_length < 0)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
+  }
 
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
@@ -2388,7 +2417,7 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { buffer_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" }
   };
 
@@ -2485,23 +2514,24 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   }
 
   /* Key Group & Sub key */
-  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_MAXIMUM_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   result->sub_key_type= query->type;
 
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %llu",
-                                      (unsigned long long)query->sub_key.bkey);
+    write_length= snprintf(buffer, buffer_length,
+                           " %llu",
+                           (unsigned long long)query->sub_key.bkey);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
   {
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " %llu..%llu",
-                                      (unsigned long long)query->sub_key.bkey_range[0],
-                                      (unsigned long long)query->sub_key.bkey_range[1]);
+    write_length= snprintf(buffer, buffer_length,
+                           " %llu..%llu",
+                           (unsigned long long)query->sub_key.bkey_range[0],
+                           (unsigned long long)query->sub_key.bkey_range[1]);
     if (query->sub_key.bkey_range[0] > query->sub_key.bkey_range[1])
     {
       result->options.is_descending= true;
@@ -2513,8 +2543,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " 0x%s", bkey_str);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
   {
@@ -2525,9 +2554,8 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
                               bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      " 0x%s..0x%s",
-                                      bkey_str_from, bkey_str_to);
+    write_length= snprintf(buffer, buffer_length,
+                           " 0x%s..0x%s", bkey_str_from, bkey_str_to);
 
     if (memcached_compare_two_hexadecimal(&query->sub_key.bkey_ext_range[0], &query->sub_key.bkey_ext_range[1]) == 1)
     {
@@ -2543,16 +2571,20 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   /* Filter */
   if (query->eflag_filter)
   {
-    char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
-    memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+    const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
+    char filter_str[filter_length];
+    if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+    {
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                 memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
+    }
 
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      "%s", filter_str);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
   }
 
   /* Options */
-  buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                    " %u %u", (int)0, (int)(query->offset + query->count));
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                          " %u %u", (int)0, (int)(query->offset + query->count));
   if (result != NULL)
   {
     result->offset= query->offset;
@@ -2562,9 +2594,15 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   /* smget mode */
   if (query->smgmode != MEMCACHED_COLL_SMGET_NONE)
   {
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE, " %s",
-                    (query->smgmode == MEMCACHED_COLL_SMGET_DUPLICATE ?  "duplicate" : "unique"));
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %s",
+                            (query->smgmode == MEMCACHED_COLL_SMGET_DUPLICATE ? "duplicate" : "unique"));
     result->smgmode= query->smgmode;
+  }
+
+  if ((size_t)write_length >= buffer_length || write_length < 0)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
   }
 
   /* Command */
@@ -2627,7 +2665,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       // request header
       { command_length, command },
       { lenkeys_numkeys_length[key_to_serverkey[i]], lenkeys_numkeys_str[key_to_serverkey[i]] },
-      { buffer_length, buffer },
+      { (size_t)write_length, buffer },
       { 2, "\r\n" },
       { key_length[i], keys[i] },
       // comma-seperated request keys
@@ -2732,14 +2770,15 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
   ptr->last_op_code= command;
 
   /* Query header */
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t write_length= 0;
-  write_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                  " %u%s\r\n",
-                                  (int)value_length,
-                                  (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
+  write_length= snprintf(buffer, buffer_length,
+                         " %u%s\r\n",
+                         (int)value_length,
+                         (ptr->flags.no_reply)? " noreply" : (ptr->flags.piped)? " pipe" : "");
 
-  if (write_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
@@ -2752,7 +2791,7 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { write_length, buffer },
+    { (size_t)write_length, buffer },
     { value_length, value },
     { 2, "\r\n" }
   };
@@ -3209,8 +3248,9 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   /* Query header */
 
@@ -3228,14 +3268,13 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
     {
         return MEMCACHED_INVALID_ARGUMENTS;
     }
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    " %s", query->sub_key.mkey.string);
+    write_length= snprintf(buffer, buffer_length, " %s", query->sub_key.mkey.string);
   }
   else if (verb == BOP_UPDATE_OP)
   {
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
-      buffer_length= (size_t) snprintf(buffer, 30, " %llu", (unsigned long long) query->sub_key.bkey);
+      write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
     {
@@ -3243,26 +3282,29 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                       " 0x%s", bkey_str);
+      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
     }
   }
 
   /* 2. update filter */
   if (update_filter)
   {
-    char filter_str[MEMCACHED_COLL_UPD_FILTER_STR_LENGTH];
-    memcached_coll_update_filter_to_str(update_filter, filter_str, MEMCACHED_COLL_UPD_FILTER_STR_LENGTH);
+    const size_t filter_length= MEMCACHED_COLL_UPD_FILTER_STR_LENGTH+1;
+    char filter_str[filter_length];
+    if (memcached_coll_update_filter_to_str(update_filter, filter_str, filter_length) < 0)
+    {
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                 memcached_literal_param("snprintf(MEMCACHED_COLL_UPD_FILTER_STR_LENGTH)"));
+    }
 
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                      "%s", filter_str);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
   }
 
   /* 3. value length & options */
-  buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    " %d%s", value_length, (ptr->flags.no_reply)? " noreply":"");
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length,
+                          " %d%s", value_length, (ptr->flags.no_reply)? " noreply":"");
 
-  if (buffer_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
@@ -3277,21 +3319,21 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   if (value_length < 0)
   {
     /* update without value */
-    vector[0].length= command_length; vector[0].buffer= command;
-    vector[1].length= key_length;     vector[1].buffer= key;
-    vector[2].length= buffer_length;  vector[2].buffer= buffer;
-    vector[3].length= 2;              vector[3].buffer= "\r\n";
+    vector[0].length= command_length;       vector[0].buffer= command;
+    vector[1].length= key_length;           vector[1].buffer= key;
+    vector[2].length= (size_t)write_length; vector[2].buffer= buffer;
+    vector[3].length= 2;                    vector[3].buffer= "\r\n";
     veclen= 4;
   }
   else
   {
     /* update with value */
-    vector[0].length= command_length; vector[0].buffer= command;
-    vector[1].length= key_length;     vector[1].buffer= key;
-    vector[2].length= buffer_length;  vector[2].buffer= buffer;
-    vector[3].length= 2;              vector[3].buffer= "\r\n";
-    vector[4].length= value_length;   vector[4].buffer= value;
-    vector[5].length= 2;              vector[5].buffer= "\r\n";
+    vector[0].length= command_length;       vector[0].buffer= command;
+    vector[1].length= key_length;           vector[1].buffer= key;
+    vector[2].length= (size_t)write_length; vector[2].buffer= buffer;
+    vector[3].length= 2;                    vector[3].buffer= "\r\n";
+    vector[4].length= value_length;         vector[4].buffer= value;
+    vector[5].length= 2;                    vector[5].buffer= "\r\n";
     veclen= 6;
   }
 
@@ -3374,8 +3416,9 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   uint8_t command_length= coll_op_length(verb);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_DEFAULT_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   /* Query header */
   if (verb != BOP_INCR_OP && verb != BOP_DECR_OP)
@@ -3387,7 +3430,7 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   /* 1. sub key */
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
-    buffer_length= (size_t) snprintf(buffer, 30, " %llu", (unsigned long long) query->sub_key.bkey);
+    write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
   {
@@ -3395,25 +3438,23 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
     memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                     " 0x%s", bkey_str);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
   }
 
   /* 2. delta */
-  buffer_length+= (size_t) snprintf(buffer+buffer_length, 30, " %llu", (unsigned long long) delta);
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %llu", (unsigned long long) delta);
 
 #ifdef BOP_ARITHMETIC_INITIAL
   /* 3. initial */
   if (with_initial)
   {
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, 30, " %llu", (unsigned long long) initial);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %llu", (unsigned long long) initial);
     if (eflag && eflag->array)
     {
       char eflag_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
       memcached_conv_hex_to_str(ptr, eflag,
                                 eflag_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                       " 0x%s", eflag_str);
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length, " 0x%s", eflag_str);
     }
   }
 
@@ -3421,10 +3462,9 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
 #else
   /* 3. options */
 #endif
-  buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_DEFAULT_COMMAND_SIZE,
-                                    "%s", (ptr->flags.no_reply)? " noreply":"");
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", (ptr->flags.no_reply)? " noreply":"");
 
-  if (buffer_length >= MEMCACHED_DEFAULT_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
@@ -3438,7 +3478,7 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { buffer_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" }
   };
 
@@ -3514,8 +3554,9 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   uint8_t command_length= coll_op_length(BOP_COUNT_OP);
   ptr->last_op_code= command;
 
-  char buffer[MEMCACHED_MAXIMUM_COMMAND_SIZE];
-  size_t buffer_length= 0;
+  const size_t buffer_length= MEMCACHED_MAXIMUM_COMMAND_SIZE;
+  char buffer[buffer_length];
+  int write_length= 0;
 
   /* Query header */
   if (verb != BOP_COUNT_OP)
@@ -3527,16 +3568,16 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   /* 1. sub key */
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                     " %llu",
-                                     (unsigned long long)query->sub_key.bkey);
+    write_length= snprintf(buffer, buffer_length,
+                           " %llu",
+                           (unsigned long long)query->sub_key.bkey);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
   {
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                     " %llu..%llu",
-                                     (unsigned long long)query->sub_key.bkey_range[0],
-                                     (unsigned long long)query->sub_key.bkey_range[1]);
+    write_length= snprintf(buffer, buffer_length,
+                           " %llu..%llu",
+                           (unsigned long long)query->sub_key.bkey_range[0],
+                           (unsigned long long)query->sub_key.bkey_range[1]);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
   {
@@ -3544,8 +3585,7 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
                               bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                     " 0x%s", bkey_str);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
   {
@@ -3556,9 +3596,7 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
                               bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-    buffer_length= (size_t) snprintf(buffer, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                    " 0x%s..0x%s",
-                                    bkey_str_from, bkey_str_to);
+    write_length= snprintf(buffer, buffer_length, " 0x%s..0x%s", bkey_str_from, bkey_str_to);
   }
   else
   {
@@ -3569,14 +3607,18 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   /* 2. filter */
   if (query->eflag_filter)
   {
-    char filter_str[MEMCACHED_COLL_MAX_FILTER_STR_LENGTH];
-    memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, MEMCACHED_COLL_MAX_FILTER_STR_LENGTH);
+    const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
+    char filter_str[filter_length];
+    if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+    {
+      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                 memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
+    }
 
-    buffer_length+= (size_t) snprintf(buffer+buffer_length, MEMCACHED_MAXIMUM_COMMAND_SIZE,
-                                      "%s", filter_str);
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
   }
 
-  if (buffer_length >= MEMCACHED_MAXIMUM_COMMAND_SIZE)
+  if ((size_t)write_length >= buffer_length || write_length < 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
@@ -3589,7 +3631,7 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   {
     { command_length, command },
     { key_length, key },
-    { buffer_length, buffer },
+    { (size_t)write_length, buffer },
     { 2, "\r\n" }
   };
 
