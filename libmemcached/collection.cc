@@ -1882,8 +1882,6 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
                                        memcached_coll_query_st *query,
                                        memcached_coll_action_t verb)
 {
-  const size_t MAX_SERVERS_FOR_COLLECTION_MGET= 200;
-
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, keys, key_length, number_of_keys);
@@ -1911,10 +1909,10 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("count should be <= 50"));
   }
-  if (memcached_server_count(ptr) > MAX_SERVERS_FOR_COLLECTION_MGET)
+  if (memcached_server_count(ptr) > MAX_SERVERS_FOR_MULTI_KEY_OPERATION)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("memcached instances should be <= 200"));
+                               memcached_literal_param("memcached instances should be <= MAX_SERVERS_FOR_MULTI_KEY_OPERATION"));
   }
 
   /* Prepare the request header */
@@ -2009,27 +2007,20 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   }
 
   /* Prepare <lenkeys> and <numkeys> */
-  int32_t lenkeys[MAX_SERVERS_FOR_COLLECTION_MGET]= { 0 };
-  int32_t numkeys[MAX_SERVERS_FOR_COLLECTION_MGET]= { 0 };
-  char lenkeys_numkeys_str[MAX_SERVERS_FOR_COLLECTION_MGET][64];
-  size_t lenkeys_numkeys_length[MAX_SERVERS_FOR_COLLECTION_MGET];
+  uint32_t lenkeys[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { 0 };
+  uint16_t numkeys[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { 0 };
 
   for (size_t i=0; i<number_of_keys; i++)
   {
-    lenkeys[key_to_serverkey[i]]+= (key_length[i] + 1); // +1 for the comma(,)
-    numkeys[key_to_serverkey[i]]+= 1;
-  }
-
-  for (size_t i=0; i<memcached_server_count(ptr); i++)
-  {
-    if (numkeys[i] > MEMCACHED_COLL_MAX_BOP_MGET_KEY_COUNT)
+    uint32_t serverkey= key_to_serverkey[i];
+    lenkeys[serverkey]+= (key_length[i] + 1); // +1 for the comma(,)
+    numkeys[serverkey]+= 1;
+    if (numkeys[serverkey] > MEMCACHED_COLL_MAX_BOP_MGET_KEY_COUNT)
     {
       DEALLOCATE_ARRAY(ptr, key_to_serverkey);
       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                                 memcached_literal_param("key size for a server should be <= 200"));
+                                 memcached_literal_param("key size for a server should be <= MEMCACHED_COLL_MAX_BOP_MGET_KEY_COUNT"));
     }
-    lenkeys_numkeys_length[i]= snprintf(lenkeys_numkeys_str[i], 64, "%d %d",
-                                        lenkeys[i]-1, numkeys[i]); // -1 for the comma-less first key
   }
 
   /* Send the request (buffered) */
@@ -2038,30 +2029,16 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
 
   for (size_t i=0; i<number_of_keys; i++)
   {
-    memcached_server_write_instance_st instance=
-        memcached_server_instance_fetch(ptr, key_to_serverkey[i]);
+    uint32_t serverkey= key_to_serverkey[i];
+    memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, serverkey);
 
     if (not instance)
     {
-      fprintf(stderr, "[debug] instance is null : serverkey=%d\n", key_to_serverkey[i]);
+      fprintf(stderr, "[debug] instance is null : serverkey=%u\n", serverkey);
     }
-
-    struct libmemcached_io_vector_st vector[]=
-    {
-      // request header
-      { command_length, command },
-      { lenkeys_numkeys_length[key_to_serverkey[i]], lenkeys_numkeys_str[key_to_serverkey[i]] },
-      { (size_t)write_length, buffer },
-      { 2, "\r\n" },
-      { key_length[i], keys[i] },
-      // comma-seperated request keys
-      { 1, "," },
-      { key_length[i], keys[i] },
-    };
 
     if (memcached_server_response_count(instance) == 0)
     {
-      /* Sending the request header */
       rc= memcached_connect(instance);
       if (memcached_failed(rc))
       {
@@ -2069,6 +2046,19 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
         continue;
       }
       hosts_connected++;
+
+      char lenkeys_numkeys_str[64];
+      size_t lenkeys_numkeys_length= snprintf(lenkeys_numkeys_str, 64, "%u %u",
+                                              lenkeys[serverkey]-1, numkeys[serverkey]); // -1 for the comma-less first key
+
+      /* Sending the request header */
+      struct libmemcached_io_vector_st vector[] = {
+        { command_length, command },
+        { lenkeys_numkeys_length, lenkeys_numkeys_str },
+        { (size_t)write_length, buffer },
+        { 2, "\r\n" },
+        { key_length[i], keys[i] }
+      };
 
       if ((memcached_io_writev(instance, vector, 5, false)) == -1)
       {
@@ -2079,8 +2069,13 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     }
     else
     {
-      /* Sending each key */
-      if ((memcached_io_writev(instance, (vector + 5), 2, false)) == -1)
+      /* Sending comma-separated key */
+      struct libmemcached_io_vector_st vector[] = {
+        { 1, "," },
+        { key_length[i], keys[i] }
+      };
+
+      if ((memcached_io_writev(instance, vector, 2, false)) == -1)
       {
         memcached_server_response_reset(instance);
         failures_occured_in_sending= true;
@@ -2470,8 +2465,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
                                 memcached_bop_query_st *query,
                                 memcached_coll_smget_result_st *result)
 {
-  const size_t MAX_SERVERS_FOR_BOP_SMGET= 200;
-
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, keys, key_length, number_of_keys);
@@ -2507,10 +2500,10 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
                                memcached_literal_param("invalid smget mode"));
   }
 
-  if (memcached_server_count(ptr) > MAX_SERVERS_FOR_BOP_SMGET)
+  if (memcached_server_count(ptr) > MAX_SERVERS_FOR_MULTI_KEY_OPERATION)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("memcached instances should be <= 200"));
+                               memcached_literal_param("memcached instances should be <= MAX_SERVERS_FOR_MULTI_KEY_OPERATION"));
   }
 
   /* Key Group & Sub key */
@@ -2623,27 +2616,20 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   }
 
   /* Prepare <lenkeys> and <numkeys> */
-  int32_t lenkeys[MAX_SERVERS_FOR_BOP_SMGET]= { 0 };
-  int32_t numkeys[MAX_SERVERS_FOR_BOP_SMGET]= { 0 };
-  char lenkeys_numkeys_str[MAX_SERVERS_FOR_BOP_SMGET][64];
-  size_t lenkeys_numkeys_length[MAX_SERVERS_FOR_BOP_SMGET];
+  uint32_t lenkeys[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { 0 };
+  uint16_t numkeys[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { 0 };
 
   for (size_t i=0; i<number_of_keys; i++)
   {
-    lenkeys[key_to_serverkey[i]]+= (key_length[i] + 1); // +1 for the comma(,)
-    numkeys[key_to_serverkey[i]]+= 1;
-  }
-
-  for (size_t i=0; i<memcached_server_count(ptr); i++)
-  {
-    if (numkeys[i] > MEMCACHED_COLL_MAX_BOP_SMGET_KEY_COUNT)
+    uint32_t serverkey= key_to_serverkey[i];
+    lenkeys[serverkey]+= (key_length[i] + 1); // +1 for the comma(,)
+    numkeys[serverkey]+= 1;
+    if (numkeys[serverkey] > MEMCACHED_COLL_MAX_BOP_SMGET_KEY_COUNT)
     {
       DEALLOCATE_ARRAY(ptr, key_to_serverkey);
       return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                                 memcached_literal_param("key size for a server should be <= 2000"));
+                                 memcached_literal_param("key size for a server should be <= MEMCACHED_COLL_MAX_BOP_SMGET_KEY_COUNT"));
     }
-    lenkeys_numkeys_length[i]= snprintf(lenkeys_numkeys_str[i], 64, "%d %d",
-                                        lenkeys[i]-1, numkeys[i]); // -1 for the comma-less first key
   }
 
   /* Send the request (buffered) */
@@ -2652,30 +2638,16 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
 
   for (size_t i=0; i<number_of_keys; i++)
   {
-    memcached_server_write_instance_st instance=
-        memcached_server_instance_fetch(ptr, key_to_serverkey[i]);
+    uint32_t serverkey= key_to_serverkey[i];
+    memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, serverkey);
 
     if (not instance)
     {
-      fprintf(stderr, "[debug] instance is null : serverkey=%d\n", key_to_serverkey[i]);
+      fprintf(stderr, "[debug] instance is null : serverkey=%u\n", serverkey);
     }
-
-    struct libmemcached_io_vector_st vector[]=
-    {
-      // request header
-      { command_length, command },
-      { lenkeys_numkeys_length[key_to_serverkey[i]], lenkeys_numkeys_str[key_to_serverkey[i]] },
-      { (size_t)write_length, buffer },
-      { 2, "\r\n" },
-      { key_length[i], keys[i] },
-      // comma-seperated request keys
-      { 1, "," },
-      { key_length[i], keys[i] },
-    };
 
     if (memcached_server_response_count(instance) == 0)
     {
-      /* Sending the request header */
       rc= memcached_connect(instance);
       if (memcached_failed(rc))
       {
@@ -2683,6 +2655,19 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
         continue;
       }
       hosts_connected++;
+
+      char lenkeys_numkeys_str[64];
+      size_t lenkeys_numkeys_length= snprintf(lenkeys_numkeys_str, 64, "%u %u",
+                                              lenkeys[serverkey]-1, numkeys[serverkey]); // -1 for the comma-less first key
+
+      /* Sending the request header */
+      struct libmemcached_io_vector_st vector[] = {
+        { command_length, command },
+        { lenkeys_numkeys_length, lenkeys_numkeys_str },
+        { (size_t)write_length, buffer },
+        { 2, "\r\n" },
+        { key_length[i], keys[i] }
+      };
 
       if ((memcached_io_writev(instance, vector, 5, false)) == -1)
       {
@@ -2693,8 +2678,13 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     }
     else
     {
-      /* Sending each key */
-      if ((memcached_io_writev(instance, (vector + 5), 2, false)) == -1)
+      /* Sending comma-separated key */
+      struct libmemcached_io_vector_st vector[] = {
+        { 1, "," },
+        { key_length[i], keys[i] }
+      };
+
+      if ((memcached_io_writev(instance, vector, 2, false)) == -1)
       {
         memcached_server_response_reset(instance);
         failures_occured_in_sending= true;
@@ -3053,8 +3043,6 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
                                                     memcached_return_t *piped_rc,
                                                     memcached_coll_action_t verb)
 {
-  const size_t MAX_SERVERS_FOR_COLL_INSERT_BULK= 200;
-
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc = before_query(ptr, keys, key_length, number_of_keys);
@@ -3077,10 +3065,10 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("result is null"));
   }
-  if (memcached_server_count(ptr) > MAX_SERVERS_FOR_COLL_INSERT_BULK)
+  if (memcached_server_count(ptr) > MAX_SERVERS_FOR_MULTI_KEY_OPERATION)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("memcached instances should be <= 200"));
+                               memcached_literal_param("memcached instances should be <= MAX_SERVERS_FOR_MULTI_KEY_OPERATION"));
   }
 
   /* Prepare an eflag */
@@ -3093,7 +3081,7 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
 
   /* Key-Server mapping */
   uint32_t *key_to_serverkey= NULL;
-  int32_t numkeys[MAX_SERVERS_FOR_COLL_INSERT_BULK]= { 0 };
+  int32_t numkeys[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { 0 };
   int32_t numkeys_max= 0;
 
   ALLOCATE_ARRAY_OR_RETURN(ptr, key_to_serverkey, uint32_t, number_of_keys);
