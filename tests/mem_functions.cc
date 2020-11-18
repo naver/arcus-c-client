@@ -4248,18 +4248,19 @@ static test_return_t MEMCACHED_BEHAVIOR_POLL_TIMEOUT_test(memcached_st *memc)
 static test_return_t noreply_test(memcached_st *memc)
 {
   test_compare(MEMCACHED_SUCCESS,
-               memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_NOREPLY, 1));
-  test_compare(MEMCACHED_SUCCESS,
                memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_BUFFER_REQUESTS, 1));
   test_compare(MEMCACHED_SUCCESS,
                memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_SUPPORT_CAS, 1));
-  test_compare(1LLU, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_NOREPLY));
   test_compare(1LLU, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_BUFFER_REQUESTS));
   test_compare(1LLU, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_SUPPORT_CAS));
 
   memcached_return_t ret;
   for (int count= 0; count < 5; ++count)
   {
+    test_compare(MEMCACHED_SUCCESS,
+                 memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_NOREPLY, 1));
+    test_compare(1LLU, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_NOREPLY));
+
     for (size_t x= 0; x < 100; ++x)
     {
       char key[10];
@@ -4307,6 +4308,10 @@ static test_return_t noreply_test(memcached_st *memc)
 
     test_true(no_msg == 0);
     test_compare(MEMCACHED_SUCCESS, memcached_flush_buffers(memc));
+
+    test_compare(MEMCACHED_SUCCESS,
+                 memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_NOREPLY, 0));
+    test_compare(0LLU, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_NOREPLY));
 
     /*
      ** Now validate that all items was set properly!
@@ -4364,6 +4369,11 @@ static test_return_t noreply_test(memcached_st *memc)
   results= memcached_fetch_result(memc, &results_obj, &ret);
   test_true(results);
   test_compare(MEMCACHED_SUCCESS, ret);
+
+  test_compare(MEMCACHED_SUCCESS,
+               memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_NOREPLY, 1));
+  test_compare(1LLU, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_NOREPLY));
+
   uint64_t cas= memcached_result_cas(results);
   memcached_result_free(&results_obj);
 
@@ -4377,6 +4387,11 @@ static test_return_t noreply_test(memcached_st *memc)
   test_compare(MEMCACHED_SUCCESS,
                memcached_cas(memc, keys[0], lengths[0], keys[0], lengths[0], 0, 0, cas));
   test_true(memcached_flush_buffers(memc) == MEMCACHED_SUCCESS);
+
+  test_compare(MEMCACHED_SUCCESS,
+               memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_NOREPLY, 0));
+  test_compare(0LLU, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_NOREPLY));
+
   char* value=memcached_get(memc, keys[0], lengths[0], &length, &flags, &ret);
   test_true(ret == MEMCACHED_SUCCESS && value != NULL);
   free(value);
