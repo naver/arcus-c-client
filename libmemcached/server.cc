@@ -58,8 +58,9 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   WATCHPOINT_SET(self->io_wait_count.read= 0);
   WATCHPOINT_SET(self->io_wait_count.write= 0);
   self->major_version= UINT8_MAX;
-  self->micro_version= UINT8_MAX;
   self->minor_version= UINT8_MAX;
+  self->micro_version= UINT8_MAX;
+  self->is_enterprise= false;
   self->type= type;
   self->error_messages= NULL;
   self->read_ptr= self->read_buffer;

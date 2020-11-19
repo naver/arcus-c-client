@@ -650,6 +650,7 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
   if (memcached_success(rc))
   {
     memcached_mark_server_as_clean(server);
+    rc= memcached_version_instance(server);
     return rc;
   }
 

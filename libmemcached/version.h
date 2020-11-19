@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include <libmemcached/server_instance.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,6 +48,9 @@ memcached_return_t memcached_version(memcached_st *ptr);
 
 LIBMEMCACHED_API
 const char * memcached_lib_version(void);
+
+LIBMEMCACHED_LOCAL
+memcached_return_t memcached_version_instance(memcached_server_write_instance_st instance);
 
 #ifdef __cplusplus
 }
