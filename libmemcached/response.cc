@@ -188,6 +188,53 @@ read_error:
   return MEMCACHED_PARTIAL_READ;
 }
 
+static memcached_return_t version_fetch(memcached_server_write_instance_st instance, char *buffer)
+{
+  char *response_ptr= buffer;
+  /* UNKNOWN */
+  if (*response_ptr == 'U')
+  {
+    instance->major_version= instance->minor_version= instance->micro_version= UINT8_MAX;
+    return MEMCACHED_SUCCESS;
+  }
+
+  /* parse version */
+  char *end_ptr;
+  errno= 0;
+  long int version= strtol(response_ptr, &end_ptr, 10);
+  if (errno != 0 || version == LONG_MIN || version == LONG_MAX || version > UINT8_MAX)
+  {
+    return memcached_set_error(*instance, MEMCACHED_UNKNOWN_READ_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("strtol() failed to parse major version"));
+  }
+  instance->major_version= uint8_t(version);
+
+  end_ptr++;
+  errno= 0;
+  version= strtol(end_ptr, &end_ptr, 10);
+  if (errno != 0 || version == LONG_MIN || version == LONG_MAX || version > UINT8_MAX)
+  {
+    instance->major_version= UINT8_MAX;
+    return memcached_set_error(*instance, MEMCACHED_UNKNOWN_READ_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("strtol() failed to parse minor version"));
+  }
+  instance->minor_version= uint8_t(version);
+
+  end_ptr++;
+  errno= 0;
+  version= strtol(end_ptr, &end_ptr, 10);
+  if (errno != 0 || version == LONG_MIN || version == LONG_MAX || version > UINT8_MAX)
+  {
+    instance->major_version= instance->minor_version= UINT8_MAX;
+    return memcached_set_error(*instance, MEMCACHED_UNKNOWN_READ_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("strtol() failed to parse micro version"));
+  }
+  instance->micro_version= uint8_t(version);
+  instance->is_enterprise= (strrchr(response_ptr, 'E') == NULL) ? false : true;
+
+  return MEMCACHED_SUCCESS;
+}
+
 static memcached_return_t textual_read_one_response(memcached_server_write_instance_st ptr,
                                                     char *buffer, size_t buffer_length,
                                                     memcached_result_st *result)
@@ -211,7 +258,10 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     }
     else if (memcmp(buffer, "VERSION", 7) == 0)
     {
-      return MEMCACHED_SUCCESS;
+      /* Find the space, and then move one past it to copy version */
+      char *version_ptr= index(buffer, ' ');
+      version_ptr++;
+      return version_fetch(ptr, version_ptr);
     }
     break;
 
@@ -501,17 +551,13 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
     case PROTOCOL_BINARY_CMD_SASL_LIST_MECHS:
     case PROTOCOL_BINARY_CMD_VERSION:
       {
-        memset(buffer, 0, buffer_length);
-        if (bodylen >= buffer_length)
+        char version_buffer[32];
+        memset(version_buffer, 0, sizeof(version_buffer));
+        if (memcached_safe_read(ptr, version_buffer, bodylen) != MEMCACHED_SUCCESS)
         {
-          /* not enough space in buffer.. should not happen... */
           return MEMCACHED_UNKNOWN_READ_FAILURE;
         }
-        else if ((rc= memcached_safe_read(ptr, buffer, bodylen)) != MEMCACHED_SUCCESS)
-        {
-          WATCHPOINT_ERROR(rc);
-          return MEMCACHED_UNKNOWN_READ_FAILURE;
-        }
+        rc= version_fetch(ptr, version_buffer);
       }
       break;
     case PROTOCOL_BINARY_CMD_FLUSH:
