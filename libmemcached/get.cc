@@ -53,9 +53,7 @@
 
 #include <libmemcached/common.h>
 #include "libmemcached/arcus_priv.h"
-#define REFACTOR 1
 
-#ifdef REFACTOR
 static memcached_return_t before_get_query(memcached_st *ptr,
                                            const char *group_key,
                                            const size_t group_key_length,
@@ -158,7 +156,6 @@ static memcached_return_t ascii_get_by_key(memcached_st *ptr,
   return rc;
 }
 
-#endif
 static memcached_return_t simple_binary_mget(memcached_st *ptr,
                                              uint32_t master_server_key,
                                              bool is_group_key_set,
@@ -434,220 +431,10 @@ static memcached_return_t binary_mget_by_key(memcached_st *ptr,
   return MEMCACHED_SUCCESS;
 }
 
-#ifndef REFACTOR
-static memcached_return_t memcached_mget_by_key_real(memcached_st *ptr,
-                                                     const char *group_key,
-                                                     size_t group_key_length,
-                                                     const char * const *keys,
-                                                     const size_t *key_length,
-                                                     size_t number_of_keys,
-                                                     bool mget_mode)
-{
-  bool failures_occured_in_sending= false;
-  const char *get_command= "get ";
-  uint8_t get_command_length= 4;
-  unsigned int master_server_key= (unsigned int)-1; /* 0 is a valid server id! */
-
-  memcached_return_t rc;
-  if (memcached_failed(rc= initialize_query(ptr)))
-  {
-    return rc;
-  }
-
-  if (ptr->flags.use_udp)
-  {
-    return memcached_set_error(*ptr, MEMCACHED_NOT_SUPPORTED, MEMCACHED_AT);
-  }
-
-  LIBMEMCACHED_MEMCACHED_MGET_START();
-
-  if (number_of_keys == 0)
-  {
-    return memcached_set_error(*ptr, MEMCACHED_NOTFOUND, MEMCACHED_AT, memcached_literal_param("number_of_keys was zero"));
-  }
-
-  if (memcached_failed(memcached_key_test(*ptr, keys, key_length, number_of_keys)))
-  {
-    return memcached_set_error(*ptr, MEMCACHED_BAD_KEY_PROVIDED, MEMCACHED_AT, memcached_literal_param("A bad key value was provided"));
-  }
-
-  bool is_group_key_set= false;
-  if (group_key and group_key_length)
-  {
-    if (memcached_failed(memcached_key_test(*ptr, (const char * const *)&group_key, &group_key_length, 1)))
-    {
-      return memcached_set_error(*ptr, MEMCACHED_BAD_KEY_PROVIDED, MEMCACHED_AT, memcached_literal_param("A bad group key was provided."));
-    }
-
-    master_server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
-    is_group_key_set= true;
-  }
-
-  /*
-    Here is where we pay for the non-block API. We need to remove any data sitting
-    in the queue before we start our get.
-
-    It might be optimum to bounce the connection if count > some number.
-  */
-  for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
-  {
-    memcached_server_write_instance_st instance=
-      memcached_server_instance_fetch(ptr, x);
-
-    if (memcached_server_response_count(instance))
-    {
-      char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-
-      if (ptr->flags.no_block)
-        (void)memcached_io_write(instance, NULL, 0, true);
-
-      while(memcached_server_response_count(instance))
-        (void)memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, &ptr->result);
-    }
-  }
-
-  if (ptr->flags.binary_protocol)
-  {
-    return binary_mget_by_key(ptr, master_server_key, is_group_key_set, keys,
-                              key_length, number_of_keys, mget_mode);
-  }
-
-  if (ptr->flags.support_cas)
-  {
-    get_command= "gets ";
-    get_command_length= 5;
-  }
-
-  /*
-    If a server fails we warn about errors and start all over with sending keys
-    to the server.
-  */
-  WATCHPOINT_ASSERT(rc == MEMCACHED_SUCCESS);
-  size_t hosts_connected= 0;
-  for (uint32_t x= 0; x < number_of_keys; x++)
-  {
-    memcached_server_write_instance_st instance;
-    uint32_t server_key;
-
-    if (is_group_key_set)
-    {
-      server_key= master_server_key;
-    }
-    else
-    {
-      server_key= memcached_generate_hash_with_redistribution(ptr, keys[x], key_length[x]);
-    }
-
-    instance= memcached_server_instance_fetch(ptr, server_key);
-
-    struct libmemcached_io_vector_st vector[]=
-    {
-      { get_command_length, get_command },
-      { memcached_array_size(ptr->_namespace), memcached_array_string(ptr->_namespace) },
-      { key_length[x], keys[x] },
-      { 1, " " }
-    };
-
-    if (memcached_server_response_count(instance) == 0)
-    {
-      rc= memcached_connect(instance);
-
-      if (memcached_failed(rc))
-      {
-        if (rc != MEMCACHED_ERRNO)
-        {
-          memcached_set_error(*instance, rc, MEMCACHED_AT);
-        }
-        continue;
-      }
-      hosts_connected++;
-
-      if ((memcached_io_writev(instance, vector, 4, false)) == -1)
-      {
-        failures_occured_in_sending= true;
-        continue;
-      }
-      WATCHPOINT_ASSERT(instance->cursor_active == 0);
-      memcached_server_response_increment(instance);
-      WATCHPOINT_ASSERT(instance->cursor_active == 1);
-    }
-    else
-    {
-      if ((memcached_io_writev(instance, (vector + 1), 3, false)) == -1)
-      {
-        memcached_server_response_reset(instance);
-        failures_occured_in_sending= true;
-        continue;
-      }
-    }
-  }
-
-  if (hosts_connected == 0)
-  {
-    LIBMEMCACHED_MEMCACHED_MGET_END();
-
-    if (memcached_failed(rc))
-      return rc;
-
-    return memcached_set_error(*ptr, MEMCACHED_NO_SERVERS, MEMCACHED_AT);
-  }
-
-
-  /*
-    Should we muddle on if some servers are dead?
-  */
-  bool success_happened= false;
-  for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
-  {
-    memcached_server_write_instance_st instance=
-      memcached_server_instance_fetch(ptr, x);
-
-    if (memcached_server_response_count(instance))
-    {
-      /* We need to do something about non-connnected hosts in the future */
-      if ((memcached_io_write(instance, "\r\n", 2, true)) == -1)
-      {
-        failures_occured_in_sending= true;
-      }
-      else
-      {
-        success_happened= true;
-      }
-    }
-  }
-
-  LIBMEMCACHED_MEMCACHED_MGET_END();
-
-  if (failures_occured_in_sending && success_happened)
-  {
-    return MEMCACHED_SOME_ERRORS;
-  }
-
-  if (success_happened)
-    return MEMCACHED_SUCCESS;
-
-  return MEMCACHED_FAILURE; // Complete failure occurred
-}
-
-#endif
 /*
   What happens if no servers exist?
 */
-#ifndef REFACTOR
-memcached_return_t memcached_mget_by_key(memcached_st *ptr,
-                                         const char *group_key,
-                                         size_t group_key_length,
-                                         const char * const *keys,
-                                         const size_t *key_length,
-                                         size_t number_of_keys)
-{
-  arcus_server_check_for_update(ptr);
 
-  return memcached_mget_by_key_real(ptr, group_key, group_key_length, keys,
-                                    key_length, number_of_keys, true);
-}
-
-#endif
 char *memcached_get_by_key(memcached_st *ptr,
                            const char *group_key,
                            size_t group_key_length,
@@ -658,7 +445,6 @@ char *memcached_get_by_key(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-#ifdef REFACTOR
   memcached_return_t unused;
   if (error == NULL)
     error= &unused;
@@ -704,28 +490,6 @@ char *memcached_get_by_key(memcached_st *ptr,
     *error= ascii_get_by_key(ptr, master_server_key, is_group_key_set, key, key_length);
   }
 
-#else
-  memcached_return_t unused;
-  if (error == NULL)
-    error= &unused;
-
-  unlikely (ptr->flags.use_udp)
-  {
-    if (value_length)
-      *value_length= 0;
-
-    *error= memcached_set_error(*ptr, MEMCACHED_NOT_SUPPORTED, MEMCACHED_AT);
-    return NULL;
-  }
-
-  uint64_t query_id= ptr->query_id;
-  (void)query_id;
-
-  /* Request the key */
-  *error= memcached_mget_by_key_real(ptr, group_key, group_key_length,
-                                     (const char * const *)&key, &key_length,
-                                     1, false);
-#endif
   assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
   //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
@@ -828,7 +592,6 @@ char *memcached_get(memcached_st *ptr, const char *key,
                               flags, error);
 }
 
-#ifdef REFACTOR
 memcached_return_t memcached_mget_by_key(memcached_st *ptr,
                                          const char *group_key,
                                          size_t group_key_length,
@@ -975,7 +738,6 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
   return MEMCACHED_FAILURE; // Complete failure occurred
 }
 
-#endif
 memcached_return_t memcached_mget(memcached_st *ptr,
                                   const char * const *keys,
                                   const size_t *key_length,
