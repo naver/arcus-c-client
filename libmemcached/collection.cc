@@ -190,6 +190,28 @@ static inline memcached_coll_type_t str_to_type(const char *value, size_t value_
   }
 }
 
+static inline bool space_separated_keys_is_supported(memcached_server_write_instance_st instance)
+{
+  if (instance->major_version != UINT8_MAX && instance->minor_version != UINT8_MAX)
+  {
+    if (instance->is_enterprise)
+    {
+      if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 7))
+      {
+        return true;
+      }
+    }
+    else
+    {
+      if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 11))
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /* Hexadecimal */
 
 int memcached_compare_two_hexadecimal(memcached_hexadecimal_st *lhs, memcached_hexadecimal_st *rhs)
@@ -1606,6 +1628,10 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   int mkey_write_length= 0;
   size_t mkey_array_size= 0;
 
+  /* Find a memcached */
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
   /* Query header */
 
   /* 1. sub key */
@@ -1669,11 +1695,12 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
       // mkeys
       size_t mkey_buffer_length= sizeof(char) * length_of_mkeys + 1;
       mkey_buffer= (char*)libmemcached_malloc(ptr, mkey_buffer_length);
+      char field_delimeter= space_separated_keys_is_supported(instance) ? ' ' : ',';
       for (size_t i=0; i<number_of_mkeys-1; i++)
       {
         mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
-                                     mkey_buffer_length-mkey_write_length, "%s,",
-                                     query->sub_key.mkey.string_array[i]);
+                                     mkey_buffer_length-mkey_write_length, "%s%c",
+                                     query->sub_key.mkey.string_array[i], field_delimeter);
       }
       mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
                                    mkey_buffer_length-mkey_write_length, "%s",
@@ -1809,10 +1836,6 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     vector[3].length= 2;                    vector[3].buffer= "\r\n";
     veclen= 4;
   }
-
-  /* Find a memcached */
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
 #ifdef ENABLE_REPLICATION
 do_action:
@@ -2013,7 +2036,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   for (size_t i=0; i<number_of_keys; i++)
   {
     uint32_t serverkey= key_to_serverkey[i];
-    lenkeys[serverkey]+= (key_length[i] + 1); // +1 for the comma(,)
+    lenkeys[serverkey]+= (key_length[i] + 1); // +1 for the delimeter
     numkeys[serverkey]+= 1;
     if (numkeys[serverkey] > MEMCACHED_COLL_MAX_BOP_MGET_KEY_COUNT)
     {
@@ -2049,7 +2072,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
 
       char lenkeys_numkeys_str[64];
       size_t lenkeys_numkeys_length= snprintf(lenkeys_numkeys_str, 64, "%u %u",
-                                              lenkeys[serverkey]-1, numkeys[serverkey]); // -1 for the comma-less first key
+                                              lenkeys[serverkey]-1, numkeys[serverkey]); // -1 for the delimeter-less first key
 
       /* Sending the request header */
       struct libmemcached_io_vector_st vector[] = {
@@ -2069,9 +2092,9 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     }
     else
     {
-      /* Sending comma-separated key */
+      /* Sending delimeter-separated key */
       struct libmemcached_io_vector_st vector[] = {
-        { 1, "," },
+        { 1, (space_separated_keys_is_supported(instance) ? " " : ",") },
         { key_length[i], keys[i] }
       };
 
@@ -2622,7 +2645,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   for (size_t i=0; i<number_of_keys; i++)
   {
     uint32_t serverkey= key_to_serverkey[i];
-    lenkeys[serverkey]+= (key_length[i] + 1); // +1 for the comma(,)
+    lenkeys[serverkey]+= (key_length[i] + 1); // +1 for the delimeter
     numkeys[serverkey]+= 1;
     if (numkeys[serverkey] > MEMCACHED_COLL_MAX_BOP_SMGET_KEY_COUNT)
     {
@@ -2658,7 +2681,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
 
       char lenkeys_numkeys_str[64];
       size_t lenkeys_numkeys_length= snprintf(lenkeys_numkeys_str, 64, "%u %u",
-                                              lenkeys[serverkey]-1, numkeys[serverkey]); // -1 for the comma-less first key
+                                              lenkeys[serverkey]-1, numkeys[serverkey]); // -1 for the delimeter-less first key
 
       /* Sending the request header */
       struct libmemcached_io_vector_st vector[] = {
@@ -2678,9 +2701,9 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     }
     else
     {
-      /* Sending comma-separated key */
+      /* Sending delimeter-separated key */
       struct libmemcached_io_vector_st vector[] = {
-        { 1, "," },
+        { 1, (space_separated_keys_is_supported(instance) ? " " : ",") },
         { key_length[i], keys[i] }
       };
 
