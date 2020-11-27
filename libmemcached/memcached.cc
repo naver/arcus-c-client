@@ -61,16 +61,16 @@
 #ifdef REFACTORING_ERROR_PRINT
 #include <pthread.h>
 
-static uint64_t        mc_id= 0;
-static pthread_mutex_t lock_mcid= PTHREAD_MUTEX_INITIALIZER;
+static uint64_t        next_mc_id= 0;
+static pthread_mutex_t lock_mc_id= PTHREAD_MUTEX_INITIALIZER;
 
 static inline uint64_t _memcached_get_id(void)
 {
-  uint64_t id= 0;
-  pthread_mutex_lock(&lock_mcid);
-  id= mc_id;
-  mc_id= (mc_id < UINT64_MAX-1 ? mc_id+1 : 0);
-  pthread_mutex_unlock(&lock_mcid);
+  uint64_t id;
+  pthread_mutex_lock(&lock_mc_id);
+  id= next_mc_id;
+  next_mc_id= (next_mc_id < UINT64_MAX-1 ? next_mc_id+1 : 0);
+  pthread_mutex_unlock(&lock_mc_id);
   return id;
 }
 #endif
