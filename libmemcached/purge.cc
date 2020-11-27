@@ -23,7 +23,7 @@ memcached_return_t memcached_purge(memcached_server_write_instance_st ptr)
     requests buffered up.. */
   if (memcached_io_write(ptr, NULL, 0, true) == -1)
   {
-    memcached_set_purging(root, true);
+    memcached_set_purging(root, false);
 
     return memcached_set_error(*ptr, MEMCACHED_WRITE_FAILURE, MEMCACHED_AT);
   }
