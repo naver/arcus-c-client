@@ -313,7 +313,8 @@ uint32_t memcached_coll_attrs_get_maxbkey(memcached_coll_attrs_st *attrs);
  * @param size  actual size of the bkey (the number of bytes), filled by the function.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_coll_attrs_get_minbkey_by_byte(memcached_coll_attrs_st *attrs, unsigned char **bkey, size_t *size);
+memcached_return_t memcached_coll_attrs_get_minbkey_by_byte(memcached_coll_attrs_st *attrs,
+                                                            unsigned char **bkey, size_t *size);
 
 /**
  * Get the b+tree item's byte-array type maximum bkey from the collection attributes.
@@ -322,7 +323,8 @@ memcached_return_t memcached_coll_attrs_get_minbkey_by_byte(memcached_coll_attrs
  * @param size  actual size of the bkey (the number of bytes), filled by the function.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_coll_attrs_get_maxbkey_by_byte(memcached_coll_attrs_st *attrs, unsigned char **bkey, size_t *size);
+memcached_return_t memcached_coll_attrs_get_maxbkey_by_byte(memcached_coll_attrs_st *attrs,
+                                                            unsigned char **bkey, size_t *size);
 
 /**
  * Set the b+tree item's byte-array type maximum bkey range in the attributes.
@@ -331,7 +333,8 @@ memcached_return_t memcached_coll_attrs_get_maxbkey_by_byte(memcached_coll_attrs
  * @param maxbkeyrange_size  size of the range, should be at most MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH bytes.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs, unsigned char *maxbkeyrange, size_t maxbkeyrange_size);
+memcached_return_t memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs,
+                                                                 unsigned char *maxbkeyrange, size_t maxbkeyrange_size);
 
 /**
  * Get the b+tree item's byte-array type maximum bkey range from the collection attributes.
@@ -340,7 +343,8 @@ memcached_return_t memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_
  * @param maxbkeyrange_size  actual size of the bkey range (the number of bytes), filled by the function.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_coll_attrs_get_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs, unsigned char **maxbkeyrange, size_t *maxbkeyrange_size);
+memcached_return_t memcached_coll_attrs_get_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs,
+                                                                 unsigned char **maxbkeyrange, size_t *maxbkeyrange_size);
 
 /**
  * Set the collection item's overflow action in the attributes.
@@ -348,7 +352,8 @@ memcached_return_t memcached_coll_attrs_get_maxbkeyrange_by_byte(memcached_coll_
  * @param overflowaction  overflow action (OVERFLOWACTION_).
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_coll_attrs_set_overflowaction(memcached_coll_attrs_st *attrs, memcached_coll_overflowaction_t overflowaction);
+memcached_return_t memcached_coll_attrs_set_overflowaction(memcached_coll_attrs_st *attrs,
+                                                           memcached_coll_overflowaction_t overflowaction);
 
 /**
  * Get the collection item's overflow action from the collection attributes.

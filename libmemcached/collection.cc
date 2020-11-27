@@ -298,7 +298,8 @@ memcached_return_t memcached_conv_hex_to_str(memcached_st *ptr __attribute__((un
 }
 
 memcached_return_t memcached_conv_str_to_hex(memcached_st *ptr,
-                                             char *str, size_t str_length, memcached_hexadecimal_st *hex)
+                                             char *str, size_t str_length,
+                                             memcached_hexadecimal_st *hex)
 {
   if (str_length > MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH or hex == NULL)
   {
@@ -341,7 +342,8 @@ static inline const char *comp_to_str(memcached_coll_comp_t comp)
   }
 }
 
-static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter_st *filter, char *buffer, size_t buffer_length)
+static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter_st *filter,
+                                                     char *buffer, size_t buffer_length)
 {
   if (not filter)
   {
@@ -385,7 +387,8 @@ static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter
   return write_length;
 }
 
-static inline int memcached_coll_update_filter_to_str(memcached_coll_update_filter_st *filter, char *buffer, size_t buffer_length)
+static inline int memcached_coll_update_filter_to_str(memcached_coll_update_filter_st *filter,
+                                                      char *buffer, size_t buffer_length)
 {
   if (not filter)
   {
@@ -504,6 +507,7 @@ uint32_t memcached_coll_attrs_get_minbkey(memcached_coll_attrs_st *attrs)
   }
   return attrs->minbkey.bkey;
 }
+
 uint32_t memcached_coll_attrs_get_maxbkey(memcached_coll_attrs_st *attrs)
 {
   if (attrs->options.subkey_type != MEMCACHED_COLL_QUERY_BOP) {
@@ -511,7 +515,9 @@ uint32_t memcached_coll_attrs_get_maxbkey(memcached_coll_attrs_st *attrs)
   }
   return attrs->maxbkey.bkey;
 }
-memcached_return_t memcached_coll_attrs_get_minbkey_by_byte(memcached_coll_attrs_st *attrs, unsigned char **bkey, size_t *size)
+
+memcached_return_t memcached_coll_attrs_get_minbkey_by_byte(memcached_coll_attrs_st *attrs,
+                                                            unsigned char **bkey, size_t *size)
 {
   if (attrs->options.subkey_type != MEMCACHED_COLL_QUERY_BOP_EXT) {
     return MEMCACHED_INVALID_ARGUMENTS;
@@ -520,7 +526,9 @@ memcached_return_t memcached_coll_attrs_get_minbkey_by_byte(memcached_coll_attrs
   *size= attrs->minbkey.bkey_ext.length;
   return MEMCACHED_SUCCESS;
 }
-memcached_return_t memcached_coll_attrs_get_maxbkey_by_byte(memcached_coll_attrs_st *attrs, unsigned char **bkey, size_t *size)
+
+memcached_return_t memcached_coll_attrs_get_maxbkey_by_byte(memcached_coll_attrs_st *attrs,
+                                                            unsigned char **bkey, size_t *size)
 {
   if (attrs->options.subkey_type != MEMCACHED_COLL_QUERY_BOP_EXT) {
     return MEMCACHED_INVALID_ARGUMENTS;
@@ -547,7 +555,8 @@ uint32_t memcached_coll_attrs_get_maxbkeyrange(memcached_coll_attrs_st *attrs)
   return attrs->maxbkeyrange.bkey;
 }
 
-memcached_return_t memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs, unsigned char *maxbkeyrange, size_t maxbkeyrange_size)
+memcached_return_t memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs,
+                                                                 unsigned char *maxbkeyrange, size_t maxbkeyrange_size)
 {
   if (maxbkeyrange == NULL
       || maxbkeyrange_size == 0
@@ -563,7 +572,8 @@ memcached_return_t memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_
   return MEMCACHED_SUCCESS;
 }
 
-memcached_return_t memcached_coll_attrs_get_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs, unsigned char **maxbkeyrange, size_t *maxbkeyrange_size)
+memcached_return_t memcached_coll_attrs_get_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs,
+                                                                 unsigned char **maxbkeyrange, size_t *maxbkeyrange_size)
 {
   if (attrs->options.subkey_type != MEMCACHED_COLL_QUERY_BOP_EXT) {
     return MEMCACHED_INVALID_ARGUMENTS;
@@ -573,7 +583,8 @@ memcached_return_t memcached_coll_attrs_get_maxbkeyrange_by_byte(memcached_coll_
   return MEMCACHED_SUCCESS;
 }
 
-memcached_return_t memcached_coll_attrs_set_overflowaction(memcached_coll_attrs_st *attrs, memcached_coll_overflowaction_t overflowaction)
+memcached_return_t memcached_coll_attrs_set_overflowaction(memcached_coll_attrs_st *attrs,
+                                                           memcached_coll_overflowaction_t overflowaction)
 {
   attrs->overflowaction= overflowaction;
   attrs->options.set_overflowaction= true;
