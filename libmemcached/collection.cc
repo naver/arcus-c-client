@@ -2049,7 +2049,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   /* Send the request (buffered) */
   bool failures_occured_in_sending= false;
   size_t hosts_connected= 0;
-
+  bool hosts_failed[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { false };
   for (size_t i=0; i<number_of_keys; i++)
   {
     uint32_t serverkey= key_to_serverkey[i];
@@ -2060,12 +2060,19 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       fprintf(stderr, "[debug] instance is null : serverkey=%u\n", serverkey);
     }
 
+    if (hosts_failed[serverkey])
+    {
+      /* The command protocol for that instance is broken. */
+      continue;
+    }
+
     if (memcached_server_response_count(instance) == 0)
     {
       rc= memcached_connect(instance);
       if (memcached_failed(rc))
       {
         memcached_set_error(*instance, rc, MEMCACHED_AT);
+        hosts_failed[serverkey]= true;
         continue;
       }
       hosts_connected++;
@@ -2086,6 +2093,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       if ((memcached_io_writev(instance, vector, 5, false)) == -1)
       {
         failures_occured_in_sending= true;
+        hosts_failed[serverkey]= true;
         continue;
       }
       memcached_server_response_increment(instance);
@@ -2102,6 +2110,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       {
         memcached_server_response_reset(instance);
         failures_occured_in_sending= true;
+        hosts_failed[serverkey]= true;
         continue;
       }
     }
@@ -2658,7 +2667,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   /* Send the request (buffered) */
   bool failures_occured_in_sending= false;
   size_t hosts_connected= 0;
-
+  bool hosts_failed[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { false };
   for (size_t i=0; i<number_of_keys; i++)
   {
     uint32_t serverkey= key_to_serverkey[i];
@@ -2669,12 +2678,19 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       fprintf(stderr, "[debug] instance is null : serverkey=%u\n", serverkey);
     }
 
+    if (hosts_failed[serverkey])
+    {
+      /* The command protocol for that instance is broken. */
+      continue;
+    }
+
     if (memcached_server_response_count(instance) == 0)
     {
       rc= memcached_connect(instance);
       if (memcached_failed(rc))
       {
         memcached_set_error(*instance, rc, MEMCACHED_AT);
+        hosts_failed[serverkey]= true;
         continue;
       }
       hosts_connected++;
@@ -2695,6 +2711,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       if ((memcached_io_writev(instance, vector, 5, false)) == -1)
       {
         failures_occured_in_sending= true;
+        hosts_failed[serverkey]= true;
         continue;
       }
       memcached_server_response_increment(instance);
@@ -2711,6 +2728,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       {
         memcached_server_response_reset(instance);
         failures_occured_in_sending= true;
+        hosts_failed[serverkey]= true;
         continue;
       }
     }

@@ -685,6 +685,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
   */
   WATCHPOINT_ASSERT(rc == MEMCACHED_SUCCESS);
   size_t hosts_connected= 0;
+  bool hosts_failed[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { false };
   int write_result= 0;
   for (uint32_t x= 0; x < number_of_keys; x++)
   {
@@ -701,6 +702,15 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
     }
 
     instance= memcached_server_instance_fetch(ptr, server_key);
+    bool enable_mget= mget_command_is_supported(ptr, instance);
+    if (enable_mget)
+    {
+      if (hosts_failed[server_key])
+      {
+        /* The command protocol for that instancce is broken. */
+        continue;
+      }
+    }
 
     struct libmemcached_io_vector_st vector[]=
     {
@@ -720,11 +730,12 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
         {
           memcached_set_error(*instance, rc, MEMCACHED_AT);
         }
+        hosts_failed[server_key]= true;
         continue;
       }
       hosts_connected++;
 
-      if (mget_command_is_supported(ptr, instance))
+      if (enable_mget)
       {
         char mget_command[80];
         size_t mget_command_length= snprintf(mget_command, 80, "mget %u %u\r\n",
@@ -749,6 +760,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
       if (write_result == -1)
       {
         failures_occured_in_sending= true;
+        hosts_failed[server_key]= true;
         continue;
       }
 
@@ -767,6 +779,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
       {
         memcached_server_response_reset(instance);
         failures_occured_in_sending= true;
+        hosts_failed[server_key]= true;
         continue;
       }
     }
