@@ -1408,29 +1408,24 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   {
     if (MEMCACHED_COLL_QUERY_LOP == query->type)
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " %d%s%s",
-                             query->sub_key.index,
-                             drop_if_empty ? " drop" :"",
-                             ptr->flags.no_reply ? " noreply" :"");
+      write_length= snprintf(buffer, buffer_length, " %d",
+                             query->sub_key.index);
     }
     else if (MEMCACHED_COLL_QUERY_LOP_RANGE == query->type)
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " %d..%d%s%s",
+      write_length= snprintf(buffer, buffer_length, " %d..%d",
                              query->sub_key.index_range[0],
-                             query->sub_key.index_range[1],
-                             drop_if_empty ? " drop" :"",
-                             ptr->flags.no_reply ? " noreply" :"");
+                             query->sub_key.index_range[1]);
+    }
+    else
+    {
+      return MEMCACHED_INVALID_ARGUMENTS;
     }
   }
   else if (verb == SOP_DELETE_OP)
   {
-    write_length= snprintf(buffer, buffer_length,
-                          " %u%s%s\r\n",
-                          (int)query->value_length,
-                          drop_if_empty ? " drop" :"",
-                          ptr->flags.no_reply ? " noreply" :"");
+    write_length= snprintf(buffer, buffer_length, " %u",
+                          (int)query->value_length);
   }
   else if (verb == MOP_DELETE_OP)
   {
@@ -1441,44 +1436,25 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     }
     if (mkey_length == 0) /* delete all */
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " 0 0%s%s",
-                             drop_if_empty ? " drop" :"",
-                             ptr->flags.no_reply ? " noreply" :"");
+      write_length= snprintf(buffer, buffer_length, " 0 0");
     }
     else /* delete with mkey */
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " %lu 1%s%s\r\n", mkey_length,
-                             drop_if_empty ? " drop" :"",
-                             ptr->flags.no_reply ? " noreply" :"");
+      write_length= snprintf(buffer, buffer_length, " %lu 1", mkey_length);
     }
   }
   else if (verb == BOP_DELETE_OP)
   {
-    const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
-    char filter_str[filter_length];
-    if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
-    {
-      return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
-                                 memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
-    }
-
     if (MEMCACHED_COLL_QUERY_BOP == query->type)
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " %llu%s",
-                             (unsigned long long)query->sub_key.bkey,
-                             filter_str);
+      write_length= snprintf(buffer, buffer_length, " %llu",
+                             (unsigned long long)query->sub_key.bkey);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " %llu..%llu%s %u",
+      write_length= snprintf(buffer, buffer_length, " %llu..%llu",
                              (unsigned long long)query->sub_key.bkey_range[0],
-                             (unsigned long long)query->sub_key.bkey_range[1],
-                             filter_str,
-                             (int)count);
+                             (unsigned long long)query->sub_key.bkey_range[1]);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
     {
@@ -1486,7 +1462,7 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
                                 bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      write_length= snprintf(buffer, buffer_length, " 0x%s%s", bkey_str, filter_str);
+      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
     }
     else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
     {
@@ -1498,20 +1474,48 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
       memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[1],
                                 bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
 
-      write_length= snprintf(buffer, buffer_length,
-                             " 0x%s..0x%s%s %u", bkey_str_from, bkey_str_to,
-                             filter_str, (int)count);
+      write_length= snprintf(buffer, buffer_length, " 0x%s..0x%s",
+                             bkey_str_from, bkey_str_to);
+    }
+    else
+    {
+      return MEMCACHED_INVALID_ARGUMENTS;
     }
 
-    // drop & noreply
-    write_length+= snprintf(buffer+write_length, buffer_length-write_length,
-                            "%s%s",
-                            drop_if_empty ? " drop" :"",
-                            ptr->flags.no_reply ? " noreply" :"");
+    /* Filter */
+    if (query->eflag_filter)
+    {
+      const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
+      char filter_str[filter_length];
+      if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+      {
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                   memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
+      }
+
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
+    }
+
+    /* Count */
+    if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type ||
+        MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
+    {
+      write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %u", (int)count);
+    }
   }
   else
   {
     return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  /* drop & noreply */
+  if (drop_if_empty)
+  {
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, " drop");
+  }
+  if (ptr->flags.no_reply)
+  {
+    write_length+= snprintf(buffer+write_length, buffer_length-write_length, " noreply");
   }
 
   if ((size_t)write_length >= buffer_length || write_length < 0)
@@ -1532,9 +1536,10 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     vector[0].length= command_length;       vector[0].buffer= command;
     vector[1].length= key_length;           vector[1].buffer= key;
     vector[2].length= (size_t)write_length; vector[2].buffer= buffer;
-    vector[3].length= query->value_length;  vector[3].buffer= query->value;
-    vector[4].length= 2;                    vector[4].buffer= "\r\n";
-    veclen= 5;
+    vector[3].length= 2;                    vector[3].buffer= "\r\n";
+    vector[4].length= query->value_length;  vector[4].buffer= query->value;
+    vector[5].length= 2;                    vector[5].buffer= "\r\n";
+    veclen= 6;
   }
   else if (MOP_DELETE_OP == verb && query->sub_key.mkey.length != 0)
   {
@@ -1542,9 +1547,10 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     vector[0].length= command_length;             vector[0].buffer= command;
     vector[1].length= key_length;                 vector[1].buffer= key;
     vector[2].length= (size_t)write_length;       vector[2].buffer= buffer;
-    vector[3].length= query->sub_key.mkey.length; vector[3].buffer= query->sub_key.mkey.string;
-    vector[4].length= 2;                          vector[4].buffer= "\r\n";
-    veclen= 5;
+    vector[3].length= 2;                          vector[3].buffer= "\r\n";
+    vector[4].length= query->sub_key.mkey.length; vector[4].buffer= query->sub_key.mkey.string;
+    vector[5].length= 2;                          vector[5].buffer= "\r\n";
+    veclen= 6;
   }
   else
   {
