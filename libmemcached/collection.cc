@@ -328,7 +328,7 @@ static inline const char *bitwise_to_str(memcached_coll_bitwise_t bitwise)
   }
 }
 
-static inline const char *comp_to_str(memcached_coll_comp_t comp)
+static inline const char *compare_to_str(memcached_coll_comp_t comp)
 {
   switch (comp)
   {
@@ -345,33 +345,32 @@ static inline const char *comp_to_str(memcached_coll_comp_t comp)
 static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter_st *filter,
                                                      char *buffer, size_t buffer_length)
 {
-  const size_t bkey_hex_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
+  const size_t hexa_str_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
+  char foperand_str[hexa_str_length];
   int write_length= 0;
 
   if (filter->options.is_bitwised)
   {
-    char foperand_str[bkey_hex_length];
-    memcached_conv_hex_to_str(NULL, &filter->bitwise.foperand, foperand_str, bkey_hex_length);
+    memcached_conv_hex_to_str(NULL, &filter->bitwise.foperand, foperand_str, hexa_str_length);
 
     write_length= snprintf(buffer, buffer_length, " %u %s 0x%s %s ",
                            (int)filter->fwhere,
                            bitwise_to_str(filter->bitwise.op), foperand_str,
-                           comp_to_str(filter->comp.op));
+                           compare_to_str(filter->comp.op));
   }
   else
   {
     write_length= snprintf(buffer, buffer_length, " %u %s ",
                            (int)filter->fwhere,
-                           comp_to_str(filter->comp.op));
+                           compare_to_str(filter->comp.op));
   }
 
-  char fvalue_str[bkey_hex_length];
   for (int i = 0; i < (int)filter->comp.count; i++)
   {
-    memcached_conv_hex_to_str(NULL, &filter->comp.fvalue[i], fvalue_str, bkey_hex_length);
+    memcached_conv_hex_to_str(NULL, &filter->comp.fvalue[i], foperand_str, hexa_str_length);
 
     write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s0x%s",
-                            ((i == 0)?"":","), fvalue_str);
+                            ((i == 0)?"":","), foperand_str);
   }
 
   if ((size_t)write_length >= buffer_length || write_length < 0)
@@ -384,17 +383,17 @@ static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter
 static inline int memcached_coll_update_filter_to_str(memcached_coll_update_filter_st *filter,
                                                       char *buffer, size_t buffer_length)
 {
-  const size_t bkey_hex_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
+  const size_t hexa_str_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
+  char fvalue_str[hexa_str_length];
   int write_length= 0;
 
-  char fvalue_str[bkey_hex_length];
-  memcached_conv_hex_to_str(NULL, &filter->comp.fvalue, fvalue_str, bkey_hex_length);
+  memcached_conv_hex_to_str(NULL, &filter->comp.fvalue, fvalue_str, hexa_str_length);
 
   if (filter->options.is_bitwised)
   {
     write_length= snprintf(buffer, buffer_length, " %u %s 0x%s",
-                           (int)filter->fwhere,
-                           bitwise_to_str(filter->bitwise.op), fvalue_str);
+                           (int)filter->fwhere, bitwise_to_str(filter->bitwise.op),
+                           fvalue_str);
   }
   else
   {
