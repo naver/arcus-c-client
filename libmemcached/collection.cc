@@ -1514,7 +1514,7 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
 
-  struct libmemcached_io_vector_st vector[5];
+  struct libmemcached_io_vector_st vector[6];
   size_t veclen;
 
   if (SOP_DELETE_OP == verb)
