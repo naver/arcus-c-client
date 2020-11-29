@@ -345,12 +345,6 @@ static inline const char *comp_to_str(memcached_coll_comp_t comp)
 static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter_st *filter,
                                                      char *buffer, size_t buffer_length)
 {
-  if (not filter)
-  {
-    buffer[0] = 0;
-    return 0;
-  }
-
   const size_t bkey_hex_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
   int write_length= 0;
 
@@ -390,12 +384,6 @@ static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter
 static inline int memcached_coll_update_filter_to_str(memcached_coll_update_filter_st *filter,
                                                       char *buffer, size_t buffer_length)
 {
-  if (not filter)
-  {
-    buffer[0] = 0;
-    return 0;
-  }
-
   const size_t bkey_hex_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
   int write_length= 0;
 
@@ -1485,15 +1473,14 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     /* Filter */
     if (query->eflag_filter)
     {
-      const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
-      char filter_str[filter_length];
-      if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+      int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
+                                                          buffer+write_length, buffer_length-write_length);
+      if (str_length < 0)
       {
         return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                    memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
       }
-
-      write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
+      write_length+= str_length;
     }
 
     /* Count */
@@ -1782,15 +1769,14 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     /* Filter */
     if (query->eflag_filter)
     {
-      const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
-      char filter_str[filter_length];
-      if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+      int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
+                                                          buffer+write_length, buffer_length-write_length);
+      if (str_length < 0)
       {
         return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                    memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
       }
-
-      write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
+      write_length+= str_length;
     }
 
     /* Options */
@@ -2006,15 +1992,14 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     /* 2. [<eflag_filter>] */
     if (query->eflag_filter)
     {
-      const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
-      char filter_str[filter_length];
-      if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+      int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
+                                                          buffer+write_length, buffer_length-write_length);
+      if (str_length < 0)
       {
         return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                    memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
       }
-
-      write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
+      write_length+= str_length;
     }
 
     /* 3. [<offset>] <count> */
@@ -2613,15 +2598,14 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   /* Filter */
   if (query->eflag_filter)
   {
-    const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
-    char filter_str[filter_length];
-    if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+    int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
+                                                        buffer+write_length, buffer_length-write_length);
+    if (str_length < 0)
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                  memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
     }
-
-    write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
+    write_length+= str_length;
   }
 
   /* Options */
@@ -3335,15 +3319,14 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   /* 2. update filter */
   if (update_filter)
   {
-    const size_t filter_length= MEMCACHED_COLL_UPD_FILTER_STR_LENGTH+1;
-    char filter_str[filter_length];
-    if (memcached_coll_update_filter_to_str(update_filter, filter_str, filter_length) < 0)
+    int str_length = memcached_coll_update_filter_to_str(update_filter,
+                                                         buffer+write_length, buffer_length-write_length);
+    if (str_length < 0)
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                  memcached_literal_param("snprintf(MEMCACHED_COLL_UPD_FILTER_STR_LENGTH)"));
     }
-
-    write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
+    write_length+= str_length;
   }
 
   /* 3. value length & options */
@@ -3653,15 +3636,14 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   /* 2. filter */
   if (query->eflag_filter)
   {
-    const size_t filter_length= MEMCACHED_COLL_MAX_FILTER_STR_LENGTH+1;
-    char filter_str[filter_length];
-    if (memcached_coll_eflag_filter_to_str(query->eflag_filter, filter_str, filter_length) < 0)
+    int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
+                                                        buffer+write_length, buffer_length-write_length);
+    if (str_length < 0)
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                  memcached_literal_param("snprintf(MEMCACHED_COLL_MAX_FILTER_STR_LENGTH)"));
     }
-
-    write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s", filter_str);
+    write_length+= str_length;
   }
 
   if ((size_t)write_length >= buffer_length || write_length < 0)
