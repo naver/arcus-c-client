@@ -69,7 +69,7 @@ static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
   bool errors_happened= false;
   for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
   {
-    memcached_server_write_instance_st instance=
+    memcached_server_st *instance=
       memcached_server_instance_fetch(ptr, x);
 
     /* Optimization, we only fetch version once. */
@@ -92,7 +92,7 @@ static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
   if (success)
   {
     /* Collect the returned items */
-    memcached_server_write_instance_st instance;
+    memcached_server_st *instance;
     while ((instance= memcached_io_get_readable_server(ptr)))
     {
       char buffer[32];
@@ -123,7 +123,7 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
   bool errors_happened= false;
   for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
   {
-    memcached_server_write_instance_st instance=
+    memcached_server_st *instance=
       memcached_server_instance_fetch(ptr, x);
 
     /* Optimization, we only fetch version once. */
@@ -146,7 +146,7 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
   if (success)
   {
     /* Collect the returned items */
-    memcached_server_write_instance_st instance;
+    memcached_server_st *instance;
     while ((instance= memcached_io_get_readable_server(ptr)))
     {
       char buffer[32];
@@ -161,7 +161,7 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
   return errors_happened ? MEMCACHED_SOME_ERRORS : MEMCACHED_SUCCESS;
 }
 
-static inline memcached_return_t version_ascii_instance(memcached_server_write_instance_st instance)
+static inline memcached_return_t version_ascii_instance(memcached_server_st *instance)
 {
   memcached_return_t rc= MEMCACHED_SUCCESS;
   if (instance->major_version == UINT8_MAX)
@@ -194,7 +194,7 @@ static inline memcached_return_t version_ascii_instance(memcached_server_write_i
   return rc;
 }
 
-static inline memcached_return_t version_binary_instance(memcached_server_write_instance_st instance)
+static inline memcached_return_t version_binary_instance(memcached_server_st *instance)
 {
   memcached_return_t rc= MEMCACHED_SUCCESS;
   if (instance->major_version == UINT8_MAX)
@@ -259,7 +259,7 @@ memcached_return_t memcached_version(memcached_st *ptr)
   return MEMCACHED_INVALID_ARGUMENTS;
 }
 
-memcached_return_t memcached_version_instance(memcached_server_write_instance_st instance)
+memcached_return_t memcached_version_instance(memcached_server_st *instance)
 {
   if (instance && instance->root)
   {
