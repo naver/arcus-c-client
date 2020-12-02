@@ -94,7 +94,6 @@
 #include <libmemcached/quit.h>
 #include <libmemcached/result.h>
 #include <libmemcached/server.h>
-#include <libmemcached/server_instance.h>
 #include <libmemcached/server_list.h>
 #ifdef ENABLE_REPLICATION
 #include <libmemcached/rgroup.h>
