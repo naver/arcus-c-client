@@ -140,16 +140,22 @@ struct memcached_mkey_st {
  * @return string length.
  */
 LIBMEMCACHED_API
-size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr, char *buffer, size_t buffer_length);
+size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr,
+                                    char *buffer, size_t buffer_length);
 
 LIBMEMCACHED_API
-int memcached_compare_two_hexadecimal(memcached_hexadecimal_st *lhs, memcached_hexadecimal_st *rhs);
+int memcached_compare_two_hexadecimal(memcached_hexadecimal_st *lhs,
+                                      memcached_hexadecimal_st *rhs);
 
 LIBMEMCACHED_LOCAL
-memcached_return_t memcached_conv_hex_to_str(memcached_st *ptr, memcached_hexadecimal_st *hex, char *str, size_t str_length);
+memcached_return_t memcached_conv_hex_to_str(memcached_st *ptr,
+                                             memcached_hexadecimal_st *hex,
+                                             char *str, size_t str_length);
 
 LIBMEMCACHED_LOCAL
-memcached_return_t memcached_conv_str_to_hex(memcached_st *ptr, char *str, size_t str_length, memcached_hexadecimal_st *hex);
+memcached_return_t memcached_conv_str_to_hex(memcached_st *ptr,
+                                             char *str, size_t str_length,
+                                             memcached_hexadecimal_st *hex);
 
 typedef enum {
   OVERFLOWACTION_NONE=0,
@@ -485,7 +491,8 @@ memcached_return_t memcached_lop_query_init(memcached_coll_query_st *ptr,
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_lop_range_query_init(memcached_coll_query_st *ptr,
-                                                  const int32_t list_index_from, const int32_t list_index_to);
+                                                  const int32_t list_index_from,
+                                                  const int32_t list_index_to);
 
 /**
  * Initialize the query structure for elements in the set item.
@@ -525,8 +532,9 @@ memcached_return_t memcached_mop_query_init(memcached_coll_query_st *ptr,
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_mop_mkey_list_query_init(memcached_coll_query_st *ptr,
-                                                  const char * const *mkeys, const size_t *mkeys_length,
-                                                  size_t number_of_mkeys);
+                                                      const char * const *mkeys,
+                                                      const size_t *mkeys_length,
+                                                      size_t number_of_mkeys);
 
 /**
  * Initialize the query structure for a b+tree element.
@@ -673,7 +681,8 @@ struct memcached_coll_eflag_filter_st {
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_st *ptr,
                                                     const size_t fwhere,
-                                                    const unsigned char *fvalue, const size_t fvalue_length,
+                                                    const unsigned char *fvalue,
+                                                    const size_t fvalue_length,
                                                     memcached_coll_comp_t comp_op);
 
 /**
@@ -688,11 +697,11 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
-                                                    const size_t fwhere,
-                                                    const unsigned char *fvalues,
-                                                    const size_t fvalue_length,
-                                                    const size_t fvalue_count,
-                                                    memcached_coll_comp_t comp_op);
+                                                     const size_t fwhere,
+                                                     const unsigned char *fvalues,
+                                                     const size_t fvalue_length,
+                                                     const size_t fvalue_count,
+                                                     memcached_coll_comp_t comp_op);
 
 /**
  * Initialize the b+tree eflag filter for bitwise operation.
@@ -704,7 +713,8 @@ memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_filter_st *ptr,
-                                                           const unsigned char *foperand, const size_t foperand_length,
+                                                           const unsigned char *foperand,
+                                                           const size_t foperand_length,
                                                            memcached_coll_bitwise_t bitwise_op);
 
 /**
@@ -740,7 +750,8 @@ struct memcached_coll_update_filter_st {
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
-                                                     const unsigned char *fvalue, const size_t fvalue_length);
+                                                     const unsigned char *fvalue,
+                                                     const size_t fvalue_length);
 
 /**
  * Initialize the b+tree eflag filter used for update commands.
@@ -751,7 +762,8 @@ memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filte
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_update_filter_st *ptr,
-                                                            const size_t fwhere, memcached_coll_bitwise_t bitwise_op);
+                                                            const size_t fwhere,
+                                                            memcached_coll_bitwise_t bitwise_op);
 
 /* COLLECTION APIs */
 
@@ -799,7 +811,8 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
  * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_lop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const int32_t list_index,
                                         const char *value, size_t value_length,
                                         memcached_coll_create_attrs_st *attributes);
@@ -814,7 +827,8 @@ memcached_return_t memcached_lop_insert(memcached_st *ptr, const char *key, size
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_lop_delete(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const int32_t list_index, bool drop_if_empty);
 
 /**
@@ -828,8 +842,10 @@ memcached_return_t memcached_lop_delete(memcached_st *ptr, const char *key, size
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_lop_delete_by_range(memcached_st *ptr, const char *key, size_t key_length,
-                                                 const int32_t from, const int32_t to, bool drop_if_empty);
+memcached_return_t memcached_lop_delete_by_range(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 const int32_t from, const int32_t to,
+                                                 bool drop_if_empty);
 
 /**
  * Fetch an element from the list item.
@@ -843,8 +859,10 @@ memcached_return_t memcached_lop_delete_by_range(memcached_st *ptr, const char *
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_lop_get(memcached_st *ptr, const char *key, size_t key_length,
-                                     const int32_t list_index, bool with_delete, bool drop_if_empty,
+memcached_return_t memcached_lop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
+                                     const int32_t list_index,
+                                     bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result);
 
 /**
@@ -860,7 +878,8 @@ memcached_return_t memcached_lop_get(memcached_st *ptr, const char *key, size_t 
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_lop_get_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_get_by_range(memcached_st *ptr,
+                                              const char *key, size_t key_length,
                                               const int32_t from, const int32_t to,
                                               bool with_delete, bool drop_if_empty,
                                               memcached_coll_result_st *result);
@@ -880,7 +899,8 @@ memcached_return_t memcached_lop_get_by_range(memcached_st *ptr, const char *key
  * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_sop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const char *value, size_t value_length,
                                         memcached_coll_create_attrs_st *attributes);
 
@@ -895,8 +915,10 @@ memcached_return_t memcached_sop_insert(memcached_st *ptr, const char *key, size
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_sop_delete(memcached_st *ptr, const char *key, size_t key_length,
-                                        const char *value, size_t value_length, bool drop_if_empty);
+memcached_return_t memcached_sop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
+                                        const char *value, size_t value_length,
+                                        bool drop_if_empty);
 
 /**
  * Check the existence of an element in the set item.
@@ -907,7 +929,8 @@ memcached_return_t memcached_sop_delete(memcached_st *ptr, const char *key, size
  * @param value_length  length of the element value (number of bytes).
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_sop_exist(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_exist(memcached_st *ptr,
+                                       const char *key, size_t key_length,
                                        const char *value, size_t value_length);
 
 /**
@@ -922,8 +945,10 @@ memcached_return_t memcached_sop_exist(memcached_st *ptr, const char *key, size_
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_sop_get(memcached_st *ptr, const char *key, size_t key_length,
-                                     size_t count, bool with_delete, bool drop_if_empty,
+memcached_return_t memcached_sop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
+                                     size_t count,
+                                     bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result);
 
 /**
@@ -943,7 +968,8 @@ memcached_return_t memcached_sop_get(memcached_st *ptr, const char *key, size_t 
  * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const char *mkey, size_t mkey_length,
                                         const char *value, size_t value_length,
                                         memcached_coll_create_attrs_st *attributes);
@@ -959,7 +985,8 @@ memcached_return_t memcached_mop_insert(memcached_st *ptr, const char *key, size
  * @param value_length  length of the element value (number of bytes).
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_update(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const char *mkey, size_t mkey_length,
                                         const char *value, size_t value_length);
 
@@ -974,7 +1001,8 @@ memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_delete(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const char *mkey, size_t mkey_length,
                                         bool drop_if_empty);
 
@@ -987,7 +1015,8 @@ memcached_return_t memcached_mop_delete(memcached_st *ptr, const char *key, size
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_delete_all(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_delete_all(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             bool drop_if_empty);
 
 /**
@@ -1003,7 +1032,8 @@ memcached_return_t memcached_mop_delete_all(memcached_st *ptr, const char *key, 
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_get(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
                                      const char *mkey, size_t mkey_length,
                                      bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result);
@@ -1019,7 +1049,8 @@ memcached_return_t memcached_mop_get(memcached_st *ptr, const char *key, size_t 
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_get_all(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_get_all(memcached_st *ptr,
+                                         const char *key, size_t key_length,
                                          bool with_delete, bool drop_if_empty,
                                          memcached_coll_result_st *result);
 
@@ -1037,8 +1068,10 @@ memcached_return_t memcached_mop_get_all(memcached_st *ptr, const char *key, siz
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key, size_t key_length,
-                                             const char * const *mkeys, const size_t *mkeys_length,
+memcached_return_t memcached_mop_get_by_list(memcached_st *ptr,
+                                             const char *key, size_t key_length,
+                                             const char * const *mkeys,
+                                             const size_t *mkeys_length,
                                              size_t number_of_mkeys,
                                              bool with_delete, bool drop_if_empty,
                                              memcached_coll_result_st *result);
@@ -1061,7 +1094,8 @@ memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key,
  * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const uint64_t bkey,
                                         const unsigned char *eflag, size_t eflag_length,
                                         const char *value, size_t value_length,
@@ -1082,7 +1116,8 @@ memcached_return_t memcached_bop_insert(memcached_st *ptr, const char *key, size
  * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_insert(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             const unsigned char *eflag, size_t eflag_length,
                                             const char *value, size_t value_length,
@@ -1102,7 +1137,8 @@ memcached_return_t memcached_bop_ext_insert(memcached_st *ptr, const char *key, 
  * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_upsert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_upsert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const uint64_t bkey,
                                         const unsigned char *eflag, size_t eflag_length,
                                         const char *value, size_t value_length,
@@ -1123,7 +1159,8 @@ memcached_return_t memcached_bop_upsert(memcached_st *ptr, const char *key, size
  * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             const unsigned char *eflag, size_t eflag_length,
                                             const char *value, size_t value_length,
@@ -1140,7 +1177,8 @@ memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr, const char *key, 
  * @param value_length  length of the element value (number of bytes).
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_update(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_update(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const uint64_t bkey,
                                         memcached_coll_update_filter_st *update_filter,
                                         const char *value, size_t value_length);
@@ -1157,7 +1195,8 @@ memcached_return_t memcached_bop_update(memcached_st *ptr, const char *key, size
  * @param value_length  length of the element value (number of bytes).
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_update(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_update(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             memcached_coll_update_filter_st *update_filter,
                                             const char *value, size_t value_length);
@@ -1173,8 +1212,10 @@ memcached_return_t memcached_bop_ext_update(memcached_st *ptr, const char *key, 
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_delete(memcached_st *ptr, const char *key, size_t key_length,
-                                        const uint64_t bkey, memcached_coll_eflag_filter_st *eflag_filter,
+memcached_return_t memcached_bop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
+                                        const uint64_t bkey,
+                                        memcached_coll_eflag_filter_st *eflag_filter,
                                         bool drop_if_empty);
 
 /**
@@ -1190,10 +1231,11 @@ memcached_return_t memcached_bop_delete(memcached_st *ptr, const char *key, size
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_delete_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_delete_by_range(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
                                                  const uint64_t from, const uint64_t to,
-                                                 memcached_coll_eflag_filter_st *eflag_filter, size_t count,
-                                                 bool drop_if_empty);
+                                                 memcached_coll_eflag_filter_st *eflag_filter,
+                                                 size_t count, bool drop_if_empty);
 
 /**
  * Delete an element from the b+tree item using byte-array bkey.
@@ -1207,7 +1249,8 @@ memcached_return_t memcached_bop_delete_by_range(memcached_st *ptr, const char *
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_delete(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_delete(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             memcached_coll_eflag_filter_st *eflag_filter,
                                             bool drop_if_empty);
@@ -1227,7 +1270,8 @@ memcached_return_t memcached_bop_ext_delete(memcached_st *ptr, const char *key, 
  * @param drop_if_empty  if true, delete the empty list item.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr,
+                                                     const char *key, size_t key_length,
                                                      const unsigned char *from, size_t from_length,
                                                      const unsigned char *to, size_t to_length,
                                                      memcached_coll_eflag_filter_st *eflag_filter,
@@ -1243,8 +1287,10 @@ memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr, const ch
  * @param value  incremented value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t key_length,
-                                      const uint64_t bkey, const uint64_t delta, uint64_t *value);
+memcached_return_t memcached_bop_incr(memcached_st *ptr,
+                                      const char *key, size_t key_length,
+                                      const uint64_t bkey,
+                                      const uint64_t delta, uint64_t *value);
 
 #ifdef BOP_ARITHMETIC_INITIAL
 /**
@@ -1262,9 +1308,10 @@ memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t
  * @param value  incremented or initial value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
-                                                   const uint64_t bkey, const uint64_t delta,
-                                                   const uint64_t initial,
+memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr,
+                                                   const char *key, size_t key_length,
+                                                   const uint64_t bkey,
+                                                   const uint64_t delta, const uint64_t initial,
                                                    const unsigned char *eflag, size_t eflag_length,
                                                    uint64_t *value);
 #endif
@@ -1279,7 +1326,8 @@ memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr, const char
  * @param value  incremented value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_incr(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_incr(memcached_st *ptr,
+                                          const char *key, size_t key_length,
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value);
 
@@ -1300,7 +1348,8 @@ memcached_return_t memcached_bop_ext_incr(memcached_st *ptr, const char *key, si
  * @param value  incremented or initial value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr,
+                                                       const char *key, size_t key_length,
                                                        const unsigned char *bkey, size_t bkey_length,
                                                        const uint64_t delta, const uint64_t initial,
                                                        const unsigned char *eflag, size_t eflag_length,
@@ -1316,8 +1365,10 @@ memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr, const 
  * @param value  decremented value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_decr(memcached_st *ptr, const char *key, size_t key_length,
-                                      const uint64_t bkey, const uint64_t delta, uint64_t *value);
+memcached_return_t memcached_bop_decr(memcached_st *ptr,
+                                      const char *key, size_t key_length,
+                                      const uint64_t bkey,
+                                      const uint64_t delta, uint64_t *value);
 
 #ifdef BOP_ARITHMETIC_INITIAL
 /**
@@ -1335,9 +1386,10 @@ memcached_return_t memcached_bop_decr(memcached_st *ptr, const char *key, size_t
  * @param value  decremented or initial value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
-                                                   const uint64_t bkey, const uint64_t delta,
-                                                   const uint64_t initial,
+memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr,
+                                                   const char *key, size_t key_length,
+                                                   const uint64_t bkey,
+                                                   const uint64_t delta, const uint64_t initial,
                                                    const unsigned char *eflag, size_t eflag_length,
                                                    uint64_t *value);
 #endif
@@ -1352,7 +1404,8 @@ memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr, const char
  * @param value  decremented value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_decr(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_decr(memcached_st *ptr,
+                                          const char *key, size_t key_length,
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value);
 #ifdef BOP_ARITHMETIC_INITIAL
@@ -1372,7 +1425,8 @@ memcached_return_t memcached_bop_ext_decr(memcached_st *ptr, const char *key, si
  * @param value  decremented or initial value, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr,
+                                                       const char *key, size_t key_length,
                                                        const unsigned char *bkey, size_t bkey_length,
                                                        const uint64_t delta, const uint64_t initial,
                                                        const unsigned char *eflag, size_t eflag_length,
@@ -1392,7 +1446,8 @@ memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr, const 
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_get(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
                                      const uint64_t bkey,
                                      memcached_coll_eflag_filter_st *eflag_filter,
                                      bool with_delete, bool drop_if_empty,
@@ -1414,7 +1469,8 @@ memcached_return_t memcached_bop_get(memcached_st *ptr, const char *key, size_t 
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_get_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_get_by_range(memcached_st *ptr,
+                                              const char *key, size_t key_length,
                                               const uint64_t from, const uint64_t to,
                                               memcached_coll_eflag_filter_st *eflag_filter,
                                               const size_t offset, const size_t count,
@@ -1435,7 +1491,8 @@ memcached_return_t memcached_bop_get_by_range(memcached_st *ptr, const char *key
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_get(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_get(memcached_st *ptr,
+                                         const char *key, size_t key_length,
                                          const unsigned char *bkey, size_t bkey_length,
                                          memcached_coll_eflag_filter_st *eflag_filter,
                                          bool with_delete, bool drop_if_empty,
@@ -1459,7 +1516,8 @@ memcached_return_t memcached_bop_ext_get(memcached_st *ptr, const char *key, siz
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr,
+                                                  const char *key, size_t key_length,
                                                   const unsigned char *from, size_t from_length,
                                                   const unsigned char *to, size_t to_length,
                                                   memcached_coll_eflag_filter_st *eflag_filter,
@@ -1479,7 +1537,8 @@ memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr, const char 
  * @param result  result structure, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_get_by_query(memcached_st *ptr,
+                                              const char *key, size_t key_length,
                                               memcached_bop_query_st *query,
                                               bool with_delete, bool drop_if_empty,
                                               memcached_coll_result_st *result);
@@ -1495,7 +1554,8 @@ memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_mget(memcached_st *ptr,
-                                      const char * const *keys, const size_t *key_length,
+                                      const char * const *keys,
+                                      const size_t *key_length,
                                       size_t number_of_keys,
                                       memcached_coll_query_st *query);
 
@@ -1539,7 +1599,8 @@ memcached_return_t memcached_bop_count(memcached_st *ptr,
  * @param count  number of elements, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_count_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_count_by_range(memcached_st *ptr,
+                                                const char *key, size_t key_length,
                                                 const uint64_t from, const uint64_t to,
                                                 memcached_coll_eflag_filter_st *eflag_filter,
                                                 size_t *count);
@@ -1555,7 +1616,8 @@ memcached_return_t memcached_bop_count_by_range(memcached_st *ptr, const char *k
  * @param count  number of elements, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_count(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_count(memcached_st *ptr,
+                                           const char *key, size_t key_length,
                                            const unsigned char *bkey, size_t bkey_length,
                                            memcached_coll_eflag_filter_st *eflag_filter,
                                            size_t *count);
@@ -1573,7 +1635,8 @@ memcached_return_t memcached_bop_ext_count(memcached_st *ptr, const char *key, s
  * @param count  number of elements, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_count_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_count_by_range(memcached_st *ptr,
+                                                    const char *key, size_t key_length,
                                                     const unsigned char *from, size_t from_length,
                                                     const unsigned char *to, size_t to_length,
                                                     memcached_coll_eflag_filter_st *eflag_filter,
@@ -1587,7 +1650,8 @@ memcached_return_t memcached_bop_ext_count_by_range(memcached_st *ptr, const cha
  * @param attrs  item's attributes.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_lop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attrs);
 
 /**
@@ -1598,7 +1662,8 @@ memcached_return_t memcached_lop_create(memcached_st *ptr, const char *key, size
  * @param attrs  item's attributes.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_sop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attrs);
 
 /**
@@ -1609,7 +1674,8 @@ memcached_return_t memcached_sop_create(memcached_st *ptr, const char *key, size
  * @param attrs  item's attributes.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attrs);
 
 /**
@@ -1620,7 +1686,8 @@ memcached_return_t memcached_mop_create(memcached_st *ptr, const char *key, size
  * @param attrs  item's attributes.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attrs);
 
 /**
@@ -1635,7 +1702,8 @@ memcached_return_t memcached_bop_create(memcached_st *ptr, const char *key, size
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_smget(memcached_st *ptr,
                                        const char * const *keys,
-                                       const size_t *key_length, size_t number_of_keys,
+                                       const size_t *key_length,
+                                       size_t number_of_keys,
                                        memcached_bop_query_st *query,
                                        memcached_coll_smget_result_st *result);
 
@@ -1660,7 +1728,8 @@ memcached_coll_smget_result_st *memcached_coll_smget_fetch_result(memcached_st *
  * @param position element position, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_find_position(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_find_position(memcached_st *ptr,
+                                               const char *key, size_t key_length,
                                                const uint64_t bkey,
                                                memcached_coll_order_t order,
                                                size_t *position);
@@ -1676,7 +1745,8 @@ memcached_return_t memcached_bop_find_position(memcached_st *ptr, const char *ke
  * @param position element position, filled upon return.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr,
+                                                   const char *key, size_t key_length,
                                                    const unsigned char *bkey, size_t bkey_length,
                                                    memcached_coll_order_t order,
                                                    size_t *position);
@@ -1761,12 +1831,14 @@ memcached_return_t memcached_bop_ext_find_position_with_get(memcached_st *ptr,
  * @param piped_rc  return code for the whole pipelined operation.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_lop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_lop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const int32_t *list_indexes,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attrs,
-                                              memcached_return_t *results, memcached_return_t *piped_rc);
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc);
 
 /**
  * Insert multiple elements into the set item in a pipelined fashion.
@@ -1781,11 +1853,13 @@ memcached_return_t memcached_lop_piped_insert(memcached_st *ptr, const char *key
  * @param piped_rc  return code for the whole pipelined operation.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_sop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attrs,
-                                              memcached_return_t *results, memcached_return_t *piped_rc);
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc);
 
 /**
  * Insert multiple elements into the map item in a pipelined fashion.
@@ -1802,12 +1876,14 @@ memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key
  * @param piped_rc  return code for the whole pipelined operation.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_mop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const char * const *mkeys, const size_t *mkeys_length,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attrs,
-                                              memcached_return_t *results, memcached_return_t *piped_rc);
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc);
 
 /**
  * Insert multiple elements into the b+tree item in a pipelined fashion.
@@ -1825,13 +1901,15 @@ memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key
  * @param piped_rc  return code for the whole pipelined operation.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_bop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const uint64_t *bkeys,
                                               const unsigned char * const *eflags, const size_t *eflags_length,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attrs,
-                                              memcached_return_t *results, memcached_return_t *piped_rc);
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc);
 
 /**
  * Insert multiple elements into the b+tree item in a pipelined fashion, using byte-array bkey's.
@@ -1850,13 +1928,15 @@ memcached_return_t memcached_bop_piped_insert(memcached_st *ptr, const char *key
  * @param piped_rc  return code for the whole pipelined operation.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr,
+                                                  const char *key, const size_t key_length,
                                                   const size_t number_of_piped_items,
                                                   const unsigned char * const *bkeys, const size_t *bkeys_length,
                                                   const unsigned char * const *eflags, const size_t *eflags_length,
                                                   const char * const *values, const size_t *values_length,
                                                   memcached_coll_create_attrs_st *attrs,
-                                                  memcached_return_t *results, memcached_return_t *piped_rc);
+                                                  memcached_return_t *results,
+                                                  memcached_return_t *piped_rc);
 
 /**
  * Insert a single element into multiple list items in a pipelined fashion.
@@ -1874,7 +1954,8 @@ memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr, const char 
 LIBMEMCACHED_API
 memcached_return_t memcached_lop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const int32_t index,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attrs,
@@ -1896,7 +1977,8 @@ memcached_return_t memcached_lop_piped_insert_bulk(memcached_st *ptr,
 LIBMEMCACHED_API
 memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attrs,
                                                    memcached_return_t *results,
@@ -1919,7 +2001,8 @@ memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
 LIBMEMCACHED_API
 memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const char *mkey, size_t mkey_length,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attrs,
@@ -1944,7 +2027,8 @@ memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const uint64_t bkey,
                                                    const unsigned char *eflag, size_t eflag_length,
                                                    const char *value, size_t value_length,
@@ -1971,7 +2055,8 @@ memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
                                                        const char * const *keys,
-                                                       const size_t *key_length, size_t number_of_keys,
+                                                       const size_t *key_length,
+                                                       size_t number_of_keys,
                                                        const unsigned char *bkey, size_t bkey_length,
                                                        const unsigned char *eflag, size_t eflag_length,
                                                        const char *value, size_t value_length,
@@ -1991,10 +2076,12 @@ memcached_return_t memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
  * @param piped_rc  return code for the whole pipelined operation.
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_sop_piped_exist(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_piped_exist(memcached_st *ptr,
+                                             const char *key, size_t key_length,
                                              const size_t number_of_piped_items,
                                              const char * const *values, const size_t *values_length,
-                                             memcached_return_t *results, memcached_return_t *piped_rc);
+                                             memcached_return_t *results,
+                                             memcached_return_t *piped_rc);
 
 #ifdef __cplusplus
 }

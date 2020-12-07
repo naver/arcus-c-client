@@ -214,7 +214,8 @@ static inline bool space_separated_keys_is_supported(memcached_server_write_inst
 
 /* Hexadecimal */
 
-int memcached_compare_two_hexadecimal(memcached_hexadecimal_st *lhs, memcached_hexadecimal_st *rhs)
+int memcached_compare_two_hexadecimal(memcached_hexadecimal_st *lhs,
+                                      memcached_hexadecimal_st *rhs)
 {
   if (not lhs or not rhs)
   {
@@ -285,7 +286,8 @@ static inline bool convert_str_to_hex(const char *str, unsigned char *bin, const
 }
 
 memcached_return_t memcached_conv_hex_to_str(memcached_st *ptr __attribute__((unused)),
-                                             memcached_hexadecimal_st *hex, char *str, size_t str_length)
+                                             memcached_hexadecimal_st *hex,
+                                             char *str, size_t str_length)
 {
   if (str_length <= hex->length*2)
   {
@@ -3706,7 +3708,8 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
 
 /* APIs : insert, upsert, update */
 
-memcached_return_t memcached_lop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const int32_t index,
                                         const char *value, size_t value_length,
                                         memcached_coll_create_attrs_st *attributes)
@@ -3720,7 +3723,8 @@ memcached_return_t memcached_lop_insert(memcached_st *ptr, const char *key, size
                         &query, NULL, attributes, LOP_INSERT_OP);
 }
 
-memcached_return_t memcached_sop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const char *value, size_t value_length,
                                         memcached_coll_create_attrs_st *attributes)
 {
@@ -3731,7 +3735,8 @@ memcached_return_t memcached_sop_insert(memcached_st *ptr, const char *key, size
                         &query, NULL, attributes, SOP_INSERT_OP);
 }
 
-memcached_return_t memcached_mop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const char *mkey, size_t mkey_length,
                                         const char *value, size_t value_length,
                                         memcached_coll_create_attrs_st *attributes)
@@ -3745,7 +3750,8 @@ memcached_return_t memcached_mop_insert(memcached_st *ptr, const char *key, size
                         &query, NULL, attributes, MOP_INSERT_OP);
 }
 
-memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_update(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const char *mkey, size_t mkey_length,
                                         const char *value, size_t value_length)
 {
@@ -3756,7 +3762,8 @@ memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size
                         &query, NULL, value, value_length, MOP_UPDATE_OP);
 }
 
-memcached_return_t memcached_bop_ext_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_insert(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             const unsigned char *eflag, size_t eflag_length,
                                             const char *value, size_t value_length,
@@ -3775,7 +3782,8 @@ memcached_return_t memcached_bop_ext_insert(memcached_st *ptr, const char *key, 
                         &query, &eflag_hex, attributes, BOP_INSERT_OP);
 }
 
-memcached_return_t memcached_bop_insert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_insert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const uint64_t bkey,
                                         const unsigned char *eflag, size_t eflag_length,
                                         const char *value, size_t value_length,
@@ -3794,7 +3802,8 @@ memcached_return_t memcached_bop_insert(memcached_st *ptr, const char *key, size
                         &query, &eflag_hex, attributes, BOP_INSERT_OP);
 }
 
-memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             const unsigned char *eflag, size_t eflag_length,
                                             const char *value, size_t value_length,
@@ -3813,7 +3822,8 @@ memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr, const char *key, 
                         &query, &eflag_hex, attributes, BOP_UPSERT_OP);
 }
 
-memcached_return_t memcached_bop_upsert(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_upsert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const uint64_t bkey,
                                         const unsigned char *eflag, size_t eflag_length,
                                         const char *value, size_t value_length,
@@ -3832,7 +3842,8 @@ memcached_return_t memcached_bop_upsert(memcached_st *ptr, const char *key, size
                         &query, &eflag_hex, attributes, BOP_UPSERT_OP);
 }
 
-memcached_return_t memcached_bop_update(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_update(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const uint64_t bkey,
                                         memcached_coll_update_filter_st *update_filter,
                                         const char *value, size_t value_length)
@@ -3845,7 +3856,8 @@ memcached_return_t memcached_bop_update(memcached_st *ptr, const char *key, size
                         BOP_UPDATE_OP);
 }
 
-memcached_return_t memcached_bop_ext_update(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_update(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             memcached_coll_update_filter_st *update_filter,
                                             const char *value, size_t value_length)
@@ -3860,7 +3872,8 @@ memcached_return_t memcached_bop_ext_update(memcached_st *ptr, const char *key, 
 
 /* APIs : delete */
 
-memcached_return_t memcached_lop_delete(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         const int32_t index, bool drop_if_empty)
 {
   memcached_coll_query_st query;
@@ -3871,8 +3884,10 @@ memcached_return_t memcached_lop_delete(memcached_st *ptr, const char *key, size
                         LOP_DELETE_OP);
 }
 
-memcached_return_t memcached_lop_delete_by_range(memcached_st *ptr, const char *key, size_t key_length,
-                                                 const int32_t from, const int32_t to, bool drop_if_empty)
+memcached_return_t memcached_lop_delete_by_range(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
+                                                 const int32_t from, const int32_t to,
+                                                 bool drop_if_empty)
 {
   memcached_coll_query_st query;
   memcached_lop_range_query_init(&query, from, to);
@@ -3882,8 +3897,10 @@ memcached_return_t memcached_lop_delete_by_range(memcached_st *ptr, const char *
                         LOP_DELETE_OP);
 }
 
-memcached_return_t memcached_sop_delete(memcached_st *ptr, const char *key, size_t key_length,
-                                        const char *value, size_t value_length, bool drop_if_empty)
+memcached_return_t memcached_sop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
+                                        const char *value, size_t value_length,
+                                        bool drop_if_empty)
 {
   memcached_coll_query_st query;
   memcached_sop_value_query_init(&query, value, value_length);
@@ -3893,8 +3910,10 @@ memcached_return_t memcached_sop_delete(memcached_st *ptr, const char *key, size
                         SOP_DELETE_OP);
 }
 
-memcached_return_t memcached_mop_delete(memcached_st *ptr, const char *key, size_t key_length,
-                                        const char *mkey, size_t mkey_length, bool drop_if_empty)
+memcached_return_t memcached_mop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
+                                        const char *mkey, size_t mkey_length,
+                                        bool drop_if_empty)
 {
   memcached_coll_query_st query;
   memcached_mop_query_init(&query, mkey, mkey_length);
@@ -3904,7 +3923,8 @@ memcached_return_t memcached_mop_delete(memcached_st *ptr, const char *key, size
                         MOP_DELETE_OP);
 }
 
-memcached_return_t memcached_mop_delete_all(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_delete_all(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             bool drop_if_empty)
 {
   memcached_coll_query_st query;
@@ -3915,8 +3935,10 @@ memcached_return_t memcached_mop_delete_all(memcached_st *ptr, const char *key, 
                         MOP_DELETE_OP);
 }
 
-memcached_return_t memcached_bop_delete(memcached_st *ptr, const char *key, size_t key_length,
-                                        const uint64_t bkey, memcached_coll_eflag_filter_st *eflag_filter,
+memcached_return_t memcached_bop_delete(memcached_st *ptr,
+                                        const char *key, size_t key_length,
+                                        const uint64_t bkey,
+                                        memcached_coll_eflag_filter_st *eflag_filter,
                                         bool drop_if_empty)
 {
   memcached_coll_query_st query;
@@ -3927,10 +3949,11 @@ memcached_return_t memcached_bop_delete(memcached_st *ptr, const char *key, size
                         BOP_DELETE_OP);
 }
 
-memcached_return_t memcached_bop_delete_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_delete_by_range(memcached_st *ptr,
+                                                 const char *key, size_t key_length,
                                                  const uint64_t from, const uint64_t to,
-                                                 memcached_coll_eflag_filter_st *eflag_filter, const size_t count,
-                                                 bool drop_if_empty)
+                                                 memcached_coll_eflag_filter_st *eflag_filter,
+                                                 const size_t count, bool drop_if_empty)
 {
   memcached_coll_query_st query;
   memcached_bop_range_query_init(&query, from, to, eflag_filter, 0, count);
@@ -3940,7 +3963,8 @@ memcached_return_t memcached_bop_delete_by_range(memcached_st *ptr, const char *
                         BOP_DELETE_OP);
 }
 
-memcached_return_t memcached_bop_ext_delete(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_delete(memcached_st *ptr,
+                                            const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
                                             memcached_coll_eflag_filter_st *eflag_filter,
                                             bool drop_if_empty)
@@ -3953,7 +3977,8 @@ memcached_return_t memcached_bop_ext_delete(memcached_st *ptr, const char *key, 
                         BOP_DELETE_OP);
 }
 
-memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr,
+                                                     const char *key, size_t key_length,
                                                      const unsigned char *from, size_t from_length,
                                                      const unsigned char *to, size_t to_length,
                                                      memcached_coll_eflag_filter_st *eflag_filter,
@@ -3969,8 +3994,10 @@ memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr, const ch
 
 /* APIs : incr & decr */
 
-memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t key_length,
-                                      const uint64_t bkey, const uint64_t delta, uint64_t *value)
+memcached_return_t memcached_bop_incr(memcached_st *ptr,
+                                      const char *key, size_t key_length,
+                                      const uint64_t bkey,
+                                      const uint64_t delta, uint64_t *value)
 {
   memcached_coll_query_st query;
   memcached_bop_query_init(&query, bkey, NULL);
@@ -3985,9 +4012,10 @@ memcached_return_t memcached_bop_incr(memcached_st *ptr, const char *key, size_t
 }
 
 #ifdef BOP_ARITHMETIC_INITIAL
-memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
-                                                   const uint64_t bkey, const uint64_t delta,
-                                                   const uint64_t initial,
+memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr,
+                                                   const char *key, size_t key_length,
+                                                   const uint64_t bkey,
+                                                   const uint64_t delta, const uint64_t initial,
                                                    const unsigned char *eflag, size_t eflag_length,
                                                    uint64_t *value)
 {
@@ -4003,7 +4031,8 @@ memcached_return_t memcached_bop_incr_with_initial(memcached_st *ptr, const char
 }
 
 #endif
-memcached_return_t memcached_bop_ext_incr(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_incr(memcached_st *ptr,
+                                          const char *key, size_t key_length,
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value)
 {
@@ -4020,7 +4049,8 @@ memcached_return_t memcached_bop_ext_incr(memcached_st *ptr, const char *key, si
 }
 
 #ifdef BOP_ARITHMETIC_INITIAL
-memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr,
+                                                       const char *key, size_t key_length,
                                                        const unsigned char *bkey, size_t bkey_length,
                                                        const uint64_t delta, const uint64_t initial,
                                                        const unsigned char *eflag, size_t eflag_length,
@@ -4038,8 +4068,10 @@ memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr, const 
 }
 
 #endif
-memcached_return_t memcached_bop_decr(memcached_st *ptr, const char *key, size_t key_length,
-                                      const uint64_t bkey, const uint64_t delta, uint64_t *value)
+memcached_return_t memcached_bop_decr(memcached_st *ptr,
+                                      const char *key, size_t key_length,
+                                      const uint64_t bkey,
+                                      const uint64_t delta, uint64_t *value)
 {
   memcached_coll_query_st query;
   memcached_bop_query_init(&query, bkey, NULL);
@@ -4054,7 +4086,8 @@ memcached_return_t memcached_bop_decr(memcached_st *ptr, const char *key, size_t
 }
 
 #ifdef BOP_ARITHMETIC_INITIAL
-memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr,
+                                                   const char *key, size_t key_length,
                                                    const uint64_t bkey, const uint64_t delta,
                                                    const uint64_t initial,
                                                    const unsigned char *eflag, size_t eflag_length,
@@ -4072,7 +4105,8 @@ memcached_return_t memcached_bop_decr_with_initial(memcached_st *ptr, const char
 }
 
 #endif
-memcached_return_t memcached_bop_ext_decr(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_decr(memcached_st *ptr,
+                                          const char *key, size_t key_length,
                                           const unsigned char *bkey, size_t bkey_length,
                                           const uint64_t delta, uint64_t *value)
 {
@@ -4089,7 +4123,8 @@ memcached_return_t memcached_bop_ext_decr(memcached_st *ptr, const char *key, si
 }
 
 #ifdef BOP_ARITHMETIC_INITIAL
-memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr,
+                                                       const char *key, size_t key_length,
                                                        const unsigned char *bkey, size_t bkey_length,
                                                        const uint64_t delta, const uint64_t initial,
                                                        const unsigned char *eflag, size_t eflag_length,
@@ -4109,7 +4144,8 @@ memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr, const 
 #endif
 /* APIs : exist */
 
-memcached_return_t memcached_sop_exist(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_exist(memcached_st *ptr,
+                                       const char *key, size_t key_length,
                                        const char *value, size_t value_length)
 {
   return do_coll_exist(ptr, key, key_length,
@@ -4117,10 +4153,12 @@ memcached_return_t memcached_sop_exist(memcached_st *ptr, const char *key, size_
                        SOP_EXIST_OP);
 }
 
-memcached_return_t memcached_sop_piped_exist(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_piped_exist(memcached_st *ptr,
+                                             const char *key, size_t key_length,
                                              const size_t number_of_piped_items,
                                              const char * const *values, const size_t *values_length,
-                                             memcached_return_t *responses, memcached_return_t *piped_rc)
+                                             memcached_return_t *responses,
+                                             memcached_return_t *piped_rc)
 {
   return do_coll_piped_exist(ptr, key, key_length,
                              number_of_piped_items, values, values_length,
@@ -4129,7 +4167,8 @@ memcached_return_t memcached_sop_piped_exist(memcached_st *ptr, const char *key,
 
 /* APIs : get */
 
-memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_get_by_query(memcached_st *ptr,
+                                              const char *key, size_t key_length,
                                               memcached_bop_query_st *query,
                                               bool with_delete, bool drop_if_empty,
                                               memcached_coll_result_st *result)
@@ -4166,8 +4205,10 @@ memcached_return_t memcached_bop_get_by_query(memcached_st *ptr, const char *key
                      op);
 }
 
-memcached_return_t memcached_lop_get(memcached_st *ptr, const char *key, size_t key_length,
-                                     const int32_t index, bool with_delete, bool drop_if_empty,
+memcached_return_t memcached_lop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
+                                     const int32_t index,
+                                     bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result)
 {
   memcached_coll_query_st query;
@@ -4178,7 +4219,8 @@ memcached_return_t memcached_lop_get(memcached_st *ptr, const char *key, size_t 
                      LOP_GET_OP);
 }
 
-memcached_return_t memcached_lop_get_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_get_by_range(memcached_st *ptr,
+                                              const char *key, size_t key_length,
                                               const int32_t from, const int32_t to,
                                               bool with_delete, bool drop_if_empty,
                                               memcached_coll_result_st *result)
@@ -4191,8 +4233,10 @@ memcached_return_t memcached_lop_get_by_range(memcached_st *ptr, const char *key
                      LOP_GET_OP);
 }
 
-memcached_return_t memcached_sop_get(memcached_st *ptr, const char *key, size_t key_length,
-                                     size_t count, bool with_delete, bool drop_if_empty,
+memcached_return_t memcached_sop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
+                                     size_t count,
+                                     bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result)
 {
   memcached_coll_query_st query;
@@ -4203,7 +4247,8 @@ memcached_return_t memcached_sop_get(memcached_st *ptr, const char *key, size_t 
                      SOP_GET_OP);
 }
 
-memcached_return_t memcached_mop_get(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
                                      const char *mkey, size_t mkey_length,
                                      bool with_delete, bool drop_if_empty,
                                      memcached_coll_result_st *result)
@@ -4216,7 +4261,8 @@ memcached_return_t memcached_mop_get(memcached_st *ptr, const char *key, size_t 
                      MOP_GET_OP);
 }
 
-memcached_return_t memcached_mop_get_all(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_get_all(memcached_st *ptr,
+                                         const char *key, size_t key_length,
                                          bool with_delete, bool drop_if_empty,
                                          memcached_coll_result_st *result)
 {
@@ -4228,8 +4274,10 @@ memcached_return_t memcached_mop_get_all(memcached_st *ptr, const char *key, siz
                      MOP_GET_OP);
 }
 
-memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key, size_t key_length,
-                                             const char * const *mkeys, const size_t *mkeys_length,
+memcached_return_t memcached_mop_get_by_list(memcached_st *ptr,
+                                             const char *key, size_t key_length,
+                                             const char * const *mkeys,
+                                             const size_t *mkeys_length,
                                              size_t number_of_mkeys,
                                              bool with_delete, bool drop_if_empty,
                                              memcached_coll_result_st *result)
@@ -4242,7 +4290,8 @@ memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key,
                      MOP_GET_OP);
 }
 
-memcached_return_t memcached_bop_get(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_get(memcached_st *ptr,
+                                     const char *key, size_t key_length,
                                      const uint64_t bkey,
                                      memcached_coll_eflag_filter_st *eflag_filter,
                                      bool with_delete, bool drop_if_empty,
@@ -4256,7 +4305,8 @@ memcached_return_t memcached_bop_get(memcached_st *ptr, const char *key, size_t 
                      BOP_GET_OP);
 }
 
-memcached_return_t memcached_bop_get_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_get_by_range(memcached_st *ptr,
+                                              const char *key, size_t key_length,
                                               const uint64_t from, const uint64_t to,
                                               memcached_coll_eflag_filter_st *eflag_filter,
                                               const size_t offset, const size_t count,
@@ -4271,7 +4321,8 @@ memcached_return_t memcached_bop_get_by_range(memcached_st *ptr, const char *key
                      BOP_GET_OP);
 }
 
-memcached_return_t memcached_bop_ext_get(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_get(memcached_st *ptr,
+                                         const char *key, size_t key_length,
                                          const unsigned char *bkey, size_t bkey_length,
                                          memcached_coll_eflag_filter_st *eflag_filter,
                                          bool with_delete, bool drop_if_empty,
@@ -4285,7 +4336,8 @@ memcached_return_t memcached_bop_ext_get(memcached_st *ptr, const char *key, siz
                      BOP_GET_OP);
 }
 
-memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr,
+                                                  const char *key, size_t key_length,
                                                   const unsigned char *from, size_t from_length,
                                                   const unsigned char *to, size_t to_length,
                                                   memcached_coll_eflag_filter_st *eflag_filter,
@@ -4294,7 +4346,8 @@ memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr, const char 
                                                   memcached_coll_result_st *result)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length, eflag_filter, offset, count);
+  memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length,
+                                     eflag_filter, offset, count);
 
   return do_coll_get(ptr, key, key_length,
                      &query, with_delete, drop_if_empty, result,
@@ -4302,7 +4355,8 @@ memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr, const char 
 }
 
 memcached_return_t memcached_bop_mget(memcached_st *ptr,
-                                      const char * const *keys, const size_t *key_length,
+                                      const char * const *keys,
+                                      const size_t *key_length,
                                       size_t number_of_keys,
                                       memcached_coll_query_st *query)
 {
@@ -4311,14 +4365,16 @@ memcached_return_t memcached_bop_mget(memcached_st *ptr,
 
 memcached_return_t memcached_bop_smget(memcached_st *ptr,
                                        const char * const *keys,
-                                       const size_t *key_length, size_t number_of_keys,
+                                       const size_t *key_length,
+                                       size_t number_of_keys,
                                        memcached_bop_query_st *query,
                                        memcached_coll_smget_result_st *result)
 {
   return do_bop_smget(ptr, keys, key_length, number_of_keys, query, result);
 }
 
-memcached_return_t memcached_bop_find_position(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_find_position(memcached_st *ptr,
+                                               const char *key, size_t key_length,
                                                const uint64_t bkey,
                                                memcached_coll_order_t order,
                                                size_t *position)
@@ -4335,7 +4391,8 @@ memcached_return_t memcached_bop_find_position(memcached_st *ptr, const char *ke
   return do_bop_find_position(ptr, key, key_length, &query, order, position, BOP_POSI_OP);
 }
 
-memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr,
+                                                   const char *key, size_t key_length,
                                                    const unsigned char *bkey, size_t bkey_length,
                                                    memcached_coll_order_t order,
                                                    size_t *position)
@@ -4408,25 +4465,29 @@ memcached_return_t memcached_bop_ext_find_position_with_get(memcached_st *ptr,
 
 /* APIs : create */
 
-memcached_return_t memcached_lop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_lop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attributes)
 {
   return do_coll_create(ptr, key, key_length, attributes, LOP_CREATE_OP);
 }
 
-memcached_return_t memcached_sop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_sop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attributes)
 {
   return do_coll_create(ptr, key, key_length, attributes, SOP_CREATE_OP);
 }
 
-memcached_return_t memcached_mop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_mop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attributes)
 {
   return do_coll_create(ptr, key, key_length, attributes, MOP_CREATE_OP);
 }
 
-memcached_return_t memcached_bop_create(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_create(memcached_st *ptr,
+                                        const char *key, size_t key_length,
                                         memcached_coll_create_attrs_st *attributes)
 {
   return do_coll_create(ptr, key, key_length, attributes, BOP_CREATE_OP);
@@ -4446,7 +4507,8 @@ memcached_return_t memcached_bop_count(memcached_st *ptr,
   return do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
 }
 
-memcached_return_t memcached_bop_count_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_count_by_range(memcached_st *ptr,
+                                                const char *key, size_t key_length,
                                                 const uint64_t from, const uint64_t to,
                                                 memcached_coll_eflag_filter_st *eflag_filter,
                                                 size_t *count)
@@ -4457,7 +4519,8 @@ memcached_return_t memcached_bop_count_by_range(memcached_st *ptr, const char *k
   return do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
 }
 
-memcached_return_t memcached_bop_ext_count(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_count(memcached_st *ptr,
+                                           const char *key, size_t key_length,
                                            const unsigned char *bkey, size_t bkey_length,
                                            memcached_coll_eflag_filter_st *eflag_filter,
                                            size_t *count)
@@ -4468,7 +4531,8 @@ memcached_return_t memcached_bop_ext_count(memcached_st *ptr, const char *key, s
   return do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
 }
 
-memcached_return_t memcached_bop_ext_count_by_range(memcached_st *ptr, const char *key, size_t key_length,
+memcached_return_t memcached_bop_ext_count_by_range(memcached_st *ptr,
+                                                    const char *key, size_t key_length,
                                                     const unsigned char *from, size_t from_length,
                                                     const unsigned char *to, size_t to_length,
                                                     memcached_coll_eflag_filter_st *eflag_filter,
@@ -4535,7 +4599,7 @@ memcached_return_t memcached_coll_create_attrs_set_maxcount(memcached_coll_creat
 }
 
 memcached_return_t memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *ptr,
-                                              memcached_coll_overflowaction_t overflowaction)
+                                                                  memcached_coll_overflowaction_t overflowaction)
 {
   ptr->overflowaction = overflowaction;
   ptr->options.set_overflowaction = true;
@@ -4571,7 +4635,8 @@ static void memcached_coll_query_init(memcached_coll_query_st *ptr)
   return;
 }
 
-memcached_return_t memcached_lop_query_init(memcached_coll_query_st *ptr, const int32_t index)
+memcached_return_t memcached_lop_query_init(memcached_coll_query_st *ptr,
+                                            const int32_t index)
 {
   memcached_coll_query_init(ptr);
 
@@ -4582,7 +4647,8 @@ memcached_return_t memcached_lop_query_init(memcached_coll_query_st *ptr, const 
 }
 
 memcached_return_t memcached_lop_range_query_init(memcached_coll_query_st *ptr,
-                                                  const int32_t index_from, const int32_t index_to)
+                                                  const int32_t index_from,
+                                                  const int32_t index_to)
 {
   memcached_coll_query_init(ptr);
 
@@ -4630,8 +4696,9 @@ memcached_return_t memcached_mop_query_init(memcached_coll_query_st *ptr,
 }
 
 memcached_return_t memcached_mop_mkey_list_query_init(memcached_coll_query_st *ptr,
-                                                  const char * const *mkeys, const size_t *mkeys_length,
-                                                  size_t number_of_mkeys)
+                                                      const char * const *mkeys,
+                                                      const size_t *mkeys_length,
+                                                      size_t number_of_mkeys)
 {
   memcached_coll_query_init(ptr);
 
@@ -4751,7 +4818,8 @@ memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *pt
 
 memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_st *ptr,
                                                     const size_t fwhere,
-                                                    const unsigned char *fvalue, const size_t fvalue_length,
+                                                    const unsigned char *fvalue,
+                                                    const size_t fvalue_length,
                                                     memcached_coll_comp_t comp_op)
 {
   if (not ptr)
@@ -4785,11 +4853,11 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_
 }
 
 memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
-                                                    const size_t fwhere,
-                                                    const unsigned char *fvalues,
-                                                    const size_t fvalue_length,
-                                                    const size_t fvalue_count,
-                                                    memcached_coll_comp_t comp_op)
+                                                     const size_t fwhere,
+                                                     const unsigned char *fvalues,
+                                                     const size_t fvalue_length,
+                                                     const size_t fvalue_count,
+                                                     memcached_coll_comp_t comp_op)
 {
   if (not ptr)
   {
@@ -4835,7 +4903,8 @@ memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter
 }
 
 memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_filter_st *ptr,
-                                                           const unsigned char *foperand, const size_t foperand_length,
+                                                           const unsigned char *foperand,
+                                                           const size_t foperand_length,
                                                            memcached_coll_bitwise_t bitwise_op)
 {
   if (not ptr)
@@ -4866,7 +4935,8 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
 /* memcached_coll_update_filter_st */
 
 memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
-                                                     const unsigned char *fvalue, const size_t fvalue_length)
+                                                     const unsigned char *fvalue,
+                                                     const size_t fvalue_length)
 {
   if (not ptr)
   {
@@ -4889,7 +4959,8 @@ memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filte
 }
 
 memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_update_filter_st *ptr,
-                                                            const size_t fwhere, memcached_coll_bitwise_t bitwise_op)
+                                                            const size_t fwhere,
+                                                            memcached_coll_bitwise_t bitwise_op)
 {
   if (not ptr)
   {
@@ -4909,7 +4980,8 @@ memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_updat
   return MEMCACHED_SUCCESS;
 }
 
-size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr, char *buffer, size_t buffer_length)
+size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr,
+                                    char *buffer, size_t buffer_length)
 {
   if (buffer_length <= ptr->length*2)
     return 0;
@@ -4924,12 +4996,14 @@ size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr, char *buffer,
 
 /* API : piped_insert && piped_insert_bulk */
 
-memcached_return_t memcached_lop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_lop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const int32_t *indexes,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attributes,
-                                              memcached_return_t *results, memcached_return_t *piped_rc)
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc)
 {
   memcached_return_t rc;
 
@@ -4948,11 +5022,13 @@ memcached_return_t memcached_lop_piped_insert(memcached_st *ptr, const char *key
   return rc;
 }
 
-memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_sop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attributes,
-                                              memcached_return_t *results, memcached_return_t *piped_rc)
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc)
 {
   memcached_return_t rc;
 
@@ -4971,12 +5047,14 @@ memcached_return_t memcached_sop_piped_insert(memcached_st *ptr, const char *key
   return rc;
 }
 
-memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_mop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const char * const *mkeys, const size_t *mkeys_length,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attributes,
-                                              memcached_return_t *results, memcached_return_t *piped_rc)
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc)
 {
   memcached_return_t rc;
 
@@ -4995,13 +5073,15 @@ memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key
   return rc;
 }
 
-memcached_return_t memcached_bop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_bop_piped_insert(memcached_st *ptr,
+                                              const char *key, const size_t key_length,
                                               const size_t number_of_piped_items,
                                               const uint64_t *bkeys,
                                               const unsigned char * const *eflags, const size_t *eflags_length,
                                               const char * const *values, const size_t *values_length,
                                               memcached_coll_create_attrs_st *attributes,
-                                              memcached_return_t *results, memcached_return_t *piped_rc)
+                                              memcached_return_t *results,
+                                              memcached_return_t *piped_rc)
 {
   memcached_return_t rc;
 
@@ -5020,13 +5100,15 @@ memcached_return_t memcached_bop_piped_insert(memcached_st *ptr, const char *key
   return rc;
 }
 
-memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
+memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr,
+                                                  const char *key, const size_t key_length,
                                                   const size_t number_of_piped_items,
                                                   const unsigned char * const *bkeys, const size_t *bkeys_length,
                                                   const unsigned char * const *eflags, const size_t *eflags_length,
                                                   const char * const *values, const size_t *values_length,
                                                   memcached_coll_create_attrs_st *attributes,
-                                                  memcached_return_t *results, memcached_return_t *piped_rc)
+                                                  memcached_return_t *results,
+                                                  memcached_return_t *piped_rc)
 {
   memcached_return_t rc;
 
@@ -5047,7 +5129,8 @@ memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr, const char 
 
 memcached_return_t memcached_lop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const int32_t index,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attributes,
@@ -5066,7 +5149,8 @@ memcached_return_t memcached_lop_piped_insert_bulk(memcached_st *ptr,
 
 memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attributes,
                                                    memcached_return_t *results,
@@ -5082,7 +5166,8 @@ memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
 
 memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const char *mkey, size_t mkey_length,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attributes,
@@ -5101,7 +5186,8 @@ memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
 
 memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
-                                                   const size_t *key_length, size_t number_of_keys,
+                                                   const size_t *key_length,
+                                                   size_t number_of_keys,
                                                    const uint64_t bkey,
                                                    const unsigned char *eflag, size_t eflag_length,
                                                    const char *value, size_t value_length,
@@ -5121,7 +5207,8 @@ memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
 
 memcached_return_t memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
                                                        const char * const *keys,
-                                                       const size_t *key_length, size_t number_of_keys,
+                                                       const size_t *key_length,
+                                                       size_t number_of_keys,
                                                        const unsigned char *bkey, size_t bkey_length,
                                                        const unsigned char *eflag, size_t eflag_length,
                                                        const char *value, size_t value_length,
