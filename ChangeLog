@@ -1,3 +1,17 @@
+2020-12-07 [version 1.11.0]
+	* [FEATURE] supported space-separated keys.
+	* [FEATURE] supported mget command, efficient for getting multiple items.
+	* [FEATURE] requested version operation when connect to server.
+	* [FEATURE] increased max key length: 250 => 4K.
+	* [ENHANCE] do memcached_quit_server() if poll timeout occurs in io_flush.
+	* [ENHANCE] increased cluster max size for multi key op: 200 => 1000.
+	* [IMPROVE] reduced string copy when convert eflag/update_filter to string.
+	* [FIX] set purge recursion flag to false before return.
+	* [FIX] handled the host failures in the multi key operation.
+	* [FIX] unset noreply before get operation in noreply_test().
+	* [FIX] fixed unallocated memory access in mkey fetch.
+	* [OTHERS] Refactored some code for readabiblity.
+
 2020-10-22 [version 1.10.5]
 	* [FEATURE] bop incr/decr with initial option.
 	* [FIX] registered "NULL" if hostname lookup fails in do_add_client_info().
