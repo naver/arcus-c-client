@@ -1125,7 +1125,7 @@ Sort-Merge 조회를 수행하는 함수는 아래와 같다.
 ``` c
 memcached_return_t memcached_bop_smget(memcached_st *ptr, const char * const *keys, const size_t *keys_length,
                                        size_t num_of_keys, memcached_bop_query_st *query,
-                                       memcached_bop_smget_result_st *result)
+                                       memcached_coll_smget_result_st *result)
 ```
 - keys, keys_length: 다수 bt+tree item들의 key array
 - number_of_keys: key 개수
@@ -1174,35 +1174,36 @@ Response code는 아래와 같다.
     - 참고로 smget에 참여하는 B+tree들은 maxcount, maxbkeyrange, overflowaction이 모두 동일해야 함.
     - arcus-memcached 1.11.3 이후로 attribute 통일 제약이 사라짐.
 
-Sort-merge 조회 결과는 memcached_bop_smget_result_t 구조체로 받아온다.
-Sort-merge 조회하기 전에 memcached_bop_smget_result_t 구조체를 초기화하여 사용해야 하고,
-memcached_bop_smget_result_t 구조체에서 조회 결과를 모두 얻은 후에는 다시 반환하여야 한다.
+Sort-merge 조회 결과는 memcached_coll_smget_result_st 구조체로 받아온다.
+Sort-merge 조회하기 전에 memcached_coll_smget_result_st 구조체를 초기화하여 사용해야 하고,
+memcached_coll_smget_result_st 구조체에서 조회 결과를 모두 얻은 후에는 다시 반환하여야 한다.
 이를 수행하는 두 함수는 아래와 같다.
 
 ``` c
-memcached_bop_smget_result_st *memcached_bop_smget_result_create(const memcached_st *ptr, memcached_bop_smget_result_st *result)
-void                           memcached_bop_smget_result_free(memcached_bop_smget_result_st *result)
+memcached_coll_smget_result_st *memcached_coll_smget_result_create(const memcached_st *ptr,
+                                                                   memcached_coll_smget_result_st *result)
+void                            memcached_coll_smget_result_free(memcached_coll_smget_result_st *result)
 ```
 
-함수                              | 기능
---------------------------------- | ---------------------------------------------------------------
-memcached_bop_smget_result_create | result 구조체를 초기화한다. result에 NULL을 넣으면 새로 allocate 하여 반환한다.
-memcached_bop_smget_result_free   | result 구조체를 초기화하고 allocate 된 경우 free 한다.
+함수                               | 기능
+---------------------------------- | ---------------------------------------------------------------
+memcached_coll_smget_result_create | result 구조체를 초기화한다. result에 NULL을 넣으면 새로 allocate 하여 반환한다.
+memcached_coll_smget_result_free   | result 구조체를 초기화하고 allocate 된 경우 free 한다.
 
 
-memcached_bop_smget_result_t 구조체에서 조회 결과를 얻기 위한 함수들은 아래와 같다.
+memcached_coll_smget_result_st 구조체에서 조회 결과를 얻기 위한 함수들은 아래와 같다.
 
 ``` c
-size_t                    memcached_bop_smget_result_get_count(memcached_bop_smget_result_st *result)
-const char *              memcached_bop_smget_result_get_key(memcached_bop_smget_result_st *result, size_t index)
-uint64_t                  memcached_bop_smget_result_get_bkey(memcached_bop_smget_result_st *result, size_t index)
-memcached_hexadecimal_st *memcached_bop_smget_result_get_bkey_ext(memcached_bop_smget_result_st *result, size_t index)
-memcached_hexadecimal_st *memcached_bop_smget_result_get_eflag(memcached_bop_smget_result_st *result, size_t index)
-const char *              memcached_bop_smget_result_get_value(memcached_bop_smget_result_st *result, size_t index)
-size_t                    memcached_bop_smget_result_get_value_length(memcached_bop_smget_result_st *result, size_t index)
-size_t                    memcached_bop_smget_result_get_missed_key_count(memcached_bop_smget_result_st *result)
-const char *              memcached_bop_smget_result_get_missed_key(memcached_bop_smget_result_st *result, size_t index)
-size_t                    memcached_bop_smget_result_get_missed_key_length(memcached_bop_smget_result_st *result, size_t index)
+size_t                    memcached_coll_smget_result_get_count(memcached_coll_smget_result_st *result)
+const char *              memcached_coll_smget_result_get_key(memcached_coll_smget_result_st *result, size_t index)
+uint64_t                  memcached_coll_smget_result_get_bkey(memcached_coll_smget_result_st *result, size_t index)
+memcached_hexadecimal_st *memcached_coll_smget_result_get_bkey_ext(memcached_coll_smget_result_st *result, size_t index)
+memcached_hexadecimal_st *memcached_coll_smget_result_get_eflag(memcached_coll_smget_result_st *result, size_t index)
+const char *              memcached_coll_smget_result_get_value(memcached_coll_smget_result_st *result, size_t index)
+size_t                    memcached_coll_smget_result_get_value_length(memcached_coll_smget_result_st *result, size_t index)
+size_t                    memcached_coll_smget_result_get_missed_key_count(memcached_coll_smget_result_st *result)
+const char *              memcached_coll_smget_result_get_missed_key(memcached_coll_smget_result_st *result, size_t index)
+size_t                    memcached_coll_smget_result_get_missed_key_length(memcached_coll_smget_result_st *result, size_t index)
 memcached_return_t        memcached_coll_smget_result_get_missed_cause(memcached_coll_smget_result_st *result, size_t index)
 size_t                    memcached_coll_smget_result_get_trimmed_key_count(memcached_coll_smget_result_st *result)
 const char *              memcached_coll_smget_result_get_trimmed_key(memcached_coll_smget_result_st *result, size_t index)
@@ -1211,24 +1212,24 @@ uint64_t                  memcached_coll_smget_result_get_trimmed_bkey(memcached
 memcached_hexadecimal_st *memcached_coll_smget_result_get_trimmed_bkey_ext(memcached_coll_smget_result_st *result, size_t index)
 ```
 
-함수                                              | 기능
-------------------------------------------------- | ---------------------------------------------------------------
-memcached_bop_smget_result_get_count              | 조회 결과의 element 개수
-memcached_bop_smget_result_get_key                | Element array에서 index 위치에 있는 element의 key
-memcached_bop_smget_result_get_bkey               | Element array에서 index 위치에 있는 element의 unsigned int bkey
-memcached_bop_smget_result_get_bkey_ext           | Element array에서 index 위치에 있는 element의 byte array bkey
-memcached_bop_smget_result_get_eflag              | Element array에서 index 위치에 있는 element의 eflag
-memcached_bop_smget_result_get_value              | Element array에서 index 위치에 있는 element의 value
-memcached_bop_smget_result_get_value_length       | Element array에서 index 위치에 있는 element의 value 길이
-memcached_bop_smget_result_get_missed_key_count   | 조회 결과의 missed key 개수
-memcached_bop_smget_result_get_missed_key         | Missed key array에서 index 위치에 있는 key
-memcached_bop_smget_result_get_missed_key_length  | Missed key array에서 index 위치에 있는 key 길이
-memcached_bop_smget_result_get_missed_cause       | 해당 missed key가 miss된 원인 (신규 sort-merge 조회 한정)
-memcached_bop_smget_result_get_trimmed_key_count  | 조회 결과의 trimmed key 개수 (신규 sort-merge 조회 한정)
-memcached_bop_smget_result_get_trimmed_key_key    | Trimmed key array에서 index 위치에 있는 key (신규 sort-merge 조회 한정)
-memcached_bop_smget_result_get_trimmed_key_length | Trimmed key array에서 index 위치에 있는 key 길이 (신규 sort-merge 조회 한정)
-memcached_bop_smget_result_get_trimmed_bkey       | 해당 trimmed key의 마지막 unsigned int bkey (신규 sort-merge 조회 한정)
-memcached_bop_smget_result_get_trimmed_bkey_ext   | 해당 trimmed key의 마지막 byte array bkey (신규 sort-merge 조회 한정)
+함수                                               | 기능
+-------------------------------------------------- | ---------------------------------------------------------------
+memcached_coll_smget_result_get_count              | 조회 결과의 element 개수
+memcached_coll_smget_result_get_key                | Element array에서 index 위치에 있는 element의 key
+memcached_coll_smget_result_get_bkey               | Element array에서 index 위치에 있는 element의 unsigned int bkey
+memcached_coll_smget_result_get_bkey_ext           | Element array에서 index 위치에 있는 element의 byte array bkey
+memcached_coll_smget_result_get_eflag              | Element array에서 index 위치에 있는 element의 eflag
+memcached_coll_smget_result_get_value              | Element array에서 index 위치에 있는 element의 value
+memcached_coll_smget_result_get_value_length       | Element array에서 index 위치에 있는 element의 value 길이
+memcached_coll_smget_result_get_missed_key_count   | 조회 결과의 missed key 개수
+memcached_coll_smget_result_get_missed_key         | Missed key array에서 index 위치에 있는 key
+memcached_coll_smget_result_get_missed_key_length  | Missed key array에서 index 위치에 있는 key 길이
+memcached_coll_smget_result_get_missed_cause       | 해당 missed key가 miss된 원인 (신규 sort-merge 조회 한정)
+memcached_coll_smget_result_get_trimmed_key_count  | 조회 결과의 trimmed key 개수 (신규 sort-merge 조회 한정)
+memcached_coll_smget_result_get_trimmed_key_key    | Trimmed key array에서 index 위치에 있는 key (신규 sort-merge 조회 한정)
+memcached_coll_smget_result_get_trimmed_key_length | Trimmed key array에서 index 위치에 있는 key 길이 (신규 sort-merge 조회 한정)
+memcached_coll_smget_result_get_trimmed_bkey       | 해당 trimmed key의 마지막 unsigned int bkey (신규 sort-merge 조회 한정)
+memcached_coll_smget_result_get_trimmed_bkey_ext   | 해당 trimmed key의 마지막 byte array bkey (신규 sort-merge 조회 한정)
 
 B+tree element sort-merge 조회하는 예제는 아래와 같다.
 
@@ -1266,8 +1267,8 @@ void arcus_btree_element_smget(memcached_st *memc)
                                       (unsigned char *)&eflag, sizeof(eflag), value, value_length, &attributes);
     }
 
-    memcached_bop_smget_result_st smget_result_object;
-    memcached_bop_smget_result_st *smget_result = memcached_bop_smget_result_create(memc, &smget_result_object);
+    memcached_coll_smget_result_st smget_result_object;
+    memcached_coll_smget_result_st *smget_result = memcached_coll_smget_result_create(memc, &smget_result_object);
 
     uint32_t bkey_from = 0;
     uint32_t bkey_to = htonl(UINT32_MAX);
@@ -1280,13 +1281,13 @@ void arcus_btree_element_smget(memcached_st *memc)
     // smget을 수행한다.
     rc = memcached_bop_smget(memc, keys, key_length, 100, &query, smget_result);
     assert(MEMCACHED_END == memcached_get_last_response_code(memc));
-    aseert(100 == memcached_bop_smget_result_get_count(smget_result));
-    aseert(0 == memcached_bop_smget_result_get_missed_key_count(smget_result));
-    aseert(0 == memcached_bop_smget_result_get_trimmed_key_count(smget_result));
+    aseert(100 == memcached_coll_smget_result_get_count(smget_result));
+    aseert(0 == memcached_coll_smget_result_get_missed_key_count(smget_result));
+    aseert(0 == memcached_coll_smget_result_get_trimmed_key_count(smget_result));
 
     if (rc == MEMCACHED_SUCCESS) {
         uint32_t last_bkey = bkey_from;
-        for (uint32_t i=0; i<memcached_bop_smget_result_get_count(smget_result); i++) {
+        for (uint32_t i=0; i<memcached_coll_smget_result_get_count(smget_result); i++) {
             memcached_hexadecimal_st bkey = smget_result->sub_keys[i].bkey_ext;
             char bkey_buf[64];
             memcached_hexadecimal_to_str(&bkey, bkey_buf, 64);
@@ -1301,7 +1302,7 @@ void arcus_btree_element_smget(memcached_st *memc)
         return;
     }
 
-    memcached_bop_smget_result_free(smget_result);
+    memcached_coll_smget_result_free(smget_result);
 
     for (int i=0; i<100; i++) {
         free((void*)keys[i]);
