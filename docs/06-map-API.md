@@ -26,8 +26,10 @@ Map item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 새로운 empty map item을 생성한다.
 
 ``` c
-emcached_return_t memcached_mop_create(memcached_st *ptr, const char *key, size_t key_length,
-                                       memcached_coll_create_attrs_st *attributes);
+memcached_return_t
+memcached_mop_create(memcached_st *ptr,
+                     const char *key, size_t key_length,
+                     memcached_coll_create_attrs_st *attributes);
 ```
 
 - key: map item의 key
@@ -47,22 +49,29 @@ Attributes 구조체의 초기화 시에는 필수 속성 정보인 flags, expti
 
 
 ``` c
-memcached_return_t memcached_coll_create_attrs_init(memcached_coll_create_attrs_st *attributes,
-                                                    uint32_t flags, uint32_t exptime, uint32_t maxcount)
+memcached_return_t
+memcached_coll_create_attrs_init(memcached_coll_create_attrs_st *attributes,
+                                 uint32_t flags, uint32_t exptime, uint32_t maxcount)
 ```
 
 그 외에, 선택적 속성들은 attributes 구조체를 초기화한 이후,
 아래의 함수를 이용하여 개별적으로 지정할 수 있다.
 
 ``` c
-memcached_return_t memcached_coll_create_attrs_set_flags(memcached_coll_create_attrs_st *attributes, uint32_t flags)
-memcached_return_t memcached_coll_create_attrs_set_expiretime(memcached_coll_create_attrs_st *attributes,
-                                                              uint32_t expiretime)
-memcached_return_t memcached_coll_create_attrs_set_maxcount(memcached_coll_create_attrs_st *attributes,
-                                                            uint32_t maxcount)
-memcached_return_t memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
-                                                                  memcached_coll_overflowaction_t overflowaction)
-memcached_return_t memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes)
+memcached_return_t
+memcached_coll_create_attrs_set_flags(memcached_coll_create_attrs_st *attributes,
+                                      uint32_t flags)
+memcached_return_t
+memcached_coll_create_attrs_set_expiretime(memcached_coll_create_attrs_st *attributes,
+                                           uint32_t expiretime)
+memcached_return_t
+memcached_coll_create_attrs_set_maxcount(memcached_coll_create_attrs_st *attributes,
+                                         uint32_t maxcount)
+memcached_return_t
+memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
+                                               memcached_coll_overflowaction_t overflowaction)
+memcached_return_t
+memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes)
 ```
 
 - memcached_coll_create_attrs_set_flags : attributes에 flags 값을 설정한다.
@@ -92,12 +101,14 @@ void arcus_map_item_create(memcached_st *memc)
     memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
 
     // 비어있는 맵을 생성한다.
-    rc= memcached_mop_create(memc, "map:an_empty_map", strlen("map:an_empty_map"), &attributes);
+    rc= memcached_mop_create(memc, "map:an_empty_map", strlen("map:an_empty_map"),
+                             &attributes);
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_CREATED == memcached_get_last_response_code(memc));
 
     // 맵이 이미 존재한다면 실패한다.
-    rc= memcached_mop_create(memc, "map:an_empty_map", strlen("map:an_empty_map"), &attributes);
+    rc= memcached_mop_create(memc, "map:an_empty_map", strlen("map:an_empty_map"),
+                             &attributes);
     assert(MEMCACHED_SUCCESS != rc);
     assert(MEMCACHED_EXISTS == memcached_get_last_response_code(memc));
 }
@@ -109,10 +120,12 @@ void arcus_map_item_create(memcached_st *memc)
 Map에 하나의 element를 삽입하는 함수이다.
 
 ``` c
-memcached_return_t memcached_mop_insert(memcached_st *ptr, const char *key, size_t key_length,
-                                        const char *mkey, size_t mkey_length,
-                                        const char *value, size_t value_length,
-                                        memcached_coll_create_attrs_st *attributes)
+memcached_return_t
+memcached_mop_insert(memcached_st *ptr,
+                     const char *key, size_t key_length,
+                     const char *mkey, size_t mkey_length,
+                     const char *value, size_t value_length,
+                     memcached_coll_create_attrs_st *attributes)
 ```
 
 - key, key_length: map item의 key
@@ -146,17 +159,20 @@ void arcus_map_element_insert(memcached_st *memc)
     memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
 
     // 1. CREATED_STORED
-    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey", strlen("mkey"), "value", strlen("value"), &attributes);
+    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey", strlen("mkey"),
+                             "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
 
     // 2. STORED
-    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey1", strlne("mkey1"), "value", strlen("value"), &attributes);
+    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey1", strlne("mkey1"),
+                             "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
 
     // 3. ELEMENT_EXIST
-    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey1", strlen("mkey1"), "value", strlen("value"), &attributes);
+    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey1", strlen("mkey1"),
+                             "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS != rc);
     assert(MEMCACHED_ELEMENT_EXIST == rc);
 }
@@ -168,9 +184,11 @@ void arcus_map_element_insert(memcached_st *memc)
 Map에 하나의 element를 변경하는 함수이다. 주어진 mkey를 가진 element의 value를 변경한다.
 
 ``` c
-memcached_return_t memcached_mop_update(memcached_st *ptr, const char *key, size_t key_length,
-                                        const char *mkey, size_t mkey_length,
-                                        const char *value, size_t value_length)
+memcached_return_t
+memcached_mop_update(memcached_st *ptr,
+                     const char *key, size_t key_length,
+                     const char *mkey, size_t mkey_length,
+                     const char *value, size_t value_length)
 ```
 
 - key, key_length: map item의 key
@@ -200,12 +218,14 @@ void arcus_map_element_update(memcached_st *memc)
     memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
 
     // 1. CREATED_STORED
-    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey", strlen("mkey"), "value", strlen("value"), &attributes);
+    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey", strlen("mkey"),
+                             "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
 
     // 2. UPDATED
-    rc= memcached_mop_update(memc, "a_map", strlen("a_map"), "mkey", strlne("mkey"), "new_value", strlen("new_value"));
+    rc= memcached_mop_update(memc, "a_map", strlen("a_map"), "mkey", strlne("mkey"),
+                             "new_value", strlen("new_value"));
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_UPDATED == memcached_get_last_response_code(memc));
 }
@@ -218,15 +238,20 @@ Map element를 삭제하는 함수는 두 가지가 있다.
 첫째, map에서 하나의 mkey로 하나의 element만 삭제하는 함수이다.
 
 ``` c
-memcached_return_t memcached_mop_delete(memcached_st *ptr, const char *key, size_t key_length,
-                                        const char *mkey, size_t mkey_length, bool drop_if_empty)
+memcached_return_t
+memcached_mop_delete(memcached_st *ptr,
+                     const char *key, size_t key_length,
+                     const char *mkey, size_t mkey_length,
+                     bool drop_if_empty)
 ```
 
 둘째, map의 element 전체를 삭제하는 함수이다.
 
 ``` c
-memcached_return_t memcached_mop_delete_all(memcached_st *ptr, const char *key, size_t key_length,
-                                            bool drop_if_empty)
+memcached_return_t
+memcached_mop_delete_all(memcached_st *ptr,
+                         const char *key, size_t key_length,
+                         bool drop_if_empty)
 ```
 - key, key_length: map item의 key
 - mkey, mkey_length: 삭제할 element의 mkey
@@ -258,10 +283,12 @@ void arcus_map_element_delete(memcached_st *memc)
     memcached_return_t rc;
 
     // 테스트 데이터를 삽입한다.
-    rc= memcached_mop_insert(memc, "map:a_map", strlen("map:a_map"), "mkey0", strlen("mkey0"), "value", strlen("value"), &attributes);
+    rc= memcached_mop_insert(memc, "map:a_map", strlen("map:a_map"), "mkey0", strlen("mkey0"),
+                             "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS == rc);
 
-    rc= memcached_mop_insert(memc, "map:a_map", strlen("map:a_map"), "mkey1", strlen("mkey1"), "value", strlen("value"), &attributes);
+    rc= memcached_mop_insert(memc, "map:a_map", strlen("map:a_map"), "mkey1", strlen("mkey1"),
+                             "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS == rc);
 
     // mkey0에 해당하는 element를 삭제한다.
@@ -283,27 +310,33 @@ Map element를 조회하는 함수는 세 가지가 있다.
 첫째, 하나의 map mkey로 하나의 element만 조회하는 함수이다.
 
 ``` c
-memcached_return_t memcached_mop_get(memcached_st *ptr, const char *key, size_t key_length,
-                                     const char *mkey, size_t mkey_length,
-                                     bool with_delete, bool drop_if_empty,
-                                     memcached_coll_result_st *result)
+memcached_return_t
+memcached_mop_get(memcached_st *ptr,
+                  const char *key, size_t key_length,
+                  const char *mkey, size_t mkey_length,
+                  bool with_delete, bool drop_if_empty,
+                  memcached_coll_result_st *result)
 ```
 
 둘째, map의 전체 element를 조회하는 함수이다.
 
 ``` c
-memcached_return_t memcached_mop_get_all(memcached_st *ptr, const char *key, size_t key_length,
-                                         bool with_delete, bool drop_if_empty,
-                                         memcached_coll_result_st *result)
+memcached_return_t
+memcached_mop_get_all(memcached_st *ptr,
+                  const char *key, size_t key_length,
+                  bool with_delete, bool drop_if_empty,
+                  memcached_coll_result_st *result)
 ```
 
 셋째, mkey list에 해당하는 element들을 조회하는 함수이다.
 
 ``` c
-memcached_return_t memcached_mop_get_by_list(memcached_st *ptr, const char *key, size_t key_length,
-                                             const char * const *mkeys, const size_t *mkeys_length,
-                                             bool with_delete, bool drop_if_empty,
-                                             memcached_coll_result_st *result)
+memcached_return_t
+memcached_mop_get_by_list(memcached_st *ptr,
+                  const char *key, size_t key_length,
+                  const char * const *mkeys, const size_t *mkeys_length,
+                  bool with_delete, bool drop_if_empty,
+                  memcached_coll_result_st *result)
 ```
 
 - key, key_length: map item의 key
@@ -330,16 +363,25 @@ Response code는 아래와 같다.
 
 
 ``` c
-memcached_coll_result_st *memcached_coll_result_create(const memcached_st *ptr, memcached_coll_result_st *result)
-void                      memcached_coll_result_free(memcached_coll_result_st *result)
+memcached_coll_result_st *
+memcached_coll_result_create(const memcached_st *ptr, memcached_coll_result_st *result)
+void
+memcached_coll_result_free(memcached_coll_result_st *result)
 
-memcached_coll_type_t     memcached_coll_result_get_type(memcached_coll_result_st *result)
-size_t                    memcached_coll_result_get_count(memcached_coll_result_st *result)
-uint32_t                  memcached_coll_result_get_flags(memcached_coll_result_st *result)
-const char *              memcached_coll_result_get_mkey(memcached_coll_result_st *result, size_t index)
-size_t                    memcached_coll_result_get_mkey_length(memcached_coll_result_st *result, size_t index)
-const char *              memcached_coll_result_get_value(memcached_coll_result_st *result, size_t index)
-size_t                    memcached_coll_result_get_value_length(memcached_coll_result_st *result, size_t index)
+memcached_coll_type_t
+memcached_coll_result_get_type(memcached_coll_result_st *result)
+size_t
+memcached_coll_result_get_count(memcached_coll_result_st *result)
+uint32_t
+memcached_coll_result_get_flags(memcached_coll_result_st *result)
+const char *
+memcached_coll_result_get_mkey(memcached_coll_result_st *result, size_t index)
+size_t
+memcached_coll_result_get_mkey_length(memcached_coll_result_st *result, size_t index)
+const char *
+memcached_coll_result_get_value(memcached_coll_result_st *result, size_t index)
+size_t
+memcached_coll_result_get_value_length(memcached_coll_result_st *result, size_t index)
 ```
 
 Map element를 조회하는 예제는 아래와 같다.
@@ -361,7 +403,8 @@ void arcus_map_element_get(memcached_st *memc)
         char buffer[15];
         size_t mkey_len = snprintf(mkey, 15, "mkey%d", i);
         size_t buffer_len= snprintf(buffer, 15, "value%d", i);
-        rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), mkey, mkey_len, buffer, buffer_len, &attributes);
+        rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), mkey, mkey_len,
+                                 buffer, buffer_len, &attributes);
         assert(MEMCACHED_SUCCESS == rc);
     }
 
@@ -370,7 +413,8 @@ void arcus_map_element_get(memcached_st *memc)
     size_t not_mkeys_length[]= { 8, 8, 8 };
     result = memcached_coll_result_create(memc, NULL);
 
-    rc= memcached_mop_get_by_list(memc, "a_map", strlen("a_map"), not_mkeys, not_mkeys_length, 3, false, false, result);
+    rc= memcached_mop_get_by_list(memc, "a_map", strlen("a_map"), not_mkeys, not_mkeys_length, 3,
+                                  false, false, result);
     assert(MEMCACHED_SUCCESS != rc);
     assert(MEMCACHED_NOTFOUND_ELEMENT == memcached_get_last_response_code(memc));
 
@@ -381,7 +425,8 @@ void arcus_map_element_get(memcached_st *memc)
     size_t mkeys_length[]= { 5, 5, 5, 5, 5, 5 };
     result = memcached_coll_result_create(memc, NULL);
 
-    rc= memcached_mop_get_by_list(memc, "a_map", strlen("a_map"), mkeys, mkeys_length, 6, true, true, result);
+    rc= memcached_mop_get_by_list(memc, "a_map", strlen("a_map"), mkeys, mkeys_length, 6,
+                                  true, true, result);
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_DELETED == memcached_get_last_response_code(memc));
 
@@ -415,12 +460,15 @@ Map에 여러 element를 한번에 삽입하는 함수는 두 가지가 있다.
 첫째, 하나의 key가 가리키는 map에 다수의 element를 삽입하는 함수이다.
 
 ``` c
-memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key, const size_t key_length,
-                                              const size_t numr_of_piped_items,
-                                              const char * const *mkeys, const size_t *mkeys_length,
-                                              const char * const *values, const size_t *values_length,
-                                              memcached_coll_create_attrs_st *attributes,
-                                              memcached_return_t *results, memcached_return_t *piped_rc)
+memcached_return_t
+memcached_mop_piped_insert(memcached_st *ptr,
+                           const char *key, const size_t key_length,
+                           const size_t numr_of_piped_items,
+                           const char * const *mkeys, const size_t *mkeys_length,
+                           const char * const *values, const size_t *values_length,
+                           memcached_coll_create_attrs_st *attributes,
+                           memcached_return_t *results,
+                           memcached_return_t *piped_rc)
 ```
 
 - key, key_length: 하나의 key를 지정
@@ -432,12 +480,16 @@ memcached_return_t memcached_mop_piped_insert(memcached_st *ptr, const char *key
 둘째, 여러 key들이 가리키는 map들에 각각 하나의 element를 삽입하는 함수이다. 
 
 ``` c
-memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr, const char * const *keys, const size_t *keylengths,
-                                                   const size_t numr_of_keys,
-                                                   const char *mkey, size_t mkey_length,
-                                                   const char *value, size_t value_length,
-                                                   memcached_coll_create_attrs_st *attributes,
-                                                   memcached_return_t *results, memcached_return_t *piped_rc)
+memcached_return_t
+memcached_mop_piped_insert_bulk(memcached_st *ptr,
+                                const char * const *keys,
+                                const size_t *keylengths,
+                                const size_t numr_of_keys,
+                                const char *mkey, size_t mkey_length,
+                                const char *value, size_t value_length,
+                                memcached_coll_create_attrs_st *attributes,
+                                memcached_return_t *results,
+                                memcached_return_t *piped_rc)
 ```
 
 - keys, keys_length: 다수 key들을 지정
