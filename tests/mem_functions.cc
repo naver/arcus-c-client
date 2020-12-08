@@ -1208,7 +1208,7 @@ static test_return_t get_test4(memcached_st *memc)
 /* long key test */
 static test_return_t get_test5(memcached_st *memc)
 {
-  size_t key_length= 4000;
+  size_t key_length= 4000-100; /* reduced key_length as the namespace string can be added */
   char *key= (char*)malloc(key_length);
   test_true(key);
   memset(key, 'a', key_length);

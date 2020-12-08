@@ -65,7 +65,7 @@
 
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211
-#define MEMCACHED_MAX_KEY 4097 /* We add one to have it null terminated */
+#define MEMCACHED_MAX_KEY 4001 /* (4000 + 1) We add one to have it null terminated */
 #define MEMCACHED_MAX_BUFFER 8196
 #define MEMCACHED_MAX_HOST_SORT_LENGTH 86 /* Used for Ketama */
 #define MEMCACHED_POINTS_PER_SERVER 100
