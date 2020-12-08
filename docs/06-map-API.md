@@ -4,7 +4,7 @@ Map item은 하나의 key에 대해 hash 구조 기반으로 mkey & value 쌍을
 
 **제약 조건**
 - 저장 가능한 최대 element 개수: 디폴트 4,000개 (attribute 설정으로 최대 50,000개 확장 가능)
-- 각 element에서 value 최대 크기 : 4KB
+- 각 element에서 value 최대 크기 : 16KB
 - mkey 최대 길이는 250 바이트 이고, 하나의 map에 중복된 mkey는 허용하지 않는다.
 
 Map item에 대해 수행 가능한 기본 연산들은 아래와 같다.
