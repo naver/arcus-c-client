@@ -22,16 +22,17 @@ memcached_return_t
 memcached_set(memcached_st *ptr,
               const char *key, size_t key_length, 
               const char *value, size_t value_length,
-              time_t expiration, uint32_t flags);
+              time_t expiration, uint32_t flags)
 memcached_return_t
 memcached_add(memcached_st *ptr,
               const char *key, size_t key_length,
               const char *value, size_t value_length,
-              time_t expiration, uint32_t flags);
-memcached_return_t memcached_replace(memcached_st *ptr,
+              time_t expiration, uint32_t flags)
+memcached_return_t
+memcached_replace(memcached_st *ptr,
               const char *key, size_t key_length,
               const char *value, size_t value_length,
-              time_t expiration, uint32_t flags);
+              time_t expiration, uint32_t flags)
 ```
 
 - memcached_set: 주어진 key에 value를 저장한다.
@@ -44,12 +45,12 @@ memcached_return_t
 memcached_prepend(memcached_st *ptr,
                   const char *key, size_t key_length, 
                   const char *value, size_t value_length,
-                  time_t expiration, uint32_t flags);
+                  time_t expiration, uint32_t flags)
 memcached_return_t
 memcached_append(memcached_st *ptr,
                   const char *key, size_t key_length,
                   const char *value, size_t value_length,
-                  time_t expiration, uint32_t flags);
+                  time_t expiration, uint32_t flags)
 ```
 
 - memcached_prepend: 주어진 key의 value에 새로운 데이터를 prepend한다.
@@ -71,7 +72,7 @@ char *
 memcached_get(memcached_st *ptr,
               const char *key, size_t key_length,
               size_t *value_length, uint32_t *flags,
-              memcached_return_t *error);
+              memcached_return_t *error)
 ```
 
 주어진 key에 대한 value를 조회한다. 반환된 결과는 NULL이 아닌 경우 반드시 free 해주어야 한다.
@@ -80,12 +81,12 @@ memcached_get(memcached_st *ptr,
 memcached_return_t
 memcached_mget(memcached_st *ptr,
                const char * const *keys,  const size_t *key_length,
-               size_t number_of_keys);
+               size_t number_of_keys)
 char *
 memcached_fetch(memcached_st *ptr,
                 char *key, size_t *key_length,
                 size_t *value_length, uint32_t *flags,
-                memcached_return_t *error);
+                memcached_return_t *error)
 ```
 
 `memcached_mget`은 주어진 key 배열에 대한 value들을 조회하는 요청을 보낸다.
@@ -134,7 +135,9 @@ memcached_decrement_with_initial(memcached_st *ptr,
 
 ```c
 memcached_return_t
-memcached_delete(memcached_st *ptr, const char *key, size_t key_length, time_t expiration);
+memcached_delete(memcached_st *ptr,
+                 const char *key, size_t key_length,
+                 time_t expiration)
 ```
 
 주어진 key를 삭제한다.

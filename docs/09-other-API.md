@@ -12,12 +12,12 @@ ARCUS는 cache server에 있는 모든 items 또는 특정 prefix의 items을 fl
 
 ```c
 memcached_return_t
-memcached_flush(memcached_st *ptr, time_t expiration);
+memcached_flush(memcached_st *ptr, time_t expiration)
 
 memcached_return_t
 memcached_flush_by_prefix(memcached_st *ptr,
                           const char *prefix, size_t prefix_length,
-                          time_t expiration);
+                          time_t expiration)
 ```
 
 - prefix, prefix_length: flush할 prefix 정보

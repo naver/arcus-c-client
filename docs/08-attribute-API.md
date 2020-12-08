@@ -17,7 +17,7 @@ Item attributes를 변경하거나 조회하는 함수들을 설명한다.
 memcached_return_t
 memcached_set_attrs(memcached_st *ptr,
                     const char *key, size_t key_length,
-                    const memcached_coll_attrs_st *attrs);
+                    const memcached_coll_attrs_st *attrs)
 ```
 
 Return codes는 다음과 같다.
@@ -33,23 +33,23 @@ Return codes는 다음과 같다.
 
 ``` c
 memcached_return_t
-memcached_coll_attrs_init(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_init(memcached_coll_attrs_st *attrs)
 memcached_return_t
-memcached_coll_attrs_set_flags(memcached_coll_attrs_st *attrs, uint32_t flags);
+memcached_coll_attrs_set_flags(memcached_coll_attrs_st *attrs, uint32_t flags)
 memcached_return_t
-memcached_coll_attrs_set_expiretime(memcached_coll_attrs_st *attrs, uint32_t expiretime);
+memcached_coll_attrs_set_expiretime(memcached_coll_attrs_st *attrs, uint32_t expiretime)
 memcached_return_t
 memcached_coll_attrs_set_overflowaction(memcached_coll_attrs_st *attrs,
-                                        memcached_coll_overflowaction_t overflowaction);
+                                        memcached_coll_overflowaction_t overflowaction)
 memcached_return_t
-memcached_coll_attrs_set_maxcount(memcached_coll_attrs_st *attrs, uint32_t maxcount);
+memcached_coll_attrs_set_maxcount(memcached_coll_attrs_st *attrs, uint32_t maxcount)
 memcached_return_t
-memcached_coll_attrs_set_maxbkeyrange(memcached_coll_attrs_st *attrs, uint32_t maxbkeyrange);
+memcached_coll_attrs_set_maxbkeyrange(memcached_coll_attrs_st *attrs, uint32_t maxbkeyrange)
 memcached_return_t
 memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs,
-                                              unsigned char *maxbkeyrange, size_t maxbkeyrange_size);
+                                              unsigned char *maxbkeyrange, size_t maxbkeyrange_size)
 memcached_return_t
-memcached_coll_attrs_set_readable(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_set_readable(memcached_coll_attrs_st *attrs)
 ```
 - memcached_coll_attrs_init : memcached_coll_sttrs_st 구초체를 초기화한다.
 - memcached_coll_attrs_set_flags : 변경할 Flag 값을 설정한다.
@@ -69,7 +69,7 @@ memcached_coll_attrs_set_readable(memcached_coll_attrs_st *attrs);
 memcached_return_t
 memcached_get_attrs(memcached_st *ptr,
                     const char *key, size_t key_length,
-                    memcached_coll_attrs_st *attrs);
+                    memcached_coll_attrs_st *attrs)
 ```
 
 Response codes는 다음과 같다.
@@ -83,33 +83,33 @@ Response codes는 다음과 같다.
 
 ``` c
 uint32_t
-memcached_coll_attrs_get_flags(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_flags(memcached_coll_attrs_st *attrs)
 uint32_t
-memcached_coll_attrs_get_expiretime(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_expiretime(memcached_coll_attrs_st *attrs)
 memcached_coll_overflowaction_t
-memcached_coll_attrs_get_overflowaction(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_overflowaction(memcached_coll_attrs_st *attrs)
 uint32_t
-memcached_coll_attrs_get_maxcount(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_maxcount(memcached_coll_attrs_st *attrs)
 bool
-memcached_cool_attrs_is_readable(memcached_coll_attrs_st *attrs);
+memcached_cool_attrs_is_readable(memcached_coll_attrs_st *attrs)
 uint32_t
-memcached_coll_attrs_get_maxbkeyrange(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_maxbkeyrange(memcached_coll_attrs_st *attrs)
 memcached_return_t
 memcached_coll_attrs_get_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs,
                                               unsigned char **maxbkeyrange,
-                                              size_t maxbkeyrange_size);
+                                              size_t maxbkeyrange_size)
 uint32_t
-memcached_coll_attrs_get_minbkey(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_minbkey(memcached_coll_attrs_st *attrs)
 memcached_return_t
 memcached_coll_attrs_get_minbkey_by_byte(memcached_coll_attrs_st *attrs,
-                                         unsigned char **bkey, size_t *size);
+                                         unsigned char **bkey, size_t *size)
 uint32_t
-memcached_coll_attrs_get_maxbkey(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_maxbkey(memcached_coll_attrs_st *attrs)
 memcached_return_t
 memcached_coll_attrs_get_maxbkey_by_byte(memcached_coll_attrs_st *attrs,
-                                         unsigned char **bkey, size_t *size);
+                                         unsigned char **bkey, size_t *size)
 uint32_t
-memcached_coll_attrs_get_trimmed(memcached_coll_attrs_st *attrs);
+memcached_coll_attrs_get_trimmed(memcached_coll_attrs_st *attrs)
 ```
 
 - memcached_coll_attrs_get_flags : Flag 값을 얻는다.

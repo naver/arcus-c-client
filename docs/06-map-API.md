@@ -29,7 +29,7 @@ Map item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 memcached_return_t
 memcached_mop_create(memcached_st *ptr,
                      const char *key, size_t key_length,
-                     memcached_coll_create_attrs_st *attributes);
+                     memcached_coll_create_attrs_st *attributes)
 ```
 
 - key: map item의 key

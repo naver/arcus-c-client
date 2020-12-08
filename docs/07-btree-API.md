@@ -1266,13 +1266,13 @@ memcached_return_t
 memcached_bop_smget_query_init(memcached_bop_query_st *ptr,
                                const uint64_t bkey_from, const uint64_t bkey_to,
                                memcached_coll_eflag_filter_st *eflag_filter,
-                               size_t count, bool unique);
+                               size_t count, bool unique)
 memcached_return_t
 memcached_bop_ext_smget_query_init(memcached_bop_query_st *ptr,
                                const unsigned char *bkey_from, size_t bkey_from_length,
                                const unsigned char *bkey_to, size_t bkey_to_length,
                                memcached_coll_eflag_filter_st *eflag_filter,
-                               size_t count, bool unique);
+                               size_t count, bool unique)
 ```
 
 
@@ -1540,7 +1540,7 @@ memcached_bop_get_by_position(memcached_st *ptr,
                               const char *key, size_t key_length,
                               memcached_coll_order_t order,
                               size_t from_position, size_t to_position,
-                              memcached_coll_result_st *result);
+                              memcached_coll_result_st *result)
 ```
 - key, key_length: B+Tree item의 key
 - order : 순위 기준
@@ -1647,14 +1647,14 @@ memcached_bop_find_position_with_get(memcached_st *ptr,
                                      const char *key, size_t key_length,
                                      const uint64_t bkey,
                                      memcached_coll_order_t order, size_t count,
-                                     memcached_coll_result_st *result);
+                                     memcached_coll_result_st *result)
 
 memcached_return_t
 memcached_bop_ext_find_position_with_get(memcached_st *ptr,
                                      const char *key, size_t key_length,
                                      const unsigned char *bkey, size_t bkey_length,
                                      memcached_coll_order_t order, size_t count,
-                                     memcached_coll_result_st *result);
+                                     memcached_coll_result_st *result)
 ```
 - key, key_length: B+Tree item의 key
 - bkey, bkey_length: 순위를 조회할 element의 bkey
