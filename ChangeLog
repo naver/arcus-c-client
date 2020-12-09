@@ -1,3 +1,9 @@
+2020-12-09 [version 1.12.0]
+	* [FEATURE] set the max key size to 4000.
+	* [DOC] changed max element bytes: 4KB => 16KB.
+	        (committed at 20200317 and included in 1.10.4)
+	* [DOC] fixed the smget result API and structure names.
+
 2020-12-07 [version 1.11.0]
 	* [FEATURE] supported space-separated keys.
 	* [FEATURE] supported mget command, efficient for getting multiple items.
