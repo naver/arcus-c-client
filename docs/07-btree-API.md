@@ -3,12 +3,13 @@
 B+tree item은 하나의 key에 대해 b+tree 구조 기반으로 b+tree key(bkey)로 정렬된 data의 집합을 가진다.
 
 **제약 조건**
+
 - 저장 가능한 최대 element 개수 : 디폴트 4,000개 (attribute 설정으로 최대 50,000개 확장 가능)
 - 각 element에서 value 최대 크기 : 16KB
 - 하나의 b+tree 내에서 모든 element는 동일한 bkey 유형을 가져야 한다. 
   즉, 8바이트 unsigned integer bkey 유형과 byte array bkey 유형이 혼재할 수 없다.
 
-B+tree item 구조와 기본 특징은 **[ARCUS Server Ascii Protocol 문서의 내용](https://github.com/naver/arcus-memcached/blob/master/doc/arcus-collection-concept.md)**을
+B+tree item 구조와 기본 특징은 [ARCUS Server Ascii Protocol 문서의 내용](https://github.com/naver/arcus-memcached/blob/master/doc/ch02-collection-items.md)을
 먼저 참고하기 바란다.
 
 B+tree item 연산의 설명에 앞서, b+tree 조회 및 변경에 사용하는 자료구조를 설명한다.
