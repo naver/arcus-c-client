@@ -176,6 +176,7 @@ memcached_result_st *memcached_fetch_result(memcached_st *ptr,
 
   *error= MEMCACHED_MAXIMUM_RETURN; // We use this to see if we ever go into the loop
   memcached_server_st *server;
+  bool connection_failures= false;
   while ((server= memcached_io_get_readable_server(ptr)))
   {
     char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY];
@@ -183,6 +184,11 @@ memcached_result_st *memcached_fetch_result(memcached_st *ptr,
 
     if (*error == MEMCACHED_IN_PROGRESS)
     {
+      continue;
+    }
+    else if (*error == MEMCACHED_CONNECTION_FAILURE)
+    {
+      connection_failures= true;
       continue;
     }
     else if (*error == MEMCACHED_SUCCESS)
@@ -213,6 +219,14 @@ memcached_result_st *memcached_fetch_result(memcached_st *ptr,
   else if (*error == MEMCACHED_MAXIMUM_RETURN) // while() loop was never entered
   {
     *error= MEMCACHED_NOTFOUND;
+  }
+  else if (connection_failures)
+  {
+    /* If we have a connection failure to some servers, the caller may
+     * wish to treat that differently to getting a definitive NOT_FOUND
+     * from all servers, so return MEMCACHED_CONNECTION_FAILURE to allow that.
+     */
+    *error= MEMCACHED_CONNECTION_FAILURE;
   }
   else if (result->count == 0)
   {
