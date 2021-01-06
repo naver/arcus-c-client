@@ -56,25 +56,49 @@
 
 static inline bool mget_command_is_supported(memcached_st *ptr, memcached_server_write_instance_st instance)
 {
+  /* mgets */
   if (ptr->flags.support_cas)
   {
-    return false;
-  }
-
-  if (instance->major_version != UINT8_MAX && instance->minor_version != UINT8_MAX)
-  {
-    if (instance->is_enterprise)
+    if (instance->major_version != UINT8_MAX && instance->minor_version != UINT8_MAX)
     {
-      if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 7))
+      if (instance->is_enterprise)
       {
-        return true;
+        /* >= 0.9.0-E */
+        if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 9))
+        {
+          return true;
+        }
+      }
+      else
+      {
+        /* >= 1.13.0 */
+        if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 13))
+        {
+          return true;
+        }
       }
     }
-    else
+  }
+  /* mget */
+  else
+  {
+    if (instance->major_version != UINT8_MAX && instance->minor_version != UINT8_MAX)
     {
-      if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 11))
+      if (instance->is_enterprise)
       {
-        return true;
+        /* >= 0.7.0-E */
+        if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 7))
+        {
+          return true;
+        }
+      }
+      else
+      {
+        /* >= 1.11.0 */
+        if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 11))
+        {
+          return true;
+        }
       }
     }
   }
@@ -707,7 +731,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
     {
       if (hosts_failed[server_key])
       {
-        /* The command protocol for that instancce is broken. */
+        /* The command protocol for that instance is broken. */
         continue;
       }
     }
@@ -737,12 +761,13 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
 
       if (enable_mget)
       {
-        char mget_command[80];
-        size_t mget_command_length= snprintf(mget_command, 80, "mget %u %u\r\n",
-                                             lenkeys[server_key]-1, numkeys[server_key]); // -1 for the space-less first key
-
-        vector[0].length= mget_command_length;
-        vector[0].buffer= mget_command;
+        const char *command= (ptr->flags.support_cas ? "mgets" : "mget");
+        char command_buffer[80];
+        vector[0].length= snprintf(command_buffer, 80, "%s %u %u\r\n",
+                                   command,
+                                   lenkeys[server_key]-1,
+                                   numkeys[server_key]); // -1 for the space-less first key
+        vector[0].buffer= command_buffer;
 
         /* Sending the request header */
         write_result= memcached_io_writev(instance, vector, veclen, false);
