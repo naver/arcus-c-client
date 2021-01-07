@@ -139,7 +139,7 @@ main(int argc, char *argv[])
 To compile, specify the include and library paths and link against this library.
 
 ```
-gcc -Wall -I/install/directory/include -L/install/directory/lib -lmemcached -lmemcachedutil -o sample sample.c
+gcc -o sample sample.c -Wall -I/install/directory/include -L/install/directory/lib -lmemcached -lmemcachedutil
 ```
 
 Then start the memcached instance.
