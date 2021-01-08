@@ -731,7 +731,9 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
     {
       if (hosts_failed[server_key])
       {
-        /* The command protocol for that instance is broken. */
+        /* For mget command, the number of keys and length are mismatched,
+         * so the remaining requests are not sent.
+         */
         continue;
       }
     }
@@ -759,6 +761,10 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
       }
       hosts_connected++;
 
+      /* check enable_mget here again because the instance version
+       * can be set for the first time in the memcached_connect() above.
+       */
+      enable_mget= mget_command_is_supported(ptr, instance);
       if (enable_mget)
       {
         const char *command= (ptr->flags.support_cas ? "mgets" : "mget");
