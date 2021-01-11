@@ -1637,6 +1637,14 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
+  /* For check space_separated_keys_is_supported */
+  rc= memcached_connect(instance);
+  if (memcached_failed(rc))
+  {
+    memcached_set_error(*instance, rc, MEMCACHED_AT);
+    return rc;
+  }
+
   /* Query header */
 
   /* 1. sub key */
