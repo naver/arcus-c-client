@@ -1,3 +1,9 @@
+2021-01-18 [version 1.13.0]
+	* [FEATURE] supported mgets command.
+	* [FIX] check space_sepatated_keys immediately after memcached_connect().
+	* [FIX] check mget command support immediately after memcached_connect().
+	* [INTERNAL] return MEMCACHED_CONNECTION_FAILURE in memcached_fetch_result().
+
 2020-12-09 [version 1.12.0]
 	* [FEATURE] set the max key size to 4000.
 	* [DOC] changed max element bytes: 4KB => 16KB.
