@@ -260,6 +260,7 @@ if test "x$enable_zk_integration" = "xyes"; then
       AC_MSG_ERROR([If it's already installed, specify its path using --with-zookeeper=/dir/])
     fi
   ])
+  AC_DEFINE([THREADED],1,[Enable Zookeeper multi thread mode])
   LIBS="$LIBS -lzookeeper_mt"
   if test $ac_cv_zookeeper_dir != "(system)"; then
     if test -d "$ac_cv_zookeeper_dir/lib" ; then
