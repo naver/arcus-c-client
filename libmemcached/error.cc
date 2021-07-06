@@ -218,16 +218,29 @@ static void _set(memcached_st& memc, memcached_string_t *str, memcached_return_t
   memc.error_messages= error;
 }
 
+/* memcached_set_error() comment :
+ * MEMCACHED_ERRNO must not be handled in memcached_set_errno().
+ * But because the version of this libmemcached is old, there is a problem and the errors comes in.
+ * Check the overall error handling and set "assert" instead of "if-return".
+ */
 memcached_return_t memcached_set_error(memcached_st& memc, memcached_return_t rc, const char *at, const char *str, size_t length)
 {
-  assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
+  if (rc == MEMCACHED_ERRNO)
+  {
+    return rc;
+  }
+  //assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
   memcached_string_t tmp= { str, length };
   return memcached_set_error(memc, rc, at, tmp);
 }
 
 memcached_return_t memcached_set_error(memcached_server_st& self, memcached_return_t rc, const char *at, const char *str, size_t length)
 {
-  assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
+  if (rc == MEMCACHED_ERRNO)
+  {
+    return rc;
+  }
+  //assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
   assert_msg(rc != MEMCACHED_SOME_ERRORS, "Programmer error, MEMCACHED_SOME_ERRORS was about to be set on a memcached_server_st");
   memcached_string_t tmp= { str, length };
   return memcached_set_error(self, rc, at, tmp);
@@ -235,7 +248,11 @@ memcached_return_t memcached_set_error(memcached_server_st& self, memcached_retu
 
 memcached_return_t memcached_set_error(memcached_st& memc, memcached_return_t rc, const char *at, memcached_string_t& str)
 {
-  assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
+  if (rc == MEMCACHED_ERRNO)
+  {
+    return rc;
+  }
+  //assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
   if (memcached_success(rc))
     return MEMCACHED_SUCCESS;
 
@@ -260,7 +277,11 @@ memcached_return_t memcached_set_parser_error(memcached_st& memc,
 
 memcached_return_t memcached_set_error(memcached_server_st& self, memcached_return_t rc, const char *at, memcached_string_t& str)
 {
-  assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
+  if (rc == MEMCACHED_ERRNO)
+  {
+    return rc;
+  }
+  //assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
   assert_msg(rc != MEMCACHED_SOME_ERRORS, "Programmer error, MEMCACHED_SOME_ERRORS was about to be set on a memcached_server_st");
   if (memcached_success(rc))
     return MEMCACHED_SUCCESS;
@@ -292,7 +313,11 @@ memcached_return_t memcached_set_error(memcached_server_st& self, memcached_retu
 
 memcached_return_t memcached_set_error(memcached_server_st& self, memcached_return_t rc, const char *at)
 {
-  assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
+  if (rc == MEMCACHED_ERRNO)
+  {
+    return rc;
+  }
+  //assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
   assert_msg(rc != MEMCACHED_SOME_ERRORS, "Programmer error, MEMCACHED_SOME_ERRORS was about to be set on a memcached_server_st");
   if (memcached_success(rc))
     return MEMCACHED_SUCCESS;
@@ -313,7 +338,11 @@ memcached_return_t memcached_set_error(memcached_server_st& self, memcached_retu
 
 memcached_return_t memcached_set_error(memcached_st& self, memcached_return_t rc, const char *at)
 {
-  assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
+  if (rc == MEMCACHED_ERRNO)
+  {
+    return rc;
+  }
+  //assert_msg(rc != MEMCACHED_ERRNO, "Programmer error, MEMCACHED_ERRNO was set to be returned to client");
   if (memcached_success(rc))
     return MEMCACHED_SUCCESS;
 
