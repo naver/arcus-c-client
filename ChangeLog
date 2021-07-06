@@ -1,3 +1,8 @@
+2021-07-06 [version 1.13.1]
+	* [FEATURE] enable zookeeper multi thread mode.
+	* [FIX] if MEMCACHED_ERRNO entered in memcached_set_error(),
+	        return instead of assert.
+
 2021-01-18 [version 1.13.0]
 	* [FEATURE] supported mgets command.
 	* [FIX] check space_sepatated_keys immediately after memcached_connect().
