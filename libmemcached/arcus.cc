@@ -807,12 +807,11 @@ static inline int do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *
     mc->flags.repl_enabled= false;
     return 0;
   }
-  else {
-    ZOO_LOG_ERROR(("zoo_exists failed while trying to"
-      " determine Arcus version. path=%s reason=%s, zookeeper=%s",
-      arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
-    return -1;
-  }
+
+  ZOO_LOG_ERROR(("zoo_exists failed while trying to"
+    " determine Arcus version. path=%s reason=%s, zookeeper=%s",
+    arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
+  return -1;
 }
 
 /**

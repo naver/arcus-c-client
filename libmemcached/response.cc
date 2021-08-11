@@ -188,7 +188,7 @@ read_error:
   return MEMCACHED_PARTIAL_READ;
 }
 
-static memcached_return_t version_fetch(memcached_server_write_instance_st instance, char *buffer)
+static memcached_return_t textual_version_fetch(memcached_server_write_instance_st instance, char *buffer)
 {
   char *response_ptr= buffer;
   /* UNKNOWN */
@@ -285,7 +285,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
       /* Find the space, and then move one past it to copy version */
       char *version_ptr= index(buffer, ' ');
       version_ptr++;
-      return version_fetch(ptr, version_ptr);
+      return textual_version_fetch(ptr, version_ptr);
     }
     break;
 
@@ -593,7 +593,7 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
         {
           return MEMCACHED_UNKNOWN_READ_FAILURE;
         }
-        rc= version_fetch(ptr, version_buffer);
+        rc= textual_version_fetch(ptr, version_buffer);
       }
       break;
     case PROTOCOL_BINARY_CMD_FLUSH:
