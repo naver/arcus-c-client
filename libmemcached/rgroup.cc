@@ -181,10 +181,11 @@ do_rgroup_server_free(memcached_st *memc, memcached_server_st *server)
 }
 
 static void
-do_rgroup_server_insert(memcached_rgroup_st *rgroup, uint32_t sindex,
+do_rgroup_server_insert(memcached_rgroup_st *rgroup, int sindex,
                         const char *hostname, in_port_t port)
 {
-  assert(sindex < RGROUP_MAX_REPLICA);
+  assert(rgroup->nreplica < RGROUP_MAX_REPLICA);
+  assert(sindex >= -1 && sindex <= (int)rgroup->nreplica);
   memcached_server_st *server;
 
   /* create a new memcached server */
@@ -198,21 +199,37 @@ do_rgroup_server_insert(memcached_rgroup_st *rgroup, uint32_t sindex,
 
   /* attach the new memcached server */
   //pthread_mutex_lock(&rgroup_lock);
-  rgroup->replicas[sindex] = server;
+  if (sindex == -1 || sindex == (int)rgroup->nreplica) {
+    /* append */
+    rgroup->replicas[rgroup->nreplica]= server;
+  } else { /* sindex >= 0 && sindex < (int)rgroup->nreplica */
+    /* insert */
+    for (int i= (int)(rgroup->nreplica-1); i >= sindex; i--) {
+      rgroup->replicas[i+1]= rgroup->replicas[i];
+    }
+    rgroup->replicas[sindex]= server;
+  }
   rgroup->nreplica += 1;
   //pthread_mutex_unlock(&rgroup_lock);
 }
 
 static void
-do_rgroup_server_remove(memcached_rgroup_st *rgroup, uint32_t sindex)
+do_rgroup_server_remove(memcached_rgroup_st *rgroup, int sindex)
 {
-  assert(sindex < RGROUP_MAX_REPLICA);
+  assert(sindex >= 0 && sindex < (int)rgroup->nreplica);
   memcached_server_st *server;
 
   /* detach the memcached server */
   //pthread_mutex_lock(&rgroup_lock);
   server = rgroup->replicas[sindex];
-  rgroup->replicas[sindex] = NULL;
+  if (sindex == (int)(rgroup->nreplica-1)) {
+    rgroup->replicas[sindex]= NULL;
+  } else { /* sindex < (int)(rgroup->nreplica-1) */
+    for (int i= sindex+1; i < (int)rgroup->nreplica; i++) {
+      rgroup->replicas[i-1]= rgroup->replicas[i];
+    }
+    rgroup->replicas[rgroup->nreplica-1]= NULL;
+  }
   rgroup->nreplica -= 1;
   //pthread_mutex_unlock(&rgroup_lock);
 
@@ -222,10 +239,10 @@ do_rgroup_server_remove(memcached_rgroup_st *rgroup, uint32_t sindex)
 }
 
 static void
-do_rgroup_server_replace(memcached_rgroup_st *rgroup, uint32_t sindex,
+do_rgroup_server_replace(memcached_rgroup_st *rgroup, int sindex,
                          const char *hostname, in_port_t port)
 {
-  assert(sindex < RGROUP_MAX_REPLICA);
+  assert(sindex >= 0 && sindex < (int)rgroup->nreplica);
   memcached_server_st *new_server;
   memcached_server_st *old_server;
 
@@ -250,10 +267,10 @@ do_rgroup_server_replace(memcached_rgroup_st *rgroup, uint32_t sindex,
 }
 
 static void
-do_rgroup_server_switchover(memcached_rgroup_st *rgroup, uint32_t sindex)
+do_rgroup_server_switchover(memcached_rgroup_st *rgroup, int sindex)
 {
   /* sindex(slave replica index) must satisfy the below condition. */
-  assert(sindex > 0 && sindex < RGROUP_MAX_REPLICA);
+  assert(sindex > 0 && sindex < (int)rgroup->nreplica);
   memcached_server_st *server;
 
   //pthread_mutex_lock(&rgroup_lock);
