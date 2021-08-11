@@ -235,6 +235,30 @@ static memcached_return_t version_fetch(memcached_server_write_instance_st insta
   return MEMCACHED_SUCCESS;
 }
 
+#ifdef ENABLE_REPLICATION
+static void textual_switchover_peer_fetch(memcached_server_write_instance_st instance, char *buffer)
+{
+  int str_length;
+  int buf_length;
+  char *startptr= buffer;
+  char *endptr= startptr;
+  while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+  str_length = (endptr - startptr);
+  buf_length = sizeof(instance->switchover_peer); /* currently 128 */
+
+  if (str_length < buf_length) {
+    /* OK */
+    memcpy(instance->switchover_peer, startptr, str_length);
+    instance->switchover_peer[str_length]= '\0'; 
+  } else {
+    /* something is wrong */
+    memcpy(instance->switchover_peer, startptr, buf_length-1);
+    instance->switchover_peer[buf_length-1]= '\0'; 
+  }
+}
+#endif
+
 static memcached_return_t textual_read_one_response(memcached_server_write_instance_st ptr,
                                                     char *buffer, size_t buffer_length,
                                                     memcached_result_st *result)
@@ -312,6 +336,12 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
 #ifdef ENABLE_REPLICATION
     else if (memcmp(buffer, "SWITCHOVER", 10) == 0)
     {
+      if (memcmp(buffer + 10, " ", 1) == 0) {
+        textual_switchover_peer_fetch(ptr, &buffer[11]);
+        ptr->switchover_sidx= -1; /* undefined */
+      } else {
+        ptr->switchover_sidx= 1;
+      }
       return MEMCACHED_SWITCHOVER;
     }
 #endif
@@ -343,6 +373,12 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
 #ifdef ENABLE_REPLICATION
     if (memcmp(buffer, "REPL_SLAVE", 10) == 0)
     {
+      if (memcmp(buffer + 10, " ", 1) == 0) {
+        textual_switchover_peer_fetch(ptr, &buffer[11]);
+        ptr->switchover_sidx= -1; /* undefined */
+      } else {
+        ptr->switchover_sidx= 1;
+      }
       return MEMCACHED_REPL_SLAVE;
     }
 #endif
@@ -965,8 +1001,16 @@ static memcached_return_t get_status_of_coll_pipe_response(memcached_server_writ
       if (string_len == 6 && memcmp(string_ptr, "STORED", string_len) == 0)
         return MEMCACHED_STORED;
 #ifdef ENABLE_REPLICATION
-      else if (string_len == 10 && memcmp(string_ptr, "SWITCHOVER", string_len) == 0)
+      else if (string_len >= 10 && memcmp(string_ptr, "SWITCHOVER", string_len) == 0)
+      {
+        if (string_len > 10 && memcmp(string_ptr + 10, " ", 1) == 0) {
+          textual_switchover_peer_fetch(ptr, &string_ptr[11]);
+          ptr->switchover_sidx= -1; /* undefined */
+        } else {
+          ptr->switchover_sidx= 1;
+        }
         return MEMCACHED_SWITCHOVER;
+      }
 #endif
       /* error message will follow after SERVER_ERROR */
       else if (string_len > 12 && memcmp(string_ptr, "SERVER_ERROR", 12) == 0)
@@ -1009,8 +1053,16 @@ static memcached_return_t get_status_of_coll_pipe_response(memcached_server_writ
         /* REPLACED in response to bop upsert. */
         return MEMCACHED_REPLACED;
 #ifdef ENABLE_REPLICATION
-      else if (string_len == 10 && memcmp(string_ptr, "REPL_SLAVE", string_len) == 0)
+      else if (string_len >= 10 && memcmp(string_ptr, "REPL_SLAVE", string_len) == 0)
+      {
+        if (string_len > 10 && memcmp(string_ptr + 10, " ", 1) == 0) {
+          textual_switchover_peer_fetch(ptr, &string_ptr[11]);
+          ptr->switchover_sidx= -1; /* undefined */
+        } else {
+          ptr->switchover_sidx= 1;
+        }
         return MEMCACHED_REPL_SLAVE;
+      }
 #endif
       break;
 
@@ -1644,6 +1696,12 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
 #ifdef ENABLE_REPLICATION
     else if (memcmp(buffer, "SWITCHOVER", 10) == 0)
     {
+      if (memcmp(buffer + 10, " ", 1) == 0) {
+        textual_switchover_peer_fetch(ptr, &buffer[11]);
+        ptr->switchover_sidx= -1; /* undefined */
+      } else {
+        ptr->switchover_sidx= 1;
+      }
       return MEMCACHED_SWITCHOVER;
     }
 #endif
@@ -1678,6 +1736,12 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
 #ifdef ENABLE_REPLICATION
     if (memcmp(buffer, "REPL_SLAVE", 10) == 0)
     {
+      if (memcmp(buffer + 10, " ", 1) == 0) {
+        textual_switchover_peer_fetch(ptr, &buffer[11]);
+        ptr->switchover_sidx= -1; /* undefined */
+      } else {
+        ptr->switchover_sidx= 1;
+      }
       return MEMCACHED_REPL_SLAVE;
     }
 #endif

@@ -93,9 +93,10 @@ struct memcached_server_st {
   bool immediate_reconnect; /* about ERROR, CLIENT_ERROR, SERVER_ERROR, PARTIAL_READ_ERROR */
 #endif
 #ifdef ENABLE_REPLICATION
-  /* In replication, a group may have one master and one slave.
-   */
+  /* In replication, a group may have one master and zero or more slaves. */
   int32_t groupindex; 
+  int32_t switchover_sidx;      /* slave index for switchover */
+  char    switchover_peer[128]; /* FIXME: constant macro must be defined */
   struct memcached_server_st *next;
 #endif
   memcached_st *root;

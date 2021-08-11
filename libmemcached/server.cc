@@ -92,6 +92,9 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
 #ifdef ENABLE_REPLICATION
   /* Needed for replication */
   self->groupindex= -1; /* replica group index */
+  /* Followings will be set when switchover response is received */
+  /* self->switchover_sidx; */
+  /* self->switchover_peer; */
   self->next= NULL;     /* next server pointer */
 #endif
 }

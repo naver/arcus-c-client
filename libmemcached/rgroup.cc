@@ -564,7 +564,37 @@ memcached_rgroup_switchover(memcached_st *memc, memcached_server_st *server)
   memcached_rgroup_st *rgroup= &memc->rgroups[server->groupindex];
 
   /* do switchover */
-  do_rgroup_server_switchover(rgroup, 1);
+  if (server->switchover_sidx == -1) {
+    int c= 0;
+    char *token;
+    char *buffer= NULL;
+    char *hostname= NULL;
+    in_port_t port= 0;
+
+    for (token= strtok_r(server->switchover_peer, ":", &buffer);
+         token;
+         token= strtok_r(NULL, ":", &buffer), c++) {
+      if (c == 0) { /* HOST */
+        hostname= token;
+      } else { /* PORT */
+        port= atoi(token);
+        break;
+      }
+    }
+    if (hostname != NULL && port > 0) {
+      for (c= 1; c < (int)rgroup->nreplica; c++) {
+        if (strcmp(rgroup->replicas[c]->hostname, hostname) == 0 and
+            rgroup->replicas[c]->port == port) {
+          server->switchover_sidx= c;
+          break;
+        }
+      }
+    }
+    if (server->switchover_sidx == -1) {
+      return; /* Something is wrong. do not perform switchover */
+    }
+  }
+  do_rgroup_server_switchover(rgroup, server->switchover_sidx);
 }
 
 void

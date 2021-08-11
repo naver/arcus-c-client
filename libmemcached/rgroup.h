@@ -55,7 +55,7 @@
 
 #ifdef ENABLE_REPLICATION
 #define RGROUP_NAME_LENGTH 128
-#define RGROUP_MAX_REPLICA 2
+#define RGROUP_MAX_REPLICA 3
 
 struct memcached_rgroup_info {
   char                *groupname;
