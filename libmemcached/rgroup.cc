@@ -403,6 +403,7 @@ memcached_rgroup_expand(memcached_st *memc, uint32_t rgroupcount,
   (strcmp((g1)->replicas[n1]->hostname, (g2)->replicas[n2]->hostname) == 0 \
    and (g1)->replicas[n1]->port == (g2)->replicas[n2]->port)
 
+#define RGROUP_UPDATE_WITH_N_REPLICAS 1
 bool
 memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
                                        struct memcached_rgroup_info *rginfo)
@@ -421,6 +422,19 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
         do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
                                             rginfo->replicas[0]->port);
       }
+#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
+    } else { /* rginfo->nreplica >= 2 */
+      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
+        /* replace the master */
+        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
+                                            rginfo->replicas[0]->port);
+      }
+      /* add new slaves */
+      for (int i= 1; i < (int)rginfo->nreplica; i++) {
+        do_rgroup_server_insert(rgroup, i, rginfo->replicas[i]->hostname,
+                                           rginfo->replicas[i]->port);
+      }
+#else
     } else { /* rginfo->nreplica == 2 */
       if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
         /* add new slave */
@@ -439,10 +453,73 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
         do_rgroup_server_insert(rgroup, 1, rginfo->replicas[1]->hostname,
                                            rginfo->replicas[1]->port);
       }
+#endif
     }
+#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
+    return true;
+#endif
   }
+#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
+  else /* rgroup->nreplica >= 2 */
+#else
   else /* rgroup->nreplica == 2 */
+#endif
   {
+#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
+    int i, j;
+    bool changed = false;
+
+    if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
+      for (i= 1; i < (int)rgroup->nreplica; i++) {
+        if (RGROUP_SERVER_IS_SAME(rgroup, i, rginfo, 0))
+          break;
+      }
+      if (i < (int)rgroup->nreplica) { /* found */
+        /* master failover : The old slave become the new master */
+        do_rgroup_server_switchover(rgroup, i);
+      } else {
+        /* replace the master */
+        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
+                                            rginfo->replicas[0]->port);
+      }
+      changed = true;
+    }
+
+    /* handle the slave nodes */
+    if (rginfo->nreplica == 1) {
+      /* remove old slave nodes */
+      while (rgroup->nreplica > 1) {
+        do_rgroup_server_remove(rgroup, rgroup->nreplica-1);
+      }
+      changed = true;
+    } else { /* rginfo->nreplica >= 2 */
+      /* remove old slaves that are disappeared */
+      for (i= 1; i < (int)rgroup->nreplica; i++) {
+        for (j= 1; j < (int)rginfo->nreplica; j++) {
+          if (RGROUP_SERVER_IS_SAME(rgroup, i, rginfo, j))
+            break;
+        }
+        if (j >= (int)rginfo->nreplica) { /* Not exist */
+          do_rgroup_server_remove(rgroup, i);
+          i -= 1; /* for adjusting "i" index */
+          changed = true;
+        }
+      }
+      /* insert new slaves that are appeared */
+      for (i= 1; i < (int)rginfo->nreplica; i++) {
+        for (j= 1; j < (int)rgroup->nreplica; j++) {
+          if (RGROUP_SERVER_IS_SAME(rgroup, j, rginfo, i))
+            break;
+        }
+        if (j >= (int)rgroup->nreplica) { /* Not exist */
+          do_rgroup_server_insert(rgroup, -1, rginfo->replicas[i]->hostname,
+                                              rginfo->replicas[i]->port);
+          changed = true;
+        }
+      }
+    }
+    return changed;
+#else
     if (rginfo->nreplica == 1) {
       if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
         /* remove old slave node */
@@ -500,8 +577,12 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
                                             rginfo->replicas[1]->port);
       }
     }
+#endif
   }
+#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
+#else
   return true;
+#endif
 }
 
 void
