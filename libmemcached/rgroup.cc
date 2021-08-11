@@ -403,7 +403,6 @@ memcached_rgroup_expand(memcached_st *memc, uint32_t rgroupcount,
   (strcmp((g1)->replicas[n1]->hostname, (g2)->replicas[n2]->hostname) == 0 \
    and (g1)->replicas[n1]->port == (g2)->replicas[n2]->port)
 
-#define RGROUP_UPDATE_WITH_N_REPLICAS 1
 bool
 memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
                                        struct memcached_rgroup_info *rginfo)
@@ -422,7 +421,6 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
         do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
                                             rginfo->replicas[0]->port);
       }
-#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
     } else { /* rginfo->nreplica >= 2 */
       if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
         /* replace the master */
@@ -434,38 +432,11 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
         do_rgroup_server_insert(rgroup, i, rginfo->replicas[i]->hostname,
                                            rginfo->replicas[i]->port);
       }
-#else
-    } else { /* rginfo->nreplica == 2 */
-      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
-        /* add new slave */
-        do_rgroup_server_insert(rgroup, 1, rginfo->replicas[1]->hostname,
-                                           rginfo->replicas[1]->port);
-      } else if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 1)) {
-        /* really rare case: old master => slave, A new master appeared */
-        /* add the new master as slave and then do switchover */
-        do_rgroup_server_insert(rgroup, 1, rginfo->replicas[0]->hostname,
-                                           rginfo->replicas[0]->port);
-        do_rgroup_server_switchover(rgroup, 1);
-      } else {
-        /* replace master and add new slave */
-        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
-                                            rginfo->replicas[0]->port);
-        do_rgroup_server_insert(rgroup, 1, rginfo->replicas[1]->hostname,
-                                           rginfo->replicas[1]->port);
-      }
-#endif
     }
-#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
     return true;
-#endif
   }
-#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
   else /* rgroup->nreplica >= 2 */
-#else
-  else /* rgroup->nreplica == 2 */
-#endif
   {
-#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
     int i, j;
     bool changed = false;
 
@@ -519,70 +490,7 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
       }
     }
     return changed;
-#else
-    if (rginfo->nreplica == 1) {
-      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
-        /* remove old slave node */
-        do_rgroup_server_remove(rgroup, 1);
-      } else if (RGROUP_SERVER_IS_SAME(rgroup, 1, rginfo, 0)) {
-        /* master failover : The old slave become the new master */
-        do_rgroup_server_switchover(rgroup, 1);
-        do_rgroup_server_remove(rgroup, 1);
-      } else {
-        /* replace master and remove slave */
-        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
-                                            rginfo->replicas[0]->port);
-        do_rgroup_server_remove(rgroup, 1);
-      }
-    } else { /* rginfo->nreplica == 2 */
-      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
-        if (RGROUP_SERVER_IS_SAME(rgroup, 1, rginfo, 1)) {
-          /* no change: do nothing */
-          return false;
-        } else {
-          /* replace slave only */
-          do_rgroup_server_replace(rgroup, 1, rginfo->replicas[1]->hostname,
-                                              rginfo->replicas[1]->port);
-        }
-      } else if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 1)) {
-        if (RGROUP_SERVER_IS_SAME(rgroup, 1, rginfo, 0)) {
-          /* switchover: role change */
-          do_rgroup_server_switchover(rgroup, 1);
-        } else {
-          /* The old slave has disappeared and new master has appeared */
-          /* remove old slave */
-          /* change role */
-          /* insert new master */
-          do_rgroup_server_replace(rgroup, 1, rginfo->replicas[0]->hostname,
-                                              rginfo->replicas[0]->port);
-          do_rgroup_server_switchover(rgroup, 1);
-        }
-      } else if (RGROUP_SERVER_IS_SAME(rgroup, 1, rginfo, 0)) {
-        /* failover. And, new slave has appeared */
-        /* remove old master node */
-        /* change role */
-        /* insert new slave node */
-        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[1]->hostname,
-                                            rginfo->replicas[1]->port);
-        do_rgroup_server_switchover(rgroup, 1);
-      } else if (RGROUP_SERVER_IS_SAME(rgroup, 1, rginfo, 1)) {
-        /* replace master only */
-        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
-                                            rginfo->replicas[0]->port);
-      } else {
-        /* replace all */
-        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
-                                            rginfo->replicas[0]->port);
-        do_rgroup_server_replace(rgroup, 1, rginfo->replicas[1]->hostname,
-                                            rginfo->replicas[1]->port);
-      }
-    }
-#endif
   }
-#ifdef RGROUP_UPDATE_WITH_N_REPLICAS
-#else
-  return true;
-#endif
 }
 
 void
