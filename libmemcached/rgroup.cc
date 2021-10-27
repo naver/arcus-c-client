@@ -532,7 +532,7 @@ memcached_rgroup_push(memcached_st *memc,
     return MEMCACHED_SUCCESS;
   }
 
-  if (memcached_rgroup_expand(memc, groupcount, (groupcount*2)) != 0) {
+  if (memcached_rgroup_expand(memc, groupcount, (groupcount*RGROUP_MAX_REPLICA)) != 0) {
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
 
