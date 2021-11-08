@@ -394,6 +394,10 @@ memcached_coll_fetch_result(memcached_st *ptr,
            *error != MEMCACHED_UNREADABLE       and
            *error != MEMCACHED_OUT_OF_RANGE     and
            *error != MEMCACHED_NOTFOUND_ELEMENT and
+#ifdef ENABLE_REPLICATION /* coll get with delete */
+           *error != MEMCACHED_SWITCHOVER       and
+           *error != MEMCACHED_REPL_SLAVE       and
+#endif
            *error != MEMCACHED_TYPE_MISMATCH    and
            *error != MEMCACHED_BKEY_MISMATCH    )
   {
