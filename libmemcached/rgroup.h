@@ -121,7 +121,7 @@ LIBMEMCACHED_API
                         const memcached_rgroup_st *grouplist,
                         uint32_t groupcount);
 LIBMEMCACHED_API
-  void
+  bool
   memcached_rgroup_switchover(memcached_st *memc, memcached_server_st *server);
 LIBMEMCACHED_API
   void

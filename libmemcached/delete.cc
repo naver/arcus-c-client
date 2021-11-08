@@ -121,9 +121,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
     }
@@ -232,9 +233,10 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      memcached_rgroup_switchover(ptr, instance);
-      instance= memcached_server_instance_fetch(ptr, server_key);
-      goto do_action;
+      if (memcached_rgroup_switchover(ptr, instance) == true) {
+        instance= memcached_server_instance_fetch(ptr, server_key);
+        goto do_action;
+      }
     }
 #endif
   }
