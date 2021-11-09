@@ -236,8 +236,13 @@ static memcached_return_t textual_version_fetch(memcached_server_write_instance_
 }
 
 #ifdef ENABLE_REPLICATION
-static void textual_switchover_peer_fetch(memcached_server_write_instance_st instance, char *buffer)
+static void textual_switchover_peer_check(memcached_server_write_instance_st instance, char *buffer)
 {
+  if (memcmp(buffer, " ", 1) != 0) {
+    instance->switchover_sidx= 1; /* set first slave */
+    return;
+  }
+
   int str_length;
   int buf_length;
   char *startptr= buffer;
@@ -251,10 +256,12 @@ static void textual_switchover_peer_fetch(memcached_server_write_instance_st ins
     /* OK */
     memcpy(instance->switchover_peer, startptr, str_length);
     instance->switchover_peer[str_length]= '\0'; 
+    instance->switchover_sidx= -1; /* undefined */
   } else {
     /* something is wrong */
     memcpy(instance->switchover_peer, startptr, buf_length-1);
     instance->switchover_peer[buf_length-1]= '\0'; 
+    instance->switchover_sidx= 1; /* set first slave */
   }
 }
 #endif
@@ -336,12 +343,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
 #ifdef ENABLE_REPLICATION
     else if (memcmp(buffer, "SWITCHOVER", 10) == 0)
     {
-      if (memcmp(buffer + 10, " ", 1) == 0) {
-        textual_switchover_peer_fetch(ptr, &buffer[11]);
-        ptr->switchover_sidx= -1; /* undefined */
-      } else {
-        ptr->switchover_sidx= 1;
-      }
+      textual_switchover_peer_check(ptr, &buffer[10]);
       return MEMCACHED_SWITCHOVER;
     }
 #endif
@@ -373,12 +375,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
 #ifdef ENABLE_REPLICATION
     if (memcmp(buffer, "REPL_SLAVE", 10) == 0)
     {
-      if (memcmp(buffer + 10, " ", 1) == 0) {
-        textual_switchover_peer_fetch(ptr, &buffer[11]);
-        ptr->switchover_sidx= -1; /* undefined */
-      } else {
-        ptr->switchover_sidx= 1;
-      }
+      textual_switchover_peer_check(ptr, &buffer[10]);
       return MEMCACHED_REPL_SLAVE;
     }
 #endif
@@ -1003,12 +1000,7 @@ static memcached_return_t get_status_of_coll_pipe_response(memcached_server_writ
 #ifdef ENABLE_REPLICATION
       else if (string_len >= 10 && memcmp(string_ptr, "SWITCHOVER", string_len) == 0)
       {
-        if (string_len > 10 && memcmp(string_ptr + 10, " ", 1) == 0) {
-          textual_switchover_peer_fetch(ptr, &string_ptr[11]);
-          ptr->switchover_sidx= -1; /* undefined */
-        } else {
-          ptr->switchover_sidx= 1;
-        }
+        textual_switchover_peer_check(ptr, &string_ptr[10]);
         return MEMCACHED_SWITCHOVER;
       }
 #endif
@@ -1055,12 +1047,7 @@ static memcached_return_t get_status_of_coll_pipe_response(memcached_server_writ
 #ifdef ENABLE_REPLICATION
       else if (string_len >= 10 && memcmp(string_ptr, "REPL_SLAVE", string_len) == 0)
       {
-        if (string_len > 10 && memcmp(string_ptr + 10, " ", 1) == 0) {
-          textual_switchover_peer_fetch(ptr, &string_ptr[11]);
-          ptr->switchover_sidx= -1; /* undefined */
-        } else {
-          ptr->switchover_sidx= 1;
-        }
+        textual_switchover_peer_check(ptr, &string_ptr[10]);
         return MEMCACHED_REPL_SLAVE;
       }
 #endif
@@ -1696,12 +1683,7 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
 #ifdef ENABLE_REPLICATION
     else if (memcmp(buffer, "SWITCHOVER", 10) == 0)
     {
-      if (memcmp(buffer + 10, " ", 1) == 0) {
-        textual_switchover_peer_fetch(ptr, &buffer[11]);
-        ptr->switchover_sidx= -1; /* undefined */
-      } else {
-        ptr->switchover_sidx= 1;
-      }
+      textual_switchover_peer_check(ptr, &buffer[10]);
       return MEMCACHED_SWITCHOVER;
     }
 #endif
@@ -1736,12 +1718,7 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
 #ifdef ENABLE_REPLICATION
     if (memcmp(buffer, "REPL_SLAVE", 10) == 0)
     {
-      if (memcmp(buffer + 10, " ", 1) == 0) {
-        textual_switchover_peer_fetch(ptr, &buffer[11]);
-        ptr->switchover_sidx= -1; /* undefined */
-      } else {
-        ptr->switchover_sidx= 1;
-      }
+      textual_switchover_peer_check(ptr, &buffer[10]);
       return MEMCACHED_REPL_SLAVE;
     }
 #endif
