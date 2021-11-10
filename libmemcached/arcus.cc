@@ -1188,7 +1188,7 @@ static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached
 #ifdef ENABLE_REPLICATION
   if (ptr->flags.repl_enabled)
   {
-    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(ptr, sizeof(memcached_server_info)*(memcached_server_count(master)*2)));
+    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(ptr, sizeof(memcached_server_info)*(memcached_server_count(master)*RGROUP_MAX_REPLICA)));
     if (not serverinfo) {
       return;
     }
