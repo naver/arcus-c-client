@@ -1480,7 +1480,10 @@ static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t res
     }
     else /* failure */
     {
-      *pipe_return_code= MEMCACHED_ALL_FAILURE; /* FIXME */
+      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
+        *pipe_return_code= MEMCACHED_ALL_FAILURE;
+      else if (*pipe_return_code == MEMCACHED_ALL_EXIST)
+        *pipe_return_code= MEMCACHED_SOME_EXIST;
     }
     break;
 
