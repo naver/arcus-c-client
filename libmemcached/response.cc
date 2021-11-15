@@ -245,7 +245,7 @@ static void textual_switchover_peer_check(memcached_server_write_instance_st ins
 
   int str_length;
   int buf_length;
-  char *startptr= buffer;
+  char *startptr= buffer+1;
   char *endptr= startptr;
   while (*endptr != '\r' && *endptr != '\n') endptr++;
 
