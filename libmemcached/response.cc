@@ -1458,54 +1458,6 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
   return textual_coll_element_fetch(ptr, ehdr_string, ehdr_length, ecount, result);
 }
 
-static void aggregate_pipe_return_code(memcached_st *ptr, memcached_return_t response,
-                                       memcached_return_t *pipe_return_code)
-{
-  switch (ptr->last_op_code[4])
-  {
-  case 'e': /* exist */
-    if (response == MEMCACHED_EXIST)
-    {
-      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
-        *pipe_return_code= MEMCACHED_ALL_EXIST;
-      else if (*pipe_return_code == MEMCACHED_ALL_NOT_EXIST)
-        *pipe_return_code= MEMCACHED_SOME_EXIST;
-    }
-    else if (response == MEMCACHED_NOT_EXIST)
-    {
-      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
-        *pipe_return_code= MEMCACHED_ALL_NOT_EXIST;
-      else if (*pipe_return_code == MEMCACHED_ALL_EXIST)
-        *pipe_return_code= MEMCACHED_SOME_EXIST;
-    }
-    else /* failure */
-    {
-      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
-        *pipe_return_code= MEMCACHED_ALL_FAILURE;
-      else if (*pipe_return_code == MEMCACHED_ALL_EXIST)
-        *pipe_return_code= MEMCACHED_SOME_EXIST;
-    }
-    break;
-
-  case 'i': /* insert */
-    if (response == MEMCACHED_STORED or response == MEMCACHED_CREATED_STORED)
-    {
-      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
-        *pipe_return_code= MEMCACHED_ALL_SUCCESS;
-      else if (*pipe_return_code == MEMCACHED_ALL_FAILURE)
-        *pipe_return_code= MEMCACHED_SOME_SUCCESS;
-    }
-    else /* failure */
-    {
-      if (*pipe_return_code == MEMCACHED_MAXIMUM_RETURN)
-        *pipe_return_code= MEMCACHED_ALL_FAILURE;
-      else if (*pipe_return_code == MEMCACHED_ALL_SUCCESS)
-        *pipe_return_code= MEMCACHED_SOME_SUCCESS;
-    }
-    break;
-  }
-}
-
 /*
  * Fetching the piped responses : RESPONSE <count>\r\n
  * (works only for same kind of operations)
@@ -1539,16 +1491,13 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
     {
       break;
     }
+    responses[offset+i]= rc;
 #ifdef ENABLE_REPLICATION
     if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
     {
       switchover_rc= rc;
-      rc= MEMCACHED_SUCCESS;
-      break; /* Let's skip aggregate_pipe_return_code() */
     }
 #endif
-    responses[offset+i]= rc;
-    aggregate_pipe_return_code(ptr->root, responses[offset+i], &ptr->root->pipe_return_code);
   }
 
   ptr->root->pipe_responses_length+= i; /* i can be smaller than count[0] */
@@ -1957,16 +1906,6 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
   }
 
   return memcached_read_one_coll_response(ptr, buffer, buffer_length, result);
-}
-
-void memcached_add_coll_pipe_return_code(memcached_server_write_instance_st ptr,
-                                         memcached_return_t return_code)
-{
-  memcached_return_t *responses= ptr->root->pipe_responses;
-
-  responses[ptr->root->pipe_responses_length]= return_code;
-  ptr->root->pipe_responses_length+= 1;
-  aggregate_pipe_return_code(ptr->root, return_code, &ptr->root->pipe_return_code);
 }
 
 /* Sort-merge-get */
