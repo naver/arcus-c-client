@@ -754,9 +754,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
     }
@@ -1031,9 +1032,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
       memcached_set_last_response_code(ptr, rc);
@@ -1408,9 +1410,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
       memcached_set_last_response_code(ptr, rc);
@@ -1641,9 +1644,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
       memcached_set_last_response_code(ptr, rc);
@@ -1936,9 +1940,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
 
@@ -3068,12 +3073,13 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
       if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        ptr->pipe_responses_length-= 1; /* try again from the last request. */
-        i= ptr->pipe_responses_length-1; /* for-statement increments i variable. */
-        requested_items= 0; /* reset */
-        continue; /* retry */
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          ptr->pipe_responses_length-= 1; /* try again from the last request. */
+          i= ptr->pipe_responses_length-1; /* for-statement increments i variable. */
+          requested_items= 0; /* reset */
+          continue; /* retry */
+        }
       }
 #endif
       if (requested_items == 1) { /* received not pipe response */
@@ -3287,12 +3293,13 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
         if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE) {
           ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                         instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-          memcached_rgroup_switchover(ptr, instance);
-          instance= memcached_server_instance_fetch(ptr, i);
-          ptr->pipe_responses_length-= 1; /* try again from the last request. */
-          j= ptr->pipe_responses_length-1; /* for-statement increments j variable. */
-          requested_items= 0; /* reset */
-          continue; /* retry */
+          if (memcached_rgroup_switchover(ptr, instance) == true) {
+            instance= memcached_server_instance_fetch(ptr, i);
+            ptr->pipe_responses_length-= 1; /* try again from the last request. */
+            j= ptr->pipe_responses_length-1; /* for-statement increments j variable. */
+            requested_items= 0; /* reset */
+            continue; /* retry */
+          }
         }
 #endif
         memcached_set_last_response_code(ptr, rc);
@@ -3495,9 +3502,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
       memcached_set_last_response_code(ptr, rc);
@@ -3640,9 +3648,10 @@ do_action:
       {
         ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                       instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-        memcached_rgroup_switchover(ptr, instance);
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
+        if (memcached_rgroup_switchover(ptr, instance) == true) {
+          instance= memcached_server_instance_fetch(ptr, server_key);
+          goto do_action;
+        }
       }
 #endif
       memcached_set_last_response_code(ptr, rc);

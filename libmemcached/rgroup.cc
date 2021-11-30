@@ -556,7 +556,7 @@ memcached_rgroup_push(memcached_st *memc,
   return run_distribution(memc);
 }
 
-void
+bool
 memcached_rgroup_switchover(memcached_st *memc, memcached_server_st *server)
 {
   /* find rgroup */
@@ -591,10 +591,13 @@ memcached_rgroup_switchover(memcached_st *memc, memcached_server_st *server)
       }
     }
     if (server->switchover_sidx == -1) {
-      return; /* Something is wrong. do not perform switchover */
+      /* Something is wrong. do not perform switchover */
+      ZOO_LOG_WARN(("Can't find switchover peer(%s:%d)", hostname, port));
+      return false;
     }
   }
   do_rgroup_server_switchover(rgroup, server->switchover_sidx);
+  return true;
 }
 
 void
