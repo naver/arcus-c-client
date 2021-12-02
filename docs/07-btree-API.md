@@ -261,7 +261,7 @@ void arcus_btree_item_create(memcached_st *memc)
     // 이미 존재하는 key를 갖는 B+tree를 생성하려 하면 오류를 반환한다.
     rc= memcached_bop_create(memc, "btree:an_empty_btree", strlen("btree:an_empty_btree"),
                              &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
+    assert(MEMCACHED_SUCCESS != rc);
     assert(MEMCACHED_EXISTS == memcached_get_last_response_code(memc));
 }
 ```
