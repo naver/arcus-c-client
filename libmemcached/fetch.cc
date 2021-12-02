@@ -205,7 +205,6 @@ memcached_result_st *memcached_fetch_result(memcached_st *ptr,
       break;
     }
   }
-
   memcached_set_last_response_code(ptr, *error);
 
   if (*error == MEMCACHED_NOTFOUND and result->count)
@@ -339,7 +338,6 @@ memcached_coll_fetch_result(memcached_st *ptr,
   {
     char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY];
     *error= memcached_coll_response(server, buffer, sizeof(buffer), result);
-    memcached_set_last_response_code(ptr, *error);
 
     if (*error == MEMCACHED_IN_PROGRESS)
     {
@@ -364,6 +362,7 @@ memcached_coll_fetch_result(memcached_st *ptr,
       break;
     }
   }
+  memcached_set_last_response_code(ptr, *error);
 
   if (result->collection_count and *error == MEMCACHED_NOTFOUND)
   {
