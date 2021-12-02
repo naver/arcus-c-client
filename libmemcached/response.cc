@@ -1648,8 +1648,6 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
         return MEMCACHED_DELETED;
       else if (memcmp(buffer + 7, "_DROPPED", 8) == 0)
         return MEMCACHED_DELETED_DROPPED;
-      else if (memcmp(buffer + 7, "_TRIMMED", 8) == 0)
-        return MEMCACHED_DELETED_TRIMMED;
     }
     break;
 
@@ -1896,7 +1894,6 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
               rc != MEMCACHED_EXIST            and
               rc != MEMCACHED_NOT_EXIST        and
               rc != MEMCACHED_TRIMMED          and
-              rc != MEMCACHED_DELETED_TRIMMED  and
               rc != MEMCACHED_NOTFOUND_ELEMENT and
               rc != MEMCACHED_ELEMENT_EXISTS   and
               rc != MEMCACHED_UNREADABLE       and

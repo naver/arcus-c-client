@@ -345,9 +345,8 @@ memcached_coll_fetch_result(memcached_st *ptr,
     {
       continue;
     }
-    else if (*error == MEMCACHED_SUCCESS or
-             *error == MEMCACHED_DELETED or *error == MEMCACHED_DELETED_DROPPED or
-             *error == MEMCACHED_TRIMMED or *error == MEMCACHED_DELETED_TRIMMED )
+    else if (*error == MEMCACHED_SUCCESS or *error == MEMCACHED_TRIMMED or
+             *error == MEMCACHED_DELETED or *error == MEMCACHED_DELETED_DROPPED)
     {
       return result;
     }

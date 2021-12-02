@@ -228,9 +228,6 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
   case MEMCACHED_TRIMMED:
 	  return "TRIMMED";
 
-  case MEMCACHED_DELETED_TRIMMED:
-	  return "DELETED TRIMMED";
-
   case MEMCACHED_DUPLICATED:
 	  return "DUPLICATED";
 
