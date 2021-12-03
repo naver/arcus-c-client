@@ -1619,7 +1619,7 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
-  rc=  memcached_vdo(instance, vector, veclen, to_write);
+  rc= memcached_vdo(instance, vector, veclen, to_write);
 
   if (rc == MEMCACHED_SUCCESS)
   {
@@ -2329,15 +2329,13 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
       char response[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, response, MEMCACHED_DEFAULT_COMMAND_SIZE, &ptr->collection_result);
 
-      if (rc != MEMCACHED_POSITION)
+      if (rc == MEMCACHED_POSITION)
       {
-        return rc;
+        *position= ptr->collection_result.btree_position;
+        /* reset btree_position because it is intended for use in bop pwg */
+        ptr->collection_result.btree_position= 0;
+        rc= MEMCACHED_SUCCESS;
       }
-
-      *position= ptr->collection_result.btree_position;
-      /* reset btree_position because it is intended for use in bop pwg */
-      ptr->collection_result.btree_position= 0;
-      rc= MEMCACHED_SUCCESS;
     }
   }
 
@@ -3783,15 +3781,13 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
       char response[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, response, MEMCACHED_DEFAULT_COMMAND_SIZE, &ptr->collection_result);
 
-      if (rc != MEMCACHED_COUNT)
+      if (rc == MEMCACHED_COUNT)
       {
-        return rc;
+        *count= ptr->collection_result.collection_count;
+        /* reset collection because it is used in memcached_coll_result_reset(collection_result.cc)*/
+        ptr->collection_result.collection_count= 0;
+        rc= MEMCACHED_SUCCESS;
       }
-
-      *count= ptr->collection_result.collection_count;
-      /* reset collection because it is used in memcached_coll_result_reset(collection_result.cc)*/
-      ptr->collection_result.collection_count= 0;
-      rc= MEMCACHED_SUCCESS;
     }
   }
 
