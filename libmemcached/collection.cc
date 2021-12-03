@@ -763,8 +763,6 @@ do_action:
     }
   }
 
-  memcached_set_last_response_code(ptr, rc);
-
   if (rc == MEMCACHED_WRITE_FAILURE)
     memcached_io_reset(instance);
 
@@ -934,8 +932,6 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
       }
     }
   }
-
-  memcached_set_last_response_code(ptr, rc);
 
   if (rc == MEMCACHED_END) {
     rc = MEMCACHED_SUCCESS;
@@ -1946,13 +1942,13 @@ do_action:
         }
       }
 #endif
-
       /* Search for END or something */
       if (result)
       {
         memcached_coll_result_reset(&ptr->collection_result);
         memcached_coll_fetch_result(ptr, &ptr->collection_result, &rc);
       }
+      memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_END             or
           rc == MEMCACHED_TRIMMED         or
@@ -2332,7 +2328,6 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
     {
       char response[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, response, MEMCACHED_DEFAULT_COMMAND_SIZE, &ptr->collection_result);
-      memcached_set_last_response_code(ptr, rc);
 
       if (rc != MEMCACHED_POSITION)
       {
@@ -3007,7 +3002,6 @@ static memcached_return_t do_coll_piped_exist(memcached_st *ptr, const char *key
       responses[i]= MEMCACHED_MAXIMUM_RETURN;
     }
   }
-  memcached_set_last_response_code(ptr, rc);
   ptr->flags.piped= false;
   return rc;
 }
@@ -3105,7 +3099,6 @@ static memcached_return_t do_coll_piped_insert(memcached_st *ptr, const char *ke
       responses[i]= MEMCACHED_MAXIMUM_RETURN;
     }
   }
-  memcached_set_last_response_code(ptr, rc);
   ptr->flags.piped= false;
   return rc;
 }
@@ -3302,7 +3295,6 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
           }
         }
 #endif
-        memcached_set_last_response_code(ptr, rc);
         if (requested_items == 1) { /* received not pipe response */
           responses[ptr->pipe_responses_length++]= rc;
           if (rc == MEMCACHED_STORED or rc == MEMCACHED_CREATED_STORED) {
@@ -3356,7 +3348,6 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
 
   ptr->pipe_responses= results;
   *piped_rc= do_aggregate_pipe_responses(ptr, rc);
-  memcached_set_last_response_code(ptr, rc);
   ptr->flags.piped= false;
   return rc;
 }
@@ -3654,8 +3645,6 @@ do_action:
         }
       }
 #endif
-      memcached_set_last_response_code(ptr, rc);
-
       if (rc == MEMCACHED_NOTFOUND
           || rc == MEMCACHED_NOTFOUND_ELEMENT
           || rc == MEMCACHED_CLIENT_ERROR
@@ -3793,7 +3782,6 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
     {
       char response[MEMCACHED_DEFAULT_COMMAND_SIZE];
       rc= memcached_coll_response(instance, response, MEMCACHED_DEFAULT_COMMAND_SIZE, &ptr->collection_result);
-      memcached_set_last_response_code(ptr, rc);
 
       if (rc != MEMCACHED_COUNT)
       {
