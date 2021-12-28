@@ -30,7 +30,7 @@
 memcached_return_t memcached_do(memcached_server_write_instance_st ptr, const void *command,
                                 size_t command_length, bool with_flush)
 {
-  memcached_return_t rc;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
   ssize_t sent_length;
 
   WATCHPOINT_ASSERT(command_length);
@@ -58,8 +58,10 @@ memcached_return_t memcached_do(memcached_server_write_instance_st ptr, const vo
   if (sent_length == -1 || (size_t)sent_length != command_length)
   {
     rc= MEMCACHED_WRITE_FAILURE;
+    return rc;
   }
-  else if ((ptr->root->flags.no_reply) == 0)
+  
+  if ((ptr->root->flags.no_reply) == 0)
   {
     memcached_server_response_increment(ptr);
   }
@@ -71,7 +73,7 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
                                  const struct libmemcached_io_vector_st *vector, size_t count,
                                  bool with_flush)
 {
-  memcached_return_t rc;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
   ssize_t sent_length;
 
   WATCHPOINT_ASSERT(count);
@@ -107,8 +109,10 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
     rc= MEMCACHED_WRITE_FAILURE;
     WATCHPOINT_ERROR(rc);
     WATCHPOINT_ERRNO(errno);
+    return rc;
   }
-  else if ((ptr->root->flags.no_reply) == 0 and (ptr->root->flags.piped == false))
+  
+  if ((ptr->root->flags.no_reply) == 0 and (ptr->root->flags.piped == false))
   {
     memcached_server_response_increment(ptr);
   }
