@@ -103,20 +103,6 @@ sig_handler(int sig __attribute__((unused)))
 }
 
 static void
-release_resources(memcached_st *mc, memcached_pool_st *pool)
-{
-  arcus_pool_close(pool);
-
-  if (pool) {
-    memcached_pool_destroy(pool);
-  }
-
-  if (mc) {
-    memcached_free(mc);
-  }
-}
-
-static void
 sample_sop(memcached_st *mc)
 {
   uint32_t flags= 10;
@@ -275,6 +261,7 @@ my_application_thread(void *ctx_pool)
 int
 main(int argc __attribute__((unused)), char** argv __attribute__((unused)))
 {
+  int ret = 0;
   int x;
   int min_thread = 5;
   int max_thread = NUMBER_OF_THREADS;
@@ -282,36 +269,54 @@ main(int argc __attribute__((unused)), char** argv __attribute__((unused)))
   pthread_t tstat;
 
   memcached_pool_st *pool = NULL;
+  arcus_return_t arc = ARCUS_ERROR;
 
-  global_mc = memcached_create(NULL);
-  pool = memcached_pool_create(global_mc, min_thread, max_thread);
+  do {
+    global_mc = memcached_create(NULL);
+    if (!global_mc) {
+      fprintf(stderr, "memcached_create failed\n");
+      ret = 1;
+      break;
+    }
 
-  if (!pool) {
-    fprintf(stderr, "memcached_pool_create failed\n");
-    return 1;
+    pool = memcached_pool_create(global_mc, min_thread, max_thread);
+    if (!pool) {
+      fprintf(stderr, "memcached_pool_create failed\n");
+      ret = 1;
+      break;
+    }
+
+    arc = arcus_pool_connect(pool, zkadmin_addr, service_code);
+    if (arc != ARCUS_SUCCESS) {
+      fprintf(stderr, "arcus_connect() failed, reason=%s\n", arcus_strerror(arc));
+      ret = 1;
+      break;
+    }
+
+    signal(SIGINT, sig_handler);
+
+    pthread_create(&tstat, NULL, my_statistics_thread, NULL);
+
+    for (x=0; x<NUMBER_OF_THREADS; x++) {
+      pthread_create(&tid[x], NULL, my_application_thread, pool);
+    }
+
+    for (x=0; x<NUMBER_OF_THREADS; x++) {
+      pthread_join(tid[x], NULL);
+    }
+  } while (0);
+
+  if (pool) {
+    if (arc == ARCUS_SUCCESS) {
+      arcus_pool_close(pool);
+    }
+
+    memcached_pool_destroy(pool);
   }
 
-  arcus_return_t arc = arcus_pool_connect(pool, zkadmin_addr, service_code);
-
-  if (arc != ARCUS_SUCCESS) {
-    fprintf(stderr, "arcus_connect() failed, reason=%s\n", arcus_strerror(arc));
-    memcached_pool_push(pool, global_mc);
-    return 1;
+  if (global_mc) {
+    memcached_free(global_mc);
   }
 
-  signal(SIGINT, sig_handler);
-
-  pthread_create(&tstat, NULL, my_statistics_thread, NULL);
-
-  for (x=0; x<NUMBER_OF_THREADS; x++) {
-    pthread_create(&tid[x], NULL, my_application_thread, pool);
-  }
-
-  for (x=0; x<NUMBER_OF_THREADS; x++) {
-    pthread_join(tid[x], NULL);
-  }
-
-  release_resources(global_mc, pool);
-
-  return 1;
+  return ret;
 }
