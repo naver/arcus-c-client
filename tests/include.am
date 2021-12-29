@@ -11,6 +11,7 @@
 TESTS_LDADDS= \
 	      libmemcached/libmemcached.la \
 	      libmemcached/libmemcachedutil.la \
+	      libhashkit/libhashkit.la \
 	      libtest/libtest.la
 
 DEBUG_COMMAND= $(LIBTOOL) --mode=execute gdb
