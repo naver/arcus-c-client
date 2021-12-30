@@ -1956,10 +1956,10 @@ struct testcase testcases[]= {
   { "binary stat", test_binary_stat },
   { NULL, NULL}
 };
-
+/*
 const int ascii_tests = 1;
 const int binary_tests = 2;
-
+*/
 struct test_type_st
 {
   bool ascii;
