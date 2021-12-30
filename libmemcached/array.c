@@ -82,10 +82,10 @@ bool memcached_array_is_null(memcached_array_st *array)
   if (not array)
     return false;
 
-  if (array->size and array->c_str)
+  if (array->size)
     return false;
 
-  assert(not array->size and not array->c_str);
+  assert(not array->size);
 
   return true;
 }

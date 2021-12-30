@@ -592,10 +592,6 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
       ZOO_LOG_WARN(("Arcus already has a zookeeper client"));
       rc= ARCUS_ERROR; break;
     }
-    if (not arcus->zk.ensemble_list) {
-      ZOO_LOG_ERROR(("Ensemble list cannot be null"));
-      rc= ARCUS_ERROR; break;
-    }
 
     ZOO_LOG_WARN(("Initiating zookeeper client"));
 
