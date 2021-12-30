@@ -114,14 +114,14 @@ char *memcached_fetch(memcached_st *ptr, char *key, size_t *key_length,
       if (value_length)
         *value_length= 0;
 
-    if (key_length)
-      *key_length= 0;
+      if (key_length)
+        *key_length= 0;
 
-    if (flags)
-      *flags= 0;
+      if (flags)
+        *flags= 0;
 
-    if (key)
-      *key= 0;
+      if (key)
+        *key= 0;
 
       return NULL;
     }
