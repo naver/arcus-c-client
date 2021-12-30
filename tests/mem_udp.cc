@@ -419,7 +419,7 @@ static test_return_t udp_get_test(memcached_st *memc)
   const char *key= "foo";
   size_t vlen;
   uint16_t *expected_ids = get_udp_request_ids(memc);
-  char *val= memcached_get(memc, key, strlen(key), &vlen, (uint32_t)0, &rc);
+  char *val= memcached_get(memc, key, strlen(key), &vlen, 0, &rc);
   test_true(rc == MEMCACHED_NOT_SUPPORTED);
   test_true(val == NULL);
   return post_udp_op_check(memc, expected_ids);
