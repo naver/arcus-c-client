@@ -144,9 +144,9 @@ static void _set(memcached_st& memc, memcached_string_t *str, memcached_return_t
   tm_info= localtime(&time.tv_sec);
   char errmsg_header[ERROR_HDR_LENGTH];
   snprintf(errmsg_header, ERROR_HDR_LENGTH,
-           "[%04d-%02d-%02d %02d:%02d:%02d.%06ld] mc_id:%"PRIu64" mc_qid:%"PRIu64" er_qid:%"PRIu64"",
+           "[%04d-%02d-%02d %02d:%02d:%02d.%06ld] mc_id:%" PRIu64 " mc_qid:%" PRIu64 " er_qid:%" PRIu64 "",
            tm_info->tm_year+1900, tm_info->tm_mon+1, tm_info->tm_mday,
-           tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec, time.tv_usec,
+           tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec, (long)time.tv_usec,
            memc.mc_id, memc.query_id, error->query_id);
   if (str and str->size and local_errno)
   {
