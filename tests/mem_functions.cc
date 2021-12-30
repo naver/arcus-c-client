@@ -5329,7 +5329,7 @@ static test_return_t regression_bug_442914(memcached_st *memc)
   uint32_t number_of_hosts= memcached_server_count(memc);
   memc->number_of_hosts= 1;
 
-  char k[250];
+  char k[251];
   size_t len;
 
   for (uint32_t x= 0; x < 250; ++x)
