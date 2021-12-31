@@ -288,7 +288,7 @@ static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
   void *mapped_addr;
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
 
-  strncpy(arcus->proxy.name, name, 256);
+  strncpy(arcus->proxy.name, name, 255);
   arcus->is_proxy= true;
 
   /* Mmap */
@@ -333,7 +333,7 @@ static inline arcus_return_t do_arcus_proxy_connect(memcached_st *mc,
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
   arcus_st *proxy_arcus= static_cast<arcus_st *>(memcached_get_server_manager(proxy));
 
-  strncpy(arcus->proxy.name, proxy_arcus->proxy.name, 256);
+  strncpy(arcus->proxy.name, proxy_arcus->proxy.name, 255);
   arcus->proxy.data= proxy_arcus->proxy.data;
   arcus->pool = pool;
 #ifdef ENABLE_REPLICATION
@@ -1153,7 +1153,7 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
     return;
   }
 
-  strncpy(buffer, serverlist, ARCUS_MAX_PROXY_FILE_LENGTH);
+  strncpy(buffer, serverlist, ARCUS_MAX_PROXY_FILE_LENGTH-1);
 
   /* Parse the cache server list strings. */
   if (size > 0) {

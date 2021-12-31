@@ -125,7 +125,7 @@ char *memcached_fetch(memcached_st *ptr, char *key, size_t *key_length,
 
       return NULL;
     }
-    strncpy(key, result_buffer->item_key, result_buffer->key_length); // For the binary protocol we will cut off the key :(
+    strncpy(key, result_buffer->item_key, MEMCACHED_MAX_KEY-1); // For the binary protocol we will cut off the key :(
     if (key_length)
       *key_length= result_buffer->key_length;
   }

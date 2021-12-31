@@ -341,7 +341,7 @@ memcached_return_t memcached_set_sasl_auth_data(memcached_st *ptr,
 
   callbacks[0].id= SASL_CB_USER;
   callbacks[0].proc= (int (*)())get_username;
-  callbacks[0].context= strncpy(name, username, username_length +1);
+  callbacks[0].context= strncpy(name, username, username_length);
   callbacks[1].id= SASL_CB_AUTHNAME;
   callbacks[1].proc= (int (*)())get_username;
   callbacks[1].context= name;
@@ -453,7 +453,7 @@ memcached_return_t memcached_clone_sasl(memcached_st *clone, const  memcached_st
   {
     if (callbacks[x].id == SASL_CB_USER || callbacks[x].id == SASL_CB_AUTHNAME)
     {
-      callbacks[x].context= (sasl_callback_t*)libmemcached_malloc(clone, strlen((const char*)source->sasl.callbacks[x].context));
+      callbacks[x].context= (sasl_callback_t*)libmemcached_malloc(clone, strlen((const char*)source->sasl.callbacks[x].context)+1);
 
       if (callbacks[x].context == NULL)
       {
@@ -466,7 +466,7 @@ memcached_return_t memcached_clone_sasl(memcached_st *clone, const  memcached_st
         libmemcached_free(clone, callbacks);
         return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
       }
-      strncpy((char*)callbacks[x].context, (const char*)source->sasl.callbacks[x].context, sizeof(callbacks[x].context));
+      strncpy((char*)callbacks[x].context, (const char*)source->sasl.callbacks[x].context, strlen((const char*)source->sasl.callbacks[x].context));
     }
     else
     {

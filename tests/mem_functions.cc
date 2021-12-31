@@ -837,7 +837,7 @@ static memcached_return_t  server_function(const memcached_st *ptr,
 static test_return_t memcached_server_cursor_test(memcached_st *memc)
 {
   char context[10];
-  strncpy(context, "foo bad", sizeof(context));
+  strncpy(context, "foo bad", sizeof(context)-1);
   memcached_server_fn callbacks[1];
 
   callbacks[0]= server_function;
@@ -4005,12 +4005,12 @@ static test_return_t selection_of_namespace_tests(memcached_st *memc)
 
     /* Test a long key for failure */
     /* TODO, extend test to determine based on setting, what result should be */
-    strncpy(long_key, "Thisismorethentheallottednumberofcharacters", sizeof(long_key));
+    strncpy(long_key, "Thisismorethentheallottednumberofcharacters", sizeof(long_key)-1);
     test_compare(MEMCACHED_SUCCESS,
                  memcached_callback_set(memc, MEMCACHED_CALLBACK_NAMESPACE, long_key));
 
     /* Now test a key with spaces (which will fail from long key, since bad key is not set) */
-    strncpy(long_key, "This is more then the allotted number of characters", sizeof(long_key));
+    strncpy(long_key, "This is more then the allotted number of characters", sizeof(long_key)-1);
     test_compare(memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL) ? MEMCACHED_SUCCESS : MEMCACHED_BAD_KEY_PROVIDED,
                  memcached_callback_set(memc, MEMCACHED_CALLBACK_NAMESPACE, long_key));
 
