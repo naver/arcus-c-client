@@ -121,6 +121,9 @@ memcached_st *memcached_pool_get_master(memcached_pool_st* pool);
 LIBMEMCACHED_API
 memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool);
 
+LIBMEMCACHED_API
+memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool);
+
 #ifdef ENABLE_REPLICATION
 memcached_return_t memcached_pool_use_single_server(memcached_pool_st *pool,
                                                     const char *host,

@@ -244,6 +244,163 @@ static void _free(memcached_st *ptr, bool release_st)
   }
 }
 
+#ifdef ENABLE_REPLICATION
+static inline memcached_return_t
+do_memcached_update_grouplist(memcached_st *mc,
+                            struct memcached_server_info *serverinfo,
+                            uint32_t servercount, bool *serverlist_changed)
+{
+  struct memcached_rgroup_info *groupinfo;
+  uint32_t groupcount= 0;
+  uint32_t validcount= 0;
+  uint32_t x, y;
+  bool prune_flag= false;
+
+  if (servercount == 0) {
+    if (memcached_server_count(mc) == 0) {
+      return MEMCACHED_SUCCESS;
+    }
+    memcached_rgroup_prune(mc, true); /* prune all rgroups */
+    *serverlist_changed= true;
+    return run_distribution(mc);
+  }
+
+  ZOO_LOG_INFO(("do_memcached_update_grouplist: count=%u\n", servercount));
+  for (x= 0; x < servercount; x++) {
+    ZOO_LOG_INFO(("server[%u] groupname=%s %s hostname=%s port=%u\n",
+            x, serverinfo[x].groupname, 
+            serverinfo[x].master ? "master" : "slave",
+            serverinfo[x].hostname, 
+            serverinfo[x].port));
+  }
+
+  groupinfo= memcached_rgroup_info_create(mc, serverinfo, servercount,
+                                          &groupcount, &validcount);
+  if (not groupinfo) {
+    return memcached_set_error(*mc, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("Failed to create rgroup_info"));
+  }
+
+  if (memcached_rgroup_expand(mc, groupcount, servercount) != 0) {
+    return memcached_set_error(*mc, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("Failed to expand rgroup space"));
+  }
+
+  for (x= 0; x< memcached_server_count(mc); x++) {
+    /* find replica group */
+    for (y= 0; y< groupcount; y++) {
+      if (strcmp(mc->rgroups[x].groupname, groupinfo[y].groupname) == 0)
+        break;
+    }
+    if (y < groupcount) { /* Found */
+      if (groupinfo[y].valid) {
+        if (memcached_rgroup_update_with_groupinfo(&mc->rgroups[x], &groupinfo[y]) == true) {
+            *serverlist_changed= true;
+        }
+        groupinfo[y].valid= false;
+        validcount--;
+      }
+    } else { /* Not found */
+      mc->rgroups[x].options.is_dead= true;
+      prune_flag= true;
+    }
+  }
+
+  if (prune_flag) { /* prune old dead replica groups */
+    memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
+  }
+  if (validcount > 0) { /* push new valid replica groups */
+    memcached_rgroup_push_with_groupinfo(mc, groupinfo, groupcount);
+  }
+  memcached_rgroup_info_destroy(mc, groupinfo);
+
+  if (prune_flag or validcount > 0) {
+    *serverlist_changed= true;
+    return run_distribution(mc);
+  } else {
+    return MEMCACHED_SUCCESS;
+  }
+}
+#endif
+
+static inline memcached_return_t
+do_memcached_update_cachelist(memcached_st *mc,
+                            struct memcached_server_info *serverinfo,
+                            uint32_t servercount, bool *serverlist_changed)
+{
+  memcached_return_t error= MEMCACHED_SUCCESS;
+  uint32_t x, y;
+  memcached_server_st *servers= NULL;
+  memcached_server_st *new_hosts;
+  bool prune_flag= false;
+
+  if (servercount == 0)
+  {
+    /* If there's no available servers, delete all managed servers. */
+    if (memcached_server_count(mc) == 0) {
+      return MEMCACHED_SUCCESS;
+    }
+    memcached_server_prune(mc, true); /* prune all servers */
+    *serverlist_changed = true;
+    return run_distribution(mc);
+  }
+
+  for (x= 0; x< memcached_server_count(mc); x++)
+  {
+    for (y= 0; y< servercount; y++) {
+      if (serverinfo[y].exist)
+        continue;
+
+      if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
+          mc->servers[x].port == serverinfo[y].port) {
+         serverinfo[y].exist= true; break;
+      }
+    }
+    if (y == servercount) { /* NOT found */
+      mc->servers[x].options.is_dead= true;
+      prune_flag= true;
+    }
+  }
+  for (x= 0; x< servercount; x++)
+  {
+    if (serverinfo[x].exist == false) {
+      new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
+                                              serverinfo[x].port, &error);
+      if (new_hosts == NULL)
+        break;
+      servers= new_hosts;
+    }
+  }
+
+  if (error == MEMCACHED_SUCCESS) {
+    if (servers) {
+      if (prune_flag) {
+        memcached_server_prune(mc, false); /* prune dead servers only */
+      }
+      error= memcached_server_push(mc, servers);
+    } else {
+      if (prune_flag) {
+        memcached_server_prune(mc, false); /* prune dead servers only */
+        error= run_distribution(mc);
+      }
+    }
+    if (servers or prune_flag) {
+      *serverlist_changed = true;
+    }
+  } else { /* memcached_server_list_append FAIL */
+    if (prune_flag) {
+      for (x= 0; x< memcached_server_count(mc); x++) {
+        if (mc->servers[x].options.is_dead == true)
+          mc->servers[x].options.is_dead= false;
+      }
+    }
+  }
+  if (servers) {
+    memcached_server_list_free(servers);
+  }
+  return error;
+}
+
 memcached_st *memcached_create(memcached_st *ptr)
 {
   if (ptr == NULL)
@@ -566,4 +723,24 @@ void memcached_ketama_release(memcached_st *ptr)
     }
     ptr->ketama.info= NULL;
   }
+}
+
+memcached_return_t memcached_update_cachelist(memcached_st *mc, 
+                                              struct memcached_server_info *serverinfo, 
+                                              uint32_t servercount, bool *serverlist_changed)
+{
+  memcached_return_t rc;
+  bool dummy = false;
+
+  if (serverlist_changed == NULL)
+    serverlist_changed = &dummy;
+
+#ifdef ENABLE_REPLICATION
+  if (mc->flags.repl_enabled)
+    rc= do_memcached_update_grouplist(mc, serverinfo, servercount, serverlist_changed);
+  else
+#endif
+  rc= do_memcached_update_cachelist(mc, serverinfo, servercount, serverlist_changed);
+
+  return rc;
 }

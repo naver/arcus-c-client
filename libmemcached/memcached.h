@@ -294,6 +294,11 @@ void memcached_ketama_reference(memcached_st *dest, memcached_st *src);
 LIBMEMCACHED_API
 void memcached_ketama_release(memcached_st *ptr);
 
+LIBMEMCACHED_API
+memcached_return_t memcached_update_cachelist(memcached_st *mc, 
+                                              struct memcached_server_info *serverinfo, 
+                                              uint32_t servercount, bool *serverlist_changed);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

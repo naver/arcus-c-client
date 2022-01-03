@@ -603,6 +603,108 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   return MEMCACHED_SUCCESS;
 }
 
+memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool)
+{
+  if (pool == NULL)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  if (pthread_mutex_lock(&pool->mutex))
+  {
+    return MEMCACHED_IN_PROGRESS;
+  }
+
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  pool->increment_ketama_version();
+#else
+  pool->increment_version();
+#endif
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+  memcached_st *master= pool->master; // master MUST be updated already.
+
+  uint32_t servercount= 0;
+  struct memcached_server_info *serverinfo;
+#ifdef ENABLE_REPLICATION
+  if (master->flags.repl_enabled)
+  {
+    // In this case, function do_memcached_update_grouplist() will be called.
+    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(master, sizeof(memcached_server_info)*(memcached_server_count(master)*RGROUP_MAX_REPLICA)));
+    if (not serverinfo)
+    {
+      rc= MEMCACHED_MEMORY_ALLOCATION_FAILURE;
+      return rc;
+    }
+
+    memcached_rgroup_st *grouplist = master->rgroups;
+    for (uint32_t i= 0; i < memcached_server_count(master); i++)
+    {
+      for (uint32_t j= 0; j < grouplist[i].nreplica; j++)
+      {
+        serverinfo[servercount].groupname = grouplist[i].groupname;
+        serverinfo[servercount].hostname  = grouplist[i].replicas[j]->hostname;
+        serverinfo[servercount].port      = grouplist[i].replicas[j]->port;
+        serverinfo[servercount].master    = (i == 0);
+        serverinfo[servercount].exist     = false;
+        servercount++;
+      }
+    }
+  }
+  else
+#endif
+  {
+    // In this case, function do_memcached_update_cachelist() will be called.
+    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(master, sizeof(memcached_server_info)*(memcached_server_count(master))));
+    if (not serverinfo)
+    {
+      rc= MEMCACHED_MEMORY_ALLOCATION_FAILURE;
+      return rc;
+    }
+
+    memcached_server_list_st serverlist = master->servers;
+    for (uint32_t i= 0; i < memcached_server_count(master); i++)
+    {
+#ifdef ENABLE_REPLICATION
+      serverinfo[servercount].groupname = NULL;
+      serverinfo[servercount].master    = false;
+#endif
+      serverinfo[servercount].hostname  = serverlist[i].hostname;
+      serverinfo[servercount].port      = serverlist[i].port;
+      serverinfo[servercount].exist     = false;
+      servercount++;
+    }
+  }
+
+  for (int i= 0; i <= pool->top; i++)
+  {
+    for (uint32_t j = 0; j < servercount; j++)
+    {
+      // Set serverinfo[j].exist=false because it will be set true in function memcached_update_cachelist().
+      // If function memcached_update_cachelist() changes other member variable of serverinfo[j], it must be set default value at here.
+      serverinfo[j].exist= false;
+    }
+
+#ifdef ENABLE_REPLICATION
+    // This statement is needed to determine to call do_memcached_update_grouplist() or do_memcached_update_cachelist().
+    pool->mc_pool[i]->flags.repl_enabled= master->flags.repl_enabled;
+#endif
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+    // These statements are needed when call arcus_server_check_for_update() with poped mc_pool[i].
+    pool->mc_pool[i]->server_manager= master->server_manager;
+    ((arcus_st *)pool->mc_pool[i])->proxy= ((arcus_st *)master)->proxy;
+#endif
+
+    if ((rc= memcached_update_cachelist(pool->mc_pool[i], serverinfo, servercount, NULL)) != MEMCACHED_SUCCESS)
+      break;
+  }
+
+  libmemcached_free(master, serverinfo);
+  (void)pthread_mutex_unlock(&pool->mutex);
+
+  return rc;
+}
+
 #ifdef ENABLE_REPLICATION
 memcached_return_t
 memcached_pool_use_single_server(memcached_pool_st *pool,
@@ -630,7 +732,7 @@ memcached_pool_use_single_server(memcached_pool_st *pool,
     return error;
 
   // clone the master to the whole pool
-  return memcached_pool_repopulate(pool);
+  return memcached_pool_update_cachelist(pool);
 }
 #endif
 
