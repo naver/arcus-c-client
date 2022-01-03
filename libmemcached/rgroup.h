@@ -70,6 +70,9 @@ struct memcached_rgroup_st {
     bool is_initialized:1;
     bool is_shutting_down:1;
     bool is_dead:1;
+  #ifdef POOL_UPDATE_SERVERLIST
+    bool is_new_to_update:1;
+  #endif
   } options;
   uint32_t             groupindex;
   char                 groupname[RGROUP_NAME_LENGTH];
@@ -109,6 +112,12 @@ LIBMEMCACHED_API
   bool
   memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
                         struct memcached_rgroup_info *rginfo);
+
+#ifdef POOL_UPDATE_SERVERLIST
+LIBMEMCACHED_API
+  bool
+  memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *rginfo);
+#endif
 
 LIBMEMCACHED_API
   void

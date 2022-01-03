@@ -309,6 +309,9 @@ do_rgroup_init(memcached_rgroup_st *self, memcached_st *root,
   //self->options.is_allocated
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
+#ifdef POOL_UPDATE_SERVERLIST
+  self->options.is_new_to_update= true;
+#endif
 
   self->root= root;
   assert(groupname.size < RGROUP_NAME_LENGTH);
@@ -493,6 +496,97 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
   }
 }
 
+#ifdef POOL_UPDATE_SERVERLIST
+bool
+memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *rginfo)
+{
+  /* rgroup : old rgroup struct */
+  /* rginfo : new rgroup info */
+
+  if (rgroup->nreplica == 1)
+  {
+    if (rginfo->nreplica == 1) {
+      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
+        /* no change: do nothing */
+        return false;
+      } else {
+        /* replace the server */
+        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
+                                            rginfo->replicas[0]->port);
+      }
+    } else { /* rginfo->nreplica >= 2 */
+      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
+        /* replace the master */
+        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
+                                            rginfo->replicas[0]->port);
+      }
+      /* add new slaves */
+      for (int i= 1; i < (int)rginfo->nreplica; i++) {
+        do_rgroup_server_insert(rgroup, i, rginfo->replicas[i]->hostname,
+                                           rginfo->replicas[i]->port);
+      }
+    }
+    return true;
+  }
+  else /* rgroup->nreplica >= 2 */
+  {
+    int i, j;
+    bool changed = false;
+
+    if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
+      for (i= 1; i < (int)rgroup->nreplica; i++) {
+        if (RGROUP_SERVER_IS_SAME(rgroup, i, rginfo, 0))
+          break;
+      }
+      if (i < (int)rgroup->nreplica) { /* found */
+        /* master failover : The old slave become the new master */
+        do_rgroup_server_switchover(rgroup, i);
+      } else {
+        /* replace the master */
+        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
+                                            rginfo->replicas[0]->port);
+      }
+      changed = true;
+    }
+
+    /* handle the slave nodes */
+    if (rginfo->nreplica == 1) {
+      /* remove old slave nodes */
+      while (rgroup->nreplica > 1) {
+        do_rgroup_server_remove(rgroup, rgroup->nreplica-1);
+      }
+      changed = true;
+    } else { /* rginfo->nreplica >= 2 */
+      /* remove old slaves that are disappeared */
+      for (i= 1; i < (int)rgroup->nreplica; i++) {
+        for (j= 1; j < (int)rginfo->nreplica; j++) {
+          if (RGROUP_SERVER_IS_SAME(rgroup, i, rginfo, j))
+            break;
+        }
+        if (j >= (int)rginfo->nreplica) { /* Not exist */
+          do_rgroup_server_remove(rgroup, i);
+          i -= 1; /* for adjusting "i" index */
+          changed = true;
+        }
+      }
+      /* insert new slaves that are appeared */
+      for (i= 1; i < (int)rginfo->nreplica; i++) {
+        for (j= 1; j < (int)rgroup->nreplica; j++) {
+          if (RGROUP_SERVER_IS_SAME(rgroup, j, rginfo, i))
+            break;
+        }
+        if (j >= (int)rgroup->nreplica) { /* Not exist */
+          do_rgroup_server_insert(rgroup, -1, rginfo->replicas[i]->hostname,
+                                              rginfo->replicas[i]->port);
+          changed = true;
+        }
+      }
+    }
+    return changed;
+  }
+}
+#endif
+
 void
 memcached_rgroup_push_with_groupinfo(memcached_st *memc,
                       struct memcached_rgroup_info *groupinfo,
@@ -537,6 +631,10 @@ memcached_rgroup_push(memcached_st *memc,
   }
 
   for (x= 0; x < groupcount; x++) {
+#ifdef POOL_UPDATE_SERVERLIST
+    if (grouplist[x].options.is_new_to_update) 
+    {
+#endif
     /* create rgroup */
     rgroup= do_rgroup_create(&memc->rgroups[memc->number_of_hosts], memc);
     assert(rgroup != NULL);
@@ -552,6 +650,9 @@ memcached_rgroup_push(memcached_st *memc,
       memc->ketama.weighted= true;
     }
     memc->number_of_hosts++;
+#ifdef POOL_UPDATE_SERVERLIST
+    }
+#endif
   }
   return run_distribution(memc);
 }

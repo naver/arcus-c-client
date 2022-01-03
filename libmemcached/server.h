@@ -62,6 +62,9 @@ struct memcached_server_st {
     bool is_initialized:1;
     bool is_shutting_down:1;
     bool is_dead:1;
+#ifdef POOL_UPDATE_SERVERLIST
+    bool is_new_to_update:1;
+#endif
   } options;
   uint32_t number_of_hosts;
   uint32_t cursor_active;

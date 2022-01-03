@@ -735,8 +735,13 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
   uint32_t count= memcached_server_list_count(list);
 
   memcached_server_st *new_host_list;
+#ifdef POOL_UPDATE_SERVERLIST
+  new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
+									sizeof(memcached_server_st) * count));
+#else
   new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
 									sizeof(memcached_server_st) * (count + memcached_server_count(ptr))));
+#endif
 
   if (not new_host_list)
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
@@ -745,6 +750,10 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
 
   for (uint32_t x= 0; x < count; x++)
   {
+#ifdef POOL_UPDATE_SERVERLIST
+    if (list[x].options.is_new_to_update) 
+    {
+#endif
     memcached_server_write_instance_st instance;
 
     if ((ptr->flags.use_udp && list[x].type != MEMCACHED_CONNECTION_UDP)
@@ -773,6 +782,9 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
     }
 
     ptr->number_of_hosts++;
+#ifdef POOL_UPDATE_SERVERLIST
+    }
+#endif
   }
 
   // Provides backwards compatibility with server list.

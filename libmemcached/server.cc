@@ -47,6 +47,9 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
 {
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
+#ifdef POOL_UPDATE_SERVERLIST
+  self->options.is_new_to_update= true;
+#endif
   self->number_of_hosts= 0;
   self->cursor_active= 0;
   self->port= port;
