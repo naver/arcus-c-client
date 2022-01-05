@@ -451,17 +451,16 @@ static test_return_t hashkit_get_function_test(hashkit_st *hashk)
 {
   for (int algo= int(HASHKIT_HASH_DEFAULT); algo < int(HASHKIT_HASH_MAX); algo++)
   {
-
-    if (HASHKIT_HASH_CUSTOM)
-    {
+    if (algo == int(HASHKIT_HASH_CUSTOM))
       continue;
+
+    if (libhashkit_has_algorithm(static_cast<hashkit_hash_algorithm_t>(algo)))
+    {
+      test_compare(HASHKIT_SUCCESS,
+                   hashkit_set_function(hashk, static_cast<hashkit_hash_algorithm_t>(algo)));
+
+      test_compare(hashkit_get_function(hashk), algo);
     }
-    test_skip(true, libhashkit_has_algorithm(static_cast<hashkit_hash_algorithm_t>(algo)));
-
-    test_compare(HASHKIT_SUCCESS,
-                 hashkit_set_function(hashk, static_cast<hashkit_hash_algorithm_t>(algo)));
-
-    test_compare(hashkit_get_function(hashk), algo);
   }
   return TEST_SUCCESS;
 }
