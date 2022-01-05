@@ -292,13 +292,16 @@ static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
   arcus->is_proxy= true;
 
   /* Mmap */
-#ifdef TARGET_OS_LINUX
+#ifndef MAP_ANONYMOUS // for TARGET_OS_OSX and others (excluding TARGET_OS_LINUX)
+  #ifdef MAP_ANON
+    #define MAP_ANONYMOUS MAP_ANON
+  #else
+    #define MAP_ANONYMOUS 0
+  #endif // MAP_ANON
+#endif // MAP_ANONYMOUS
   mapped_addr= mmap(NULL, ARCUS_MAX_PROXY_FILE_LENGTH, PROT_WRITE | PROT_READ,
                     MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-#else
-  mapped_addr= mmap(NULL, ARCUS_MAX_PROXY_FILE_LENGTH, PROT_WRITE | PROT_READ,
-                    MAP_SHARED, -1, 0);
-#endif
+
   if (mapped_addr == MAP_FAILED) {
     ZOO_LOG_ERROR(("cannot map the proxy file"));
     return ARCUS_ERROR;
