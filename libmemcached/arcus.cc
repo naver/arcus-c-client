@@ -705,11 +705,11 @@ void arcus_server_check_for_update(memcached_st *ptr)
   uint32_t version;
 
   arcus= static_cast<arcus_st *>(memcached_get_server_manager(ptr));
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   if (not arcus) {
     return;
   }
 
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   if (arcus->proxy.data)
   {
     if (arcus->proxy.data->version != arcus->proxy.current_version)
@@ -750,10 +750,9 @@ void arcus_server_check_for_update(memcached_st *ptr)
     }
   }
 #else
-  if (not arcus or not arcus->proxy.data) {
+  if (not arcus->proxy.data) {
     return;
   }
-
   if (arcus->proxy.data->version != arcus->proxy.current_version)
   {
     proc_mutex_lock(&arcus->proxy.data->mutex);
