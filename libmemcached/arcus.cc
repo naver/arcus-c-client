@@ -39,14 +39,6 @@
 #endif
 
 /**
- * ARCUS_PROXY
- */
-static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc, const char *name);
-static inline arcus_return_t do_arcus_proxy_connect(memcached_st *mc, memcached_pool_st *pool, memcached_st *proxy);
-static inline arcus_return_t do_arcus_proxy_close(memcached_st *mc);
-static inline void           do_arcus_proxy_update_cachelist(memcached_st *mc, const struct String_vector *strings);
-
-/**
  * ARCUS_ZK_CONNECTION
  */
 static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc);
@@ -203,6 +195,97 @@ static inline arcus_return_t do_arcus_connect(memcached_st *mc,
   return rc;
 }
 
+static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
+                                                   const char *name)
+{
+  void *mapped_addr;
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+
+  strncpy(arcus->proxy.name, name, 256);
+  arcus->is_proxy= true;
+
+  /* Mmap */
+#ifndef MAP_ANONYMOUS // for TARGET_OS_OSX and others (excluding TARGET_OS_LINUX)
+  #ifdef MAP_ANON
+    #define MAP_ANONYMOUS MAP_ANON
+  #else
+    #define MAP_ANONYMOUS 0
+  #endif // MAP_ANON
+#endif // MAP_ANONYMOUS
+  mapped_addr= mmap(NULL, ARCUS_MAX_PROXY_FILE_LENGTH, PROT_WRITE | PROT_READ,
+                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+  if (mapped_addr == MAP_FAILED) {
+    ZOO_LOG_ERROR(("cannot map the proxy file"));
+    return ARCUS_ERROR;
+  }
+
+  /* With the proxy data. */
+  arcus->proxy.data= (arcus_proxy_data_st *)mapped_addr;
+  arcus->proxy.data->version = 0;
+
+  /* Initialize a mutex to protect the proxy data. */
+  arcus->proxy.data->mutex.fd = -1;
+  arcus->proxy.data->mutex.locked = 0;
+  arcus->proxy.data->mutex.fname = NULL;
+
+  char ap_lock_fname[64];
+  snprintf(ap_lock_fname, 64, ".arcus_proxy_lock.%d", getpid());
+
+  if (0 != proc_mutex_create(&arcus->proxy.data->mutex, ap_lock_fname)) {
+    ZOO_LOG_ERROR(("Cannot create the proxy lock file. You might have to"
+            " delete the lock file manually. file=%s error=%s(%d)",
+            ap_lock_fname, strerror(errno), errno));
+    return ARCUS_ERROR;
+  }
+
+  return ARCUS_SUCCESS;
+}
+
+static inline arcus_return_t do_arcus_proxy_connect(memcached_st *mc,
+                                                    memcached_pool_st *pool,
+                                                    memcached_st *proxy)
+{
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+  arcus_st *proxy_arcus= static_cast<arcus_st *>(memcached_get_server_manager(proxy));
+
+  strncpy(arcus->proxy.name, proxy_arcus->proxy.name, 256);
+  arcus->proxy.data= proxy_arcus->proxy.data;
+  arcus->pool = pool;
+#ifdef ENABLE_REPLICATION
+  arcus->zk.is_repl_enabled= proxy_arcus->zk.is_repl_enabled;
+  mc->flags.repl_enabled= arcus->zk.is_repl_enabled;
+  if (arcus->pool) {
+    memcached_st *master = memcached_pool_get_master(arcus->pool);
+    if (master != mc) {
+      master->flags.repl_enabled=  arcus->zk.is_repl_enabled;
+    }
+  }
+#endif
+
+  return ARCUS_SUCCESS;
+}
+
+static inline arcus_return_t do_arcus_proxy_close(memcached_st *mc)
+{
+  arcus_st *arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
+
+  /* if my role is proxy. */
+  if (arcus->is_proxy) {
+    arcus->proxy.data->version= 0;
+    arcus->is_proxy= false;
+    if (0 != proc_mutex_destroy(&arcus->proxy.data->mutex)) {
+      ZOO_LOG_ERROR(("Failed to free the mutex. error=%s(%d)",
+                    strerror(errno), errno));
+    }
+  }
+
+  memset(arcus->proxy.name, 0, sizeof(arcus->proxy.name));
+  arcus->proxy.current_version= 0;
+  arcus->proxy.data= NULL;
+  return ARCUS_SUCCESS;
+}
+
 /**
  * PUBLIC API
  * Creates the Arcus Manager and ZooKeeper client.
@@ -344,97 +427,6 @@ arcus_return_t arcus_proxy_close(memcached_st *mc)
   rc= arcus_close(mc);
 
   return rc;
-}
-
-static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
-                                                   const char *name)
-{
-  void *mapped_addr;
-  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-
-  strncpy(arcus->proxy.name, name, 256);
-  arcus->is_proxy= true;
-
-  /* Mmap */
-#ifndef MAP_ANONYMOUS // for TARGET_OS_OSX and others (excluding TARGET_OS_LINUX)
-  #ifdef MAP_ANON
-    #define MAP_ANONYMOUS MAP_ANON
-  #else
-    #define MAP_ANONYMOUS 0
-  #endif // MAP_ANON
-#endif // MAP_ANONYMOUS
-  mapped_addr= mmap(NULL, ARCUS_MAX_PROXY_FILE_LENGTH, PROT_WRITE | PROT_READ,
-                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-
-  if (mapped_addr == MAP_FAILED) {
-    ZOO_LOG_ERROR(("cannot map the proxy file"));
-    return ARCUS_ERROR;
-  }
-
-  /* With the proxy data. */
-  arcus->proxy.data= (arcus_proxy_data_st *)mapped_addr;
-  arcus->proxy.data->version = 0;
-
-  /* Initialize a mutex to protect the proxy data. */
-  arcus->proxy.data->mutex.fd = -1;
-  arcus->proxy.data->mutex.locked = 0;
-  arcus->proxy.data->mutex.fname = NULL;
-
-  char ap_lock_fname[64];
-  snprintf(ap_lock_fname, 64, ".arcus_proxy_lock.%d", getpid());
-
-  if (0 != proc_mutex_create(&arcus->proxy.data->mutex, ap_lock_fname)) {
-    ZOO_LOG_ERROR(("Cannot create the proxy lock file. You might have to"
-            " delete the lock file manually. file=%s error=%s(%d)",
-            ap_lock_fname, strerror(errno), errno));
-    return ARCUS_ERROR;
-  }
-
-  return ARCUS_SUCCESS;
-}
-
-static inline arcus_return_t do_arcus_proxy_connect(memcached_st *mc,
-                                                    memcached_pool_st *pool,
-                                                    memcached_st *proxy)
-{
-  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-  arcus_st *proxy_arcus= static_cast<arcus_st *>(memcached_get_server_manager(proxy));
-
-  strncpy(arcus->proxy.name, proxy_arcus->proxy.name, 256);
-  arcus->proxy.data= proxy_arcus->proxy.data;
-  arcus->pool = pool;
-#ifdef ENABLE_REPLICATION
-  arcus->zk.is_repl_enabled= proxy_arcus->zk.is_repl_enabled;
-  mc->flags.repl_enabled= arcus->zk.is_repl_enabled;
-  if (arcus->pool) {
-    memcached_st *master = memcached_pool_get_master(arcus->pool);
-    if (master != mc) {
-      master->flags.repl_enabled=  arcus->zk.is_repl_enabled;
-    }
-  }
-#endif
-
-  return ARCUS_SUCCESS;
-}
-
-static inline arcus_return_t do_arcus_proxy_close(memcached_st *mc)
-{
-  arcus_st *arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
-
-  /* if my role is proxy. */
-  if (arcus->is_proxy) {
-    arcus->proxy.data->version= 0;
-    arcus->is_proxy= false;
-    if (0 != proc_mutex_destroy(&arcus->proxy.data->mutex)) {
-      ZOO_LOG_ERROR(("Failed to free the mutex. error=%s(%d)",
-                    strerror(errno), errno));
-    }
-  }
-
-  memset(arcus->proxy.name, 0, sizeof(arcus->proxy.name));
-  arcus->proxy.current_version= 0;
-  arcus->proxy.data= NULL;
-  return ARCUS_SUCCESS;
 }
 
 /**
