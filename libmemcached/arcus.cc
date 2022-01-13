@@ -39,14 +39,6 @@
 #endif
 
 /**
- * ARCUS
- */
-static inline arcus_return_t do_arcus_connect(memcached_st *mc, memcached_pool_st *pool,
-                                              const char *ensemble_list, const char *svc_code);
-static inline arcus_return_t do_arcus_init(memcached_st *mc, memcached_pool_st *pool,
-                                           const char *ensemble_list, const char *svc_code);
-
-/**
  * ARCUS_PROXY
  */
 static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc, const char *name);
@@ -108,6 +100,109 @@ static int proc_mutex_create(struct arcus_proc_mutex *m, const char *fname);
 static int proc_mutex_lock(struct arcus_proc_mutex *m);
 static int proc_mutex_unlock(struct arcus_proc_mutex *m);
 static int proc_mutex_destroy(struct arcus_proc_mutex *m);
+
+/**
+ * Initialize the Arcus.
+ */
+static inline arcus_return_t do_arcus_init(memcached_st *mc,
+                                           memcached_pool_st *pool,
+                                           const char *ensemble_list,
+                                           const char *svc_code)
+{
+  arcus_st *arcus;
+  arcus_return_t rc= ARCUS_SUCCESS;
+
+  zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
+
+  /* Set memcached flags (Arcus default) */
+  mc->flags.use_sort_hosts= false;
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_NO_BLOCK,        1);
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_TCP_NODELAY,     1);
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1);
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_DISTRIBUTION,    MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY);
+
+  memcached_behavior_set_key_hash(mc, MEMCACHED_HASH_MD5);
+
+  pthread_mutex_lock(&lock_arcus);
+  do {
+    arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+    if (arcus) {
+      ZOO_LOG_WARN(("Your memcached already has a Arcus server manager"));
+      rc= ARCUS_ALREADY_INITIATED; break;
+    }
+
+    /* Create a new Arcus client */
+    arcus= static_cast<arcus_st *>(libmemcached_malloc(mc, sizeof(arcus_st)));
+    if (not arcus) {
+      ZOO_LOG_ERROR(("cannot allocate the arcus"));
+      rc= ARCUS_ERROR; break;
+    }
+
+    memset(arcus, 0, sizeof(arcus_st));
+
+    arcus->zk.port= 0;
+    arcus->zk.session_timeout= ARCUS_ZK_SESSION_TIMEOUT_IN_MS;
+    arcus->zk.maxbytes= 0;
+    arcus->zk.last_rc= !ZOK;
+    arcus->zk.conn_result= ARCUS_SUCCESS;
+    arcus->zk.is_initializing= true;
+
+    arcus->pool = pool;
+    arcus->is_proxy= false;
+
+    /* Set ZooKeeper parameters */
+    snprintf(arcus->zk.ensemble_list, sizeof(arcus->zk.ensemble_list),
+             "%s", (ensemble_list)?ensemble_list:"");
+    snprintf(arcus->zk.svc_code, sizeof(arcus->zk.svc_code),
+             "%s", (svc_code)?svc_code:"");
+    snprintf(arcus->zk.path, sizeof(arcus->zk.path),
+             "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
+
+    /* Set the Arcus to memcached as a server manager.  */
+    memcached_set_server_manager(mc, (void *)arcus);
+
+    /* clear zk_manager structure */
+    memset(&arcus->zk_mgr.request, 0, sizeof(struct arcus_zk_request_st));
+    pthread_mutex_init(&arcus->zk_mgr.lock, NULL);
+    pthread_cond_init(&arcus->zk_mgr.cond, NULL);
+    arcus->zk_mgr.notification= false;
+    arcus->zk_mgr.reqstop= false;
+    arcus->zk_mgr.running= false;
+  } while(0);
+  pthread_mutex_unlock(&lock_arcus);
+
+  return rc;
+}
+
+static inline arcus_return_t do_arcus_connect(memcached_st *mc,
+                                              memcached_pool_st *pool,
+                                              const char *ensemble_list,
+                                              const char *svc_code)
+{
+  arcus_return_t rc;
+
+  /* Initiate the Arcus. */
+  rc= do_arcus_init(mc, pool, ensemble_list, svc_code);
+  if (rc == ARCUS_ALREADY_INITIATED) {
+    return ARCUS_SUCCESS;
+  }
+  else if (rc != ARCUS_SUCCESS) {
+    return ARCUS_ERROR; 
+  }
+
+  /* Creates a new ZooKeeper client thread. */
+  rc= do_arcus_zk_connect(mc);
+  if (rc != ARCUS_SUCCESS) {
+    return ARCUS_ERROR;
+  }
+
+  /* Creates a new ZooKeeper Manager thread. */
+  rc= do_arcus_zk_manager_start(mc);
+  if (rc != ARCUS_SUCCESS) {
+    return ARCUS_ERROR;
+  }
+  return rc;
+}
 
 /**
  * PUBLIC API
@@ -252,36 +347,6 @@ arcus_return_t arcus_proxy_close(memcached_st *mc)
   return rc;
 }
 
-static inline arcus_return_t do_arcus_connect(memcached_st *mc,
-                                              memcached_pool_st *pool,
-                                              const char *ensemble_list,
-                                              const char *svc_code)
-{
-  arcus_return_t rc;
-
-  /* Initiate the Arcus. */
-  rc= do_arcus_init(mc, pool, ensemble_list, svc_code);
-  if (rc == ARCUS_ALREADY_INITIATED) {
-    return ARCUS_SUCCESS;
-  }
-  else if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR; 
-  }
-
-  /* Creates a new ZooKeeper client thread. */
-  rc= do_arcus_zk_connect(mc);
-  if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR;
-  }
-
-  /* Creates a new ZooKeeper Manager thread. */
-  rc= do_arcus_zk_manager_start(mc);
-  if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR;
-  }
-  return rc;
-}
-
 static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
                                                    const char *name)
 {
@@ -403,79 +468,6 @@ void arcus_set_log_stream(memcached_st *mc,
 {
   zoo_set_log_stream(logfile);
   mc->logfile= logfile;
-}
-
-/**
- * Initialize the Arcus.
- */
-static inline arcus_return_t do_arcus_init(memcached_st *mc,
-                                           memcached_pool_st *pool,
-                                           const char *ensemble_list,
-                                           const char *svc_code)
-{
-  arcus_st *arcus;
-  arcus_return_t rc= ARCUS_SUCCESS;
-
-  zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-
-  /* Set memcached flags (Arcus default) */
-  mc->flags.use_sort_hosts= false;
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_NO_BLOCK,        1);
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_TCP_NODELAY,     1);
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1);
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_DISTRIBUTION,    MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY);
-
-  memcached_behavior_set_key_hash(mc, MEMCACHED_HASH_MD5);
-
-  pthread_mutex_lock(&lock_arcus);
-  do {
-    arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-    if (arcus) {
-      ZOO_LOG_WARN(("Your memcached already has a Arcus server manager"));
-      rc= ARCUS_ALREADY_INITIATED; break;
-    }
-
-    /* Create a new Arcus client */
-    arcus= static_cast<arcus_st *>(libmemcached_malloc(mc, sizeof(arcus_st)));
-    if (not arcus) {
-      ZOO_LOG_ERROR(("cannot allocate the arcus"));
-      rc= ARCUS_ERROR; break;
-    }
-
-    memset(arcus, 0, sizeof(arcus_st));
-
-    arcus->zk.port= 0;
-    arcus->zk.session_timeout= ARCUS_ZK_SESSION_TIMEOUT_IN_MS;
-    arcus->zk.maxbytes= 0;
-    arcus->zk.last_rc= !ZOK;
-    arcus->zk.conn_result= ARCUS_SUCCESS;
-    arcus->zk.is_initializing= true;
-
-    arcus->pool = pool;
-    arcus->is_proxy= false;
-
-    /* Set ZooKeeper parameters */
-    snprintf(arcus->zk.ensemble_list, sizeof(arcus->zk.ensemble_list),
-             "%s", (ensemble_list)?ensemble_list:"");
-    snprintf(arcus->zk.svc_code, sizeof(arcus->zk.svc_code),
-             "%s", (svc_code)?svc_code:"");
-    snprintf(arcus->zk.path, sizeof(arcus->zk.path),
-             "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
-
-    /* Set the Arcus to memcached as a server manager.  */
-    memcached_set_server_manager(mc, (void *)arcus);
-
-    /* clear zk_manager structure */
-    memset(&arcus->zk_mgr.request, 0, sizeof(struct arcus_zk_request_st));
-    pthread_mutex_init(&arcus->zk_mgr.lock, NULL);
-    pthread_cond_init(&arcus->zk_mgr.cond, NULL);
-    arcus->zk_mgr.notification= false;
-    arcus->zk_mgr.reqstop= false;
-    arcus->zk_mgr.running= false;
-  } while(0);
-  pthread_mutex_unlock(&lock_arcus);
-
-  return rc;
 }
 
 static inline int do_add_client_info(arcus_st *arcus)
