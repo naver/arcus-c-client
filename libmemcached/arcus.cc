@@ -64,7 +64,6 @@ static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh, int type, int st
 static inline void do_arcus_zk_update_cachelist(memcached_st *mc, const struct String_vector *strings);
 static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc, char *serverlist, const size_t size);
 static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc, bool *retry);
-static inline int  do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *arcus);
 
 /**
  * ARCUS_ZK_MANAGER
@@ -470,6 +469,79 @@ void arcus_set_log_stream(memcached_st *mc,
   mc->logfile= logfile;
 }
 
+/* mutex for async operations */
+static void inc_count(int delta)
+{
+  pthread_mutex_lock(&azk_mtx);
+  azk_count += delta;
+  pthread_cond_broadcast(&azk_cond);
+  pthread_mutex_unlock(&azk_mtx);
+}
+
+static void clear_count(void)
+{
+  pthread_mutex_lock(&azk_mtx);
+  azk_count= 0;
+  pthread_mutex_unlock(&azk_mtx);
+}
+
+static int wait_count(int timeout)
+{
+    struct timeval  tv;
+    struct timespec ts;
+    int rc= 0;
+    pthread_mutex_lock(&azk_mtx);
+    while (azk_count > 0 && rc == 0) {
+        if (timeout == 0) {
+            rc= pthread_cond_wait(&azk_cond, &azk_mtx);
+        } else {
+            gettimeofday(&tv, NULL);
+            ts.tv_sec = tv.tv_sec;
+            ts.tv_nsec= tv.tv_usec*1000;
+            ts.tv_sec += timeout/1000; /* timeout: msec */
+            rc= pthread_cond_timedwait(&azk_cond, &azk_mtx, &ts);
+        }
+    }
+    pthread_mutex_unlock(&azk_mtx);
+    return rc;
+}
+
+static inline int do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *arcus)
+{
+  int zkrc;
+  struct Stat stat;
+
+#ifdef ENABLE_REPLICATION
+  /* Check /arcus_repl/cache_list/{svc} first
+   * If it exists, the service code belongs to a repl cluster.
+   */
+  snprintf(arcus->zk.path, sizeof(arcus->zk.path),
+    "%s/%s", ARCUS_REPL_ZK_CACHE_LIST, arcus->zk.svc_code);
+  zkrc= zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
+  if (zkrc == ZOK) {
+    ZOO_LOG_WARN(("Detected Arcus replication cluster. %s exits", arcus->zk.path));
+    arcus->zk.is_repl_enabled= true;
+    mc->flags.repl_enabled= true;
+    return 0;
+  }
+#endif
+
+  snprintf(arcus->zk.path, sizeof(arcus->zk.path),
+    "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
+  zkrc= zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
+  if (zkrc == ZOK) {
+    ZOO_LOG_WARN(("Detected Arcus cluster. %s exits", arcus->zk.path));
+    arcus->zk.is_repl_enabled= false;
+    mc->flags.repl_enabled= false;
+    return 0;
+  }
+
+  ZOO_LOG_ERROR(("zoo_exists failed while trying to"
+    " determine Arcus version. path=%s reason=%s, zookeeper=%s",
+    arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
+  return -1;
+}
+
 static inline int do_add_client_info(arcus_st *arcus)
 {
   int result;
@@ -530,43 +602,6 @@ static inline int do_add_client_info(arcus_st *arcus)
   return 0;
 }
 
-/* mutex for async operations */
-static void inc_count(int delta)
-{
-  pthread_mutex_lock(&azk_mtx);
-  azk_count += delta;
-  pthread_cond_broadcast(&azk_cond);
-  pthread_mutex_unlock(&azk_mtx);
-}
-
-static void clear_count(void)
-{
-  pthread_mutex_lock(&azk_mtx);
-  azk_count= 0;
-  pthread_mutex_unlock(&azk_mtx);
-}
-
-static int wait_count(int timeout)
-{
-    struct timeval  tv;
-    struct timespec ts;
-    int rc= 0;
-    pthread_mutex_lock(&azk_mtx);
-    while (azk_count > 0 && rc == 0) {
-        if (timeout == 0) {
-            rc= pthread_cond_wait(&azk_cond, &azk_mtx);
-        } else {
-            gettimeofday(&tv, NULL);
-            ts.tv_sec = tv.tv_sec;
-            ts.tv_nsec= tv.tv_usec*1000;
-            ts.tv_sec += timeout/1000; /* timeout: msec */
-            rc= pthread_cond_timedwait(&azk_cond, &azk_mtx, &ts);
-        }
-    }
-    pthread_mutex_unlock(&azk_mtx);
-    return rc;
-}
-
 /**
  * Creates a new ZooKeeper client thread.
  */
@@ -625,7 +660,6 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
       pthread_mutex_unlock(&lock_arcus);
       rc= ARCUS_ERROR; break;
     }
-
     if (do_arcus_cluster_validation_check(mc, arcus) < 0) {
       pthread_mutex_unlock(&lock_arcus);
       rc= ARCUS_ERROR; break;
@@ -766,42 +800,6 @@ void arcus_server_check_for_update(memcached_st *ptr)
     proc_mutex_unlock(&arcus->proxy.data->mutex);
   }
 #endif
-}
-
-static inline int do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *arcus)
-{
-  int zkrc;
-  struct Stat stat;
-
-#ifdef ENABLE_REPLICATION
-  /* Check /arcus_repl/cache_list/{svc} first
-   * If it exists, the service code belongs to a repl cluster.
-   */
-  snprintf(arcus->zk.path, sizeof(arcus->zk.path),
-    "%s/%s", ARCUS_REPL_ZK_CACHE_LIST, arcus->zk.svc_code);
-  zkrc= zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
-  if (zkrc == ZOK) {
-    ZOO_LOG_WARN(("Detected Arcus replication cluster. %s exits", arcus->zk.path));
-    arcus->zk.is_repl_enabled= true;
-    mc->flags.repl_enabled= true;
-    return 0;
-  }
-#endif
-
-  snprintf(arcus->zk.path, sizeof(arcus->zk.path),
-    "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
-  zkrc= zoo_exists(arcus->zk.handle, arcus->zk.path, 0, &stat);
-  if (zkrc == ZOK) {
-    ZOO_LOG_WARN(("Detected Arcus cluster. %s exits", arcus->zk.path));
-    arcus->zk.is_repl_enabled= false;
-    mc->flags.repl_enabled= false;
-    return 0;
-  }
-
-  ZOO_LOG_ERROR(("zoo_exists failed while trying to"
-    " determine Arcus version. path=%s reason=%s, zookeeper=%s",
-    arcus->zk.path, zerror(zkrc), arcus->zk.ensemble_list));
-  return -1;
 }
 
 /**
