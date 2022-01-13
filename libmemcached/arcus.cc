@@ -329,6 +329,10 @@ arcus_return_t arcus_close(memcached_st *mc)
   return ARCUS_SUCCESS;
 }
 
+/**
+ * PUBLIC API
+ * Connect the pool to ZooKeeper and initialize Arcus cluster.
+ */
 arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
                                   const char *ensemble_list,
                                   const char *svc_code)
@@ -357,11 +361,20 @@ arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
   return ARCUS_SUCCESS;
 }
 
+/**
+ * PUBLIC API
+ * Disconnect from ZooKeeper associated with the pool.
+ */
 arcus_return_t arcus_pool_close(memcached_pool_st *pool)
 {
   return arcus_close(memcached_pool_get_master(pool));
 }
 
+/**
+ * PUBLIC API
+ * Connect the client to ZooKeeper, initialize Arcus cluster, and turn the
+ * client into proxy.
+ */
 arcus_return_t arcus_proxy_create(memcached_st *mc,
                                   const char *ensemble_list,
                                   const char *svc_code)
@@ -397,6 +410,10 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
   return rc;
 }
 
+/**
+ * PUBLIC API
+ * Connect the given memcached to the proxy.
+ */
 arcus_return_t arcus_proxy_connect(memcached_st *mc,
                                    memcached_pool_st *pool,
                                    memcached_st *proxy)
@@ -419,6 +436,10 @@ arcus_return_t arcus_proxy_connect(memcached_st *mc,
   return rc;
 }
 
+/**
+ * PUBLIC API
+ * Close the proxy.
+ */
 arcus_return_t arcus_proxy_close(memcached_st *mc)
 {
   arcus_return_t rc;
@@ -460,6 +481,7 @@ void arcus_set_log_stream(memcached_st *mc,
   zoo_set_log_stream(logfile);
   mc->logfile= logfile;
 }
+
 
 /* mutex for async operations */
 static void inc_count(int delta)
