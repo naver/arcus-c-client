@@ -69,11 +69,6 @@ static void                  *arcus_zk_manager_thread_main(void *arg);
 /**
  * UTILITIES
  */
-static inline void do_arcus_update_cachelist(memcached_st *mc,
-                                             struct memcached_server_info *serverinfo,
-                                             uint32_t servercount);
-static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *nodename,
-                                             struct memcached_server_info *serverinfo);
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
 static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached_st *master);
 #endif
@@ -892,45 +887,6 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
   return 0;
 }
 
-static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
-                                                   const struct String_vector *strings)
-{
-  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-
-  /* Lock the data mutex */
-  proc_mutex_lock(&arcus->proxy.data->mutex);
-  {
-    if (strings->count) {
-      /* Convert String_vector to comma-seperated string */
-      size_t write_length= 0;
-      for (int i= 0; i< strings->count; i++) {
-        strcpy(arcus->proxy.data->serverlist + write_length, strings->data[i]);
-        write_length+= strlen(strings->data[i]);
-        arcus->proxy.data->serverlist[write_length++]= ',';
-      }
-      arcus->proxy.data->serverlist[write_length-1]= '\0';
-      arcus->proxy.data->size = strings->count;
-    } else { /* Empty string */
-      arcus->proxy.data->serverlist[0]= '\0';
-      arcus->proxy.data->size= 0;
-    }
-    /* Increase the data version */
-    arcus->proxy.data->version++;
-    ZOO_LOG_WARN(("proxy : data updated (version=%d) : %s",
-                 arcus->proxy.data->version,
-                 (arcus->proxy.data->size == 0) ? "NO CACHE SERVERS"
-                                                : arcus->proxy.data->serverlist));
-  }
-  /* Unlock the data mutex */
-  proc_mutex_unlock(&arcus->proxy.data->mutex);
-
-  unlikely (arcus->zk.is_initializing)
-  {
-    arcus->zk.is_initializing= false;
-    pthread_cond_broadcast(&cond_arcus);
-  }
-}
-
 #ifdef ENABLE_REPLICATION
 static inline memcached_return_t
 __do_arcus_update_grouplist(memcached_st *mc,
@@ -1283,6 +1239,45 @@ static inline int do_arcus_zk_process_reconnect(memcached_st *mc, bool *retry)
     ret= -1;
   }
   return ret;
+}
+
+static inline void do_arcus_proxy_update_cachelist(memcached_st *mc,
+                                                   const struct String_vector *strings)
+{
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+
+  /* Lock the data mutex */
+  proc_mutex_lock(&arcus->proxy.data->mutex);
+  {
+    if (strings->count) {
+      /* Convert String_vector to comma-seperated string */
+      size_t write_length= 0;
+      for (int i= 0; i< strings->count; i++) {
+        strcpy(arcus->proxy.data->serverlist + write_length, strings->data[i]);
+        write_length+= strlen(strings->data[i]);
+        arcus->proxy.data->serverlist[write_length++]= ',';
+      }
+      arcus->proxy.data->serverlist[write_length-1]= '\0';
+      arcus->proxy.data->size = strings->count;
+    } else { /* Empty string */
+      arcus->proxy.data->serverlist[0]= '\0';
+      arcus->proxy.data->size= 0;
+    }
+    /* Increase the data version */
+    arcus->proxy.data->version++;
+    ZOO_LOG_WARN(("proxy : data updated (version=%d) : %s",
+                 arcus->proxy.data->version,
+                 (arcus->proxy.data->size == 0) ? "NO CACHE SERVERS"
+                                                : arcus->proxy.data->serverlist));
+  }
+  /* Unlock the data mutex */
+  proc_mutex_unlock(&arcus->proxy.data->mutex);
+
+  unlikely (arcus->zk.is_initializing)
+  {
+    arcus->zk.is_initializing= false;
+    pthread_cond_broadcast(&cond_arcus);
+  }
 }
 
 /**
