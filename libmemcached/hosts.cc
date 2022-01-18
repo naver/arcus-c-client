@@ -785,6 +785,65 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
   return run_distribution(ptr);
 }
 
+#ifdef SERVER_PUSH_WITH_SERVERINFO
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr, 
+                                                         struct memcached_server_info *serverinfo, 
+                                                         uint32_t servercount)
+{
+  if (not serverinfo or servercount == 0 or memcached_server_count(ptr) >= servercount) {
+    return MEMCACHED_SUCCESS;
+  }
+
+  if (ptr->flags.use_udp) {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_HOST_PROTOCOL, MEMCACHED_AT);
+  }
+  
+  memcached_server_st *new_host_list;
+  new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
+									sizeof(memcached_server_st) * servercount));
+
+  if (not new_host_list) {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
+  }
+
+  memcached_server_list_set(ptr, new_host_list);
+
+  for (uint32_t x= 0; x < servercount; x++)
+  {
+    if (serverinfo[x].exist == false) 
+    {
+      memcached_server_write_instance_st instance;
+
+      WATCHPOINT_ASSERT(serverinfo[x].hostname[0] != 0);
+
+      // We have extended the array, and now we will find it, and use it.
+      instance= memcached_server_instance_fetch(ptr, memcached_server_count(ptr));
+      WATCHPOINT_ASSERT(instance);
+
+      memcached_string_t hostname= { memcached_string_make_from_cstr(serverinfo[x].hostname) };
+      if (__server_create_with(ptr, instance, hostname, serverinfo[x].port, 0, 
+                              serverinfo[x].port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET) == NULL)
+      {
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
+      }
+
+      ptr->number_of_hosts++;
+    }
+  }
+
+  // Provides backwards compatibility with server list.
+  {
+    memcached_server_write_instance_st instance;
+    instance= memcached_server_instance_fetch(ptr, 0);
+    instance->number_of_hosts= memcached_server_count(ptr);
+  }
+
+  return run_distribution(ptr);
+}
+#endif
+#endif
+
 memcached_return_t memcached_server_add_unix_socket(memcached_st *ptr,
                                                     const char *filename)
 {
