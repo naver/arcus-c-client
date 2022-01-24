@@ -309,6 +309,9 @@ do_rgroup_init(memcached_rgroup_st *self, memcached_st *root,
   //self->options.is_allocated
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
+#ifdef POOL_UPDATE_SERVERLIST
+  self->options.is_exist= false;
+#endif
 
   self->root= root;
   assert(groupname.size < RGROUP_NAME_LENGTH);
@@ -493,6 +496,97 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
   }
 }
 
+#ifdef POOL_UPDATE_SERVERLIST
+bool
+memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rgroup)
+{
+  /* rgroup : old rgroup struct */
+  /* new_rgroup : new rgroup struct */
+
+  if (rgroup->nreplica == 1)
+  {
+    if (new_rgroup->nreplica == 1) {
+      if (RGROUP_SERVER_IS_SAME(rgroup, 0, new_rgroup, 0)) {
+        /* no change: do nothing */
+        return false;
+      } else {
+        /* replace the server */
+        do_rgroup_server_replace(rgroup, 0, new_rgroup->replicas[0]->hostname,
+                                            new_rgroup->replicas[0]->port);
+      }
+    } else { /* new_rgroup->nreplica >= 2 */
+      if (RGROUP_SERVER_IS_SAME(rgroup, 0, new_rgroup, 0) != true) {
+        /* replace the master */
+        do_rgroup_server_replace(rgroup, 0, new_rgroup->replicas[0]->hostname,
+                                            new_rgroup->replicas[0]->port);
+      }
+      /* add new slaves */
+      for (int i= 1; i < (int)new_rgroup->nreplica; i++) {
+        do_rgroup_server_insert(rgroup, i, new_rgroup->replicas[i]->hostname,
+                                           new_rgroup->replicas[i]->port);
+      }
+    }
+    return true;
+  }
+  else /* rgroup->nreplica >= 2 */
+  {
+    int i, j;
+    bool changed = false;
+
+    if (RGROUP_SERVER_IS_SAME(rgroup, 0, new_rgroup, 0) != true) {
+      for (i= 1; i < (int)rgroup->nreplica; i++) {
+        if (RGROUP_SERVER_IS_SAME(rgroup, i, new_rgroup, 0))
+          break;
+      }
+      if (i < (int)rgroup->nreplica) { /* found */
+        /* master failover : The old slave become the new master */
+        do_rgroup_server_switchover(rgroup, i);
+      } else {
+        /* replace the master */
+        do_rgroup_server_replace(rgroup, 0, new_rgroup->replicas[0]->hostname,
+                                            new_rgroup->replicas[0]->port);
+      }
+      changed = true;
+    }
+
+    /* handle the slave nodes */
+    if (new_rgroup->nreplica == 1) {
+      /* remove old slave nodes */
+      while (rgroup->nreplica > 1) {
+        do_rgroup_server_remove(rgroup, rgroup->nreplica-1);
+      }
+      changed = true;
+    } else { /* new_rgroup->nreplica >= 2 */
+      /* remove old slaves that are disappeared */
+      for (i= 1; i < (int)rgroup->nreplica; i++) {
+        for (j= 1; j < (int)new_rgroup->nreplica; j++) {
+          if (RGROUP_SERVER_IS_SAME(rgroup, i, new_rgroup, j))
+            break;
+        }
+        if (j >= (int)new_rgroup->nreplica) { /* Not exist */
+          do_rgroup_server_remove(rgroup, i);
+          i -= 1; /* for adjusting "i" index */
+          changed = true;
+        }
+      }
+      /* insert new slaves that are appeared */
+      for (i= 1; i < (int)new_rgroup->nreplica; i++) {
+        for (j= 1; j < (int)rgroup->nreplica; j++) {
+          if (RGROUP_SERVER_IS_SAME(rgroup, j, new_rgroup, i))
+            break;
+        }
+        if (j >= (int)rgroup->nreplica) { /* Not exist */
+          do_rgroup_server_insert(rgroup, -1, new_rgroup->replicas[i]->hostname,
+                                              new_rgroup->replicas[i]->port);
+          changed = true;
+        }
+      }
+    }
+    return changed;
+  }
+}
+#endif
+
 void
 memcached_rgroup_push_with_groupinfo(memcached_st *memc,
                       struct memcached_rgroup_info *groupinfo,
@@ -519,6 +613,46 @@ memcached_rgroup_push_with_groupinfo(memcached_st *memc,
     }
   }
 }
+
+#ifdef POOL_UPDATE_SERVERLIST
+memcached_return_t
+memcached_rgroup_push_with_master(memcached_st *memc, memcached_st *master) 
+{
+  memcached_rgroup_st *rgroup;
+  uint32_t x, y;
+
+  if (not memc or not master or not master->rgroups) {
+    return MEMCACHED_SUCCESS;
+  }
+
+  uint32_t groupcount= memcached_server_count(master);
+  memcached_rgroup_st *grouplist= master->rgroups;
+
+  if (memcached_rgroup_expand(memc, groupcount, (groupcount*RGROUP_MAX_REPLICA)) != 0) {
+    return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
+  }
+
+  for (x= 0; x < groupcount; x++) {
+    if (grouplist[x].options.is_exist) continue;
+    /* create rgroup */
+    rgroup= do_rgroup_create(&memc->rgroups[memc->number_of_hosts], memc);
+    assert(rgroup != NULL);
+    memcached_string_t _groupname= { memcached_string_make_from_cstr(grouplist[x].groupname) };
+    do_rgroup_init(rgroup, memc, _groupname, memc->number_of_hosts, 0);
+
+    /* add replicas */
+    for (y= 0; y < grouplist[x].nreplica; y++) {
+      do_rgroup_server_insert(rgroup, y, grouplist[x].replicas[y]->hostname,
+                                        grouplist[x].replicas[y]->port);
+    }
+    if (grouplist[x].weight > 1) {
+      memc->ketama.weighted= true;
+    }
+    memc->number_of_hosts++;
+  }
+  return run_distribution(memc);
+}
+#endif
 
 memcached_return_t
 memcached_rgroup_push(memcached_st *memc,

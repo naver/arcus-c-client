@@ -79,6 +79,11 @@ LIBMEMCACHED_API
 #endif
 #endif
 
+#ifdef POOL_UPDATE_SERVERLIST
+LIBMEMCACHED_API
+  memcached_return_t memcached_server_push_with_master(memcached_st *ptr, memcached_st *master);
+#endif
+
 LIBMEMCACHED_API
   memcached_server_list_st memcached_server_list_append(memcached_server_list_st ptr,
                                                         const char *hostname,
