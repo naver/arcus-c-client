@@ -114,6 +114,9 @@
 #include <libmemcached/arcus.h>
 #include <libmemcached/collection.h>
 #include <libmemcached/collection_result.h>
+#ifdef POOL_UPDATE_SERVERLIST
+#include <libmemcached/util.h>
+#endif
 
 struct memcached_st {
   /**

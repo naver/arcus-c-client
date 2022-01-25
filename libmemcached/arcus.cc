@@ -1101,12 +1101,21 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
 
   /* If enabled memcached pooling, repopulate the pool. */
   if (arcus->pool && mc == memcached_pool_get_master(arcus->pool) && serverlist_changed) {
+#ifdef POOL_UPDATE_SERVERLIST
+    memcached_return_t rc= memcached_pool_update_serverlist(arcus->pool);
+    if (rc == MEMCACHED_SUCCESS) {
+      ZOO_LOG_WARN(("MEMACHED_POOL=SERVERLIST UPDATED"));
+    } else {
+      ZOO_LOG_WARN(("failed to update serverlist in the pool!"));
+    }
+#else
     memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
     if (rc == MEMCACHED_SUCCESS) {
       ZOO_LOG_WARN(("MEMACHED_POOL=REPOPULATED"));
     } else {
       ZOO_LOG_WARN(("failed to repopulate the pool!"));
     }
+#endif
   }
 
   gettimeofday(&tv_end, 0);
