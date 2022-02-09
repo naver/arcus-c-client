@@ -227,7 +227,7 @@ static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
   char ap_lock_fname[64];
   snprintf(ap_lock_fname, 64, ".arcus_proxy_lock.%d", getpid());
 
-  if (0 != proc_mutex_create(&arcus->proxy.data->mutex, ap_lock_fname)) {
+  if (proc_mutex_create(&arcus->proxy.data->mutex, ap_lock_fname) != 0) {
     ZOO_LOG_ERROR(("Cannot create the proxy lock file. You might have to"
             " delete the lock file manually. file=%s error=%s(%d)",
             ap_lock_fname, strerror(errno), errno));
@@ -269,7 +269,7 @@ static inline arcus_return_t do_arcus_proxy_close(memcached_st *mc)
   if (arcus->is_proxy) {
     arcus->proxy.data->version= 0;
     arcus->is_proxy= false;
-    if (0 != proc_mutex_destroy(&arcus->proxy.data->mutex)) {
+    if (proc_mutex_destroy(&arcus->proxy.data->mutex) != 0) {
       ZOO_LOG_ERROR(("Failed to free the mutex. error=%s(%d)",
                     strerror(errno), errno));
     }
@@ -1468,7 +1468,7 @@ static inline arcus_return_t do_arcus_zk_manager_start(memcached_st *mc)
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 
     /* zk manager thread */
-    if (0 != pthread_create(&arcus->zk_mgr.tid, &attr, arcus_zk_manager_thread_main, (void *)mc)) {
+    if (pthread_create(&arcus->zk_mgr.tid, &attr, arcus_zk_manager_thread_main, (void *)mc) != 0) {
       ZOO_LOG_ERROR(("Cannot create zk manager thread: %s(%d)", strerror(errno), errno));
       zookeeper_close(arcus->zk.handle);
       arcus->zk.handle= NULL;
@@ -1700,7 +1700,7 @@ static int proc_mutex_unlock(struct arcus_proc_mutex *m)
 static int proc_mutex_destroy(struct arcus_proc_mutex *m)
 {
   if (m->locked) {
-    if (0 != proc_mutex_unlock(m)) {
+    if (proc_mutex_unlock(m) != 0) {
       ZOO_LOG_ERROR(("Failed to unlock the mutex. error=%s(%d)",
           strerror(errno), errno));
       return -1;
