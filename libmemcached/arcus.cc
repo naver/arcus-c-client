@@ -973,12 +973,7 @@ __do_arcus_update_cachelist(memcached_st *mc,
 {
   memcached_return_t error= MEMCACHED_SUCCESS;
   uint32_t x, y;
-#ifdef SERVER_PUSH_WITH_SERVERINFO
   uint32_t validcount= servercount;
-#else
-  memcached_server_st *servers= NULL;
-  memcached_server_st *new_hosts;
-#endif
   bool prune_flag= false;
 
   if (servercount == 0)
@@ -1000,9 +995,7 @@ __do_arcus_update_cachelist(memcached_st *mc,
 
       if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
           mc->servers[x].port == serverinfo[y].port) {
-#ifdef SERVER_PUSH_WITH_SERVERINFO
          validcount--;
-#endif
          serverinfo[y].exist= true; break;
       }
     }
@@ -1011,21 +1004,7 @@ __do_arcus_update_cachelist(memcached_st *mc,
       prune_flag= true;
     }
   }
-#ifdef SERVER_PUSH_WITH_SERVERINFO
-#else
-  for (x= 0; x< servercount; x++)
-  {
-    if (serverinfo[x].exist == false) {
-      new_hosts= memcached_server_list_append(servers, serverinfo[x].hostname,
-                                              serverinfo[x].port, &error);
-      if (new_hosts == NULL)
-        break;
-      servers= new_hosts;
-    }
-  }
-#endif
 
-#ifdef SERVER_PUSH_WITH_SERVERINFO
   if (validcount > 0) {
     if (prune_flag) {
       memcached_server_prune(mc, false); /* prune dead servers only */
@@ -1040,34 +1019,6 @@ __do_arcus_update_cachelist(memcached_st *mc,
   if (validcount > 0 or prune_flag) {
     *serverlist_changed = true;
   }
-#else
-  if (error == MEMCACHED_SUCCESS) {
-    if (servers) {
-      if (prune_flag) {
-        memcached_server_prune(mc, false); /* prune dead servers only */
-      }
-      error= memcached_server_push(mc, servers);
-    } else {
-      if (prune_flag) {
-        memcached_server_prune(mc, false); /* prune dead servers only */
-        error= run_distribution(mc);
-      }
-    }
-    if (servers or prune_flag) {
-      *serverlist_changed = true;
-    }
-  } else { /* memcached_server_list_append FAIL */
-    if (prune_flag) {
-      for (x= 0; x< memcached_server_count(mc); x++) {
-        if (mc->servers[x].options.is_dead == true)
-          mc->servers[x].options.is_dead= false;
-      }
-    }
-  }
-  if (servers) {
-    memcached_server_list_free(servers);
-  }
-#endif
   return error;
 }
 

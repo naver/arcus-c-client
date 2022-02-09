@@ -70,13 +70,11 @@ LIBMEMCACHED_API
 LIBMEMCACHED_API
   memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_server_list_st list);
 
-#ifdef SERVER_PUSH_WITH_SERVERINFO
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 LIBMEMCACHED_API
   memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr, 
                                                            struct memcached_server_info *serverinfo, 
                                                            uint32_t servercount);
-#endif
 #endif
 
 #ifdef POOL_UPDATE_SERVERLIST
