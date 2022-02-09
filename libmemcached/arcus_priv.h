@@ -23,15 +23,7 @@
 #define ZOOKEEPER_C_CLIENT 1
 #include <zookeeper_log.h>
 
-#define ARCUS_MAX_PROXY_FILE_LENGTH 10240
-
-struct arcus_proc_mutex
-{
-  int fd;
-  int locked;
-  char *fname;
-};
-
+/* arcus zk structure */
 struct arcus_zk_st
 {
   zhandle_t  *handle;
@@ -52,13 +44,15 @@ struct arcus_zk_st
 };
 
 /* arcus zk request structure */
-struct arcus_zk_request_st {
+struct arcus_zk_request_st
+{
   bool reconnect_process;
   bool update_cache_list;
 };
 
 /* arcus zk manager structure */
-struct arcus_zk_manager_st {
+struct arcus_zk_manager_st
+{
   /* zk requests by other threads */
   struct arcus_zk_request_st request;
 
@@ -69,8 +63,17 @@ struct arcus_zk_manager_st {
   bool reqstop;
 
   volatile bool running;
-
   pthread_t tid;
+};
+
+/* arcus proxy data structure */
+#define ARCUS_MAX_PROXY_FILE_LENGTH 10240
+
+struct arcus_proc_mutex
+{
+  int fd;
+  int locked;
+  char *fname;
 };
 
 typedef struct arcus_proxy_data_st
@@ -81,6 +84,14 @@ typedef struct arcus_proxy_data_st
   char serverlist[ARCUS_MAX_PROXY_FILE_LENGTH - 512];
 } arcus_proxy_data_st;
 
+/* arcus proxy structure */
+struct arcus_proxy_st
+{
+  char                name[256];
+  uint32_t            current_version;
+  arcus_proxy_data_st *data;
+};
+
 typedef struct arcus_st {
   /**
    * @note zookeeper configurations
@@ -88,13 +99,7 @@ typedef struct arcus_st {
   struct arcus_zk_st zk;
   struct arcus_zk_manager_st zk_mgr;
 
-  struct arcus_proxy_st
-  {
-    char                name[256];
-    uint32_t            current_version;
-    arcus_proxy_data_st *data;
-  } proxy;
-
+  struct arcus_proxy_st proxy;
   memcached_pool_st *pool;
 
   bool is_proxy;
@@ -103,7 +108,7 @@ typedef struct arcus_st {
 #ifdef ENABLE_REPLICATION
 /* replication cluster:
  * groupname is the name of the group this server belongs to.
- * hostname is the name of the master server. 
+ * hostname is the name of the master server.
  * If there are no masters, then hostname = NULL.
  */
 #endif
