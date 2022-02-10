@@ -527,6 +527,119 @@ void *memcached_get_server_manager(memcached_st *ptr) {
 void memcached_set_server_manager(memcached_st *ptr, void *server_manager) {
   ptr->server_manager= server_manager;
 }
+#ifdef NEW_UPDATE_SERVERLIST
+
+#ifdef ENABLE_REPLICATION
+static memcached_return_t
+do_memcached_update_grouplist_with_master(memcached_st *mc, memcached_st *master)
+{
+  uint32_t x, y;
+  bool prune_flag;
+
+  if (memcached_server_count(master) == 0)
+  {
+    if (memcached_server_count(mc) == 0) {
+      return MEMCACHED_SUCCESS;
+    }
+    memcached_rgroup_prune(mc, true); /* prune all rgroups */
+    return run_distribution(mc);
+  }
+  if (memcached_server_count(mc) == 0)
+  {
+    return memcached_rgroup_push(mc, master->rgroups, memcached_server_count(master));
+  }
+
+  /* compare member mc with master mc */ 
+  prune_flag= false;
+  y= 0;
+  for (x= 0; x < memcached_server_count(mc); x++)
+  {
+    if (y < memcached_server_count(master) and
+        strcmp(mc->rgroups[x].groupname, master->rgroups[y].groupname) == 0) 
+    {
+      memcached_rgroup_update(&mc->rgroups[x], &master->rgroups[y]);
+      y++;
+    }
+    else /* This rgroup is absent in master */
+    {
+      mc->rgroups[x].options.is_dead= true;
+      prune_flag= true;
+    }
+  }
+  if (prune_flag) {
+    memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
+  }
+  if (y < memcached_server_count(master)) {
+    uint32_t push_count= memcached_server_count(master) - y;
+    return memcached_rgroup_push(mc, &master->rgroups[y], push_count);
+  }
+  if (prune_flag) {
+    return run_distribution(mc);
+  }
+  return MEMCACHED_SUCCESS;
+}
+#endif
+
+static memcached_return_t
+do_memcached_update_serverlist_with_master(memcached_st *mc, memcached_st *master)
+{
+  uint32_t x, y;
+  bool prune_flag;
+
+  if (memcached_server_count(master) == 0)
+  {
+    if (memcached_server_count(mc) == 0) {
+      return MEMCACHED_SUCCESS;
+    }
+    memcached_server_prune(mc, true); /* prune all servers */
+    return run_distribution(mc);
+  }
+  if (memcached_server_count(mc) == 0)
+  {
+    return memcached_server_push(mc, master->servers);
+  }
+
+  /* compare member mc with master mc */
+  prune_flag= false;
+  y= 0;
+  for (x= 0; x < memcached_server_count(mc); x++)
+  {
+    if (y < memcached_server_count(master) and
+        strcmp(mc->servers[x].hostname, master->servers[y].hostname) == 0 and
+               mc->servers[x].port ==   master->servers[y].port)
+    {
+      y++;
+    }
+    else /* This server is absent in master */
+    {
+      mc->servers[x].options.is_dead= true;
+      prune_flag= true;
+    }
+  }
+  if (prune_flag) {
+    memcached_server_prune(mc, false); /* prune dead servers only */
+  }
+  if (y < memcached_server_count(master)) {
+    uint32_t push_count= memcached_server_count(master) - y;
+    return memcached_server_push_with_count(mc, &master->servers[y], push_count);
+  }
+  if (prune_flag) {
+    return run_distribution(mc);
+  }
+  return MEMCACHED_SUCCESS;
+}
+
+memcached_return_t memcached_update_cachelist_with_master(memcached_st *ptr, memcached_st *master)
+{
+#ifdef ENABLE_REPLICATION
+  if (master->flags.repl_enabled)
+  {
+    return do_memcached_update_grouplist_with_master(ptr, master);
+  }
+#endif
+  return do_memcached_update_serverlist_with_master(ptr, master);
+}
+#endif
 #endif
 
 memcached_return_t memcached_get_last_response_code(memcached_st *ptr)

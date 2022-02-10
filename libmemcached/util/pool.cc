@@ -604,6 +604,8 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 }
 
 #ifdef POOL_UPDATE_SERVERLIST
+#ifdef NEW_UPDATE_SERVERLIST
+#else
 static inline void do_member_update_ketama_version(memcached_st *ptr, memcached_st *master)
 {
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
@@ -785,19 +787,42 @@ static inline memcached_return_t do_pool_update_cachelist(memcached_pool_st *poo
   }
   return rc;
 }
+#endif /* NEW_UPDATE_SERVERLIST */
 
 memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool)
 {
+#ifdef NEW_UPDATE_SERVERLIST
+#else
   memcached_return_t rc= MEMCACHED_SUCCESS;
+#endif
   if (pool == NULL) {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
+
   (void)pthread_mutex_lock(&pool->mutex);
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   pool->increment_ketama_version();
 #else
   pool->increment_version();
 #endif
+#ifdef NEW_UPDATE_SERVERLIST
+
+  /* update the member mcs */
+  for (int xx= 0; xx <= pool->top; ++xx)
+  {
+    memcached_st *mc= pool->mc_pool[xx];
+    memcached_return_t error;
+    error= memcached_update_cachelist_with_master(mc, pool->master);
+    if (error == MEMCACHED_SUCCESS)
+    {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+      mc->configure.ketama_version= pool->ketama_version();
+#else
+      mc->configure.version= pool->version();
+#endif
+    }
+  }
+#else
   if (pool->top != -1)
   {
 #ifdef ENABLE_REPLICATION
@@ -807,8 +832,13 @@ memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool)
 #endif
     rc= do_pool_update_cachelist(pool);
   }
+#endif
   (void)pthread_mutex_unlock(&pool->mutex);
+#ifdef NEW_UPDATE_SERVERLIST
+  return MEMCACHED_SUCCESS;
+#else
   return rc;
+#endif
 }
 #endif
 
@@ -838,12 +868,17 @@ memcached_pool_use_single_server(memcached_pool_st *pool,
   if (error != MEMCACHED_SUCCESS)
     return error;
 
+#ifdef NEW_UPDATE_SERVERLIST
+  // clone the master to the whole pool
+  return memcached_pool_repopulate(pool);
+#else
 #ifdef POOL_UPDATE_SERVERLIST
   return memcached_pool_update_serverlist(pool);
 #else
   // clone the master to the whole pool
   return memcached_pool_repopulate(pool);
 #endif  
+#endif
 }
 #endif
 

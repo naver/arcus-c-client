@@ -725,14 +725,26 @@ static memcached_return_t server_add(memcached_st *ptr,
 }
 
 
+#ifdef NEW_UPDATE_SERVERLIST
+memcached_return_t memcached_server_push_with_count(memcached_st *ptr,
+                                                    const memcached_server_list_st list,
+                                                    uint32_t count)
+#else
 memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_server_list_st list)
+#endif
 {
   if (not list)
   {
     return MEMCACHED_SUCCESS;
   }
 
+#ifdef NEW_UPDATE_SERVERLIST
+#if 0 // comment out this line in the original memcached_server_push()
   uint32_t count= memcached_server_list_count(list);
+#endif
+#else
+  uint32_t count= memcached_server_list_count(list);
+#endif
 
   memcached_server_st *new_host_list;
   new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
@@ -784,6 +796,13 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
 
   return run_distribution(ptr);
 }
+
+#ifdef NEW_UPDATE_SERVERLIST
+memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_server_list_st list)
+{
+  return memcached_server_push_with_count(ptr, list, memcached_server_list_count(list));
+}
+#endif
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr, 
@@ -842,6 +861,8 @@ memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
 }
 #endif
 
+#ifdef NEW_UPDATE_SERVERLIST
+#else
 #ifdef POOL_UPDATE_SERVERLIST
 memcached_return_t memcached_server_push_with_master(memcached_st *ptr, memcached_st *master)
 {
@@ -904,6 +925,7 @@ memcached_return_t memcached_server_push_with_master(memcached_st *ptr, memcache
 
   return run_distribution(ptr);
 }
+#endif
 #endif
 
 memcached_return_t memcached_server_add_unix_socket(memcached_st *ptr,

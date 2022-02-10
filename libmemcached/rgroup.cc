@@ -309,8 +309,11 @@ do_rgroup_init(memcached_rgroup_st *self, memcached_st *root,
   //self->options.is_allocated
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
+#ifdef NEW_UPDATE_SERVERLIST
+#else
 #ifdef POOL_UPDATE_SERVERLIST
   self->options.is_exist= false;
+#endif
 #endif
 
   self->root= root;
@@ -614,6 +617,8 @@ memcached_rgroup_push_with_groupinfo(memcached_st *memc,
   }
 }
 
+#ifdef NEW_UPDATE_SERVERLIST
+#else
 #ifdef POOL_UPDATE_SERVERLIST
 memcached_return_t
 memcached_rgroup_push_with_master(memcached_st *memc, memcached_st *master) 
@@ -652,6 +657,7 @@ memcached_rgroup_push_with_master(memcached_st *memc, memcached_st *master)
   }
   return run_distribution(memc);
 }
+#endif
 #endif
 
 memcached_return_t

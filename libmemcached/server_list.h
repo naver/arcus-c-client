@@ -67,6 +67,13 @@ LIBMEMCACHED_API
   void memcached_server_prune(memcached_st *ptr, bool all_flag);
 #endif
 
+#ifdef NEW_UPDATE_SERVERLIST
+LIBMEMCACHED_API
+  memcached_return_t memcached_server_push_with_count(memcached_st *ptr,
+                                                      const memcached_server_list_st list,
+                                                      uint32_t count);
+#endif
+
 LIBMEMCACHED_API
   memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_server_list_st list);
 
@@ -77,9 +84,12 @@ LIBMEMCACHED_API
                                                            uint32_t servercount);
 #endif
 
+#ifdef NEW_UPDATE_SERVERLIST
+#else
 #ifdef POOL_UPDATE_SERVERLIST
 LIBMEMCACHED_API
   memcached_return_t memcached_server_push_with_master(memcached_st *ptr, memcached_st *master);
+#endif
 #endif
 
 LIBMEMCACHED_API
