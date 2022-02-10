@@ -887,147 +887,6 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
   return 0;
 }
 
-#ifdef ENABLE_REPLICATION
-static inline memcached_return_t
-__do_arcus_update_grouplist(memcached_st *mc,
-                            struct memcached_server_info *serverinfo,
-                            uint32_t servercount, bool *serverlist_changed)
-{
-  struct memcached_rgroup_info *groupinfo;
-  uint32_t groupcount= 0;
-  uint32_t validcount= 0;
-  uint32_t x, y;
-  bool prune_flag= false;
-
-  if (serverlist_changed) *serverlist_changed= false;
-
-  if (servercount == 0) {
-    if (memcached_server_count(mc) == 0) {
-      return MEMCACHED_SUCCESS;
-    }
-    if (serverlist_changed) *serverlist_changed= true;
-    memcached_rgroup_prune(mc, true); /* prune all rgroups */
-    return run_distribution(mc);
-  }
-
-  ZOO_LOG_INFO(("__do_arcus_update_grouplist: count=%u\n", servercount));
-  for (x= 0; x < servercount; x++) {
-    ZOO_LOG_INFO(("server[%u] groupname=%s %s hostname=%s port=%u\n",
-            x, serverinfo[x].groupname, 
-            serverinfo[x].master ? "master" : "slave",
-            serverinfo[x].hostname, 
-            serverinfo[x].port));
-  }
-
-  groupinfo= memcached_rgroup_info_create(mc, serverinfo, servercount,
-                                          &groupcount, &validcount);
-  if (not groupinfo) {
-    return memcached_set_error(*mc, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
-                               memcached_literal_param("Failed to create rgroup_info"));
-  }
-
-  if (memcached_rgroup_expand(mc, groupcount, servercount) != 0) {
-    return memcached_set_error(*mc, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
-                               memcached_literal_param("Failed to expand rgroup space"));
-  }
-
-  for (x= 0; x< memcached_server_count(mc); x++) {
-    /* find replica group */
-    for (y= 0; y< groupcount; y++) {
-      if (strcmp(mc->rgroups[x].groupname, groupinfo[y].groupname) == 0)
-        break;
-    }
-    if (y < groupcount) { /* Found */
-      if (groupinfo[y].valid) {
-        if (memcached_rgroup_update_with_groupinfo(&mc->rgroups[x], &groupinfo[y]) == true) {
-          if (serverlist_changed) *serverlist_changed= true;
-        }
-        groupinfo[y].valid= false;
-        validcount--;
-      }
-    } else { /* Not found */
-      mc->rgroups[x].options.is_dead= true;
-      prune_flag= true;
-    }
-  }
-
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-  if (validcount > 0 or prune_flag)
-  {
-    if (serverlist_changed) *serverlist_changed= true;
-    if (validcount > 0) {
-      if (prune_flag) { /* prune old dead replica groups */
-        memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
-      }
-      rc= memcached_rgroup_push_with_groupinfo(mc, groupinfo, groupcount);
-    } else {
-      assert(prune_flag); 
-      memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
-      rc= run_distribution(mc);
-    }
-  }
-  memcached_rgroup_info_destroy(mc, groupinfo);
-  return rc;
-}
-#endif
-
-static inline memcached_return_t
-__do_arcus_update_cachelist(memcached_st *mc,
-                            struct memcached_server_info *serverinfo,
-                            uint32_t servercount, bool *serverlist_changed)
-{
-  uint32_t x, y;
-  uint32_t validcount= servercount;
-  bool prune_flag= false;
-
-  if (serverlist_changed) *serverlist_changed= false;
-
-  if (servercount == 0)
-  {
-    /* If there's no available servers, delete all managed servers. */
-    if (memcached_server_count(mc) == 0) {
-      return MEMCACHED_SUCCESS;
-    }
-    if (serverlist_changed) *serverlist_changed= true;
-    memcached_server_prune(mc, true); /* prune all servers */
-    return run_distribution(mc);
-  }
-
-  for (x= 0; x< memcached_server_count(mc); x++)
-  {
-    for (y= 0; y< servercount; y++) {
-      if (serverinfo[y].exist)
-        continue;
-
-      if (strcmp(mc->servers[x].hostname, serverinfo[y].hostname) == 0 and
-          mc->servers[x].port == serverinfo[y].port) {
-         validcount--;
-         serverinfo[y].exist= true; break;
-      }
-    }
-    if (y == servercount) { /* NOT found */
-      mc->servers[x].options.is_dead= true;
-      prune_flag= true;
-    }
-  }
-
-  if (validcount > 0 or prune_flag)
-  {
-    if (serverlist_changed) *serverlist_changed= true;
-    if (validcount > 0) {
-      if (prune_flag) {
-        memcached_server_prune(mc, false); /* prune dead servers only */
-      }
-      return memcached_server_push_with_serverinfo(mc, serverinfo, servercount);
-    } else {
-      assert(prune_flag);
-      memcached_server_prune(mc, false); /* prune dead servers only */
-      return run_distribution(mc);
-    }
-  }
-  return MEMCACHED_SUCCESS;
-}
-
 static inline void do_arcus_update_cachelist(memcached_st *mc,
                                              struct memcached_server_info *serverinfo,
                                              uint32_t servercount)
@@ -1043,12 +902,7 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
 
   /* Update the server list. */
   bool serverlist_changed= false;
-#ifdef ENABLE_REPLICATION
-  if (mc->flags.repl_enabled)
-    error= __do_arcus_update_grouplist(mc, serverinfo, servercount, &serverlist_changed);
-  else
-#endif
-  error= __do_arcus_update_cachelist(mc, serverinfo, servercount, &serverlist_changed);
+  error= memcached_update_cachelist(mc, serverinfo, servercount, &serverlist_changed);
 
   unlikely (arcus->zk.is_initializing)
   {
@@ -1179,15 +1033,8 @@ static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached
 
   /* Update the server list. */
   memcached_return_t error= MEMCACHED_SUCCESS;
-#ifdef ENABLE_REPLICATION
-  if (ptr->flags.repl_enabled)
-    error= __do_arcus_update_grouplist(ptr, serverinfo, servercount, NULL);
-  else
-#endif
-  error= __do_arcus_update_cachelist(ptr, serverinfo, servercount, NULL);
-
-  /* TODO: need error handling */
-  if (error != MEMCACHED_SUCCESS)
+  error= memcached_update_cachelist(ptr, serverinfo, servercount, NULL);
+  if (error != MEMCACHED_SUCCESS) /* TODO: need error handling */
   {
   }
   libmemcached_free(ptr, serverinfo);
