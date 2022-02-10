@@ -122,7 +122,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool);
 
 #ifdef POOL_UPDATE_SERVERLIST
-LIBMEMCACHED_LOCAL
+LIBMEMCACHED_API
 memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool);
 #endif
 
