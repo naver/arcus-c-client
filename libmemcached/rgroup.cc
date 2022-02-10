@@ -194,6 +194,10 @@ do_rgroup_server_insert(memcached_rgroup_st *rgroup, int sindex,
   assert(server != NULL);
   server= __server_create_with(rgroup->root, server, _hostname, port, 0,
                                MEMCACHED_CONNECTION_TCP);
+  if (server == NULL) {
+    do_rgroup_server_free(rgroup->root, server);
+    return;
+  }
   /* set group index */
   server->groupindex= (int32_t)rgroup->groupindex;
 
@@ -252,6 +256,10 @@ do_rgroup_server_replace(memcached_rgroup_st *rgroup, int sindex,
   assert(new_server != NULL);
   new_server= __server_create_with(rgroup->root, new_server, _hostname, port, 0,
                                    MEMCACHED_CONNECTION_TCP);
+  if (new_server == NULL) {
+    do_rgroup_server_free(rgroup->root, new_server);
+    return;
+  }
   /* set group index */
   new_server->groupindex= (int32_t)rgroup->groupindex;
 
