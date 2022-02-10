@@ -905,8 +905,8 @@ __do_arcus_update_grouplist(memcached_st *mc,
     if (memcached_server_count(mc) == 0) {
       return MEMCACHED_SUCCESS;
     }
-    memcached_rgroup_prune(mc, true); /* prune all rgroups */
     if (serverlist_changed) *serverlist_changed= true;
+    memcached_rgroup_prune(mc, true); /* prune all rgroups */
     return run_distribution(mc);
   }
 
@@ -951,20 +951,23 @@ __do_arcus_update_grouplist(memcached_st *mc,
     }
   }
 
-  if (prune_flag) { /* prune old dead replica groups */
-    memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
-  }
-  if (validcount > 0) { /* push new valid replica groups */
-    memcached_rgroup_push_with_groupinfo(mc, groupinfo, groupcount);
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+  if (validcount > 0 or prune_flag)
+  {
+    if (serverlist_changed) *serverlist_changed= true;
+    if (validcount > 0) {
+      if (prune_flag) { /* prune old dead replica groups */
+        memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
+      }
+      rc= memcached_rgroup_push_with_groupinfo(mc, groupinfo, groupcount);
+    } else {
+      assert(prune_flag); 
+      memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
+      rc= run_distribution(mc);
+    }
   }
   memcached_rgroup_info_destroy(mc, groupinfo);
-
-  if (prune_flag or validcount > 0) {
-    if (serverlist_changed) *serverlist_changed= true;
-    return run_distribution(mc);
-  } else {
-    return MEMCACHED_SUCCESS;
-  }
+  return rc;
 }
 #endif
 
@@ -973,7 +976,6 @@ __do_arcus_update_cachelist(memcached_st *mc,
                             struct memcached_server_info *serverinfo,
                             uint32_t servercount, bool *serverlist_changed)
 {
-  memcached_return_t error= MEMCACHED_SUCCESS;
   uint32_t x, y;
   uint32_t validcount= servercount;
   bool prune_flag= false;
@@ -986,8 +988,8 @@ __do_arcus_update_cachelist(memcached_st *mc,
     if (memcached_server_count(mc) == 0) {
       return MEMCACHED_SUCCESS;
     }
-    memcached_server_prune(mc, true); /* prune all servers */
     if (serverlist_changed) *serverlist_changed= true;
+    memcached_server_prune(mc, true); /* prune all servers */
     return run_distribution(mc);
   }
 
@@ -1009,21 +1011,21 @@ __do_arcus_update_cachelist(memcached_st *mc,
     }
   }
 
-  if (validcount > 0) {
-    if (prune_flag) {
-      memcached_server_prune(mc, false); /* prune dead servers only */
-    }
-    error= memcached_server_push_with_serverinfo(mc, serverinfo, servercount);
-  } else {
-    if (prune_flag) {
-      memcached_server_prune(mc, false); /* prune dead servers only */
-      error= run_distribution(mc);
-    }
-  }
-  if (validcount > 0 or prune_flag) {
+  if (validcount > 0 or prune_flag)
+  {
     if (serverlist_changed) *serverlist_changed= true;
+    if (validcount > 0) {
+      if (prune_flag) {
+        memcached_server_prune(mc, false); /* prune dead servers only */
+      }
+      return memcached_server_push_with_serverinfo(mc, serverinfo, servercount);
+    } else {
+      assert(prune_flag);
+      memcached_server_prune(mc, false); /* prune dead servers only */
+      return run_distribution(mc);
+    }
   }
-  return error;
+  return MEMCACHED_SUCCESS;
 }
 
 static inline void do_arcus_update_cachelist(memcached_st *mc,

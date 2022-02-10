@@ -123,7 +123,7 @@ LIBMEMCACHED_API
 #endif
 
 LIBMEMCACHED_API
-  void
+  memcached_return_t
   memcached_rgroup_push_with_groupinfo(memcached_st *memc,
                         struct memcached_rgroup_info *groupinfo,
                         uint32_t groupcount);

@@ -590,7 +590,7 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
 }
 #endif
 
-void
+memcached_return_t
 memcached_rgroup_push_with_groupinfo(memcached_st *memc,
                       struct memcached_rgroup_info *groupinfo,
                       uint32_t groupcount)
@@ -615,6 +615,7 @@ memcached_rgroup_push_with_groupinfo(memcached_st *memc,
       memc->number_of_hosts++;
     }
   }
+  return run_distribution(memc);
 }
 
 #ifdef NEW_UPDATE_SERVERLIST
