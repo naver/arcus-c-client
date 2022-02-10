@@ -554,9 +554,9 @@ do_memcached_update_grouplist(memcached_st *mc,
   ZOO_LOG_INFO(("__do_arcus_update_grouplist: count=%u\n", servercount));
   for (x= 0; x < servercount; x++) {
     ZOO_LOG_INFO(("server[%u] groupname=%s %s hostname=%s port=%u\n",
-            x, serverinfo[x].groupname, 
+            x, serverinfo[x].groupname,
             serverinfo[x].master ? "master" : "slave",
-            serverinfo[x].hostname, 
+            serverinfo[x].hostname,
             serverinfo[x].port));
   }
 
@@ -602,7 +602,7 @@ do_memcached_update_grouplist(memcached_st *mc,
       }
       rc= memcached_rgroup_push_with_groupinfo(mc, groupinfo, groupcount);
     } else {
-      assert(prune_flag); 
+      assert(prune_flag);
       memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
       rc= run_distribution(mc);
     }
@@ -703,13 +703,13 @@ do_memcached_update_grouplist_with_master(memcached_st *mc, memcached_st *master
     return memcached_rgroup_push(mc, master->rgroups, memcached_server_count(master));
   }
 
-  /* compare member mc with master mc */ 
+  /* compare member mc with master mc */
   prune_flag= false;
   y= 0;
   for (x= 0; x < memcached_server_count(mc); x++)
   {
     if (y < memcached_server_count(master) and
-        strcmp(mc->rgroups[x].groupname, master->rgroups[y].groupname) == 0) 
+        strcmp(mc->rgroups[x].groupname, master->rgroups[y].groupname) == 0)
     {
       memcached_rgroup_update(&mc->rgroups[x], &master->rgroups[y]);
       y++;
