@@ -172,8 +172,8 @@ static inline arcus_return_t do_arcus_connect(memcached_st *mc,
   if (rc == ARCUS_ALREADY_INITIATED) {
     return ARCUS_SUCCESS;
   }
-  else if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR; 
+  if (rc != ARCUS_SUCCESS) {
+    return ARCUS_ERROR;
   }
 
   /* Creates a new ZooKeeper client thread. */
@@ -338,7 +338,7 @@ arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
 
   arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
   if (not arcus) {
-    rc= do_arcus_connect(memcached_pool_get_master(pool), pool, ensemble_list, svc_code);
+    rc= do_arcus_connect(mc, pool, ensemble_list, svc_code);
     if (rc != ARCUS_SUCCESS) {
       return rc;
     }
@@ -381,8 +381,8 @@ arcus_return_t arcus_proxy_create(memcached_st *mc,
   if (rc == ARCUS_ALREADY_INITIATED) {
     return ARCUS_SUCCESS;
   }
-  else if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR; 
+  if (rc != ARCUS_SUCCESS) {
+    return ARCUS_ERROR;
   }
 
   /* Be a proxy. */
@@ -420,8 +420,8 @@ arcus_return_t arcus_proxy_connect(memcached_st *mc,
   if (rc == ARCUS_ALREADY_INITIATED) {
     return ARCUS_SUCCESS;
   }
-  else if (rc != ARCUS_SUCCESS) {
-    return ARCUS_ERROR; 
+  if (rc != ARCUS_SUCCESS) {
+    return ARCUS_ERROR;
   }
 
   arcus_set_log_stream(mc, proxy->logfile);
