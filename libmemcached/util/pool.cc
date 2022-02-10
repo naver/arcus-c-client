@@ -604,197 +604,8 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 }
 
 #ifdef POOL_UPDATE_SERVERLIST
-#ifdef NEW_UPDATE_SERVERLIST
-#else
-static inline void do_member_update_ketama_version(memcached_st *ptr, memcached_st *master)
-{
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-  ptr->configure.ketama_version= master->configure.ketama_version;
-#else
-  ptr->configure.version= master->configure.version;
-#endif
-}
-
-#ifdef ENABLE_REPLICATION
-static inline memcached_return_t do_pool_update_grouplist(memcached_pool_st *pool)
-{
-  memcached_st *top_mc= pool->mc_pool[pool->top];
-  memcached_st *master= pool->master;
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-  uint32_t push_count= memcached_server_count(master);
-  uint32_t x, y;
-  int i;
-  bool prune_flag= false;
-
-  if (memcached_server_count(master) == 0)
-  {
-    if (memcached_server_count(top_mc) == 0) {
-      return MEMCACHED_SUCCESS;
-    }
-    for (i= 0; i <= pool->top; i++) {
-      memcached_rgroup_prune(pool->mc_pool[i], true); /* prune all rgroups */
-      rc= run_distribution(pool->mc_pool[i]);
-      if (rc != MEMCACHED_SUCCESS) { /* TODO: error handling */
-        break;
-      }
-      do_member_update_ketama_version(pool->mc_pool[i], master);
-    }    
-    return rc;
-  }
-  if (memcached_server_count(top_mc) == 0)
-  {
-    /* memcached_server_count(master) > 0 */
-    for (i= 0; i <= pool->top; i++) {
-      rc= memcached_rgroup_push(pool->mc_pool[i], master->rgroups, memcached_server_count(master));
-      if (rc != MEMCACHED_SUCCESS) { /* TODO: error handling */
-        break;
-      }
-      do_member_update_ketama_version(pool->mc_pool[i], master);
-    }
-    return rc;
-  }
-
-  /* reset the is_exist flag of each rgroup in master */
-  for (x= 0; x < memcached_server_count(master); x++) {
-    master->rgroups[x].options.is_exist= false;
-  }
-  /* compare top_mc and master */
-  for (x= 0; x < memcached_server_count(top_mc); x++)
-  {
-    for (y= 0; y < memcached_server_count(master); y++) {
-      if (master->rgroups[y].options.is_exist) continue;
-      if (strcmp(top_mc->rgroups[x].groupname, master->rgroups[y].groupname) == 0) 
-      {
-        master->rgroups[y].options.is_exist= true;
-        push_count--;
-        for (i= 0; i <= pool->top; i++) 
-        {
-          memcached_rgroup_update(&pool->mc_pool[i]->rgroups[x], &master->rgroups[y]);
-          do_member_update_ketama_version(pool->mc_pool[i], master);
-        }
-        break;
-      }
-    }
-    if (y == memcached_server_count(master)) { /* Not found */
-      for (i= 0; i <= pool->top; i++) {
-        pool->mc_pool[i]->rgroups[x].options.is_dead= true;
-      }
-      prune_flag= true;
-    }
-  }
-
-  if (prune_flag or push_count > 0) 
-  {
-    for (i= 0; i <= pool->top; i++) {
-      memcached_st *mc= pool->mc_pool[i];
-      if (prune_flag) {
-        memcached_rgroup_prune(mc, false); /* prune dead rgroups only */
-      }
-      if (push_count > 0) {
-        rc= memcached_rgroup_push_with_master(mc, master);
-      } else {
-        rc= run_distribution(mc);
-      }
-      if (rc != MEMCACHED_SUCCESS) { /* TODO: error handling */
-        break;
-      }
-      do_member_update_ketama_version(mc, master);
-    }
-  }
-  return rc;
-}
-#endif
-
-static inline memcached_return_t do_pool_update_cachelist(memcached_pool_st *pool)
-{
-  memcached_st *top_mc= pool->mc_pool[pool->top];
-  memcached_st *master= pool->master;
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-  uint32_t push_count= memcached_server_count(master);
-  uint32_t x, y;
-  int i;
-  bool prune_flag= false;
-
-  if (memcached_server_count(master) == 0)
-  {
-    if (memcached_server_count(top_mc) == 0) {
-      return MEMCACHED_SUCCESS;
-    }
-    for (i= 0; i <= pool->top; i++) {
-      memcached_server_prune(pool->mc_pool[i], true); /* prune all servers */
-      rc= run_distribution(pool->mc_pool[i]);
-      if (rc != MEMCACHED_SUCCESS) { /* TODO: error handling */
-        break;
-      }
-      do_member_update_ketama_version(pool->mc_pool[i], master);
-    }
-    return rc;
-  }
-  if (memcached_server_count(top_mc) == 0)
-  {
-    /* memcached_server_count(master) > 0 */
-    for (i= 0; i <= pool->top; i++) {
-      rc= memcached_server_push(pool->mc_pool[i], master->servers);
-      if (rc != MEMCACHED_SUCCESS) { /* TODO: error handling */
-        break;
-      }
-      do_member_update_ketama_version(pool->mc_pool[i], master);
-    }
-    return rc;
-  }
-
-  /* reset the is_exist flag of each server in master */
-  for (x= 0; x < memcached_server_count(master); x++) {
-    master->servers[x].options.is_exist= false;
-  }
-  /* compare top_mc and master */
-  for (x= 0; x < memcached_server_count(top_mc); x++)
-  {
-    for (y= 0; y < memcached_server_count(master); y++) {
-      if (master->servers[y].options.is_exist) continue;
-      if (strcmp(top_mc->servers[x].hostname, master->servers[y].hostname) == 0 
-          and    top_mc->servers[x].port ==   master->servers[y].port) 
-      {
-        master->servers[y].options.is_exist= true;
-        push_count--; break;
-      }
-    }
-    if (y == memcached_server_count(master)) { /* NOT found */
-      for (i= 0; i <= pool->top; i++) {
-        pool->mc_pool[i]->servers[x].options.is_dead= true;
-      }
-      prune_flag= true;
-    }
-  }
-
-  if (prune_flag or push_count > 0) 
-  {
-    for (i= 0; i <= pool->top; i++) {
-      memcached_st *mc= pool->mc_pool[i];
-      if (prune_flag) {
-        memcached_server_prune(mc, false); /* prune dead servers only */
-      }
-      if (push_count > 0) {
-        rc= memcached_server_push_with_master(mc, master);
-      } else {
-        rc= run_distribution(mc);
-      }
-      if (rc != MEMCACHED_SUCCESS) { /* TODO: error handling */
-        break;
-      }
-      do_member_update_ketama_version(mc, master);
-    }
-  }
-  return rc;
-}
-#endif /* NEW_UPDATE_SERVERLIST */
-
 memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool)
 {
-#ifdef NEW_UPDATE_SERVERLIST
-#else
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-#endif
   if (pool == NULL) {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
@@ -805,7 +616,6 @@ memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool)
 #else
   pool->increment_version();
 #endif
-#ifdef NEW_UPDATE_SERVERLIST
 
   /* update the member mcs */
   for (int xx= 0; xx <= pool->top; ++xx)
@@ -822,23 +632,8 @@ memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool)
 #endif
     }
   }
-#else
-  if (pool->top != -1)
-  {
-#ifdef ENABLE_REPLICATION
-    if (pool->master->flags.repl_enabled)
-      rc= do_pool_update_grouplist(pool);
-    else
-#endif
-    rc= do_pool_update_cachelist(pool);
-  }
-#endif
   (void)pthread_mutex_unlock(&pool->mutex);
-#ifdef NEW_UPDATE_SERVERLIST
   return MEMCACHED_SUCCESS;
-#else
-  return rc;
-#endif
 }
 #endif
 
@@ -868,17 +663,8 @@ memcached_pool_use_single_server(memcached_pool_st *pool,
   if (error != MEMCACHED_SUCCESS)
     return error;
 
-#ifdef NEW_UPDATE_SERVERLIST
   // clone the master to the whole pool
   return memcached_pool_repopulate(pool);
-#else
-#ifdef POOL_UPDATE_SERVERLIST
-  return memcached_pool_update_serverlist(pool);
-#else
-  // clone the master to the whole pool
-  return memcached_pool_repopulate(pool);
-#endif  
-#endif
 }
 #endif
 

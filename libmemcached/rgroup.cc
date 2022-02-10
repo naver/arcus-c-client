@@ -317,12 +317,6 @@ do_rgroup_init(memcached_rgroup_st *self, memcached_st *root,
   //self->options.is_allocated
   self->options.is_shutting_down= false;
   self->options.is_dead= false;
-#ifdef NEW_UPDATE_SERVERLIST
-#else
-#ifdef POOL_UPDATE_SERVERLIST
-  self->options.is_exist= false;
-#endif
-#endif
 
   self->root= root;
   assert(groupname.size < RGROUP_NAME_LENGTH);
@@ -625,49 +619,6 @@ memcached_rgroup_push_with_groupinfo(memcached_st *memc,
   }
   return run_distribution(memc);
 }
-
-#ifdef NEW_UPDATE_SERVERLIST
-#else
-#ifdef POOL_UPDATE_SERVERLIST
-memcached_return_t
-memcached_rgroup_push_with_master(memcached_st *memc, memcached_st *master) 
-{
-  memcached_rgroup_st *rgroup;
-  uint32_t x, y;
-
-  if (not memc or not master or not master->rgroups) {
-    return MEMCACHED_SUCCESS;
-  }
-
-  uint32_t groupcount= memcached_server_count(master);
-  memcached_rgroup_st *grouplist= master->rgroups;
-
-  if (memcached_rgroup_expand(memc, groupcount, (groupcount*RGROUP_MAX_REPLICA)) != 0) {
-    return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
-  }
-
-  for (x= 0; x < groupcount; x++) {
-    if (grouplist[x].options.is_exist) continue;
-    /* create rgroup */
-    rgroup= do_rgroup_create(&memc->rgroups[memc->number_of_hosts], memc);
-    assert(rgroup != NULL);
-    memcached_string_t _groupname= { memcached_string_make_from_cstr(grouplist[x].groupname) };
-    do_rgroup_init(rgroup, memc, _groupname, memc->number_of_hosts, 0);
-
-    /* add replicas */
-    for (y= 0; y < grouplist[x].nreplica; y++) {
-      do_rgroup_server_insert(rgroup, y, grouplist[x].replicas[y]->hostname,
-                                        grouplist[x].replicas[y]->port);
-    }
-    if (grouplist[x].weight > 1) {
-      memc->ketama.weighted= true;
-    }
-    memc->number_of_hosts++;
-  }
-  return run_distribution(memc);
-}
-#endif
-#endif
 
 memcached_return_t
 memcached_rgroup_push(memcached_st *memc,

@@ -682,7 +682,6 @@ memcached_return_t memcached_update_cachelist(memcached_st *ptr,
   return do_memcached_update_cachelist(ptr, serverinfo, servercount, serverlist_changed);
 }
 
-#ifdef NEW_UPDATE_SERVERLIST
 #ifdef ENABLE_REPLICATION
 static memcached_return_t
 do_memcached_update_grouplist_with_master(memcached_st *mc, memcached_st *master)
@@ -793,7 +792,6 @@ memcached_return_t memcached_update_cachelist_with_master(memcached_st *ptr, mem
 #endif
   return do_memcached_update_serverlist_with_master(ptr, master);
 }
-#endif
 #endif
 
 memcached_return_t memcached_get_last_response_code(memcached_st *ptr)

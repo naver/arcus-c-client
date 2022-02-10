@@ -114,12 +114,6 @@
 #include <libmemcached/arcus.h>
 #include <libmemcached/collection.h>
 #include <libmemcached/collection_result.h>
-#ifdef NEW_UPDATE_SERVERLIST
-#else
-#ifdef POOL_UPDATE_SERVERLIST
-#include <libmemcached/util.h>
-#endif
-#endif
 
 struct memcached_st {
   /**
@@ -292,10 +286,8 @@ memcached_return_t memcached_update_cachelist(memcached_st *ptr,
                                               struct memcached_server_info *serverinfo,
                                               uint32_t servercount, bool *serverlist_changed);
 
-#ifdef NEW_UPDATE_SERVERLIST
 LIBMEMCACHED_API
 memcached_return_t memcached_update_cachelist_with_master(memcached_st *ptr, memcached_st *master);
-#endif
 #endif
 
 LIBMEMCACHED_API
