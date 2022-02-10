@@ -37,10 +37,10 @@ struct arcus_zk_st
   int        last_rc;
   int        conn_result;
   struct String_vector last_strings;
-  bool       is_initializing;
 #ifdef ENABLE_REPLICATION
   bool       is_repl_enabled;
 #endif
+  bool       is_initializing;
 };
 
 /* arcus zk request structure */
@@ -99,9 +99,8 @@ typedef struct arcus_st {
   struct arcus_zk_st zk;
   struct arcus_zk_manager_st zk_mgr;
 
-  struct arcus_proxy_st proxy;
   memcached_pool_st *pool;
-
+  struct arcus_proxy_st proxy;
   bool is_proxy;
 } arcus_st;
 

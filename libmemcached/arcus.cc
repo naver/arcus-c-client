@@ -106,7 +106,6 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
   memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_TCP_NODELAY,     1);
   memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1);
   memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_DISTRIBUTION,    MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY);
-
   memcached_behavior_set_key_hash(mc, MEMCACHED_HASH_MD5);
 
   pthread_mutex_lock(&lock_arcus);
@@ -126,16 +125,8 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
 
     memset(arcus, 0, sizeof(arcus_st));
 
-    arcus->zk.port= 0;
-    arcus->zk.session_timeout= ARCUS_ZK_SESSION_TIMEOUT_IN_MS;
-    arcus->zk.maxbytes= 0;
-    arcus->zk.last_rc= !ZOK;
-    arcus->zk.conn_result= ARCUS_SUCCESS;
-    arcus->zk.is_initializing= true;
-
-    arcus->pool = pool;
-    arcus->is_proxy= false;
-
+    /* Init zk structure */
+    /* handle and myid will be set when call zookeeeper_init() */
     /* Set ZooKeeper parameters */
     snprintf(arcus->zk.ensemble_list, sizeof(arcus->zk.ensemble_list),
              "%s", (ensemble_list)?ensemble_list:"");
@@ -143,17 +134,30 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
              "%s", (svc_code)?svc_code:"");
     snprintf(arcus->zk.path, sizeof(arcus->zk.path),
              "%s/%s", ARCUS_ZK_CACHE_LIST, arcus->zk.svc_code);
+    arcus->zk.port= 0;
+    arcus->zk.session_timeout= ARCUS_ZK_SESSION_TIMEOUT_IN_MS;
+    arcus->zk.maxbytes= 0;
+    arcus->zk.last_rc= !ZOK;
+    arcus->zk.conn_result= ARCUS_SUCCESS;
+#ifdef ENABLE_REPLICATION
+    arcus->zk.is_repl_enabled= false;
+#endif
+    arcus->zk.is_initializing= true;
 
-    /* Set the Arcus to memcached as a server manager.  */
-    memcached_set_server_manager(mc, (void *)arcus);
-
-    /* clear zk_manager structure */
+    /* Init zk_manager structure */
     memset(&arcus->zk_mgr.request, 0, sizeof(struct arcus_zk_request_st));
     pthread_mutex_init(&arcus->zk_mgr.lock, NULL);
     pthread_cond_init(&arcus->zk_mgr.cond, NULL);
     arcus->zk_mgr.notification= false;
     arcus->zk_mgr.reqstop= false;
     arcus->zk_mgr.running= false;
+
+    /* Init pool and proxy information */
+    arcus->pool = pool;
+    arcus->is_proxy= false;
+
+    /* Set the Arcus to memcached as a server manager.  */
+    memcached_set_server_manager(mc, (void *)arcus);
   } while(0);
   pthread_mutex_unlock(&lock_arcus);
 
