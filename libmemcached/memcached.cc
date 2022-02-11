@@ -800,15 +800,22 @@ void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc)
   ptr->last_response_code= rc;
 }
 
+void memcached_ketama_set(memcached_st *ptr, memcached_ketama_info_st *info)
+{
+  assert(ptr->ketama.info == NULL);
+
+  /* Called by master mc to set its ketama info */
+  ptr->ketama.info= info;
+  ptr->ketama.info->continuum_refcount++;
+}
+
 void memcached_ketama_reference(memcached_st *ptr, memcached_st *master)
 {
   assert(ptr->ketama.info == NULL);
 
+  /* Called by member mc to set its ketama info */
+  /* Can the ketama info of the master mc be NULL? */
   if (master->ketama.info != NULL) {
-    /* If the cache node of the cluster is not running,
-     * master->ketama.info == NULL.
-     * Thus, ptr->ketama.info also be NULL.
-     */
     ptr->ketama.info= master->ketama.info;
     ptr->ketama.info->continuum_refcount++;
   }
@@ -816,6 +823,7 @@ void memcached_ketama_reference(memcached_st *ptr, memcached_st *master)
 
 void memcached_ketama_release(memcached_st *ptr)
 {
+  /* Called by both master mc and member mc */
   if (ptr->ketama.info != NULL) {
     ptr->ketama.info->continuum_refcount--;
 

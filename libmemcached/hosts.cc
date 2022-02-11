@@ -454,15 +454,15 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
 
   new_ketama_info->continuum= new_continuum;
-  new_ketama_info->continuum_refcount= 1;
   new_ketama_info->continuum_points_counter= pointer_counter;
+  new_ketama_info->continuum_refcount= 0;
 
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_lock(pool);
 #endif
   memcached_ketama_release(ptr);
-  ptr->ketama.info= new_ketama_info;
+  memcached_ketama_set(ptr, new_ketama_info);
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_unlock(pool);
@@ -654,15 +654,15 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
 
   new_ketama_info->continuum= new_continuum;
-  new_ketama_info->continuum_refcount= 1;
   new_ketama_info->continuum_points_counter= pointer_counter;
+  new_ketama_info->continuum_refcount= 0;
 
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_lock(pool);
 #endif
   memcached_ketama_release(ptr);
-  ptr->ketama.info= new_ketama_info;
+  memcached_ketama_set(ptr, new_ketama_info);
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_unlock(pool);

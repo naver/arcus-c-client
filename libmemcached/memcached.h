@@ -297,7 +297,10 @@ LIBMEMCACHED_API
 void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc);
 
 LIBMEMCACHED_API
-void memcached_ketama_reference(memcached_st *dest, memcached_st *src);
+void memcached_ketama_set(memcached_st *ptr, memcached_ketama_info_st *info);
+
+LIBMEMCACHED_API
+void memcached_ketama_reference(memcached_st *ptr, memcached_st *master);
 
 LIBMEMCACHED_API
 void memcached_ketama_release(memcached_st *ptr);
