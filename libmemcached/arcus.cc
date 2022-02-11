@@ -747,7 +747,6 @@ void arcus_server_check_for_update(memcached_st *ptr)
     return;
   }
 
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   if (arcus->proxy.data)
   {
     if (arcus->proxy.data->version != arcus->proxy.current_version)
@@ -760,7 +759,12 @@ void arcus_server_check_for_update(memcached_st *ptr)
         if (arcus->pool) {
           memcached_st *master = memcached_pool_get_master(arcus->pool);
           // update the master just once
-          if (master && master->configure.ketama_version == ptr->configure.ketama_version) {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+          if (master && master->configure.ketama_version == ptr->configure.ketama_version)
+#else
+          if (master && master->configure.version == ptr->configure.version)
+#endif
+          {
             do_arcus_zk_update_cachelist_by_string(master, arcus->proxy.data->serverlist, size);
           }
         }
@@ -773,6 +777,7 @@ void arcus_server_check_for_update(memcached_st *ptr)
   }
   else
   {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
     if (arcus->pool) {
       memcached_st *master = memcached_pool_get_master(arcus->pool);
       if (master && master->configure.ketama_version != ptr->configure.ketama_version) {
@@ -786,32 +791,8 @@ void arcus_server_check_for_update(memcached_st *ptr)
         pthread_mutex_unlock(&lock_arcus);
       }
     }
-  }
-#else
-  if (not arcus->proxy.data) {
-    return;
-  }
-  if (arcus->proxy.data->version != arcus->proxy.current_version)
-  {
-    proc_mutex_lock(&arcus->proxy.data->mutex);
-    {
-      version= arcus->proxy.data->version;
-      size= arcus->proxy.data->size;
-
-      if (arcus->pool) {
-        memcached_st *master = memcached_pool_get_master(arcus->pool);
-        // update the master just once
-        if (master && master->configure.version == ptr->configure.version) {
-          do_arcus_zk_update_cachelist_by_string(master, arcus->proxy.data->serverlist, size);
-        }
-      }
-
-      do_arcus_zk_update_cachelist_by_string(ptr, arcus->proxy.data->serverlist, size);
-      arcus->proxy.current_version= version;
-    }
-    proc_mutex_unlock(&arcus->proxy.data->mutex);
-  }
 #endif
+  }
 }
 
 /**
