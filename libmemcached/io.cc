@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  LibMemcached
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -546,6 +546,7 @@ memcached_return_t memcached_io_read(memcached_server_write_instance_st ptr,
       memcached_return_t io_fill_ret= _io_fill(ptr);
       if (io_fill_ret != MEMCACHED_SUCCESS)
       {
+        /* MEMCACHED_IN_PROGRESS | MEMCACHED_ERRNO | MEMCACHED_CONNECTION_FAILURE */
         *nread= -1;
         return io_fill_ret;
       }
