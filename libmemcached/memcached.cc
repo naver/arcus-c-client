@@ -375,10 +375,10 @@ void memcached_free(memcached_st *ptr)
 */
 memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
 {
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-
   if (not source)
+  {
     return memcached_create(clone);
+  }
 
   if (clone && memcached_is_allocated(clone))
   {
@@ -388,7 +388,9 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
   memcached_st *new_clone= memcached_create(clone);
 
   if (not new_clone)
+  {
     return NULL;
+  }
 
   new_clone->flags= source->flags;
   new_clone->send_size= source->send_size;
@@ -430,16 +432,11 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
 
   if (memcached_server_count(source))
   {
-    rc= memcached_push(new_clone, source);
+    if (memcached_failed(memcached_push(new_clone, source))) {
+      memcached_free(new_clone);
+      return NULL;
+    }
   }
-
-  if (memcached_failed(rc))
-  {
-    memcached_free(new_clone);
-
-    return NULL;
-  }
-
 
   new_clone->_namespace= memcached_array_clone(new_clone, source->_namespace);
   new_clone->configure.filename= memcached_array_clone(new_clone, source->_namespace);
@@ -450,8 +447,7 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
 
   if (LIBMEMCACHED_WITH_SASL_SUPPORT and source->sasl.callbacks)
   {
-    if (memcached_failed(memcached_clone_sasl(new_clone, source)))
-    {
+    if (memcached_failed(memcached_clone_sasl(new_clone, source))) {
       memcached_free(new_clone);
       return NULL;
     }
