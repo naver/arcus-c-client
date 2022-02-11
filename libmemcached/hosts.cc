@@ -214,7 +214,10 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   uint32_t pointer_per_hash= 1;
   uint32_t live_servers= 0;
   struct timeval now;
+#ifdef LOCK_UPDATE_SERVERLIST
+#else
   memcached_pool_st *pool = NULL;
+#endif
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(ptr));
@@ -223,7 +226,10 @@ static memcached_return_t update_continuum(memcached_st *ptr)
       /* Using shared hash ring does not generate hash ring except master */
       return MEMCACHED_SUCCESS;
     }
+#ifdef LOCK_UPDATE_SERVERLIST
+#else
     pool = arcus->pool;
+#endif
   }
 #endif
 
@@ -506,7 +512,10 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   uint32_t pointer_per_hash= 1;
   uint32_t live_servers= 0;
   struct timeval now;
+#ifdef LOCK_UPDATE_SERVERLIST
+#else
   memcached_pool_st *pool = NULL;
+#endif
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(ptr));
@@ -515,7 +524,10 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
       /* Using shared hash ring does not generate hash ring except master */
       return MEMCACHED_SUCCESS;
     }
+#ifdef LOCK_UPDATE_SERVERLIST
+#else
     pool = arcus->pool;
+#endif
   }
 #endif
 
