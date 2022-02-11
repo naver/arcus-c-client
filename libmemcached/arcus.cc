@@ -242,7 +242,6 @@ static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
 }
 
 static inline arcus_return_t do_arcus_proxy_connect(memcached_st *mc,
-                                                    memcached_pool_st *pool,
                                                     memcached_st *proxy)
 {
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
@@ -250,14 +249,14 @@ static inline arcus_return_t do_arcus_proxy_connect(memcached_st *mc,
 
   strncpy(arcus->proxy.name, proxy_arcus->proxy.name, 256);
   arcus->proxy.data= proxy_arcus->proxy.data;
-  arcus->pool = pool;
+
 #ifdef ENABLE_REPLICATION
   arcus->zk.is_repl_enabled= proxy_arcus->zk.is_repl_enabled;
   mc->flags.repl_enabled= arcus->zk.is_repl_enabled;
   if (arcus->pool) {
     memcached_st *master = memcached_pool_get_master(arcus->pool);
     if (master != mc) {
-      master->flags.repl_enabled=  arcus->zk.is_repl_enabled;
+      master->flags.repl_enabled= arcus->zk.is_repl_enabled;
     }
   }
 #endif
@@ -420,7 +419,7 @@ arcus_return_t arcus_proxy_connect(memcached_st *mc,
   arcus_return_t rc;
 
   /* Initiate the Arcus. */
-  rc= do_arcus_init(mc, NULL, NULL, NULL);
+  rc= do_arcus_init(mc, pool, NULL, NULL);
   if (rc == ARCUS_ALREADY_INITIATED) {
     return ARCUS_SUCCESS;
   }
@@ -429,7 +428,7 @@ arcus_return_t arcus_proxy_connect(memcached_st *mc,
   }
 
   arcus_set_log_stream(mc, proxy->logfile);
-  rc= do_arcus_proxy_connect(mc, pool, proxy);
+  rc= do_arcus_proxy_connect(mc, proxy);
   arcus_server_check_for_update(mc);
 
   return rc;
