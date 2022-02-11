@@ -604,13 +604,29 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 }
 
 #ifdef POOL_UPDATE_SERVERLIST
+#ifdef LOCK_UPDATE_SERVERLIST
+memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool,
+                                                    struct memcached_server_info *serverinfo,
+                                                    uint32_t servercount)
+#else
 memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool)
+#endif
 {
+#ifdef LOCK_UPDATE_SERVERLIST
+  memcached_return_t rc;
+  bool serverlist_changed= false;
+#endif
   if (pool == NULL) {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
   (void)pthread_mutex_lock(&pool->mutex);
+#ifdef LOCK_UPDATE_SERVERLIST
+  rc= memcached_update_cachelist(pool->master, serverinfo, servercount,
+                                 &serverlist_changed);
+  if (rc == MEMCACHED_SUCCESS && serverlist_changed)
+  {
+#endif
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   pool->increment_ketama_version();
 #else
@@ -632,6 +648,9 @@ memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool)
 #endif
     }
   }
+#ifdef LOCK_UPDATE_SERVERLIST
+  }
+#endif
   (void)pthread_mutex_unlock(&pool->mutex);
   return MEMCACHED_SUCCESS;
 }

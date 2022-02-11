@@ -451,10 +451,16 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   new_info->continuum_refcount= 1;
   new_info->continuum_points_counter= pointer_counter;
 
+#ifdef LOCK_UPDATE_SERVERLIST
+#else
   if (pool != NULL) memcached_pool_lock(pool);
+#endif
   memcached_ketama_release(ptr);
   ptr->ketama.info= new_info;
+#ifdef LOCK_UPDATE_SERVERLIST
+#else
   if (pool != NULL) memcached_pool_unlock(pool);
+#endif
 
   if (DEBUG)
   {
