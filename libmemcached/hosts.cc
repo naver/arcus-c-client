@@ -267,17 +267,17 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     live_servers= memcached_server_count(ptr);
   }
 
-  uint64_t is_ketama_weighted= memcached_behavior_get(ptr, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
-  uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
-                                                             : MEMCACHED_POINTS_PER_SERVER);
-
   if (not live_servers)
   {
     return MEMCACHED_SUCCESS;
   }
 
-  memcached_ketama_info_st *new_info= static_cast<memcached_ketama_info_st*>(libmemcached_malloc(ptr, sizeof(memcached_ketama_info_st)));
-  if (new_info == 0)
+  uint64_t is_ketama_weighted= memcached_behavior_get(ptr, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
+  uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
+                                                             : MEMCACHED_POINTS_PER_SERVER);
+
+  memcached_ketama_info_st *new_ketama_info= static_cast<memcached_ketama_info_st*>(libmemcached_malloc(ptr, sizeof(memcached_ketama_info_st)));
+  if (new_ketama_info == 0)
   {
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
@@ -287,7 +287,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
   if (new_continuum == 0)
   {
-    libmemcached_free(ptr, new_info);
+    libmemcached_free(ptr, new_ketama_info);
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
 
@@ -447,22 +447,22 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   }
 
   WATCHPOINT_ASSERT(ptr);
-  WATCHPOINT_ASSERT(new_info);
+  WATCHPOINT_ASSERT(new_ketama_info);
   WATCHPOINT_ASSERT(new_continuum);
   WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
 
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
 
-  new_info->continuum= new_continuum;
-  new_info->continuum_refcount= 1;
-  new_info->continuum_points_counter= pointer_counter;
+  new_ketama_info->continuum= new_continuum;
+  new_ketama_info->continuum_refcount= 1;
+  new_ketama_info->continuum_points_counter= pointer_counter;
 
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_lock(pool);
 #endif
   memcached_ketama_release(ptr);
-  ptr->ketama.info= new_info;
+  ptr->ketama.info= new_ketama_info;
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_unlock(pool);
@@ -548,8 +548,8 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
                                                              : MEMCACHED_POINTS_PER_SERVER);
 
-  memcached_ketama_info_st *new_info= static_cast<memcached_ketama_info_st*>(libmemcached_malloc(ptr, sizeof(memcached_ketama_info_st)));
-  if (new_info == 0)
+  memcached_ketama_info_st *new_ketama_info= static_cast<memcached_ketama_info_st*>(libmemcached_malloc(ptr, sizeof(memcached_ketama_info_st)));
+  if (new_ketama_info == 0)
   {
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
@@ -559,7 +559,7 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
 
   if (new_continuum == 0)
   {
-    libmemcached_free(ptr, new_info);
+    libmemcached_free(ptr, new_ketama_info);
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
 
@@ -647,22 +647,22 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   }
 
   WATCHPOINT_ASSERT(ptr);
-  WATCHPOINT_ASSERT(new_info);
+  WATCHPOINT_ASSERT(new_ketama_info);
   WATCHPOINT_ASSERT(new_continuum);
   WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
 
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
 
-  new_info->continuum= new_continuum;
-  new_info->continuum_refcount= 1;
-  new_info->continuum_points_counter= pointer_counter;
+  new_ketama_info->continuum= new_continuum;
+  new_ketama_info->continuum_refcount= 1;
+  new_ketama_info->continuum_points_counter= pointer_counter;
 
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_lock(pool);
 #endif
   memcached_ketama_release(ptr);
-  ptr->ketama.info= new_info;
+  ptr->ketama.info= new_ketama_info;
 #ifdef LOCK_UPDATE_SERVERLIST
 #else
   if (pool != NULL) memcached_pool_unlock(pool);
