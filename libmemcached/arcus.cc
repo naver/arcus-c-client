@@ -345,6 +345,8 @@ arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
     if (rc != ARCUS_SUCCESS) {
       return rc;
     }
+#ifdef REMOVE_DUAL_REPOPULATE
+#else
     pthread_mutex_lock(&lock_arcus);
     arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
     memcached_return_t error= memcached_pool_repopulate(pool);
@@ -352,6 +354,7 @@ arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
     if (error != MEMCACHED_SUCCESS) {
       ZOO_LOG_WARN(("failed to repopulate the pool!"));
     }
+#endif
   } else {
     ZOO_LOG_WARN(("arcus is already initiated"));
   }
@@ -885,8 +888,47 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   gettimeofday(&tv_begin, 0);
 
   /* Update the server list. */
+#ifdef REMOVE_DUAL_REPOPULATE
+  if (arcus->pool && mc == memcached_pool_get_master(arcus->pool))
+  {
+    bool serverlist_changed= false;
+    error= memcached_update_cachelist(mc, serverinfo, servercount, &serverlist_changed);
+
+#ifdef POOL_UPDATE_SERVERLIST
+    if (arcus->zk.is_initializing) {
+      memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
+      if (rc == MEMCACHED_SUCCESS) {
+        ZOO_LOG_WARN(("MEMACHED_POOL=REPOPULATED"));
+      } else {
+        ZOO_LOG_WARN(("failed to repopulate the pool!"));
+      }
+    } else if (serverlist_changed) {
+      memcached_return_t rc= memcached_pool_update_serverlist(arcus->pool);
+      if (rc == MEMCACHED_SUCCESS) {
+        ZOO_LOG_WARN(("MEMACHED_POOL=SERVERLIST UPDATED"));
+      } else {
+        ZOO_LOG_WARN(("failed to update serverlist in the pool!"));
+      }
+    }
+#else
+    if (arcus->zk.is_initializing || serverlist_changed) {
+      memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
+      if (rc == MEMCACHED_SUCCESS) {
+        ZOO_LOG_WARN(("MEMACHED_POOL=REPOPULATED"));
+      } else {
+        ZOO_LOG_WARN(("failed to repopulate the pool!"));
+      }
+    }
+#endif
+  }
+  else /* standalone mc or member mc */
+  {
+    error= memcached_update_cachelist(mc, serverinfo, servercount, NULL);
+  }
+#else
   bool serverlist_changed= false;
   error= memcached_update_cachelist(mc, serverinfo, servercount, &serverlist_changed);
+#endif
 
   unlikely (arcus->zk.is_initializing)
   {
@@ -894,6 +936,8 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
     pthread_cond_broadcast(&cond_arcus);
   }
 
+#ifdef REMOVE_DUAL_REPOPULATE
+#else
   /* If enabled memcached pooling, repopulate the pool. */
   if (arcus->pool && mc == memcached_pool_get_master(arcus->pool) && serverlist_changed) {
 #ifdef POOL_UPDATE_SERVERLIST
@@ -912,6 +956,7 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
     }
 #endif
   }
+#endif
 
   gettimeofday(&tv_end, 0);
   msec= ((tv_end.tv_sec - tv_begin.tv_sec) * 1000)
