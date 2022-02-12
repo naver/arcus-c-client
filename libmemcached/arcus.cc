@@ -899,10 +899,10 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
       }
 #ifdef LOCK_UPDATE_SERVERLIST
     } else {
-      error= memcached_pool_update_serverlist(arcus->pool, serverinfo, servercount);
+      error= memcached_pool_update_cachelist(arcus->pool, serverinfo, servercount);
 #else
     } else if (serverlist_changed) {
-      memcached_return_t rc= memcached_pool_update_serverlist(arcus->pool);
+      memcached_return_t rc= memcached_pool_update_cachelist(arcus->pool);
       if (rc == MEMCACHED_SUCCESS) {
         ZOO_LOG_WARN(("MEMACHED_POOL=SERVERLIST UPDATED"));
       } else {

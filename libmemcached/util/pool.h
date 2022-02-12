@@ -124,12 +124,12 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool);
 #ifdef POOL_UPDATE_SERVERLIST
 #ifdef LOCK_UPDATE_SERVERLIST
 LIBMEMCACHED_API
-memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool,
+memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
                                                     struct memcached_server_info *serverinfo,
                                                     uint32_t servercount);
 #else
 LIBMEMCACHED_API
-memcached_return_t memcached_pool_update_serverlist(memcached_pool_st *pool);
+memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool);
 #endif
 #endif
 

@@ -526,9 +526,9 @@ void memcached_set_server_manager(memcached_st *ptr, void *server_manager) {
 
 #ifdef ENABLE_REPLICATION
 static memcached_return_t
-do_memcached_update_grouplist(memcached_st *mc,
-                              struct memcached_server_info *serverinfo,
-                              uint32_t servercount, bool *serverlist_changed)
+do_memcached_update_rgrouplist(memcached_st *mc,
+                               struct memcached_server_info *serverinfo,
+                               uint32_t servercount, bool *serverlist_changed)
 {
   struct memcached_rgroup_info *groupinfo;
   uint32_t groupcount= 0;
@@ -609,9 +609,9 @@ do_memcached_update_grouplist(memcached_st *mc,
 #endif
 
 static memcached_return_t
-do_memcached_update_cachelist(memcached_st *mc,
-                              struct memcached_server_info *serverinfo,
-                              uint32_t servercount, bool *serverlist_changed)
+do_memcached_update_serverlist(memcached_st *mc,
+                               struct memcached_server_info *serverinfo,
+                               uint32_t servercount, bool *serverlist_changed)
 {
   uint32_t x, y;
   uint32_t validcount= servercount;
@@ -672,15 +672,15 @@ memcached_return_t memcached_update_cachelist(memcached_st *ptr,
 #ifdef ENABLE_REPLICATION
   if (ptr->flags.repl_enabled)
   {
-    return do_memcached_update_grouplist(ptr, serverinfo, servercount, serverlist_changed);
+    return do_memcached_update_rgrouplist(ptr, serverinfo, servercount, serverlist_changed);
   }
 #endif
-  return do_memcached_update_cachelist(ptr, serverinfo, servercount, serverlist_changed);
+  return do_memcached_update_serverlist(ptr, serverinfo, servercount, serverlist_changed);
 }
 
 #ifdef ENABLE_REPLICATION
 static memcached_return_t
-do_memcached_update_grouplist_with_master(memcached_st *mc, memcached_st *master)
+do_memcached_update_rgrouplist_with_master(memcached_st *mc, memcached_st *master)
 {
   uint32_t x, y;
   bool prune_flag;
@@ -783,7 +783,7 @@ memcached_return_t memcached_update_cachelist_with_master(memcached_st *ptr, mem
 #ifdef ENABLE_REPLICATION
   if (master->flags.repl_enabled)
   {
-    return do_memcached_update_grouplist_with_master(ptr, master);
+    return do_memcached_update_rgrouplist_with_master(ptr, master);
   }
 #endif
   return do_memcached_update_serverlist_with_master(ptr, master);
