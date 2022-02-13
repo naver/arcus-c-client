@@ -625,34 +625,31 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool)
   rc= memcached_update_cachelist(pool->master, serverinfo, servercount,
                                  &serverlist_changed);
   if (rc == MEMCACHED_SUCCESS && serverlist_changed)
-  {
 #endif
+  {
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-  pool->increment_ketama_version();
+    pool->increment_ketama_version();
 #else
-  pool->increment_version();
+    pool->increment_version();
 #endif
 
-  /* update the member mcs */
-  for (int xx= 0; xx <= pool->top; ++xx)
-  {
-    memcached_st *mc= pool->mc_pool[xx];
-    memcached_return_t error;
-    error= memcached_update_cachelist_with_master(mc, pool->master);
-    if (error == MEMCACHED_SUCCESS)
+    /* update the member mcs */
+    for (int xx= 0; xx <= pool->top; ++xx)
     {
+      memcached_st *mc= pool->mc_pool[xx];
+      memcached_return_t error;
+      error= memcached_update_cachelist_with_master(mc, pool->master);
+      if (error == MEMCACHED_SUCCESS) {
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-      mc->configure.ketama_version= pool->ketama_version();
+        mc->configure.ketama_version= pool->ketama_version();
 #else
-      mc->configure.version= pool->version();
+        mc->configure.version= pool->version();
 #endif
+      }
     }
   }
-#ifdef LOCK_UPDATE_SERVERLIST
-  }
-#endif
   (void)pthread_mutex_unlock(&pool->mutex);
-  return MEMCACHED_SUCCESS;
+  return rc;
 }
 #endif
 
