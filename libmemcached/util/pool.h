@@ -126,7 +126,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool);
 LIBMEMCACHED_API
 memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
                                                     struct memcached_server_info *serverinfo,
-                                                    uint32_t servercount);
+                                                    uint32_t servercount, bool init);
 #else
 LIBMEMCACHED_API
 memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool);

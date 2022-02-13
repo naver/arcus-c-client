@@ -607,7 +607,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 #ifdef LOCK_UPDATE_SERVERLIST
 memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
                                                    struct memcached_server_info *serverinfo,
-                                                   uint32_t servercount)
+                                                   uint32_t servercount, bool init)
 #else
 memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool)
 #endif
@@ -624,7 +624,32 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool)
 #ifdef LOCK_UPDATE_SERVERLIST
   rc= memcached_update_cachelist(pool->master, serverinfo, servercount,
                                  &serverlist_changed);
-  if (rc == MEMCACHED_SUCCESS && serverlist_changed)
+  if (init)
+  {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    pool->increment_ketama_version();
+#else
+    pool->increment_version();
+#endif
+
+    /* clone the member mcs */
+    for (int xx= 0; xx <= pool->top; ++xx)
+    {
+      memcached_st *memc= memcached_clone(NULL, pool->master);
+      if (memc) {
+        memcached_free(pool->mc_pool[xx]);
+        pool->mc_pool[xx]= memc;
+        /* I'm not sure what to do in this case.. this would happen
+           if we fail to push the server list inside the client..
+           I should add a testcase for this, but I believe the following
+           would work, except that you would add a hole in the pool list..
+           in theory you could end up with an empty pool....
+         */
+      }
+    }
+    rc = MEMCACHED_SUCCESS;
+  }
+  else if (rc == MEMCACHED_SUCCESS && serverlist_changed)
 #endif
   {
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
@@ -633,7 +658,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool)
     pool->increment_version();
 #endif
 
-    /* update the member mcs */
+    /* update the cachelist of member mcs */
     for (int xx= 0; xx <= pool->top; ++xx)
     {
       memcached_st *mc= pool->mc_pool[xx];
@@ -649,7 +674,11 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool)
     }
   }
   (void)pthread_mutex_unlock(&pool->mutex);
+#ifdef LOCK_UPDATE_SERVERLIST
   return rc;
+#else
+  return MEMCACHED_SUCCESS;
+#endif
 }
 #endif
 
