@@ -464,11 +464,16 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
       }
       changed= true;
     } else { /* rginfo->nreplica >= 2 */
+      uint8_t new_slave_exist[RGROUP_MAX_REPLICA];
+      memset(new_slave_exist, 0, RGROUP_MAX_REPLICA);
+
       /* remove old slaves that are disappeared */
       for (i= 1; i < (int)rgroup->nreplica; i++) {
         for (j= 1; j < (int)rginfo->nreplica; j++) {
-          if (RGROUP_SERVER_IS_SAME(rgroup, i, rginfo, j))
-            break;
+          if (new_slave_exist[j]) continue;
+          if (RGROUP_SERVER_IS_SAME(rgroup, i, rginfo, j)) {
+            new_slave_exist[j]= 1; break;
+          }
         }
         if (j >= (int)rginfo->nreplica) { /* Not exist */
           do_rgroup_server_remove(rgroup, i);
@@ -478,11 +483,7 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
       }
       /* insert new slaves that are appeared */
       for (i= 1; i < (int)rginfo->nreplica; i++) {
-        for (j= 1; j < (int)rgroup->nreplica; j++) {
-          if (RGROUP_SERVER_IS_SAME(rgroup, j, rginfo, i))
-            break;
-        }
-        if (j >= (int)rgroup->nreplica) { /* Not exist */
+        if (new_slave_exist[i] == 0) {
           do_rgroup_server_insert(rgroup, -1, rginfo->replicas[i]->hostname,
                                               rginfo->replicas[i]->port);
           changed= true;
@@ -546,11 +547,16 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
       }
       changed= true;
     } else { /* new_rgroup->nreplica >= 2 */
+      uint8_t new_slave_exist[RGROUP_MAX_REPLICA];
+      memset(new_slave_exist, 0, RGROUP_MAX_REPLICA);
+
       /* remove old slaves that are disappeared */
       for (i= 1; i < (int)rgroup->nreplica; i++) {
         for (j= 1; j < (int)new_rgroup->nreplica; j++) {
-          if (RGROUP_SERVER_IS_SAME(rgroup, i, new_rgroup, j))
-            break;
+          if (new_slave_exist[j]) continue;
+          if (RGROUP_SERVER_IS_SAME(rgroup, i, new_rgroup, j)) {
+            new_slave_exist[j]= 1; break;
+          }
         }
         if (j >= (int)new_rgroup->nreplica) { /* Not exist */
           do_rgroup_server_remove(rgroup, i);
@@ -560,11 +566,7 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
       }
       /* insert new slaves that are appeared */
       for (i= 1; i < (int)new_rgroup->nreplica; i++) {
-        for (j= 1; j < (int)rgroup->nreplica; j++) {
-          if (RGROUP_SERVER_IS_SAME(rgroup, j, new_rgroup, i))
-            break;
-        }
-        if (j >= (int)rgroup->nreplica) { /* Not exist */
+        if (new_slave_exist[i] == 0) {
           do_rgroup_server_insert(rgroup, -1, new_rgroup->replicas[i]->hostname,
                                               new_rgroup->replicas[i]->port);
           changed= true;
