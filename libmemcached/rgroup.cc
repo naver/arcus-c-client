@@ -417,36 +417,28 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
 {
   /* rgroup : old rgroup struct */
   /* rginfo : new rgroup info */
+  bool changed= false;
 
   if (rgroup->nreplica == 1)
   {
-    if (rginfo->nreplica == 1) {
-      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0)) {
-        /* no change: do nothing */
-        return false;
-      } else {
-        /* replace the server */
-        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
-                                            rginfo->replicas[0]->port);
-      }
-    } else { /* rginfo->nreplica >= 2 */
-      if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
-        /* replace the master */
-        do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
-                                            rginfo->replicas[0]->port);
-      }
+    if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
+      /* replace the master */
+      do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
+                                          rginfo->replicas[0]->port);
+      changed= true;
+    }
+    if (rginfo->nreplica > 1) {
       /* add new slaves */
       for (int i= 1; i < (int)rginfo->nreplica; i++) {
         do_rgroup_server_insert(rgroup, i, rginfo->replicas[i]->hostname,
                                            rginfo->replicas[i]->port);
       }
+      changed= true;
     }
-    return true;
   }
   else /* rgroup->nreplica >= 2 */
   {
     int i, j;
-    bool changed = false;
 
     if (RGROUP_SERVER_IS_SAME(rgroup, 0, rginfo, 0) != true) {
       for (i= 1; i < (int)rgroup->nreplica; i++) {
@@ -454,14 +446,14 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
           break;
       }
       if (i < (int)rgroup->nreplica) { /* found */
-        /* master failover : The old slave become the new master */
+        /* switchover or failover */
         do_rgroup_server_switchover(rgroup, i);
       } else {
         /* replace the master */
         do_rgroup_server_replace(rgroup, 0, rginfo->replicas[0]->hostname,
                                             rginfo->replicas[0]->port);
       }
-      changed = true;
+      changed= true;
     }
 
     /* handle the slave nodes */
@@ -470,7 +462,7 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
       while (rgroup->nreplica > 1) {
         do_rgroup_server_remove(rgroup, rgroup->nreplica-1);
       }
-      changed = true;
+      changed= true;
     } else { /* rginfo->nreplica >= 2 */
       /* remove old slaves that are disappeared */
       for (i= 1; i < (int)rgroup->nreplica; i++) {
@@ -481,7 +473,7 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
         if (j >= (int)rginfo->nreplica) { /* Not exist */
           do_rgroup_server_remove(rgroup, i);
           i -= 1; /* for adjusting "i" index */
-          changed = true;
+          changed= true;
         }
       }
       /* insert new slaves that are appeared */
@@ -493,12 +485,12 @@ memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
         if (j >= (int)rgroup->nreplica) { /* Not exist */
           do_rgroup_server_insert(rgroup, -1, rginfo->replicas[i]->hostname,
                                               rginfo->replicas[i]->port);
-          changed = true;
+          changed= true;
         }
       }
     }
-    return changed;
   }
+  return changed;
 }
 
 #ifdef POOL_UPDATE_SERVERLIST
@@ -507,36 +499,28 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
 {
   /* rgroup : old rgroup struct */
   /* new_rgroup : new rgroup struct */
+  bool changed= false;
 
   if (rgroup->nreplica == 1)
   {
-    if (new_rgroup->nreplica == 1) {
-      if (RGROUP_SERVER_IS_SAME(rgroup, 0, new_rgroup, 0)) {
-        /* no change: do nothing */
-        return false;
-      } else {
-        /* replace the server */
-        do_rgroup_server_replace(rgroup, 0, new_rgroup->replicas[0]->hostname,
-                                            new_rgroup->replicas[0]->port);
-      }
-    } else { /* new_rgroup->nreplica >= 2 */
-      if (RGROUP_SERVER_IS_SAME(rgroup, 0, new_rgroup, 0) != true) {
-        /* replace the master */
-        do_rgroup_server_replace(rgroup, 0, new_rgroup->replicas[0]->hostname,
-                                            new_rgroup->replicas[0]->port);
-      }
+    if (RGROUP_SERVER_IS_SAME(rgroup, 0, new_rgroup, 0) != true) {
+      /* replace the master */
+      do_rgroup_server_replace(rgroup, 0, new_rgroup->replicas[0]->hostname,
+                                          new_rgroup->replicas[0]->port);
+      changed= true;
+    }
+    if (new_rgroup->nreplica > 1) {
       /* add new slaves */
       for (int i= 1; i < (int)new_rgroup->nreplica; i++) {
         do_rgroup_server_insert(rgroup, i, new_rgroup->replicas[i]->hostname,
                                            new_rgroup->replicas[i]->port);
       }
+      changed= true;
     }
-    return true;
   }
   else /* rgroup->nreplica >= 2 */
   {
     int i, j;
-    bool changed = false;
 
     if (RGROUP_SERVER_IS_SAME(rgroup, 0, new_rgroup, 0) != true) {
       for (i= 1; i < (int)rgroup->nreplica; i++) {
@@ -544,14 +528,14 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
           break;
       }
       if (i < (int)rgroup->nreplica) { /* found */
-        /* master failover : The old slave become the new master */
+        /* switchover or failover */
         do_rgroup_server_switchover(rgroup, i);
       } else {
         /* replace the master */
         do_rgroup_server_replace(rgroup, 0, new_rgroup->replicas[0]->hostname,
                                             new_rgroup->replicas[0]->port);
       }
-      changed = true;
+      changed= true;
     }
 
     /* handle the slave nodes */
@@ -560,7 +544,7 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
       while (rgroup->nreplica > 1) {
         do_rgroup_server_remove(rgroup, rgroup->nreplica-1);
       }
-      changed = true;
+      changed= true;
     } else { /* new_rgroup->nreplica >= 2 */
       /* remove old slaves that are disappeared */
       for (i= 1; i < (int)rgroup->nreplica; i++) {
@@ -571,7 +555,7 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
         if (j >= (int)new_rgroup->nreplica) { /* Not exist */
           do_rgroup_server_remove(rgroup, i);
           i -= 1; /* for adjusting "i" index */
-          changed = true;
+          changed= true;
         }
       }
       /* insert new slaves that are appeared */
@@ -583,12 +567,12 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
         if (j >= (int)rgroup->nreplica) { /* Not exist */
           do_rgroup_server_insert(rgroup, -1, new_rgroup->replicas[i]->hostname,
                                               new_rgroup->replicas[i]->port);
-          changed = true;
+          changed= true;
         }
       }
     }
-    return changed;
   }
+  return changed;
 }
 #endif
 
