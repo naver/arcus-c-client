@@ -337,15 +337,6 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
     }
   } while (ret == NULL);
 
-#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-  if (ret != NULL && ret->ketama.info == NULL) {
-    arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(ret));
-    if (arcus && arcus->pool) {
-      memcached_ketama_reference(ret, this->master);
-    }
-  }
-#endif
-
   pthread_mutex_unlock(&mutex);
 
   return ret;
@@ -365,13 +356,6 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
     rc= MEMCACHED_IN_PROGRESS;
     return false;
   }
-
-#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(released));
-  if (arcus && arcus->pool) {
-    memcached_ketama_release(released);
-  }
-#endif
 
   /* 
     Someone updated the behavior on the object, so we clone a new memcached_st with the new settings. If we fail to clone, we keep the old one around.
@@ -695,10 +679,6 @@ memcached_return_t memcached_pool_update_member(memcached_pool_st* pool, memcach
     (void)pthread_mutex_lock(&pool->mutex);
     rc= memcached_update_cachelist_with_master(mc, pool->master);
     if (rc == MEMCACHED_SUCCESS) {
-      /* update hash ring */
-      memcached_ketama_release(mc);
-      memcached_ketama_reference(mc, pool->master);
-
       /* update version */
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
       mc->configure.ketama_version= pool->ketama_version();

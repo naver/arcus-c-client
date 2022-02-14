@@ -223,7 +223,10 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(ptr));
   if (arcus && arcus->pool) {
     if (memcached_pool_get_master(arcus->pool) != ptr) {
-      /* Using shared hash ring does not generate hash ring except master */
+      /* get the reference to the ketama hash of the master */
+      memcached_st *master = memcached_pool_get_master(arcus->pool);
+      memcached_ketama_release(ptr);
+      memcached_ketama_reference(ptr, master);
       return MEMCACHED_SUCCESS;
     }
 #ifdef LOCK_UPDATE_SERVERLIST
@@ -521,7 +524,10 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(ptr));
   if (arcus && arcus->pool) {
     if (memcached_pool_get_master(arcus->pool) != ptr) {
-      /* Using shared hash ring does not generate hash ring except master */
+      /* get the reference to the ketama hash of the master */
+      memcached_st *master = memcached_pool_get_master(arcus->pool);
+      memcached_ketama_release(ptr);
+      memcached_ketama_reference(ptr, master);
       return MEMCACHED_SUCCESS;
     }
 #ifdef LOCK_UPDATE_SERVERLIST
