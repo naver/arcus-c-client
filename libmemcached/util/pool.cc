@@ -682,6 +682,35 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool)
 }
 #endif
 
+memcached_return_t memcached_pool_update_member(memcached_pool_st* pool, memcached_st *mc)
+{
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+  
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  if (mc->configure.ketama_version != pool->ketama_version())
+#else
+  if (mc->configure.version != pool->version())
+#endif
+  {
+    (void)pthread_mutex_lock(&pool->mutex);
+    rc= memcached_update_cachelist_with_master(mc, pool->master);
+    if (rc == MEMCACHED_SUCCESS) {
+      /* update hash ring */
+      memcached_ketama_release(mc);
+      memcached_ketama_reference(mc, pool->master);
+
+      /* update version */
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+      mc->configure.ketama_version= pool->ketama_version();
+#else
+      mc->configure.version= pool->version();
+#endif
+    }
+    (void)pthread_mutex_unlock(&pool->mutex);
+  }
+  return rc;
+}
+
 #ifdef ENABLE_REPLICATION
 memcached_return_t
 memcached_pool_use_single_server(memcached_pool_st *pool,

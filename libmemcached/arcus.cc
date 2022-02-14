@@ -69,10 +69,6 @@ static void                  *arcus_zk_manager_thread_main(void *arg);
 /**
  * UTILITIES
  */
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached_st *master);
-#endif
-
 /* async routine synchronization */
 static pthread_mutex_t azk_mtx  = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  azk_cond = PTHREAD_COND_INITIALIZER;
@@ -776,11 +772,7 @@ void arcus_server_check_for_update(memcached_st *ptr)
       if (master && master->configure.ketama_version != ptr->configure.ketama_version) {
         /* master's cache list was changed, update my server list. */
         pthread_mutex_lock(&lock_arcus);
-        {
-          memcached_pool_lock(arcus->pool);
-          do_update_serverlist_with_master(ptr, master);
-          memcached_pool_unlock(arcus->pool);
-        }
+        (void)memcached_pool_update_member(arcus->pool, ptr);
         pthread_mutex_unlock(&lock_arcus);
       }
     }
@@ -980,70 +972,6 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
 
   libmemcached_free(mc, serverinfo);
 }
-
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-static inline void do_update_serverlist_with_master(memcached_st *ptr, memcached_st *master)
-{
-  /* pool locked */
-  uint32_t servercount= 0;
-  struct memcached_server_info *serverinfo;
-#ifdef ENABLE_REPLICATION
-  if (ptr->flags.repl_enabled)
-  {
-    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(ptr, sizeof(memcached_server_info)*(memcached_server_count(master)*RGROUP_MAX_REPLICA)));
-    if (not serverinfo) {
-      return;
-    }
-
-    memcached_rgroup_st *grouplist = master->rgroups;
-    for (uint32_t i= 0; i< memcached_server_count(master); i++) {
-      for (uint32_t j= 0; j< grouplist[i].nreplica; j++) {
-        serverinfo[servercount].groupname = grouplist[i].groupname;
-        serverinfo[servercount].hostname  = grouplist[i].replicas[j]->hostname;
-        serverinfo[servercount].port      = grouplist[i].replicas[j]->port;
-        serverinfo[servercount].master    = (j == 0 ? true : false);
-        serverinfo[servercount].exist     = false;
-        servercount++;
-      }
-    }
-  }
-  else
-#endif
-  {
-    serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(ptr, sizeof(memcached_server_info)*(memcached_server_count(master))));
-    if (not serverinfo) {
-      return;
-    }
-
-    memcached_server_list_st list = master->servers;
-    for (uint32_t i= 0; i< memcached_server_count(master); i++) {
-#ifdef ENABLE_REPLICATION
-      serverinfo[servercount].groupname = NULL;
-      serverinfo[servercount].master    = false;
-#endif
-      serverinfo[servercount].hostname  = list[i].hostname;
-      serverinfo[servercount].port      = list[i].port;
-      serverinfo[servercount].exist     = false;
-      servercount++; /* valid znode name */
-    }
-  }
-
-  /* Update the server list. */
-  memcached_return_t error= MEMCACHED_SUCCESS;
-  error= memcached_update_cachelist(ptr, serverinfo, servercount, NULL);
-  if (error != MEMCACHED_SUCCESS) /* TODO: need error handling */
-  {
-  }
-  libmemcached_free(ptr, serverinfo);
-
-  /* update hash ring */
-  memcached_ketama_release(ptr);
-  memcached_ketama_reference(ptr, master);
-
-  /* update hash ring version */
-  ptr->configure.ketama_version = master->configure.ketama_version;
-}
-#endif
 
 static inline int do_arcus_zk_process_reconnect(memcached_st *mc, bool *retry)
 {
