@@ -736,6 +736,48 @@ void arcus_server_check_for_update(memcached_st *ptr)
     return;
   }
 
+#ifdef NEW_UPDATE_USING_PROXY
+  if (arcus->proxy.data && arcus->proxy.data->version != arcus->proxy.current_version)
+  {
+    proc_mutex_lock(&arcus->proxy.data->mutex);
+    {
+      version= arcus->proxy.data->version;
+      size= arcus->proxy.data->size;
+      if (arcus->pool) {
+        /* As the proxy data version is compared, the master is updated just once */
+        memcached_st *master = memcached_pool_get_master(arcus->pool);
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+        if (master && master->configure.ketama_version == ptr->configure.ketama_version)
+#else
+        if (master && master->configure.version == ptr->configure.version)
+#endif
+        {
+          do_arcus_zk_update_cachelist_by_string(master, arcus->proxy.data->serverlist, size);
+        }
+      } else {
+        do_arcus_zk_update_cachelist_by_string(ptr, arcus->proxy.data->serverlist, size);
+      }
+      arcus->proxy.current_version= version;
+    }
+    proc_mutex_unlock(&arcus->proxy.data->mutex);
+  }
+
+  if (arcus->pool)
+  {
+    memcached_st *master = memcached_pool_get_master(arcus->pool);
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    if (master && master->configure.ketama_version != ptr->configure.ketama_version)
+#else
+    if (master && master->configure.version == ptr->configure.version)
+#endif
+    {
+      /* master's cache list was changed, update member's cache list */
+      pthread_mutex_lock(&lock_arcus);
+      (void)memcached_pool_update_member(arcus->pool, ptr);
+      pthread_mutex_unlock(&lock_arcus);
+    }
+  }
+#else
   if (arcus->proxy.data)
   {
     if (arcus->proxy.data->version != arcus->proxy.current_version)
@@ -778,6 +820,7 @@ void arcus_server_check_for_update(memcached_st *ptr)
     }
 #endif
   }
+#endif
 }
 
 /**
@@ -909,6 +952,9 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   }
   else /* standalone mc or member mc */
   {
+#ifdef NEW_UPDATE_USING_PROXY
+    /* Now, member mc cannot call this function */
+#endif
     error= memcached_update_cachelist(mc, serverinfo, servercount, NULL);
   }
 
