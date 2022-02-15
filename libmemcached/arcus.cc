@@ -744,8 +744,8 @@ void arcus_server_check_for_update(memcached_st *ptr)
       version= arcus->proxy.data->version;
       size= arcus->proxy.data->size;
       if (arcus->pool) {
-        /* As the proxy data version is compared, the master is updated just once */
         memcached_st *master = memcached_pool_get_master(arcus->pool);
+        // update the master just once
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
         if (master && master->configure.ketama_version == ptr->configure.ketama_version)
 #else
