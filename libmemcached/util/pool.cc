@@ -144,11 +144,7 @@ struct memcached_pool_st
 
   bool compare_version(const memcached_st *arg) const
   {
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-    return (arg->configure.version == version() && compare_ketama_version(arg));
-#else
     return (arg->configure.version == version());
-#endif
   }
 
   int32_t version() const
@@ -369,6 +365,17 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
       released= memc;
     }
   }
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+  else if (compare_ketama_version(released) == false)
+  {
+    memcached_return_t error;
+    error= memcached_update_cachelist_with_master(released, master);
+    if (error == MEMCACHED_SUCCESS) {
+      /* update ketama version */
+      mc->configure.ketama_version= ketama_version();
+    }
+  }
+#endif
 
   mc_pool[++top]= released;
 
@@ -475,6 +482,7 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
   }
 
   pool->increment_version();
+
   /* update the clones */
   for (int xx= 0; xx <= pool->top; ++xx)
   {
@@ -561,9 +569,8 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   pool->increment_ketama_version();
-#else
-  pool->increment_version();
 #endif
+  pool->increment_version();
 
   /* update the clones */
   for (int xx= 0; xx <= pool->top; ++xx)
@@ -606,9 +613,8 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
   {
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
     pool->increment_ketama_version();
-#else
-    pool->increment_version();
 #endif
+    pool->increment_version();
 
     /* clone the member mcs */
     for (int xx= 0; xx <= pool->top; ++xx)
