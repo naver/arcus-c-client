@@ -768,7 +768,7 @@ void arcus_server_check_for_update(memcached_st *ptr)
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
     if (master && master->configure.ketama_version != ptr->configure.ketama_version)
 #else
-    if (master && master->configure.version == ptr->configure.version)
+    if (master && master->configure.version != ptr->configure.version)
 #endif
     {
       /* master's cache list was changed, update member's cache list */
