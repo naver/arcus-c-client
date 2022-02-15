@@ -915,30 +915,13 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
   /* Update the server list. */
   if (arcus->pool && mc == memcached_pool_get_master(arcus->pool))
   {
-#ifdef LOCK_UPDATE_SERVERLIST
+#ifdef POOL_UPDATE_SERVERLIST
     error= memcached_pool_update_cachelist(arcus->pool, serverinfo, servercount,
                                            arcus->zk.is_initializing);
 #else
     bool serverlist_changed= false;
     error= memcached_update_cachelist(mc, serverinfo, servercount, &serverlist_changed);
 
-#ifdef POOL_UPDATE_SERVERLIST
-    if (arcus->zk.is_initializing) {
-      memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
-      if (rc == MEMCACHED_SUCCESS) {
-        ZOO_LOG_WARN(("MEMACHED_POOL=REPOPULATED"));
-      } else {
-        ZOO_LOG_WARN(("failed to repopulate the pool!"));
-      }
-    } else if (serverlist_changed) {
-      memcached_return_t rc= memcached_pool_update_cachelist(arcus->pool);
-      if (rc == MEMCACHED_SUCCESS) {
-        ZOO_LOG_WARN(("MEMACHED_POOL=SERVERLIST UPDATED"));
-      } else {
-        ZOO_LOG_WARN(("failed to update serverlist in the pool!"));
-      }
-    }
-#else
     if (arcus->zk.is_initializing || serverlist_changed) {
       memcached_return_t rc= memcached_pool_repopulate(arcus->pool);
       if (rc == MEMCACHED_SUCCESS) {
@@ -947,7 +930,6 @@ static inline void do_arcus_update_cachelist(memcached_st *mc,
         ZOO_LOG_WARN(("failed to repopulate the pool!"));
       }
     }
-#endif
 #endif
   }
   else /* standalone mc or member mc */
