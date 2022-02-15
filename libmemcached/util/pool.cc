@@ -372,7 +372,7 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
     error= memcached_update_cachelist_with_master(released, master);
     if (error == MEMCACHED_SUCCESS) {
       /* update ketama version */
-      mc->configure.ketama_version= ketama_version();
+      released->configure.ketama_version= ketama_version();
     }
   }
 #endif
