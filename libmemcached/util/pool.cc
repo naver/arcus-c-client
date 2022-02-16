@@ -640,7 +640,7 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
   }
 #ifdef USED_MC_LIST_IN_POOL
   int removed_count= mc_list_behavior_set(pool, flag, data);
-  for (int xx= 0; xx <= removed_count; ++xx)
+  for (int xx= 0; xx < removed_count; ++xx)
   {
     if (grow_pool(pool) == false)
        break;
@@ -730,7 +730,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   }
 #ifdef USED_MC_LIST_IN_POOL
   int removed_count= mc_list_remove_all(pool);
-  for (int xx= 0; xx <= removed_count; ++xx)
+  for (int xx= 0; xx < removed_count; ++xx)
   {
     if (grow_pool(pool) == false)
        break;
@@ -781,7 +781,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
     }
 #ifdef USED_MC_LIST_IN_POOL
     int removed_count= mc_list_remove_all(pool);
-    for (int xx= 0; xx <= removed_count; ++xx)
+    for (int xx= 0; xx < removed_count; ++xx)
     {
       if (grow_pool(pool) == false)
          break;
