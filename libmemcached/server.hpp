@@ -92,6 +92,12 @@ static inline void set_last_disconnected_host(memcached_server_write_instance_st
   memcached_server_free(root->last_disconnected_server);
   root->last_disconnected_server= memcached_server_clone(NULL, self);
   root->last_disconnected_server->version= self->version;
+#ifdef POOL_TIMEOUT_MANAGEMENT
+  struct timeval now;
+  if (gettimeofday(&now, NULL) == 0) {
+    root->last_disconnected_time= now.tv_sec;
+  }
+#endif
 }
 
 static inline void memcached_mark_server_for_timeout(memcached_server_write_instance_st server)

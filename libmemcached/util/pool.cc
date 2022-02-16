@@ -204,7 +204,11 @@ static memcached_st *mc_list_get(memcached_pool_st* pool)
   return mc;
 }
 
+#ifdef POOL_TIMEOUT_MANAGEMENT
+static void mc_list_add_head(memcached_pool_st* pool, memcached_st *mc)
+#else
 static void mc_list_add(memcached_pool_st* pool, memcached_st *mc)
+#endif
 {
   mc->mc_next= pool->used_mc_head;
   pool->used_mc_head= mc;
@@ -212,6 +216,18 @@ static void mc_list_add(memcached_pool_st* pool, memcached_st *mc)
     pool->used_mc_tail= mc;
   }
 }
+
+#ifdef POOL_TIMEOUT_MANAGEMENT
+static void mc_list_add_tail(memcached_pool_st* pool, memcached_st *mc)
+{
+  if (pool->used_mc_head == NULL) {
+    pool->used_mc_head= mc;
+  } else {
+    pool->used_mc_tail->mc_next= mc;
+  }
+  pool->used_mc_tail= mc;
+}
+#endif
 
 static int mc_list_remove_all(memcached_pool_st* pool)
 {
@@ -428,6 +444,48 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
     ret= mc_list_get(this);
     if (ret != NULL)
     {
+#ifdef POOL_TIMEOUT_MANAGEMENT
+      if (ret->last_disconnected_time > 0)
+      {
+        struct timeval now;
+        if (gettimeofday(&now, NULL) == 0)
+        {
+          time_t next_retry= ret->last_disconnected_time + ret->retry_timeout;
+          if (next_retry > now.tv_sec)
+          {
+#ifdef ENABLE_REPLICATION
+            if (ret->flags.repl_enabled)
+            {
+              for (uint32_t i= 0; i < memcached_server_count(ret); i++)
+              {
+                for (uint32_t j= 0; j < ret->rgroups[i].nreplica; j++)
+                {
+                  ret->rgroups[i].replicas[j]->next_retry= 0;
+                }
+              }
+            }
+            else
+            {
+#endif
+              for (uint32_t i= 0; i < memcached_server_count(ret); i++)
+              {
+                ret->servers[i].next_retry= 0;
+              }
+#ifdef ENABLE_REPLICATION
+            }
+#endif
+          }
+          ret->last_disconnected_time= 0;
+          break;
+        }
+        else
+        {
+          mc_list_add_head(this, ret);
+          ret= NULL;
+          continue;
+        }
+      }
+#endif
       break;
     }
 #endif
@@ -512,7 +570,15 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
 #endif
 
 #ifdef USED_MC_LIST_IN_POOL
+#ifdef POOL_TIMEOUT_MANAGEMENT
+  if (released->last_disconnected_time > 0) {
+    mc_list_add_tail(this, released);
+  } else {
+    mc_list_add_head(this, released);
+  }
+#else
   mc_list_add(this, released);
+#endif
 
   if (used_mc_head == used_mc_tail and top == 0 and cur_size == max_size)
   {

@@ -125,6 +125,9 @@ static inline bool _memcached_init(memcached_st *self)
 #endif
   self->servers= NULL;
   self->last_disconnected_server= NULL;
+#ifdef POOL_TIMEOUT_MANAGEMENT
+  self->last_disconnected_time= 0;
+#endif
 
   self->snd_timeout= 0;
   self->rcv_timeout= 0;
@@ -413,6 +416,9 @@ memcached_st *memcached_clone(memcached_st *clone, const memcached_st *source)
     return NULL;
   }
 
+#ifdef POOL_TIMEOUT_MANAGEMENT
+  new_clone->last_disconnected_time= source->last_disconnected_time;
+#endif
   new_clone->user_data= source->user_data;
 
   new_clone->snd_timeout= source->snd_timeout;

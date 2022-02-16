@@ -161,6 +161,9 @@ struct memcached_st {
 #endif
   memcached_server_st *servers;
   memcached_server_st *last_disconnected_server;
+#ifdef POOL_TIMEOUT_MANAGEMENT
+  time_t last_disconnected_time;
+#endif
   int32_t snd_timeout;
   int32_t rcv_timeout;
   uint32_t server_failure_limit;
