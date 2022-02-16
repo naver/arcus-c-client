@@ -178,6 +178,23 @@ static bool grow_pool(memcached_pool_st* pool)
   return true;
 }
 
+static memcached_return_t member_update_cachelist(memcached_st *memc,
+                                                  memcached_pool_st* pool)
+{
+  memcached_return_t rc;
+
+  rc= memcached_update_cachelist_with_master(memc, pool->master);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    memc->configure.ketama_version= pool->ketama_version();
+#else
+    memc->configure.version= pool->version();
+#endif
+  }
+  return rc;
+}
+
 bool memcached_pool_st::init(uint32_t initial)
 {
   mc_pool= new (std::nothrow) memcached_st *[max_size];
@@ -368,12 +385,7 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   else if (compare_ketama_version(released) == false)
   {
-    memcached_return_t error;
-    error= memcached_update_cachelist_with_master(released, master);
-    if (error == MEMCACHED_SUCCESS) {
-      /* update ketama version */
-      released->configure.ketama_version= ketama_version();
-    }
+    (void)member_update_cachelist(released, this);
   }
 #endif
 
@@ -644,16 +656,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
     /* update the cachelist of member mcs */
     for (int xx= 0; xx <= pool->top; ++xx)
     {
-      memcached_st *mc= pool->mc_pool[xx];
-      memcached_return_t error;
-      error= memcached_update_cachelist_with_master(mc, pool->master);
-      if (error == MEMCACHED_SUCCESS) {
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-        mc->configure.ketama_version= pool->ketama_version();
-#else
-        mc->configure.version= pool->version();
-#endif
-      }
+      (void)member_update_cachelist(pool->mc_pool[xx], pool);
     }
   }
   (void)pthread_mutex_unlock(&pool->mutex);
@@ -665,24 +668,16 @@ memcached_return_t memcached_pool_update_member(memcached_pool_st* pool, memcach
 {
   memcached_return_t rc= MEMCACHED_SUCCESS;
 
+  (void)pthread_mutex_lock(&pool->mutex);
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   if (mc->configure.ketama_version != pool->ketama_version())
 #else
   if (mc->configure.version != pool->version())
 #endif
   {
-    (void)pthread_mutex_lock(&pool->mutex);
-    rc= memcached_update_cachelist_with_master(mc, pool->master);
-    if (rc == MEMCACHED_SUCCESS) {
-      /* update version */
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-      mc->configure.ketama_version= pool->ketama_version();
-#else
-      mc->configure.version= pool->version();
-#endif
-    }
-    (void)pthread_mutex_unlock(&pool->mutex);
+    (void)member_update_cachelist(mc, pool);
   }
+  (void)pthread_mutex_unlock(&pool->mutex);
   return rc;
 }
 
