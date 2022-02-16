@@ -75,6 +75,8 @@ static inline uint64_t _memcached_get_id(void)
 }
 #endif
 
+static pthread_mutex_t ketama_info_lock = PTHREAD_MUTEX_INITIALIZER;
+
 static inline bool _memcached_init(memcached_st *self)
 {
   self->state.is_purging= false;
@@ -805,8 +807,10 @@ void memcached_ketama_set(memcached_st *ptr, memcached_ketama_info_st *info)
   assert(ptr->ketama.info == NULL);
 
   /* Called by master mc to set its ketama info */
+  pthread_mutex_lock(&ketama_info_lock);
   ptr->ketama.info= info;
   ptr->ketama.info->continuum_refcount++;
+  pthread_mutex_unlock(&ketama_info_lock);
 }
 
 void memcached_ketama_reference(memcached_st *ptr, memcached_st *master)
@@ -815,15 +819,18 @@ void memcached_ketama_reference(memcached_st *ptr, memcached_st *master)
 
   /* Called by member mc to set its ketama info */
   /* Can the ketama info of the master mc be NULL? */
+  pthread_mutex_lock(&ketama_info_lock);
   if (master->ketama.info != NULL) {
     ptr->ketama.info= master->ketama.info;
     ptr->ketama.info->continuum_refcount++;
   }
+  pthread_mutex_unlock(&ketama_info_lock);
 }
 
 void memcached_ketama_release(memcached_st *ptr)
 {
   /* Called by both master mc and member mc */
+  pthread_mutex_lock(&ketama_info_lock);
   if (ptr->ketama.info != NULL) {
     ptr->ketama.info->continuum_refcount--;
 
@@ -835,4 +842,5 @@ void memcached_ketama_release(memcached_st *ptr)
     }
     ptr->ketama.info= NULL;
   }
+  pthread_mutex_unlock(&ketama_info_lock);
 }
