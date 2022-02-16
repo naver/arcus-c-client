@@ -169,22 +169,39 @@ struct memcached_pool_st
   }
 };
 
+static memcached_return_t member_update_cachelist(memcached_st *memc,
+                                                  memcached_pool_st* pool)
+{
+  memcached_return_t rc;
+
+  rc= memcached_update_cachelist_with_master(memc, pool->master);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+    memc->configure.ketama_version= pool->ketama_version();
+#else
+    memc->configure.version= pool->version();
+#endif
+  }
+  return rc;
+}
+
 #ifdef USED_MC_LIST_IN_POOL
 /*
  * used mc list functions
  */
 static memcached_st *mc_list_get(memcached_pool_st* pool)
 {
-  if (pool->used_mc_head)
+  memcached_st *mc;
+
+  if ((mc= pool->used_mc_head) != NULL)
   {
-    memcached_st *mc= pool->used_mc_head;
     pool->used_mc_head= mc->mc_next;
     if (pool->used_mc_head == NULL) {
       pool->used_mc_tail= NULL;
     }
-    return mc;
   }
-  return NULL;
+  return mc;
 }
 
 static void mc_list_add(memcached_pool_st* pool, memcached_st *mc)
@@ -255,6 +272,18 @@ static int mc_list_behavior_set(memcached_pool_st* pool,
   }
   return removed_count;
 }
+
+static void mc_list_update_cachelist(memcached_pool_st* pool)
+{
+  memcached_st *mc;
+
+  mc= pool->used_mc_head;
+  while (mc)
+  {
+    (void)member_update_cachelist(mc, pool);
+    mc= mc->mc_next;
+  }
+}
 #endif
 
 /**
@@ -279,23 +308,6 @@ static bool grow_pool(memcached_pool_st* pool)
   obj->configure.version= pool->version();
 
   return true;
-}
-
-static memcached_return_t member_update_cachelist(memcached_st *memc,
-                                                  memcached_pool_st* pool)
-{
-  memcached_return_t rc;
-
-  rc= memcached_update_cachelist_with_master(memc, pool->master);
-  if (rc == MEMCACHED_SUCCESS)
-  {
-#ifdef UPDATE_HASH_RING_OF_FETCHED_MC
-    memc->configure.ketama_version= pool->ketama_version();
-#else
-    memc->configure.version= pool->version();
-#endif
-  }
-  return rc;
 }
 
 bool memcached_pool_st::init(uint32_t initial)
@@ -799,12 +811,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 
     /* update the cachelist of member mcs */
 #ifdef USED_MC_LIST_IN_POOL
-    memcached_st *mc= pool->used_mc_head;
-    while (mc)
-    {
-      (void)member_update_cachelist(mc, pool);
-      mc= mc->mc_next;
-    }
+    mc_list_update_cachelist(pool);
 #endif
     for (int xx= 0; xx <= pool->top; ++xx)
     {
