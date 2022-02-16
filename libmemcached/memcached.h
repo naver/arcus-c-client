@@ -225,6 +225,9 @@ struct memcached_st {
   } options;
   const char *last_op_code;
   memcached_return_t last_response_code;
+#ifdef USED_MC_LIST_IN_POOL
+  struct memcached_st *mc_next; /* used in mc pool */
+#endif
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
   void *server_manager;
   FILE *logfile;
