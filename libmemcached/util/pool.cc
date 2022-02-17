@@ -1006,11 +1006,9 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 
     /* move member mcs of mc_pool to bk_pool */
     if (pool->top > -1) {
-      int count= pool->top + 1;
-      memcpy(pool->bk_pool, pool->mc_pool, (sizeof(void*)*count));
+      memcpy(pool->bk_pool, pool->mc_pool, (sizeof(void*)*(pool->top+1)));
       pool->bk_top = pool->top;
       pool->top= -1;
-      pool->cur_size -= count;
     }
 #endif
 
