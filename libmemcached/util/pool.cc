@@ -286,6 +286,23 @@ static void mc_list_update_cachelist(memcached_pool_st* pool)
 }
 #endif
 
+static memcached_st *mc_pool_get(memcached_pool_st* pool)
+{
+  if (pool->top > -1)
+  {
+    return pool->mc_pool[pool->top--];
+  }
+  return NULL;
+}
+
+static void mc_pool_update_cachelist(memcached_pool_st* pool)
+{
+  for (int xx= 0; xx <= pool->top; ++xx)
+  {
+    (void)member_update_cachelist(pool->mc_pool[xx], pool);
+  }
+}
+
 /**
  * Grow the connection pool by creating a connection structure and clone the
  * original memcached handle.
@@ -431,11 +448,13 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
       break;
     }
 #endif
-    if (top > -1)
+    ret= mc_pool_get(this);
+    if (ret != NULL)
     {
-      ret= mc_pool[top--];
+      break;
     }
-    else if (cur_size < max_size)
+
+    if (cur_size < max_size)
     {
       if (grow_pool(this) == false)
       {
@@ -813,10 +832,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 #ifdef USED_MC_LIST_IN_POOL
     mc_list_update_cachelist(pool);
 #endif
-    for (int xx= 0; xx <= pool->top; ++xx)
-    {
-      (void)member_update_cachelist(pool->mc_pool[xx], pool);
-    }
+    mc_pool_update_cachelist(pool);
   }
   (void)pthread_mutex_unlock(&pool->mutex);
   return rc;
