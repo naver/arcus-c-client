@@ -83,7 +83,7 @@ struct memcached_pool_st
 #endif
   memcached_st **mc_pool;
   memcached_st **bk_pool;
-  int top;
+  int mc_top;
   int bk_top;
   uint32_t wait_count;
   const uint32_t max_size;
@@ -101,7 +101,7 @@ struct memcached_pool_st
 #endif
     mc_pool(NULL),
     bk_pool(NULL),
-    top(-1),
+    mc_top(-1),
     bk_top(-1),
     wait_count(0),
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
@@ -152,7 +152,7 @@ struct memcached_pool_st
       memcached_free(bk_pool[x]);
       bk_pool[x] = NULL;
     }
-    for (int x= 0; x <= top; ++x)
+    for (int x= 0; x <= mc_top; ++x)
     {
       memcached_free(mc_pool[x]);
       mc_pool[x] = NULL;
@@ -298,9 +298,9 @@ static memcached_st *mc_pool_get(memcached_pool_st* pool)
   }
 #endif
 #endif
-  if (pool->top > -1)
+  if (pool->mc_top > -1)
   {
-    return pool->mc_pool[pool->top--];
+    return pool->mc_pool[pool->mc_top--];
   }
   return NULL;
 }
@@ -320,7 +320,7 @@ static bool grow_pool(memcached_pool_st* pool)
     return false;
   }
 
-  pool->mc_pool[++pool->top]= obj;
+  pool->mc_pool[++pool->mc_top]= obj;
   pool->cur_size++;
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   obj->configure.ketama_version= pool->ketama_version();
@@ -547,7 +547,7 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
 #ifdef USED_MC_LIST_IN_POOL
   mc_list_add(this, released);
 #else
-  mc_pool[++top]= released;
+  mc_pool[++mc_top]= released;
 #endif
 
   if (wait_count > 0)
@@ -653,7 +653,7 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
   pool->increment_version();
 
   /* update the clones */
-  for (int xx= 0; xx <= pool->top; ++xx)
+  for (int xx= 0; xx <= pool->mc_top; ++xx)
   {
     if (memcached_success(memcached_behavior_set(pool->mc_pool[xx], flag, data)))
     {
@@ -822,7 +822,7 @@ static void mc_pool_update_cachelist(memcached_pool_st* pool)
 
     (void)pthread_mutex_lock(&pool->mutex);
     /* push the member mc into mc_pool */
-    pool->mc_pool[++pool->top]= mc;
+    pool->mc_pool[++pool->mc_top]= mc;
 
     if (pool->wait_count > 0) {
       /* we might have people waiting for a connection.. wake them up :-) */
@@ -830,7 +830,7 @@ static void mc_pool_update_cachelist(memcached_pool_st* pool)
     }
   }
 #else
-  for (int xx= 0; xx <= pool->top; ++xx)
+  for (int xx= 0; xx <= pool->mc_top; ++xx)
   {
     (void)member_update_cachelist(pool->mc_pool[xx], pool);
   }
@@ -864,7 +864,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
   pool->increment_version();
 
   /* update the clones */
-  for (int xx= 0; xx <= pool->top; ++xx)
+  for (int xx= 0; xx <= pool->mc_top; ++xx)
   {
     memcached_st *memc;
     if ((memc= memcached_clone(NULL, pool->master)))
@@ -918,7 +918,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
     pool->increment_version();
 
     /* clone the member mcs */
-    for (int xx= 0; xx <= pool->top; ++xx)
+    for (int xx= 0; xx <= pool->mc_top; ++xx)
     {
       memcached_st *memc= memcached_clone(NULL, pool->master);
       if (memc) {
@@ -960,10 +960,10 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 #endif
 
     /* move member mcs of mc_pool to bk_pool */
-    if (pool->top > -1) {
-      memcpy(pool->bk_pool, pool->mc_pool, (sizeof(void*)*(pool->top+1)));
-      pool->bk_top = pool->top;
-      pool->top= -1;
+    if (pool->mc_top > -1) {
+      memcpy(pool->bk_pool, pool->mc_pool, (sizeof(void*)*(pool->mc_top+1)));
+      pool->bk_top= pool->mc_top;
+      pool->mc_top= -1;
     }
 #endif
 
