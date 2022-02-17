@@ -75,12 +75,10 @@ struct memcached_pool_st
   pthread_mutex_t mutex;
   pthread_cond_t cond;
   memcached_st *master;
-#ifdef USED_MC_LIST_IN_POOL
   memcached_st *used_mc_head;
   memcached_st *used_mc_tail;
   memcached_st *used_bk_head;
   memcached_st *used_bk_tail;
-#endif
   memcached_st **mc_pool;
   memcached_st **bk_pool;
   int mc_top;
@@ -93,12 +91,10 @@ struct memcached_pool_st
 
   memcached_pool_st(memcached_st *master_arg, size_t max_arg) :
     master(master_arg),
-#ifdef USED_MC_LIST_IN_POOL
     used_mc_head(NULL),
     used_mc_tail(NULL),
     used_bk_head(NULL),
     used_bk_tail(NULL),
-#endif
     mc_pool(NULL),
     bk_pool(NULL),
     mc_top(-1),
@@ -133,7 +129,6 @@ struct memcached_pool_st
 
   ~memcached_pool_st()
   {
-#ifdef USED_MC_LIST_IN_POOL
     while (used_bk_head)
     {
       memcached_st *mc= used_bk_head;
@@ -146,7 +141,6 @@ struct memcached_pool_st
       used_mc_head= mc->mc_next;
       memcached_free(mc);
     }
-#endif
     for (int x= 0; x <= bk_top; ++x)
     {
       memcached_free(bk_pool[x]);
@@ -201,7 +195,6 @@ struct memcached_pool_st
   }
 };
 
-#ifdef USED_MC_LIST_IN_POOL
 /*
  * used mc list functions
  */
@@ -283,8 +276,6 @@ static int mc_list_behavior_set(memcached_pool_st* pool,
   }
   return removed_count;
 }
-
-#endif
 
 static memcached_st *mc_pool_get(memcached_pool_st* pool)
 {
@@ -450,15 +441,11 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
   memcached_st *ret= NULL;
   do
   {
-#ifdef USED_MC_LIST_IN_POOL
-    ret= mc_list_get(this);
-    if (ret != NULL)
+    if ((ret= mc_list_get(this)) != NULL) {
     {
       break;
     }
-#endif
-    ret= mc_pool_get(this);
-    if (ret != NULL)
+    if ((ret= mc_pool_get(this)) != NULL) {
     {
       break;
     }
@@ -544,11 +531,7 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
 #endif
 #endif
 
-#ifdef USED_MC_LIST_IN_POOL
   mc_list_add(this, released);
-#else
-  mc_pool[++mc_top]= released;
-#endif
 
   if (wait_count > 0)
   {
@@ -675,14 +658,12 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
       }
     }
   }
-#ifdef USED_MC_LIST_IN_POOL
   int removed_count= mc_list_behavior_set(pool, flag, data);
   for (int xx= 0; xx < removed_count; ++xx)
   {
     if (grow_pool(pool) == false)
        break;
   }
-#endif
 
   (void)pthread_mutex_unlock(&pool->mutex);
   (void)pthread_mutex_unlock(&pool->master_lock);
@@ -742,7 +723,6 @@ static memcached_return_t member_update_cachelist(memcached_st *memc,
   return rc;
 }
 
-#ifdef USED_MC_LIST_IN_POOL
 static int mc_list_remove_all(memcached_pool_st* pool)
 {
   memcached_st *mc;
@@ -804,7 +784,6 @@ static void mc_list_update_cachelist(memcached_pool_st* pool)
   }
 #endif
 }
-#endif
 
 static void mc_pool_update_cachelist(memcached_pool_st* pool)
 {
@@ -879,14 +858,12 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
       */
     }
   }
-#ifdef USED_MC_LIST_IN_POOL
   int removed_count= mc_list_remove_all(pool);
   for (int xx= 0; xx < removed_count; ++xx)
   {
     if (grow_pool(pool) == false)
        break;
   }
-#endif
 
   (void)pthread_mutex_unlock(&pool->mutex);
   (void)pthread_mutex_unlock(&pool->master_lock);
@@ -932,14 +909,12 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
          */
       }
     }
-#ifdef USED_MC_LIST_IN_POOL
     int removed_count= mc_list_remove_all(pool);
     for (int xx= 0; xx < removed_count; ++xx)
     {
       if (grow_pool(pool) == false)
          break;
     }
-#endif
     rc = MEMCACHED_SUCCESS;
   }
   else if (rc == MEMCACHED_SUCCESS && serverlist_changed)
@@ -951,13 +926,11 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 #endif
 
 #ifdef POOL_MORE_CONCURRENCY
-#ifdef USED_MC_LIST_IN_POOL
     /* move member mcs of used_mc_list to used_bk_list */
     pool->used_bk_head= pool->used_mc_head;
     pool->used_bk_tail= pool->used_mc_tail;
     pool->used_mc_head= NULL;
     pool->used_mc_tail= NULL;
-#endif
 
     /* move member mcs of mc_pool to bk_pool */
     if (pool->mc_top > -1) {
@@ -968,9 +941,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 #endif
 
     /* update the cachelist of member mcs */
-#ifdef USED_MC_LIST_IN_POOL
     mc_list_update_cachelist(pool);
-#endif
     mc_pool_update_cachelist(pool);
   }
   (void)pthread_mutex_unlock(&pool->mutex);
