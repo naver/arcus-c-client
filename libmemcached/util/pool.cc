@@ -97,6 +97,7 @@ struct memcached_pool_st
 #ifdef POOL_MORE_CONCURRENCY
   int bk_top;
 #endif
+  uint32_t wait_count;
   const uint32_t max_size;
   uint32_t cur_size;
   bool _owns_master;
@@ -120,6 +121,7 @@ struct memcached_pool_st
 #ifdef POOL_MORE_CONCURRENCY
     bk_top(-1),
 #endif
+    wait_count(0),
     max_size(max_arg),
     cur_size(0),
     _owns_master(false)
@@ -508,7 +510,10 @@ memcached_st* memcached_pool_st::fetch(const struct timespec& relative_time, mem
       time_to_wait.tv_nsec= relative_time.tv_nsec;
 
       int thread_ret;
-      if ((thread_ret= pthread_cond_timedwait(&cond, &mutex, &time_to_wait)) != 0)
+      wait_count++;
+      thread_ret= pthread_cond_timedwait(&cond, &mutex, &time_to_wait);
+      wait_count--;
+      if (thread_ret != 0)
       {
         if (thread_ret == ETIMEDOUT)
         {
@@ -567,21 +572,15 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
 
 #ifdef USED_MC_LIST_IN_POOL
   mc_list_add(this, released);
-
-  if (used_mc_head == used_mc_tail and top == 0 and cur_size == max_size)
-  {
-    /* we might have people waiting for a connection.. wake them up :-) */
-    pthread_cond_broadcast(&cond);
-  }
 #else
   mc_pool[++top]= released;
+#endif
 
-  if (top == 0 and cur_size == max_size)
+  if (wait_count > 0)
   {
     /* we might have people waiting for a connection.. wake them up :-) */
     pthread_cond_broadcast(&cond);
   }
-#endif
 
   (void)pthread_mutex_unlock(&mutex);
 
