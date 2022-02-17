@@ -951,11 +951,13 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 #endif
 
 #ifdef POOL_MORE_CONCURRENCY
+#ifdef USED_MC_LIST_IN_POOL
     /* move member mcs of used_mc_list to used_bk_list */
     pool->used_bk_head= pool->used_mc_head;
     pool->used_bk_tail= pool->used_mc_tail;
     pool->used_mc_head= NULL;
     pool->used_mc_tail= NULL;
+#endif
 
     /* move member mcs of mc_pool to bk_pool */
     if (pool->top > -1) {
