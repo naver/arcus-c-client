@@ -219,6 +219,7 @@ struct memcached_pool_st
   }
 };
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 static memcached_return_t member_update_cachelist(memcached_st *memc,
                                                   memcached_pool_st* pool)
 {
@@ -235,6 +236,7 @@ static memcached_return_t member_update_cachelist(memcached_st *memc,
   }
   return rc;
 }
+#endif
 
 #ifdef USED_MC_LIST_IN_POOL
 /*
@@ -245,6 +247,7 @@ static memcached_st *mc_list_get(memcached_pool_st* pool)
   memcached_st *mc;
 
 #ifdef POOL_MORE_CONCURRENCY
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
   if ((mc= pool->used_bk_head) != NULL)
   {
     pool->used_bk_head= mc->mc_next;
@@ -254,6 +257,7 @@ static memcached_st *mc_list_get(memcached_pool_st* pool)
     (void)member_update_cachelist(mc, pool);
     return mc;
   }
+#endif
 #endif
   if ((mc= pool->used_mc_head) != NULL)
   {
@@ -274,6 +278,7 @@ static void mc_list_add(memcached_pool_st* pool, memcached_st *mc)
   }
 }
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 static int mc_list_remove_all(memcached_pool_st* pool)
 {
   memcached_st *mc;
@@ -290,6 +295,7 @@ static int mc_list_remove_all(memcached_pool_st* pool)
   pool->used_mc_tail= NULL;
   return removed_count;
 }
+#endif
 
 static int mc_list_behavior_set(memcached_pool_st* pool,
                                 memcached_behavior_t flag,
@@ -334,6 +340,7 @@ static int mc_list_behavior_set(memcached_pool_st* pool,
   return removed_count;
 }
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 static void mc_list_update_cachelist(memcached_pool_st* pool)
 {
 #ifdef POOL_MORE_CONCURRENCY
@@ -389,16 +396,19 @@ static void mc_list_update_cachelist(memcached_pool_st* pool)
 #endif
 }
 #endif
+#endif
 
 static memcached_st *mc_pool_get(memcached_pool_st* pool)
 {
 #ifdef POOL_MORE_CONCURRENCY
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
   if (pool->bk_top > -1)
   {
     memcached_st *mc= pool->bk_pool[pool->bk_top--];
     (void)member_update_cachelist(mc, pool);
     return mc;
   }
+#endif
 #endif
   if (pool->top > -1)
   {
@@ -407,6 +417,7 @@ static memcached_st *mc_pool_get(memcached_pool_st* pool)
   return NULL;
 }
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 static void mc_pool_update_cachelist(memcached_pool_st* pool)
 {
 #ifdef POOL_MORE_CONCURRENCY
@@ -444,6 +455,7 @@ static void mc_pool_update_cachelist(memcached_pool_st* pool)
   }
 #endif
 }
+#endif
 
 /**
  * Grow the connection pool by creating a connection structure and clone the
@@ -674,10 +686,12 @@ bool memcached_pool_st::release(memcached_st *released, memcached_return_t& rc)
     }
   }
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
   else if (compare_ketama_version(released) == false)
   {
     (void)member_update_cachelist(released, this);
   }
+#endif
 #endif
 
 #ifdef USED_MC_LIST_IN_POOL
