@@ -64,10 +64,6 @@
 #include <pthread.h>
 #include <memory>
 
-#ifdef POOL_MORE_CONCURRENCY
-#define MEMBER_UPDATE_COUNT 5
-#endif
-
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 static memcached_return_t member_update_cachelist(memcached_st *memc,
                                                   memcached_pool_st* pool);
@@ -797,50 +793,40 @@ static int mc_list_remove_all(memcached_pool_st* pool)
 
 static void mc_list_update_cachelist(memcached_pool_st* pool)
 {
-#ifdef POOL_MORE_CONCURRENCY
-  memcached_st *mc[MEMBER_UPDATE_COUNT];
-  int i, count;
+  memcached_st *mc;
 
+#ifdef POOL_MORE_CONCURRENCY
   while (pool->used_bk_head)
   {
     /* fetch the member mc from used_bk_list */
     /* mc= mc_list_get(&pool->used_bk_list); */
-    for (i= 0; i < MEMBER_UPDATE_COUNT; i++)
-    {
-      if (pool->used_bk_head == NULL)
-        break;
-      mc[i]= pool->used_bk_head;
-      pool->used_bk_head= mc[i]->mc_next;
-      if (pool->used_bk_head == NULL) {
-        pool->used_bk_tail= NULL;
-      }
+    mc= pool->used_bk_head;
+    pool->used_bk_head= mc->mc_next;
+    if (pool->used_bk_head == NULL) {
+      pool->used_bk_tail= NULL;
     }
-    count= i;
     (void)pthread_mutex_unlock(&pool->mutex);
 
     /* update the chachelist of member mc without pool lock */
-    for (i= 0; i < count; i++)
-    {
-      (void)member_update_cachelist(mc[i], pool);
-    }
+    (void)member_update_cachelist(mc, pool);
 
     (void)pthread_mutex_lock(&pool->mutex);
     /* push the member mc to the tail of used_mc_list */
     /* mc_list_append(&pool->used_mc_list, mc); */
-    for (i= 0; i < count; i++)
-    {
-      mc[i]->mc_next= NULL;
-      if (pool->used_mc_tail) {
-        pool->used_mc_tail->mc_next= mc[i];
-      } else {
-        pool->used_mc_head= mc[i];
-      }
-      pool->used_mc_tail= mc[i];
+    mc->mc_next= NULL;
+    if (pool->used_mc_tail) {
+      pool->used_mc_tail->mc_next= mc;
+    } else {
+      pool->used_mc_head= mc;
+    }
+    pool->used_mc_tail= mc;
+
+    if (pool->wait_count > 0) {
+      /* we might have people waiting for a connection.. wake them up :-) */
+      pthread_cond_broadcast(&pool->cond);
     }
   }
 #else
-  memcached_st *mc;
-
   mc= pool->used_mc_head;
   while (mc)
   {
@@ -854,31 +840,24 @@ static void mc_list_update_cachelist(memcached_pool_st* pool)
 static void mc_pool_update_cachelist(memcached_pool_st* pool)
 {
 #ifdef POOL_MORE_CONCURRENCY
-  memcached_st *mc[MEMBER_UPDATE_COUNT];
-  int i, count;
+  memcached_st *mc;
 
   while (pool->bk_top > -1)
   {
     /* fetch the member mc from bk_pool */
-    for (i= 0; i < MEMBER_UPDATE_COUNT; i++)
-    {
-      if (pool->bk_top == -1) break;
-      mc[i]= pool->bk_pool[pool->bk_top--];
-    }
-    count= i;
+    mc= pool->bk_pool[pool->bk_top--];
     (void)pthread_mutex_unlock(&pool->mutex);
 
     /* update the chachelist of member mc without pool lock */
-    for (i= 0; i < count; i++)
-    {
-      (void)member_update_cachelist(mc[i], pool);
-    }
+    (void)member_update_cachelist(mc, pool);
 
     (void)pthread_mutex_lock(&pool->mutex);
     /* push the member mc into mc_pool */
-    for (i= 0; i < count; i++)
-    {
-       pool->mc_pool[++pool->top]= mc[i];
+    pool->mc_pool[++pool->top]= mc;
+
+    if (pool->wait_count > 0) {
+      /* we might have people waiting for a connection.. wake them up :-) */
+      pthread_cond_broadcast(&pool->cond);
     }
   }
 #else
