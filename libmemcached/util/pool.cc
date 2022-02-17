@@ -71,28 +71,20 @@ static memcached_return_t member_update_cachelist(memcached_st *memc,
 
 struct memcached_pool_st
 {
-#ifdef POOL_MORE_CONCURRENCY
   pthread_mutex_t master_lock;
-#endif
   pthread_mutex_t mutex;
   pthread_cond_t cond;
   memcached_st *master;
 #ifdef USED_MC_LIST_IN_POOL
   memcached_st *used_mc_head;
   memcached_st *used_mc_tail;
-#ifdef POOL_MORE_CONCURRENCY
   memcached_st *used_bk_head;
   memcached_st *used_bk_tail;
 #endif
-#endif
   memcached_st **mc_pool;
-#ifdef POOL_MORE_CONCURRENCY
   memcached_st **bk_pool;
-#endif
   int top;
-#ifdef POOL_MORE_CONCURRENCY
   int bk_top;
-#endif
   uint32_t wait_count;
   const uint32_t max_size;
   uint32_t cur_size;
@@ -104,19 +96,13 @@ struct memcached_pool_st
 #ifdef USED_MC_LIST_IN_POOL
     used_mc_head(NULL),
     used_mc_tail(NULL),
-#ifdef POOL_MORE_CONCURRENCY
     used_bk_head(NULL),
     used_bk_tail(NULL),
 #endif
-#endif
     mc_pool(NULL),
-#ifdef POOL_MORE_CONCURRENCY
     bk_pool(NULL),
-#endif
     top(-1),
-#ifdef POOL_MORE_CONCURRENCY
     bk_top(-1),
-#endif
     wait_count(0),
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
     max_size(max_arg+1), /* +1 for internal fetch */
@@ -126,9 +112,7 @@ struct memcached_pool_st
     cur_size(0),
     _owns_master(false)
   {
-#ifdef POOL_MORE_CONCURRENCY
     pthread_mutex_init(&master_lock, NULL);
-#endif
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
     _timeout.tv_sec= 1;
@@ -150,14 +134,12 @@ struct memcached_pool_st
   ~memcached_pool_st()
   {
 #ifdef USED_MC_LIST_IN_POOL
-#ifdef POOL_MORE_CONCURRENCY
     while (used_bk_head)
     {
       memcached_st *mc= used_bk_head;
       used_bk_head= mc->mc_next;
       memcached_free(mc);
     }
-#endif
     while (used_mc_head)
     {
       memcached_st *mc= used_mc_head;
@@ -165,27 +147,21 @@ struct memcached_pool_st
       memcached_free(mc);
     }
 #endif
-#ifdef POOL_MORE_CONCURRENCY
     for (int x= 0; x <= bk_top; ++x)
     {
       memcached_free(bk_pool[x]);
       bk_pool[x] = NULL;
     }
-#endif
     for (int x= 0; x <= top; ++x)
     {
       memcached_free(mc_pool[x]);
       mc_pool[x] = NULL;
     }
-#ifdef POOL_MORE_CONCURRENCY
     pthread_mutex_destroy(&master_lock);
-#endif
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&cond);
     delete [] mc_pool;
-#ifdef POOL_MORE_CONCURRENCY
     delete [] bk_pool;
-#endif
     if (_owns_master)
     {
       memcached_free(master);
@@ -359,14 +335,12 @@ bool memcached_pool_st::init(uint32_t initial)
   mc_pool= new (std::nothrow) memcached_st *[max_size];
   if (not mc_pool)
     return false;
-#ifdef POOL_MORE_CONCURRENCY
   bk_pool= new (std::nothrow) memcached_st *[max_size];
   if (not bk_pool)
   {
     delete [] mc_pool;
     return false;
   }
-#endif
 
   /*
     Try to create the initial size of the pool. An allocation failure at
@@ -665,15 +639,8 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-#ifdef POOL_MORE_CONCURRENCY
   (void)pthread_mutex_lock(&pool->master_lock);
   (void)pthread_mutex_lock(&pool->mutex);
-#else
-  if (pthread_mutex_lock(&pool->mutex))
-  {
-    return MEMCACHED_IN_PROGRESS;
-  }
-#endif
 
   /* update the master */
   memcached_return_t rc= memcached_behavior_set(pool->master, flag, data);
@@ -718,9 +685,7 @@ memcached_return_t memcached_pool_behavior_set(memcached_pool_st *pool,
 #endif
 
   (void)pthread_mutex_unlock(&pool->mutex);
-#ifdef POOL_MORE_CONCURRENCY
   (void)pthread_mutex_unlock(&pool->master_lock);
-#endif
 
   return rc;
 }
@@ -890,15 +855,8 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-#ifdef POOL_MORE_CONCURRENCY
   (void)pthread_mutex_lock(&pool->master_lock);
   (void)pthread_mutex_lock(&pool->mutex);
-#else
-  if (pthread_mutex_lock(&pool->mutex))
-  {
-    return MEMCACHED_IN_PROGRESS;
-  }
-#endif
 
 #ifdef UPDATE_HASH_RING_OF_FETCHED_MC
   pool->increment_ketama_version();
@@ -931,9 +889,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 #endif
 
   (void)pthread_mutex_unlock(&pool->mutex);
-#ifdef POOL_MORE_CONCURRENCY
   (void)pthread_mutex_unlock(&pool->master_lock);
-#endif
 
   return MEMCACHED_SUCCESS;
 }
@@ -950,9 +906,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-#ifdef POOL_MORE_CONCURRENCY
   (void)pthread_mutex_lock(&pool->master_lock);
-#endif
   (void)pthread_mutex_lock(&pool->mutex);
   rc= memcached_update_cachelist(pool->master, serverinfo, servercount,
                                  &serverlist_changed);
@@ -1018,9 +972,7 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
     mc_pool_update_cachelist(pool);
   }
   (void)pthread_mutex_unlock(&pool->mutex);
-#ifdef POOL_MORE_CONCURRENCY
   (void)pthread_mutex_unlock(&pool->master_lock);
-#endif
   return rc;
 }
 #endif
