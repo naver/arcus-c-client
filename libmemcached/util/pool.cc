@@ -118,7 +118,11 @@ struct memcached_pool_st
     bk_top(-1),
 #endif
     wait_count(0),
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+    max_size(max_arg+1), /* +1 for internal fetch */
+#else
     max_size(max_arg),
+#endif
     cur_size(0),
     _owns_master(false)
   {
