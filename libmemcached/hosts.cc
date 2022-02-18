@@ -799,7 +799,7 @@ memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
                                                          struct memcached_server_info *serverinfo, 
                                                          uint32_t servercount)
 {
-  if (not serverinfo or servercount == 0 or memcached_server_count(ptr) >= servercount) {
+  if (not serverinfo or servercount == 0) {
     return MEMCACHED_SUCCESS;
   }
 
