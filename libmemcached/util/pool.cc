@@ -879,7 +879,7 @@ memcached_return_t memcached_pool_repopulate(memcached_pool_st* pool)
 
 #ifdef POOL_UPDATE_SERVERLIST
 memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
-                                                   struct memcached_server_info *serverinfo,
+                                                   memcached_server_info_st *serverinfo,
                                                    uint32_t servercount, bool init)
 {
   memcached_return_t rc;

@@ -78,7 +78,7 @@ LIBMEMCACHED_API
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 LIBMEMCACHED_API
   memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr, 
-                                                           struct memcached_server_info *serverinfo, 
+                                                           memcached_server_info_st *serverinfo, 
                                                            uint32_t servercount);
 #endif
 

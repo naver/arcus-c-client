@@ -65,8 +65,12 @@ typedef struct memcached_error_t memcached_error_t;
 typedef struct memcached_server_st memcached_server_st;
 typedef const struct memcached_server_st *memcached_server_instance_st;
 typedef struct memcached_server_st *memcached_server_list_st;
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+typedef struct memcached_server_info_st memcached_server_info_st;
 #ifdef ENABLE_REPLICATION
 typedef struct memcached_rgroup_st memcached_rgroup_st;
+typedef struct memcached_rgroup_info_st memcached_rgroup_info_st;
+#endif
 #endif
 
 typedef struct memcached_callback_st memcached_callback_st;

@@ -57,9 +57,9 @@
 #define RGROUP_NAME_LENGTH 128
 #define RGROUP_MAX_REPLICA 3
 
-struct memcached_rgroup_info {
+struct memcached_rgroup_info_st {
   char                *groupname;
-  struct memcached_server_info *replicas[RGROUP_MAX_REPLICA];
+  memcached_server_info_st *replicas[RGROUP_MAX_REPLICA];
   uint32_t             nreplica;
   bool                 valid;
 };
@@ -89,16 +89,16 @@ extern "C" {
 
 /* rgroup info functions */
 LIBMEMCACHED_API
-  struct memcached_rgroup_info *
+  memcached_rgroup_info_st *
   memcached_rgroup_info_create(memcached_st *memc,
-                               struct memcached_server_info *serverinfo,
+                               memcached_server_info_st *serverinfo,
                                uint32_t servercount,
                                uint32_t *groupcount,
                                uint32_t *validcount);
 LIBMEMCACHED_API
   void
   memcached_rgroup_info_destroy(memcached_st *memc,
-                                struct memcached_rgroup_info *groupinfo);
+                                memcached_rgroup_info_st *groupinfo);
 
 /* rgroup struct functions */
 LIBMEMCACHED_API
@@ -108,7 +108,7 @@ LIBMEMCACHED_API
 LIBMEMCACHED_API
   bool
   memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
-                        struct memcached_rgroup_info *rginfo);
+                                         memcached_rgroup_info_st *rginfo);
 
 #ifdef POOL_UPDATE_SERVERLIST
 LIBMEMCACHED_API
@@ -119,8 +119,8 @@ LIBMEMCACHED_API
 LIBMEMCACHED_API
   memcached_return_t
   memcached_rgroup_push_with_groupinfo(memcached_st *memc,
-                        struct memcached_rgroup_info *groupinfo,
-                        uint32_t groupcount);
+                                       memcached_rgroup_info_st *groupinfo,
+                                       uint32_t groupcount);
 
 LIBMEMCACHED_API
   memcached_return_t

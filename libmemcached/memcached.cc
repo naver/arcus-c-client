@@ -541,10 +541,10 @@ void memcached_set_server_manager(memcached_st *ptr, void *server_manager)
 #ifdef ENABLE_REPLICATION
 static memcached_return_t
 do_memcached_update_rgrouplist(memcached_st *mc,
-                               struct memcached_server_info *serverinfo,
+                               memcached_server_info_st *serverinfo,
                                uint32_t servercount, bool *serverlist_changed)
 {
-  struct memcached_rgroup_info *groupinfo;
+  memcached_rgroup_info_st *groupinfo;
   uint32_t groupcount= 0;
   uint32_t validcount= 0;
   uint32_t x, y;
@@ -624,7 +624,7 @@ do_memcached_update_rgrouplist(memcached_st *mc,
 
 static memcached_return_t
 do_memcached_update_serverlist(memcached_st *mc,
-                               struct memcached_server_info *serverinfo,
+                               memcached_server_info_st *serverinfo,
                                uint32_t servercount, bool *serverlist_changed)
 {
   uint32_t x, y;
@@ -680,7 +680,7 @@ do_memcached_update_serverlist(memcached_st *mc,
 }
 
 memcached_return_t memcached_update_cachelist(memcached_st *ptr,
-                                              struct memcached_server_info *serverinfo,
+                                              memcached_server_info_st *serverinfo,
                                               uint32_t servercount, bool *serverlist_changed)
 {
 #ifdef ENABLE_REPLICATION

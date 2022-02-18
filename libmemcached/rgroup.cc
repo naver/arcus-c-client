@@ -59,25 +59,25 @@
  * rgroup info functions
  */
 
-struct memcached_rgroup_info *
+memcached_rgroup_info_st *
 memcached_rgroup_info_create(memcached_st *memc,
-                             struct memcached_server_info *serverinfo,
+                             memcached_server_info_st *serverinfo,
                              uint32_t servercount,
                              uint32_t *groupcount,
                              uint32_t *validcount)
 {
-  struct memcached_rgroup_info *ginfo;
-  struct memcached_rgroup_info *groupinfo;
+  memcached_rgroup_info_st *ginfo;
+  memcached_rgroup_info_st *groupinfo;
   uint32_t i, j, k;
   uint32_t total_ngroup= 0;
   uint32_t valid_ngroup= 0;
 
-  groupinfo= (struct memcached_rgroup_info*)libmemcached_malloc(memc,
-                     (sizeof(struct memcached_rgroup_info) * servercount));
+  groupinfo= (memcached_rgroup_info_st*)libmemcached_malloc(memc,
+                     (sizeof(memcached_rgroup_info_st) * servercount));
   if (not groupinfo) {
     return NULL;
   }
-  memset(groupinfo, 0, (sizeof(struct memcached_rgroup_info) * servercount));
+  memset(groupinfo, 0, (sizeof(memcached_rgroup_info_st) * servercount));
 
   for (i = 0; i < servercount; i++)
   {
@@ -149,7 +149,7 @@ memcached_rgroup_info_create(memcached_st *memc,
 
 void
 memcached_rgroup_info_destroy(memcached_st *memc,
-                              struct memcached_rgroup_info *groupinfo)
+                              memcached_rgroup_info_st *groupinfo)
 {
   libmemcached_free(memc, groupinfo);
 }
@@ -413,7 +413,7 @@ memcached_rgroup_expand(memcached_st *memc, uint32_t rgroupcount,
 
 bool
 memcached_rgroup_update_with_groupinfo(memcached_rgroup_st *rgroup,
-                                       struct memcached_rgroup_info *rginfo)
+                                       memcached_rgroup_info_st *rginfo)
 {
   /* rgroup : old rgroup struct */
   /* rginfo : new rgroup info */
@@ -580,8 +580,8 @@ memcached_rgroup_update(memcached_rgroup_st *rgroup, memcached_rgroup_st *new_rg
 
 memcached_return_t
 memcached_rgroup_push_with_groupinfo(memcached_st *memc,
-                      struct memcached_rgroup_info *groupinfo,
-                      uint32_t groupcount)
+                                     memcached_rgroup_info_st *groupinfo,
+                                     uint32_t groupcount)
 {
   memcached_rgroup_st *rgroup;
   uint32_t x, y;

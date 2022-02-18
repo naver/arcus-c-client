@@ -111,7 +111,7 @@ typedef struct arcus_st {
  * If there are no masters, then hostname = NULL.
  */
 #endif
-struct memcached_server_info
+struct memcached_server_info_st
 {
 #ifdef ENABLE_REPLICATION
   char           *groupname;

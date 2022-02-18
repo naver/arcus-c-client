@@ -94,10 +94,10 @@
 #include <libmemcached/quit.h>
 #include <libmemcached/result.h>
 #include <libmemcached/server.h>
+#include <libmemcached/server_list.h>
 #ifdef ENABLE_REPLICATION
 #include <libmemcached/rgroup.h>
 #endif
-#include <libmemcached/server_list.h>
 #include <libmemcached/storage.h>
 #include <libmemcached/strerror.h>
 #include <libmemcached/verbosity.h>
@@ -290,7 +290,7 @@ void memcached_set_server_manager(memcached_st *ptr, void *server_manager);
 
 LIBMEMCACHED_API
 memcached_return_t memcached_update_cachelist(memcached_st *ptr,
-                                              struct memcached_server_info *serverinfo,
+                                              memcached_server_info_st *serverinfo,
                                               uint32_t servercount, bool *serverlist_changed);
 
 LIBMEMCACHED_API

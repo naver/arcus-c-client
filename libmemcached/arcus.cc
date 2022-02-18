@@ -783,7 +783,7 @@ void arcus_server_check_for_update(memcached_st *ptr)
  * @note servers parameter must be freed.
  */
 static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *nodename,
-                                             struct memcached_server_info *serverinfo)
+                                             memcached_server_info_st *serverinfo)
 {
   int c= 0;
   char *hostport= nodename;
@@ -855,7 +855,7 @@ static inline int do_add_server_to_cachelist(struct arcus_zk_st *zkinfo, char *n
 }
 
 static inline void do_arcus_update_cachelist(memcached_st *mc,
-                                             struct memcached_server_info *serverinfo,
+                                             memcached_server_info_st *serverinfo,
                                              uint32_t servercount)
 {
   arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
@@ -920,10 +920,10 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
 {
   arcus_st *arcus = static_cast<arcus_st *>(memcached_get_server_manager(mc));
   uint32_t servercount= 0;
-  struct memcached_server_info *serverinfo;
+  memcached_server_info_st *serverinfo;
   char buffer[ARCUS_MAX_PROXY_FILE_LENGTH];
 
-  serverinfo = static_cast<memcached_server_info *>(libmemcached_malloc(mc, sizeof(memcached_server_info)*(size+1)));
+  serverinfo = static_cast<memcached_server_info_st *>(libmemcached_malloc(mc, sizeof(memcached_server_info_st)*(size+1)));
   if (not serverinfo) {
     return;
   }
@@ -1047,8 +1047,8 @@ static inline void do_arcus_zk_update_cachelist(memcached_st *mc,
     }
     else {
       uint32_t servercount= 0;
-      struct memcached_server_info *serverinfo;
-      serverinfo= static_cast<memcached_server_info *>(libmemcached_malloc(mc, sizeof(memcached_server_info)*(strings->count+1)));
+      memcached_server_info_st *serverinfo;
+      serverinfo= static_cast<memcached_server_info_st *>(libmemcached_malloc(mc, sizeof(memcached_server_info_st)*(strings->count+1)));
       if (not serverinfo) {
         break;
       }

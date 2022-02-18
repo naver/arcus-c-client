@@ -796,7 +796,7 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr, 
-                                                         struct memcached_server_info *serverinfo, 
+                                                         memcached_server_info_st *serverinfo, 
                                                          uint32_t servercount)
 {
   if (not serverinfo or servercount == 0) {
