@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -58,11 +58,13 @@
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 #include "libmemcached/arcus_priv.h"
 #endif
-#ifdef REFACTORING_ERROR_PRINT
 #include <pthread.h>
 
-static uint64_t        next_mc_id= 0;
+static pthread_mutex_t ketama_info_lock = PTHREAD_MUTEX_INITIALIZER;
+
+#ifdef REFACTORING_ERROR_PRINT
 static pthread_mutex_t lock_mc_id= PTHREAD_MUTEX_INITIALIZER;
+static uint64_t        next_mc_id= 0;
 
 static inline uint64_t _memcached_get_id(void)
 {
@@ -74,8 +76,6 @@ static inline uint64_t _memcached_get_id(void)
   return id;
 }
 #endif
-
-static pthread_mutex_t ketama_info_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static inline bool _memcached_init(memcached_st *self)
 {
@@ -306,7 +306,7 @@ memcached_st *memcached(const char *string, size_t length)
   {
     rc= memcached_parse_configure_file(*self, memcached_parse_filename(self), memcached_parse_filename_length(self));
   }
-    
+
   if (memcached_failed(rc))
   {
     memcached_free(self);
@@ -517,12 +517,24 @@ uint64_t memcached_query_id(const memcached_st *self)
   return self->query_id;
 }
 
+memcached_return_t memcached_get_last_response_code(memcached_st *ptr)
+{
+  return ptr->last_response_code;
+}
+
+void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc)
+{
+  ptr->last_response_code= rc;
+}
+
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-void *memcached_get_server_manager(memcached_st *ptr) {
+void *memcached_get_server_manager(memcached_st *ptr)
+{
   return ptr->server_manager;
 }
 
-void memcached_set_server_manager(memcached_st *ptr, void *server_manager) {
+void memcached_set_server_manager(memcached_st *ptr, void *server_manager)
+{
   ptr->server_manager= server_manager;
 }
 
@@ -791,16 +803,6 @@ memcached_return_t memcached_update_cachelist_with_master(memcached_st *ptr, mem
   return do_memcached_update_serverlist_with_master(ptr, master);
 }
 #endif
-
-memcached_return_t memcached_get_last_response_code(memcached_st *ptr)
-{
-  return ptr->last_response_code;
-}
-
-void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc)
-{
-  ptr->last_response_code= rc;
-}
 
 void memcached_ketama_set(memcached_st *ptr, memcached_ketama_info_st *info)
 {

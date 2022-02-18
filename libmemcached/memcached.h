@@ -275,6 +275,12 @@ uint32_t memcached_server_count(const memcached_st *);
 LIBMEMCACHED_API
 uint64_t memcached_query_id(const memcached_st *);
 
+LIBMEMCACHED_API
+memcached_return_t memcached_get_last_response_code(memcached_st *ptr);
+
+LIBMEMCACHED_API
+void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc);
+
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 LIBMEMCACHED_API
 void *memcached_get_server_manager(memcached_st *ptr);
@@ -290,12 +296,6 @@ memcached_return_t memcached_update_cachelist(memcached_st *ptr,
 LIBMEMCACHED_API
 memcached_return_t memcached_update_cachelist_with_master(memcached_st *ptr, memcached_st *master);
 #endif
-
-LIBMEMCACHED_API
-memcached_return_t memcached_get_last_response_code(memcached_st *ptr);
-
-LIBMEMCACHED_API
-void memcached_set_last_response_code(memcached_st *ptr, memcached_return_t rc);
 
 LIBMEMCACHED_API
 void memcached_ketama_set(memcached_st *ptr, memcached_ketama_info_st *info);
