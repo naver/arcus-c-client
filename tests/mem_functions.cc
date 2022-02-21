@@ -4444,6 +4444,9 @@ static test_return_t connection_pool_test(memcached_st *memc)
   memcached_pool_st* pool= memcached_pool_create(memc, 5, POOL_SIZE);
   test_true(pool);
   memcached_st *mmc[POOL_SIZE];
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  memcached_st *additional_mc;
+#endif
 
   // Fill up our array that we will store the memc that are in the pool
   for (size_t x= 0; x < POOL_SIZE; ++x)
@@ -4453,6 +4456,15 @@ static test_return_t connection_pool_test(memcached_st *memc)
     test_compare(MEMCACHED_SUCCESS, rc);
     test_true(mmc[x]);
   }
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  {
+    memcached_return_t rc;
+    additional_mc= memcached_pool_fetch(pool, NULL, &rc);
+    test_compare(MEMCACHED_SUCCESS, rc);
+    test_true(additional_mc);
+  }
+#endif
 
   // All memc should be gone
   {
@@ -4469,6 +4481,13 @@ static test_return_t connection_pool_test(memcached_st *memc)
       test_compare(MEMCACHED_SUCCESS, memcached_pool_release(pool, mmc[x]));
     }
   }
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  {
+    test_compare(MEMCACHED_SUCCESS, memcached_pool_release(pool, additional_mc));
+  }
+#endif
+
   test_true(memcached_pool_destroy(pool) == memc);
 
   return TEST_SUCCESS;
@@ -4479,6 +4498,9 @@ static test_return_t connection_pool2_test(memcached_st *memc)
   memcached_pool_st* pool= memcached_pool_create(memc, 5, POOL_SIZE);
   test_true(pool);
   memcached_st *mmc[POOL_SIZE];
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  memcached_st *additional_mc;
+#endif
 
   // Fill up our array that we will store the memc that are in the pool
   for (size_t x= 0; x < POOL_SIZE; ++x)
@@ -4488,6 +4510,15 @@ static test_return_t connection_pool2_test(memcached_st *memc)
     test_compare(MEMCACHED_SUCCESS, rc);
     test_true(mmc[x]);
   }
+
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  {
+    memcached_return_t rc;
+    additional_mc= memcached_pool_fetch(pool, NULL, &rc);
+    test_compare(MEMCACHED_SUCCESS, rc);
+    test_true(additional_mc);
+  }
+#endif
 
   // All memc should be gone
   {
@@ -4518,6 +4549,11 @@ static test_return_t connection_pool2_test(memcached_st *memc)
     test_compare(MEMCACHED_SUCCESS, memcached_pool_release(pool, mmc[x]));
   }
 
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  {
+    test_compare(MEMCACHED_SUCCESS, memcached_pool_release(pool, additional_mc));
+  }
+#endif
 
   /* verify that I can set behaviors on the pool when I don't have all
    * of the connections in the pool. It should however be enabled
