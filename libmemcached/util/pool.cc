@@ -764,6 +764,17 @@ static int mc_list_remove_all(memcached_pool_st* pool)
   return removed_count;
 }
 
+#ifdef REFACTORING_POOL_UPDATE_SERVERLIST
+static void mc_list_prepare_to_update_cachelist(memcached_pool_st* pool)
+{
+  /* move member mcs of used_mc_list to used_bk_list */
+  pool->used_bk_head= pool->used_mc_head;
+  pool->used_bk_tail= pool->used_mc_tail;
+  pool->used_mc_head= NULL;
+  pool->used_mc_tail= NULL;
+}
+#endif
+
 static void mc_list_update_cachelist(memcached_pool_st* pool)
 {
   memcached_st *mc;
@@ -796,6 +807,18 @@ static void mc_list_update_cachelist(memcached_pool_st* pool)
 #endif
 }
 
+#ifdef REFACTORING_POOL_UPDATE_SERVERLIST
+static void mc_pool_prepare_to_update_cachelist(memcached_pool_st* pool)
+{
+  /* move member mcs of mc_pool to bk_pool */
+  if (pool->mc_top > -1) {
+    memcpy(pool->bk_pool, pool->mc_pool, (sizeof(void*)*(pool->mc_top+1)));
+    pool->bk_top= pool->mc_top;
+    pool->mc_top= -1;
+  }
+}
+#endif
+
 static void mc_pool_update_cachelist(memcached_pool_st* pool)
 {
 #ifdef POOL_MORE_CONCURRENCY
@@ -821,6 +844,20 @@ static void mc_pool_update_cachelist(memcached_pool_st* pool)
   }
 #endif
 }
+
+#ifdef REFACTORING_POOL_UPDATE_SERVERLIST
+static void mc_prepare_to_update_cachelist(memcached_pool_st *pool)
+{
+  mc_list_prepare_to_update_cachelist(pool);
+  mc_pool_prepare_to_update_cachelist(pool);
+}
+
+static void mc_update_cachelist(memcached_pool_st *pool)
+{
+  mc_list_update_cachelist(pool);
+  mc_pool_update_cachelist(pool);
+}
+#endif
 
 /**
  * Returns the pool's master
@@ -932,6 +969,8 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
 #endif
 
 #ifdef POOL_MORE_CONCURRENCY
+#ifdef REFACTORING_POOL_UPDATE_SERVERLIST
+#else
     /* move member mcs of used_mc_list to used_bk_list */
     pool->used_bk_head= pool->used_mc_head;
     pool->used_bk_tail= pool->used_mc_tail;
@@ -945,10 +984,16 @@ memcached_return_t memcached_pool_update_cachelist(memcached_pool_st *pool,
       pool->mc_top= -1;
     }
 #endif
+#endif
 
+#ifdef REFACTORING_POOL_UPDATE_SERVERLIST
+    mc_prepare_to_update_cachelist(pool);
+    mc_update_cachelist(pool);
+#else
     /* update the cachelist of member mcs */
     mc_list_update_cachelist(pool);
     mc_pool_update_cachelist(pool);
+#endif
   }
   (void)pthread_mutex_unlock(&pool->mutex);
   (void)pthread_mutex_unlock(&pool->master_lock);
