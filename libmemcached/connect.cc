@@ -131,12 +131,15 @@ static memcached_return_t set_hostinfo(memcached_server_st *server)
     server->address_info_next= NULL;
   }
 
+#ifdef KETAMA_HASH_COLLSION
+#else
   char str_port[NI_MAXSERV];
   int length= snprintf(str_port, NI_MAXSERV, "%u", (uint32_t)server->port);
   if (length >= NI_MAXSERV or length < 0)
   {
     return MEMCACHED_FAILURE;
   }
+#endif
 
   struct addrinfo hints;
   memset(&hints, 0, sizeof(struct addrinfo));
@@ -157,7 +160,11 @@ static memcached_return_t set_hostinfo(memcached_server_st *server)
 
   server->address_info= NULL;
   int errcode;
+#ifdef KETAMA_HASH_COLLSION
+  switch(errcode= getaddrinfo(server->hostname, server->str_port, &hints, &server->address_info))
+#else
   switch(errcode= getaddrinfo(server->hostname, str_port, &hints, &server->address_info))
+#endif
   {
   case 0:
     break;

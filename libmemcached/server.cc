@@ -88,6 +88,9 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   self->limit_maxbytes= 0;
   memcpy(self->hostname, hostname.c_str, hostname.size);
   self->hostname[hostname.size]= 0;
+#ifdef KETAMA_HASH_COLLSION
+  snprintf(self->str_port, MEMCACHED_NI_MAXSERV, "%u", (uint32_t)port);
+#endif
 
 #ifdef ENABLE_REPLICATION
   /* Needed for replication */
