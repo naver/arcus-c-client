@@ -1,3 +1,18 @@
+2022-02-22 [version 1.13.2]
+	* [FEATURE] supported the 3 replicas in replication.
+	* [FIX] return switchover error code when coll get with delete.
+	* [FIX] fixed wrong aggregate pipe return code in case of failure.
+	* [FIX] hold the pool lock when update the cache list of master mc.
+	* [FIX] fixed the cache list update of member mc in proxy mode.
+	* [ENHANCE] enhanced the cachelist update logic with serverinfo.
+	* [ENHANCE] Not to close and reopen pool connections
+	* [ENHANCE] removed the dual pool repopulation when start at first.
+	* [ENHANCE] optimized the slave comparision in memcached_rgroup_update().
+	* [ENHANCE] optimized the release processing in memcached_pool.
+	* [ENHANCE] ensure more concurrency in memcached pool.
+	* [CLEANUP] fixed the compile warnings.
+	* [CLEANUP] refactored serveral parts of code.
+
 2021-07-06 [version 1.13.1]
 	* [FEATURE] enable zookeeper multi thread mode.
 	* [FIX] if MEMCACHED_ERRNO entered in memcached_set_error(),
