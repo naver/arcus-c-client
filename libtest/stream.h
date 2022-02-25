@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_STREAM_H__
+#define __LIBTEST_STREAM_H__
 
 #include <iostream>
 #include <cassert>
@@ -174,3 +175,5 @@ public:
 #define Logn() stream::clog(NULL, __LINE__, __func__) << " "
 
 } // namespace libtest
+
+#endif /* __LIBTEST_STREAM_H__ */

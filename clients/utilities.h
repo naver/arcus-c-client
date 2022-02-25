@@ -9,7 +9,8 @@
  *
  */
 
-#pragma once
+#ifndef __CLIENTS_UTILITIES_H__
+#define __CLIENTS_UTILITIES_H__
 
 #include <getopt.h>
 #include <libmemcached/memcached.h>
@@ -63,3 +64,5 @@ void close_stdio(void);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __CLIENTS_UTILITIES_H__ */

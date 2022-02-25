@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_VIRTUAL_BUCKETS_H__
+#define __TESTS_VIRTUAL_BUCKETS_H__
 
 struct memcached_st;
 
@@ -49,3 +50,5 @@ test_return_t virtual_back_map(memcached_st *);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_VIRTUAL_BUCKETS_H__ */

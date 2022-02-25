@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_WATCHPOINT_H__
+#define __LIBMEMCACHED_WATCHPOINT_H__
 
 #define WATCHPOINT
 #define WATCHPOINT_ERROR(A)
@@ -49,3 +50,5 @@
 #define WATCHPOINT_ASSERT(A) (void)(A)
 #define WATCHPOINT_ASSERT_INITIALIZED(A)
 #define WATCHPOINT_SET(A)
+
+#endif /* __LIBMEMCACHED_WATCHPOINT_H__ */

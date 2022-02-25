@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_ANALYZE_H__
+#define __LIBMEMCACHED_ANALYZE_H__
 
 struct memcached_analysis_st {
   memcached_st *root;
@@ -64,3 +65,5 @@ void memcached_analyze_free(memcached_analysis_st *);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_ANALYZE_H__ */

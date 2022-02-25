@@ -6,7 +6,8 @@
  * the COPYING file in the parent directory for full text.
  */
 
-#pragma once
+#ifndef __TESTS_KETAMA_TEST_CASES_H__
+#define __TESTS_KETAMA_TEST_CASES_H__
 
 static struct {
     const char *key;
@@ -116,3 +117,5 @@ static struct {
 };
 
 #include "ketama_test_cases_spy.h"
+
+#endif /* __TESTS_KETAMA_TEST_CASES_H__ */

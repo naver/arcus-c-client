@@ -36,7 +36,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBMEMCACHED_DELETE_H__
+#define __LIBMEMCACHED_DELETE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,3 +56,5 @@ memcached_return_t memcached_delete_by_key(memcached_st *ptr,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_DELETE_H__ */

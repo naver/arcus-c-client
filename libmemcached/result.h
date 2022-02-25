@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_RESULT_H__
+#define __LIBMEMCACHED_RESULT_H__
 
 struct memcached_result_st {
   uint32_t item_flags;
@@ -98,3 +99,5 @@ void memcached_result_set_expiration(memcached_result_st *self, time_t expiratio
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_RESULT_H__ */

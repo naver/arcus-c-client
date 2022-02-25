@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_STRING_H__
+#define __LIBMEMCACHED_STRING_H__
 
 #include <libmemcached/basic_string.h>
 
@@ -107,3 +108,5 @@ void memcached_string_set_length(memcached_string_st *self, size_t length);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_STRING_H__ */

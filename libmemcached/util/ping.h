@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_UTIL_PING_H__
+#define __LIBMEMCACHED_UTIL_PING_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,3 +51,5 @@ bool libmemcached_util_ping2(const char *hostname, in_port_t port, const char *u
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_UTIL_PING_H__ */

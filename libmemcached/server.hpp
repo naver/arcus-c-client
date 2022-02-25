@@ -51,7 +51,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBMEMCACHED_SERVER_HPP__
+#define __LIBMEMCACHED_SERVER_HPP__
 
 #include <libmemcached/basic_string.h>
 
@@ -132,3 +133,5 @@ LIBMEMCACHED_LOCAL
                                             const in_port_t port,
                                             uint32_t weight,
                                             const memcached_connection_t type);
+
+#endif /* __LIBMEMCACHED_SERVER_HPP__ */

@@ -34,7 +34,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_STR_ALGORITHM_H__
+#define __LIBHASHKIT_STR_ALGORITHM_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,3 +47,5 @@ const char *libhashkit_string_hash(hashkit_hash_algorithm_t type);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBHASHKIT_STR_ALGORITHM_H__ */

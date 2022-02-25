@@ -20,7 +20,10 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_VERSION_H_IN__
+#define __LIBTEST_VERSION_H_IN__
 
 #define LIBTEST_VERSION_STRING "@VERSION@"
 #define LIBTEST_VERSION_HEX @HEX_VERSION@
+
+#endif /* __LIBTEST_VERSION_H_IN__ */

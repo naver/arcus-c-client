@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_CORE_H__
+#define __LIBTEST_CORE_H__
 
 namespace libtest {
 
@@ -28,3 +29,5 @@ LIBTEST_API
 void create_core(void);
 
 } // namespace libtest
+
+#endif /* __LIBTEST_CORE_H__ */

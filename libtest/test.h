@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_TEST_H__
+#define __LIBTEST_TEST_H__
 
 #ifndef __INTEL_COMPILER
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -216,3 +217,4 @@ do \
   } \
 } while (0)
 
+#endif /* __LIBTEST_TEST_H__ */

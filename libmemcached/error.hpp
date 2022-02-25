@@ -37,7 +37,8 @@
 
 #include <libmemcached/error.h>
 
-#pragma once
+#ifndef __LIBMEMCACHED_ERROR_HPP__
+#define __LIBMEMCACHED_ERROR_HPP__
 
 #ifdef __cplusplus
 
@@ -102,3 +103,5 @@ LIBMEMCACHED_LOCAL
 memcached_error_t *memcached_error_copy(const memcached_server_st&);
 
 #endif
+
+#endif /* __LIBMEMCACHED_ERROR_HPP__ */

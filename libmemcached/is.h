@@ -51,7 +51,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_IS_H__
+#define __LIBMEMCACHED_IS_H__
 
 /* These are private */ 
 #define memcached_is_allocated(__object) ((__object)->options.is_allocated)
@@ -63,3 +64,5 @@
 #define memcached_set_initialized(__object, __value) ((__object)->options.is_initialized(= (__value))
 #define memcached_set_allocated(__object, __value) ((__object)->options.is_allocated= (__value))
 #define memcached_is_descending(__object) ((__object)->options.is_descending)
+
+#endif /* __LIBMEMCACHED_IS_H__ */

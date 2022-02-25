@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_GET_H__
+#define __LIBMEMCACHED_GET_H__
 
 
 #ifdef __cplusplus
@@ -108,3 +109,5 @@ memcached_return_t memcached_mget_execute_by_key(memcached_st *ptr,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_GET_H__ */

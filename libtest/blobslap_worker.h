@@ -19,10 +19,13 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_BLOBSLAP_WORKER_H__
+#define __LIBTEST_BLOBSLAP_WORKER_H__
 
 namespace libtest {
 
 Server *build_blobslap_worker(in_port_t try_port);
 
 }
+
+#endif /* __LIBTEST_BLOBSLAP_WORKER_H__ */

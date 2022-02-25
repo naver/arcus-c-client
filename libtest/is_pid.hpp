@@ -19,10 +19,12 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_IS_PID_HPP__
+#define __LIBTEST_IS_PID_HPP__
 
 static inline bool is_pid_valid(const pid_t pid)
 {
   return (pid > 1) ? true : false;
 }
 
+#endif /* __LIBTEST_IS_PID_HPP__ */

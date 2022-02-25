@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_LIBMEMCACHED_PROBES_H__
+#define __LIBMEMCACHED_LIBMEMCACHED_PROBES_H__
 
 
 /*
@@ -112,3 +113,5 @@
 #define	LIBMEMCACHED_MEMCACHED_SET_START_ENABLED() (0)
 
 #endif
+
+#endif /* __LIBMEMCACHED_LIBMEMCACHED_PROBES_H__ */

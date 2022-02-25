@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_QUIT_H__
+#define __LIBMEMCACHED_QUIT_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,3 +54,5 @@ void send_quit(memcached_st *ptr);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_QUIT_H__ */

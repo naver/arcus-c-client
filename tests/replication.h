@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_REPLICATION_H__
+#define __TESTS_REPLICATION_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -62,3 +63,5 @@ test_return_t replication_randomize_mget_fail_test(memcached_st *memc);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_REPLICATION_H__ */

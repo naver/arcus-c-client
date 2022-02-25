@@ -34,7 +34,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_HAS_H__
+#define __LIBHASHKIT_HAS_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,3 +47,5 @@ bool libhashkit_has_algorithm(const hashkit_hash_algorithm_t);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBHASHKIT_HAS_H__ */

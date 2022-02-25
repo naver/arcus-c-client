@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __UTIL_INSTANCE_HPP__
+#define __UTIL_INSTANCE_HPP__
 
 #include <arpa/inet.h>
 #include <cstdio>
@@ -115,3 +116,5 @@ private:
 
 } /* namespace util */
 } /* namespace datadifferential */
+
+#endif /* __UTIL_INSTANCE_HPP__ */

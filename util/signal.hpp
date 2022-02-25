@@ -21,7 +21,8 @@
 
 
 
-#pragma once 
+#ifndef __UTIL_SIGNAL_HPP__
+#define __UTIL_SIGNAL_HPP__
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -71,3 +72,5 @@ public:
 
 } /* namespace util */
 } /* namespace datadifferential */
+
+#endif /* __UTIL_SIGNAL_HPP__ */

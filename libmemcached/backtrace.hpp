@@ -35,7 +35,10 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_BACKTRACE_HPP__
+#define __LIBMEMCACHED_BACKTRACE_HPP__
 
 LIBMEMCACHED_LOCAL
 void custom_backtrace(void);
+
+#endif /* __LIBMEMCACHED_BACKTRACE_HPP__ */

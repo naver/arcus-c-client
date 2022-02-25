@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_VERSION_H__
+#define __LIBMEMCACHED_VERSION_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,3 +54,5 @@ memcached_return_t memcached_version_instance(memcached_server_st *instance);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_VERSION_H__ */

@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_MEMCACHED_H__
+#define __LIBTEST_MEMCACHED_H__
 
 namespace libtest {
 
@@ -33,3 +34,4 @@ libtest::Server *build_memcached_sasl_socket(const std::string& socket_file, con
 
 }
 
+#endif /* __LIBTEST_MEMCACHED_H__ */

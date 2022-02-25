@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_PRINT_H__
+#define __TESTS_PRINT_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -49,3 +50,5 @@ memcached_return_t server_print_callback(const memcached_st *ptr,
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_PRINT_H__ */

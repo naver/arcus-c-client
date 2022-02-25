@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __UTIL_OPERATION_HPP__
+#define __UTIL_OPERATION_HPP__
 
 
 #include <cstring>
@@ -101,3 +102,5 @@ private:
 
 } /* namespace util */
 } /* namespace datadifferential */
+
+#endif /* __UTIL_OPERATION_HPP__ */

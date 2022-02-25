@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_STORAGE_H__
+#define __LIBMEMCACHED_STORAGE_H__
 
 #include "libmemcached/memcached.h"
 
@@ -131,3 +132,5 @@ memcached_return_t memcached_cas_by_key(memcached_st *ptr,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_STORAGE_H__ */

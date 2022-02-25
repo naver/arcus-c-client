@@ -23,7 +23,8 @@
   Common include file for libtest
 */
 
-#pragma once
+#ifndef __LIBTEST_COMMON_H__
+#define __LIBTEST_COMMON_H__
 
 #include <config.h>
 
@@ -66,3 +67,4 @@
 #include <libtest/stats.h>
 #include <libtest/signal.h>
 
+#endif /* __LIBTEST_COMMON_H__ */

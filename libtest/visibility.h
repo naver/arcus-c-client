@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_VISIBILITY_H__
+#define __LIBTEST_VISIBILITY_H__
 
 #if defined(BUILDING_LIBTEST)
 # if defined(HAVE_VISIBILITY) && HAVE_VISIBILITY
@@ -61,3 +62,5 @@
 #  endif /* defined(_MSC_VER) */
 # endif /* defined(BUILDING_LIBTEST) */
 #endif /* defined(BUILDING_LIBTESTINTERNAL) */
+
+#endif /* __LIBTEST_VISIBILITY_H__ */

@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_DEBUG_H__
+#define __TESTS_DEBUG_H__
 
 test_return_t confirm_keys_exist(memcached_st *memc, const char * const *keys, const size_t number_of_keys, bool key_matches_value= false, bool require_all= false);
 
@@ -46,3 +47,5 @@ test_return_t print_keys_by_server(memcached_st *memc);
 size_t confirm_key_count(memcached_st *memc);
 
 void print_servers(memcached_st *);
+
+#endif /* __TESTS_DEBUG_H__ */

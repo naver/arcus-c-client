@@ -24,7 +24,8 @@
   Structures for generic tests.
 */
 
-#pragma once
+#ifndef __LIBTEST_PORT_H__
+#define __LIBTEST_PORT_H__
 
 namespace libtest {
 
@@ -41,3 +42,5 @@ LIBTEST_API
 void set_max_port(in_port_t port);
 
 } // namespace libtest
+
+#endif /* __LIBTEST_PORT_H__ */

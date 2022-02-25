@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_SERVER_INSTANCE_H__
+#define __LIBMEMCACHED_SERVER_INSTANCE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,3 +47,5 @@ typedef struct memcached_server_st * memcached_server_write_instance_st;
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_SERVER_INSTANCE_H__ */

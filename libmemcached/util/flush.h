@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_UTIL_FLUSH_H__
+#define __LIBMEMCACHED_UTIL_FLUSH_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,3 +49,4 @@ bool libmemcached_util_flush(const char *hostname, in_port_t port, memcached_ret
 }
 #endif
 
+#endif /* __LIBMEMCACHED_UTIL_FLUSH_H__ */

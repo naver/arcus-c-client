@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_CSL_SYMBOL_H__
+#define __LIBMEMCACHED_CSL_SYMBOL_H__
 
 #include <libmemcached/basic_string.h>
 #include <libmemcached/constants.h>
@@ -55,3 +56,5 @@ union YYSTYPE
 };
 
 typedef union YYSTYPE YYSTYPE;
+
+#endif /* __LIBMEMCACHED_CSL_SYMBOL_H__ */

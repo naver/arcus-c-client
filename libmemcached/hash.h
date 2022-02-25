@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_HASH_H__
+#define __LIBMEMCACHED_HASH_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,3 +67,5 @@ LIBMEMCACHED_API
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_HASH_H__ */

@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_VIRTUAL_BUCKET_H__
+#define __LIBMEMCACHED_VIRTUAL_BUCKET_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,3 +58,5 @@ void memcached_virtual_bucket_free(memcached_st *self);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_VIRTUAL_BUCKET_H__ */

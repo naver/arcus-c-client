@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_FLUSH_BUFFERS_H__
+#define __LIBMEMCACHED_FLUSH_BUFFERS_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,3 +48,5 @@ memcached_return_t memcached_flush_buffers(memcached_st *mem);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_FLUSH_BUFFERS_H__ */

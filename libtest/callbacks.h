@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_CALLBACKS_H__
+#define __LIBTEST_CALLBACKS_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -36,3 +37,4 @@ typedef enum test_return_t (test_callback_error_fn)(const test_return_t, void *)
 }
 #endif
 
+#endif /* __LIBTEST_CALLBACKS_H__ */

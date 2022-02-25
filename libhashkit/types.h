@@ -36,7 +36,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBHASHKIT_TYPES_H__
+#define __LIBHASHKIT_TYPES_H__
 
 typedef enum {
   HASHKIT_SUCCESS,
@@ -94,3 +95,5 @@ typedef uint32_t (*hashkit_hash_fn)(const char *key, size_t key_length, void *co
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBHASHKIT_TYPES_H__ */

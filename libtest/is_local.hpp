@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_IS_LOCAL_HPP__
+#define __LIBTEST_IS_LOCAL_HPP__
 
 namespace libtest {
 
@@ -27,3 +28,5 @@ LIBTEST_API
 bool test_is_local();
 
 } // namespace libtest
+
+#endif /* __LIBTEST_IS_LOCAL_HPP__ */

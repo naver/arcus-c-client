@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_DUMP_H__
+#define __LIBMEMCACHED_DUMP_H__
 
 
 #ifdef __cplusplus
@@ -49,3 +50,5 @@ memcached_return_t memcached_dump(memcached_st *ptr, memcached_dump_fn *function
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_DUMP_H__ */

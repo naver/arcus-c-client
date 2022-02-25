@@ -35,7 +35,8 @@
  */
 
 /* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*- */
-#pragma once
+#ifndef __LIBMEMCACHED_PROTOCOL_CACHE_H__
+#define __LIBMEMCACHED_PROTOCOL_CACHE_H__
 
 #include <pthread.h>
 
@@ -146,3 +147,5 @@ void* cache_alloc(cache_t* handle);
  */
 void cache_free(cache_t* handle, void* ptr);
 #endif //  HAVE_UMEM_H
+
+#endif /* __LIBMEMCACHED_PROTOCOL_CACHE_H__ */

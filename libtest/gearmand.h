@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_GEARMAND_H__
+#define __LIBTEST_GEARMAND_H__
 
 #include <arpa/inet.h>
 
@@ -31,3 +32,5 @@ namespace libtest {
 libtest::Server *build_gearmand(const char *hostname, in_port_t try_port);
 
 }
+
+#endif /* __LIBTEST_GEARMAND_H__ */

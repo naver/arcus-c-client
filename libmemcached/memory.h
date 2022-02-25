@@ -34,7 +34,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_MEMORY_H__
+#define __LIBMEMCACHED_MEMORY_H__
 
 static inline void libmemcached_free(const memcached_st *self, void *mem)
 {
@@ -77,3 +78,5 @@ static inline void *libmemcached_calloc(const memcached_st *self, size_t nelem, 
 
   return calloc(nelem, size);
 }
+
+#endif /* __LIBMEMCACHED_MEMORY_H__ */

@@ -6,7 +6,8 @@
  * the COPYING file in the parent directory for full text.
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_COMMON_H__
+#define __LIBHASHKIT_COMMON_H__
 
 #include <config.h>
 
@@ -31,3 +32,5 @@ int update_continuum(hashkit_st *hashkit);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBHASHKIT_COMMON_H__ */

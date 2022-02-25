@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_KILLPID_H__
+#define __LIBTEST_KILLPID_H__
 
 
 bool kill_pid(pid_t pid_arg);
@@ -35,3 +36,5 @@ static inline bool check_pid(pid_t pid_arg)
 {
   return (pid_arg > 1);
 }
+
+#endif /* __LIBTEST_KILLPID_H__ */

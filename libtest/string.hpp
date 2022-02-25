@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_STRING_HPP__
+#define __LIBTEST_STRING_HPP__
 
 #include "util/string.hpp"
 
@@ -28,3 +29,5 @@
 #define test_literal_param_size util_literal_param_size
 #define test_string_make_from_cstr util_string_make_from_cstr
 #define test_array_length util_array_length
+
+#endif /* __LIBTEST_STRING_HPP__ */

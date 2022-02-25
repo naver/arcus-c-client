@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __UTIL_PIDFILE_HPP__
+#define __UTIL_PIDFILE_HPP__
 
 #include <string>
 
@@ -64,3 +65,5 @@ private:
 
 } /* namespace util */
 } /* namespace datadifferential */
+
+#endif /* __UTIL_PIDFILE_HPP__ */

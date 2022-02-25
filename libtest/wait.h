@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_WAIT_H__
+#define __LIBTEST_WAIT_H__
 
 #include <unistd.h>
 #include <string>
@@ -77,3 +78,5 @@ private:
 };
 
 } // namespace libtest
+
+#endif /* __LIBTEST_WAIT_H__ */

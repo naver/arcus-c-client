@@ -34,7 +34,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_PROTOCOL_COMMON_H__
+#define __LIBMEMCACHED_PROTOCOL_COMMON_H__
 
 #include "config.h"
 #if !defined(__cplusplus)
@@ -161,3 +162,5 @@ struct memcached_protocol_client_st {
 
 #include "ascii_handler.h"
 #include "binary_handler.h"
+
+#endif /* __LIBMEMCACHED_PROTOCOL_COMMON_H__ */

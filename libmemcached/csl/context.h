@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_CSL_CONTEXT_H__
+#define __LIBMEMCACHED_CSL_CONTEXT_H__
 
 #include <libmemcached/csl/common.h>
 #include <libmemcached/csl/parser.h>
@@ -123,3 +124,5 @@ private:
   bool _end;
   char _hostname[NI_MAXHOST];
 }; 
+
+#endif /* __LIBMEMCACHED_CSL_CONTEXT_H__ */

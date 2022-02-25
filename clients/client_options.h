@@ -9,7 +9,8 @@
  *
  */
 
-#pragma once
+#ifndef __CLIENTS_CLIENT_OPTIONS_H__
+#define __CLIENTS_CLIENT_OPTIONS_H__
 
 typedef struct memcached_help_text_st memcached_help_text_st;
 
@@ -41,3 +42,5 @@ enum memcached_options {
   OPT_QUIET,
   OPT_FILE= 'f'
 };
+
+#endif /* __CLIENTS_CLIENT_OPTIONS_H__ */

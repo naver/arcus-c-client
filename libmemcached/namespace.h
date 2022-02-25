@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_NAMESPACE_H__
+#define __LIBMEMCACHED_NAMESPACE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,3 +51,5 @@ LIBMEMCACHED_API
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_NAMESPACE_H__ */

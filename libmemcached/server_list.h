@@ -51,7 +51,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_SERVER_LIST_H__
+#define __LIBMEMCACHED_SERVER_LIST_H__
 
 
 #ifdef __cplusplus
@@ -109,3 +110,5 @@ LIBMEMCACHED_LOCAL
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_SERVER_LIST_H__ */

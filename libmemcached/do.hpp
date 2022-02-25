@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_DO_HPP__
+#define __LIBMEMCACHED_DO_HPP__
 
 LIBMEMCACHED_LOCAL
 memcached_return_t memcached_do(memcached_server_write_instance_st ptr,
@@ -47,3 +48,5 @@ LIBMEMCACHED_LOCAL
 memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
                                  const struct libmemcached_io_vector_st *vector, size_t count,
                                  bool with_flush);
+
+#endif /* __LIBMEMCACHED_DO_HPP__ */

@@ -34,7 +34,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_BASIC_STRING_H__
+#define __LIBMEMCACHED_BASIC_STRING_H__
 
 // No assumptions of NULL should be made
 
@@ -53,3 +54,4 @@ struct memcached_string_t {
 #define memcached_string_printf(X) (int)((X).size), (X).c_str
 #endif
 
+#endif /* __LIBMEMCACHED_BASIC_STRING_H__ */
