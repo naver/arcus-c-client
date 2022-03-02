@@ -35,6 +35,9 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_UTIL_H__
+#define __LIBMEMCACHED_UTIL_H__
 
 #include <libmemcached/memcached_util.h>
+
+#endif /* __LIBMEMCACHED_UTIL_H__ */

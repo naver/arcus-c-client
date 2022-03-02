@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_GET_H__
+#define __LIBTEST_GET_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -34,4 +35,4 @@ extern "C" {
 }
 #endif
 
-
+#endif /* __LIBTEST_GET_H__ */

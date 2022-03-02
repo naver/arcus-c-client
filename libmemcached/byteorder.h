@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_BYTEORDER_H__
+#define __LIBMEMCACHED_BYTEORDER_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,3 +51,5 @@ uint64_t memcached_htonll(uint64_t);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_BYTEORDER_H__ */

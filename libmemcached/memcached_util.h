@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_MEMCACHED_UTIL_H__
+#define __LIBMEMCACHED_MEMCACHED_UTIL_H__
 
 
 #include <libmemcached/util/pid.h>
@@ -43,3 +44,5 @@
 #include <libmemcached/util/ping.h>
 #include <libmemcached/util/pool.h>
 #include <libmemcached/util/version.h>
+
+#endif /* __LIBMEMCACHED_MEMCACHED_UTIL_H__ */

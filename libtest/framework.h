@@ -21,7 +21,8 @@
 
 
 
-#pragma once
+#ifndef __LIBTEST_FRAMEWORK_H__
+#define __LIBTEST_FRAMEWORK_H__
 
 /**
   Framework is the structure which is passed to the test implementation to be filled.
@@ -180,3 +181,5 @@ private:
   bool _socket;
   void *_creators_ptr;
 };
+
+#endif /* __LIBTEST_FRAMEWORK_H__ */

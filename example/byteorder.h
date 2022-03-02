@@ -34,7 +34,8 @@
  *
  */
 
-#pragma once
+#ifndef __EXAMPLE_BYTEORDER_H__
+#define __EXAMPLE_BYTEORDER_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,3 +48,5 @@ uint64_t example_htonll(uint64_t);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __EXAMPLE_BYTEORDER_H__ */

@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_STRING_H__
+#define __TESTS_STRING_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -65,3 +66,5 @@ test_return_t string_alloc_append_multiple(void *);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_STRING_H__ */

@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_SERVER_CONTAINER_H__
+#define __LIBTEST_SERVER_CONTAINER_H__
 
 #include <cassert>
 #include <cstdio>
@@ -121,3 +122,5 @@ public:
 bool server_startup(server_startup_st&, const std::string&, in_port_t try_port, int argc, const char *argv[]);
 
 } // namespace libtest
+
+#endif /* __LIBTEST_SERVER_CONTAINER_H__ */

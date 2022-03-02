@@ -34,7 +34,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_UTIL_PID_H__
+#define __LIBMEMCACHED_UTIL_PID_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,3 +51,4 @@ pid_t libmemcached_util_getpid2(const char *hostname, in_port_t port, const char
 }
 #endif
 
+#endif /* __LIBMEMCACHED_UTIL_PID_H__ */

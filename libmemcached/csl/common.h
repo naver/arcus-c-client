@@ -35,7 +35,9 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_CSL_COMMON_H__
+#define __LIBMEMCACHED_CSL_COMMON_H__
 
 #include <libmemcached/common.h>
 
+#endif /* __LIBMEMCACHED_CSL_COMMON_H__ */

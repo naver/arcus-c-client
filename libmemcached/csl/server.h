@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_CSL_SERVER_H__
+#define __LIBMEMCACHED_CSL_SERVER_H__
 
 #include <cstdlib>
 #include <arpa/inet.h>
@@ -47,3 +48,5 @@ struct server_t
   const char *c_str;
   size_t size;
 };
+
+#endif /* __LIBMEMCACHED_CSL_SERVER_H__ */

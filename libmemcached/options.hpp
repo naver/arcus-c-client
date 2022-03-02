@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_OPTIONS_HPP__
+#define __LIBMEMCACHED_OPTIONS_HPP__
 
 LIBMEMCACHED_LOCAL
   void memcached_set_configuration_file(memcached_st *self, const char *filename, size_t filename_length);
@@ -54,3 +55,5 @@ LIBMEMCACHED_LOCAL
 
 LIBMEMCACHED_LOCAL
   memcached_return_t memcached_parse_configure_file(memcached_st&, memcached_array_st& filename);
+
+#endif /* __LIBMEMCACHED_OPTIONS_HPP__ */

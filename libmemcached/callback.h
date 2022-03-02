@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_CALLBACK_H__
+#define __LIBMEMCACHED_CALLBACK_H__
 
 struct memcached_callback_st {
   memcached_execute_fn *callback;
@@ -59,3 +60,5 @@ void *memcached_callback_get(memcached_st *ptr,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_CALLBACK_H__ */

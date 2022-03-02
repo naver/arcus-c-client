@@ -36,7 +36,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBMEMCACHED_STRERROR_H__
+#define __LIBMEMCACHED_STRERROR_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,3 +49,5 @@ const char *memcached_strerror(memcached_st *ptr, memcached_return_t rc);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_STRERROR_H__ */

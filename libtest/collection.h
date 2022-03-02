@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_COLLECTION_H__
+#define __LIBTEST_COLLECTION_H__
 
 /**
   A structure which describes a collection of test cases.
@@ -32,4 +33,4 @@ struct collection_st {
   struct test_st *tests;
 };
 
-
+#endif /* __LIBTEST_COLLECTION_H__ */

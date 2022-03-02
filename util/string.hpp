@@ -42,7 +42,8 @@
 #include <cstring>
 #include <cstddef>
 
-#pragma once
+#ifndef __UTIL_STRING_HPP__
+#define __UTIL_STRING_HPP__
 
 #define util_literal_param(X) (X), (static_cast<size_t>((sizeof(X) - 1)))
 #define util_literal_param_size(X) static_cast<size_t>(sizeof(X) - 1)
@@ -51,3 +52,4 @@
 
 #define util_array_length(__array) sizeof(__array)/sizeof(&__array)
 
+#endif /* __UTIL_STRING_HPP__ */

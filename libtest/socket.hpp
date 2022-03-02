@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_SOCKET_HPP__
+#define __LIBTEST_SOCKET_HPP__
 
 namespace libtest {
 
@@ -29,3 +30,4 @@ void set_default_socket(const char *socket);
 
 } // namespace libtest
 
+#endif /* __LIBTEST_SOCKET_HPP__ */

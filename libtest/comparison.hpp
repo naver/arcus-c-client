@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_COMPARISON_HPP__
+#define __LIBTEST_COMPARISON_HPP__
 
 #include <typeinfo>
 
@@ -162,3 +163,5 @@ bool _compare_hint(const char *file, int line, const char *func, T1_comparable _
 }
 
 } // namespace libtest
+
+#endif /* __LIBTEST_COMPARISON_HPP__ */

@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_DEPRECATED_H__
+#define __TESTS_DEPRECATED_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -47,3 +48,5 @@ test_return_t regression_bug_728286(memcached_st *);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_DEPRECATED_H__ */

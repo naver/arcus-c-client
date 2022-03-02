@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_STATS_H__
+#define __LIBTEST_STATS_H__
 
 struct Stats {
   int32_t collection_success;
@@ -45,3 +46,4 @@ struct Stats {
   { }
 };
 
+#endif /* __LIBTEST_STATS_H__ */

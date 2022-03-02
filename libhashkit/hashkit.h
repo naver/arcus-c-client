@@ -36,8 +36,9 @@
  */
 
 
-#pragma once
 
+#ifndef __LIBHASHKIT_HASHKIT_H__
+#define __LIBHASHKIT_HASHKIT_H__
 
 #if !defined(__cplusplus)
 # include <stdbool.h>
@@ -94,3 +95,5 @@ void hashkit_free(hashkit_st *hash);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBHASHKIT_HASHKIT_H__ */

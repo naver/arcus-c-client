@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_RUNNER_H__
+#define __LIBTEST_RUNNER_H__
 
 
 namespace libtest {
@@ -41,3 +42,5 @@ public:
 };
 
 } // namespace Runner
+
+#endif /* __LIBTEST_RUNNER_H__ */

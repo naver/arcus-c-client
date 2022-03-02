@@ -51,7 +51,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_MEMCACHED_H__
+#define __LIBMEMCACHED_MEMCACHED_H__
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -309,3 +310,5 @@ void memcached_ketama_release(memcached_st *ptr);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_MEMCACHED_H__ */

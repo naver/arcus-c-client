@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_STRERROR_H__
+#define __LIBTEST_STRERROR_H__
 
 namespace libtest {
 
@@ -30,3 +31,5 @@ LIBTEST_API
 const char *test_strerror(test_return_t code);
 
 } // namespace libtest
+
+#endif /* __LIBTEST_STRERROR_H__ */

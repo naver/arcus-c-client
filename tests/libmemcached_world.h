@@ -9,7 +9,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_LIBMEMCACHED_WORLD_H__
+#define __TESTS_LIBMEMCACHED_WORLD_H__
 
 #include <cassert>
 
@@ -298,3 +299,5 @@ public:
 };
 
 static LibmemcachedRunner defualt_libmemcached_runner;
+
+#endif /* __TESTS_LIBMEMCACHED_WORLD_H__ */

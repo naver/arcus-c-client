@@ -31,7 +31,8 @@
  * SUCH DAMAGE.
  */
 
-#pragma once
+#ifndef __UTIL_DAEMON_HPP__
+#define __UTIL_DAEMON_HPP__
 
 namespace datadifferential {
 namespace util {
@@ -41,3 +42,5 @@ bool daemonize(bool is_chdir= true, bool wait_sigusr1= true);
 
 } /* namespace util */
 } /* namespace datadifferential */
+
+#endif /* __UTIL_DAEMON_HPP__ */

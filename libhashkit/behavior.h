@@ -11,7 +11,8 @@
  * @brief HashKit Header
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_BEHAVIOR_H__
+#define __LIBHASHKIT_BEHAVIOR_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,3 +22,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBHASHKIT_BEHAVIOR_H__ */

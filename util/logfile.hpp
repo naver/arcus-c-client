@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __UTIL_LOGFILE_HPP__
+#define __UTIL_LOGFILE_HPP__
 
 #include <string>
 #include <fstream>
@@ -64,3 +65,5 @@ private:
 
 } /* namespace util */
 } /* namespace datadifferential */
+
+#endif /* __UTIL_LOGFILE_HPP__ */

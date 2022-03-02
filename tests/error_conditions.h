@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_ERROR_CONDITIONS_H__
+#define __TESTS_ERROR_CONDITIONS_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -46,3 +47,5 @@ test_return_t memcached_increment_MEMCACHED_NO_SERVERS(memcached_st *junk);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_ERROR_CONDITIONS_H__ */

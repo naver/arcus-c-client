@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_POOL_H__
+#define __TESTS_POOL_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -47,3 +48,5 @@ test_return_t memcached_pool_test(memcached_st *);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_POOL_H__ */

@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_BINARIES_H__
+#define __LIBTEST_BINARIES_H__
 
 namespace libtest {
 
@@ -34,3 +35,4 @@ bool has_gearmand_binary();
 
 } // namespace libtest
 
+#endif /* __LIBTEST_BINARIES_H__ */

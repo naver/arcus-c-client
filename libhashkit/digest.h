@@ -6,7 +6,8 @@
  * the COPYING file in the parent directory for full text.
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_DIGEST_H__
+#define __LIBHASHKIT_DIGEST_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,3 +26,5 @@ uint32_t libhashkit_digest(const char *key, size_t key_length, hashkit_hash_algo
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBHASHKIT_DIGEST_H__ */

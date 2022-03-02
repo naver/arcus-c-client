@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_PARSER_H__
+#define __TESTS_PARSER_H__
 
 #ifdef	__cplusplus
 extern "C" {
@@ -113,3 +114,5 @@ test_return_t test_namespace_keyword(memcached_st*);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_PARSER_H__ */

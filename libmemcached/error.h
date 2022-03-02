@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_ERROR_H__
+#define __LIBMEMCACHED_ERROR_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,3 +68,5 @@ LIBMEMCACHED_API
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_ERROR_H__ */

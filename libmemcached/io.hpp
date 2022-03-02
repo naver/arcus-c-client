@@ -36,7 +36,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_IO_HPP__
+#define __LIBMEMCACHED_IO_HPP__
 
 LIBMEMCACHED_LOCAL
 memcached_return_t memcached_io_wait_for_write(memcached_server_write_instance_st ptr);
@@ -73,3 +74,5 @@ memcached_server_write_instance_st memcached_io_get_readable_server(memcached_st
 
 LIBMEMCACHED_LOCAL
 memcached_return_t memcached_io_slurp(memcached_server_write_instance_st ptr);
+
+#endif /* __LIBMEMCACHED_IO_HPP__ */

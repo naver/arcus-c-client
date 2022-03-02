@@ -13,7 +13,8 @@
   Code to generate data to be pushed into memcached
 */
 
-#pragma once
+#ifndef __CLIENTS_GENERATOR_H__
+#define __CLIENTS_GENERATOR_H__
 
 typedef struct pairs_st pairs_st;
 
@@ -34,3 +35,5 @@ void pairs_free(pairs_st *pairs);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __CLIENTS_GENERATOR_H__ */

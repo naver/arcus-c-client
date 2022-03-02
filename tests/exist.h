@@ -34,9 +34,12 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_EXIST_H__
+#define __TESTS_EXIST_H__
 
 test_return_t memcached_exist_NOTFOUND(memcached_st *);
 test_return_t memcached_exist_SUCCESS(memcached_st *);
 test_return_t memcached_exist_by_key_NOTFOUND(memcached_st *);
 test_return_t memcached_exist_by_key_SUCCESS(memcached_st *);
+
+#endif /* __TESTS_EXIST_H__ */

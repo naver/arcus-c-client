@@ -51,7 +51,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_RGROUP_H__
+#define __LIBMEMCACHED_RGROUP_H__
 
 #ifdef ENABLE_REPLICATION
 #define RGROUP_NAME_LENGTH 128
@@ -151,3 +152,5 @@ LIBMEMCACHED_API
 #endif
 
 #endif
+
+#endif /* __LIBMEMCACHED_RGROUP_H__ */

@@ -35,7 +35,10 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_SERVER_ADD_H__
+#define __TESTS_SERVER_ADD_H__
 
 test_return_t memcached_server_add_null_test(memcached_st*);
 test_return_t memcached_server_add_empty_test(memcached_st*);
+
+#endif /* __TESTS_SERVER_ADD_H__ */

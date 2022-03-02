@@ -50,7 +50,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_RETURN_H__
+#define __LIBMEMCACHED_RETURN_H__
 
 enum memcached_return_t {
   MEMCACHED_SUCCESS,
@@ -183,3 +184,5 @@ static inline bool memcached_fatal(memcached_return_t rc)
 }
 
 #define memcached_continue(__memcached_return_t) ((__memcached_return_t) == MEMCACHED_IN_PROGRESS)
+
+#endif /* __LIBMEMCACHED_RETURN_H__ */

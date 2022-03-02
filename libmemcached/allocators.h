@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_ALLOCATORS_H__
+#define __LIBMEMCACHED_ALLOCATORS_H__
 
 struct memcached_allocator_t {
   memcached_calloc_fn calloc;
@@ -85,3 +86,5 @@ struct memcached_allocator_t memcached_allocators_return_default(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_ALLOCATORS_H__ */

@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_CMDLINE_H__
+#define __LIBTEST_CMDLINE_H__
 
 namespace libtest {
 
@@ -28,3 +29,5 @@ bool exec_cmdline(const std::string& executable, const char *args[]);
 const char *gearmand_binary(); 
 
 }
+
+#endif /* __LIBTEST_CMDLINE_H__ */

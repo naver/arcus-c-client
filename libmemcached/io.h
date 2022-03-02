@@ -36,7 +36,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_IO_H__
+#define __LIBMEMCACHED_IO_H__
 
 #define MAX_UDP_DATAGRAM_LENGTH 1400
 #define UDP_DATAGRAM_HEADER_LENGTH 8
@@ -80,3 +81,5 @@ ssize_t memcached_io_writev(memcached_server_write_instance_st ptr,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_IO_H__ */

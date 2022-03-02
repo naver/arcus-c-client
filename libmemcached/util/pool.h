@@ -51,7 +51,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_UTIL_POOL_H__
+#define __LIBMEMCACHED_UTIL_POOL_H__
 
 
 #include <libmemcached/memcached.h>
@@ -148,3 +149,5 @@ uint16_t get_memcached_pool_size(memcached_pool_st* pool);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_UTIL_POOL_H__ */

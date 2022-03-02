@@ -34,9 +34,12 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_KETAMA_H__
+#define __TESTS_KETAMA_H__
 
 test_return_t auto_eject_hosts(memcached_st *);
 test_return_t ketama_compatibility_libmemcached(memcached_st *);
 test_return_t ketama_compatibility_spymemcached(memcached_st *);
 test_return_t user_supplied_bug18(memcached_st *);
+
+#endif /* __TESTS_KETAMA_H__ */

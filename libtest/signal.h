@@ -21,7 +21,8 @@
 
 
 
-#pragma once 
+#ifndef __LIBTEST_SIGNAL_H__
+#define __LIBTEST_SIGNAL_H__
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -64,3 +65,5 @@ public:
 };
 
 } // namespace libtest
+
+#endif /* __LIBTEST_SIGNAL_H__ */

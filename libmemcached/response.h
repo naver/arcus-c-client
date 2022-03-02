@@ -51,7 +51,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_RESPONSE_H__
+#define __LIBMEMCACHED_RESPONSE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,3 +82,5 @@ memcached_return_t memcached_coll_smget_response(memcached_server_write_instance
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_RESPONSE_H__ */

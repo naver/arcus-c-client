@@ -36,7 +36,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_CONTINUUM_HPP__
+#define __LIBMEMCACHED_CONTINUUM_HPP__
 
 /* string value */
 struct memcached_continuum_item_st
@@ -50,3 +51,5 @@ struct memcached_ketama_info_st {
   uint32_t continuum_points_counter;
   memcached_continuum_item_st *continuum;
 };
+
+#endif /* __LIBMEMCACHED_CONTINUUM_HPP__ */

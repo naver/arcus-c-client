@@ -50,7 +50,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_INITIALIZE_QUERY_H__
+#define __LIBMEMCACHED_INITIALIZE_QUERY_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,3 +72,5 @@ memcached_return_t before_query(memcached_st *self,
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_INITIALIZE_QUERY_H__ */

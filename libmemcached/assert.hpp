@@ -51,7 +51,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_ASSERT_HPP__
+#define __LIBMEMCACHED_ASSERT_HPP__
 
 #include <cstdlib>
 #include <cstdio>
@@ -79,3 +80,5 @@ if (not (__expr)) \
   fprintf(stderr, "\nAssertion \"%s\" failed for function \"%s\" likely for %s, at %s:%d\n", #__expr, __func__, (#__mesg),  __FILE__, __LINE__);\
   return ret; \
 }
+
+#endif /* __LIBMEMCACHED_ASSERT_HPP__ */

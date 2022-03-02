@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_SASL_H__
+#define __LIBMEMCACHED_SASL_H__
 
 #if defined(LIBMEMCACHED_WITH_SASL_SUPPORT) && LIBMEMCACHED_WITH_SASL_SUPPORT
 #include <sasl/sasl.h>
@@ -81,3 +82,5 @@ struct memcached_sasl_st {
  */
   bool is_allocated;
 };
+
+#endif /* __LIBMEMCACHED_SASL_H__ */

@@ -19,10 +19,13 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_LIBTOOL_HPP__
+#define __LIBTEST_LIBTOOL_HPP__
 
 namespace libtest {
 
 const char *libtool(void);
 
 }
+
+#endif /* __LIBTEST_LIBTOOL_HPP__ */

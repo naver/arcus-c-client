@@ -34,10 +34,13 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_EXIST_H__
+#define __LIBMEMCACHED_EXIST_H__
 
 memcached_return_t memcached_exist(memcached_st *memc, const char *key, size_t key_length);
 
 memcached_return_t memcached_exist_by_key(memcached_st *memc,
                                           const char *group_key, size_t group_key_length,
                                           const char *key, size_t key_length);
+
+#endif /* __LIBMEMCACHED_EXIST_H__ */

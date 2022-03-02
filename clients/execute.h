@@ -9,7 +9,8 @@
  *
  */
 
-#pragma once 
+#ifndef __CLIENTS_EXECUTE_H__
+#define __CLIENTS_EXECUTE_H__
 
 #include <stdio.h>
 
@@ -28,3 +29,5 @@ unsigned int execute_mget(memcached_st *memc, const char * const *keys, size_t *
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __CLIENTS_EXECUTE_H__ */

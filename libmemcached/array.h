@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_ARRAY_H__
+#define __LIBMEMCACHED_ARRAY_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,3 +74,5 @@ bool memcached_array_is_null(memcached_array_st *array);
 #define memcached_print_array(X) (int)memcached_array_size((X)), memcached_array_string((X))
 #define memcached_param_array(X) memcached_array_string(X), memcached_array_size(X)
 #endif
+
+#endif /* __LIBMEMCACHED_ARRAY_H__ */

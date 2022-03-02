@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_STATS_H__
+#define __LIBMEMCACHED_STATS_H__
 
 struct memcached_stat_st {
   unsigned long connection_structures;
@@ -94,3 +95,5 @@ memcached_return_t memcached_stat_execute(memcached_st *memc, const char *args, 
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_STATS_H__ */

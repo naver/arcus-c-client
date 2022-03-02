@@ -20,7 +20,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBTEST_ERROR_H__
+#define __LIBTEST_ERROR_H__
 
 enum test_return_t {
   TEST_SUCCESS,
@@ -40,3 +41,5 @@ static inline bool test_failed(test_return_t rc)
 {
   return (rc != TEST_SUCCESS);
 }
+
+#endif /* __LIBTEST_ERROR_H__ */

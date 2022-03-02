@@ -19,7 +19,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#pragma once
+#ifndef __LIBTEST_SERVER_H__
+#define __LIBTEST_SERVER_H__
 
 #include <cassert>
 #include <cstdio>
@@ -189,4 +190,4 @@ std::ostream& operator<<(std::ostream& output, const libtest::Server &arg);
 
 } // namespace libtest
 
-
+#endif /* __LIBTEST_SERVER_H__ */

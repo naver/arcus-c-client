@@ -35,7 +35,10 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_NAMESPACE_H__
+#define __TESTS_NAMESPACE_H__
 
 LIBTEST_LOCAL
 test_return_t memcached_increment_namespace(memcached_st *memc);
+
+#endif /* __TESTS_NAMESPACE_H__ */

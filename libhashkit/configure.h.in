@@ -6,7 +6,8 @@
  * the COPYING file in the parent directory for full text.
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_CONFIGURE_H_IN__
+#define __LIBHASHKIT_CONFIGURE_H_IN__
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,3 +16,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBHASHKIT_CONFIGURE_H_IN__ */

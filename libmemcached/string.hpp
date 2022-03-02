@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_STRING_HPP__
+#define __LIBMEMCACHED_STRING_HPP__
 
 #include "util/string.hpp"
 
@@ -44,4 +45,4 @@
 #define memcached_string_make_from_cstr util_string_make_from_cstr
 #define memcached_array_length util_array_length
 
-
+#endif /* __LIBMEMCACHED_STRING_HPP__ */

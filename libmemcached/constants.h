@@ -52,7 +52,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBMEMCACHED_CONSTANTS_H__
+#define __LIBMEMCACHED_CONSTANTS_H__
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 #define ENABLE_REPLICATION 1
@@ -202,3 +203,5 @@ enum {
 #ifndef __cplusplus
 typedef enum memcached_connection_t memcached_connection_t;
 #endif
+
+#endif /* __LIBMEMCACHED_CONSTANTS_H__ */

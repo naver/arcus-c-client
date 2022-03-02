@@ -36,7 +36,8 @@
  */
 
 
-#pragma once
+#ifndef __LIBMEMCACHED_SERVER_H__
+#define __LIBMEMCACHED_SERVER_H__
 
 #ifndef WIN32
 #include <netdb.h>
@@ -205,3 +206,5 @@ void memcached_server_set_immediate_reconnect(memcached_server_st *ptr);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif /* __LIBMEMCACHED_SERVER_H__ */

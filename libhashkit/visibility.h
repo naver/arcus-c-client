@@ -13,7 +13,8 @@
  * @brief Visibility control macros
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_VISIBILITY_H__
+#define __LIBHASHKIT_VISIBILITY_H__
 
 /**
  *
@@ -46,3 +47,5 @@
 #  define HASHKIT_LOCAL
 # endif /* defined(_MSC_VER) */
 #endif /* defined(BUILDING_HASHKIT) */
+
+#endif /* __LIBHASHKIT_VISIBILITY_H__ */

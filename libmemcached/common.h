@@ -56,7 +56,8 @@
   Common include file for libmemached
 */
 
-#pragma once
+#ifndef __LIBMEMCACHED_COMMON_H__
+#define __LIBMEMCACHED_COMMON_H__
 
 #include <config.h>
 
@@ -213,3 +214,5 @@ static inline memcached_return_t memcached_validate_key_length(size_t key_length
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_COMMON_H__ */

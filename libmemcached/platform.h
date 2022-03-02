@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_PLATFORM_H__
+#define __LIBMEMCACHED_PLATFORM_H__
 
 
 #ifdef WIN32
@@ -54,3 +55,5 @@ typedef int memcached_socket_t;
 #include <netinet/tcp.h>
 
 #endif /* WIN32 */
+
+#endif /* __LIBMEMCACHED_PLATFORM_H__ */

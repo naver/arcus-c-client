@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBHASHKIT_HASHKIT_HPP__
+#define __LIBHASHKIT_HASHKIT_HPP__
 
 #include <libhashkit/hashkit.h>
 #include <string>
@@ -95,3 +96,5 @@ private:
 
   hashkit_st self;
 };
+
+#endif /* __LIBHASHKIT_HASHKIT_HPP__ */

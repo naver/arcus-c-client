@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __LIBMEMCACHED_INTERNAL_H__
+#define __LIBMEMCACHED_INTERNAL_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,3 +45,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __LIBMEMCACHED_INTERNAL_H__ */

@@ -35,7 +35,8 @@
  *
  */
 
-#pragma once
+#ifndef __TESTS_BASIC_H__
+#define __TESTS_BASIC_H__
 
 #include <libtest/visibility.h>
 
@@ -64,3 +65,5 @@ test_return_t basic_reset_heap_clone_test(memcached_st *memc);
 #ifdef	__cplusplus
 }
 #endif
+
+#endif /* __TESTS_BASIC_H__ */
