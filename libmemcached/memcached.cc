@@ -561,9 +561,9 @@ do_memcached_update_rgrouplist(memcached_st *mc,
     return run_distribution(mc);
   }
 
-  ZOO_LOG_INFO(("__do_arcus_update_grouplist: count=%u\n", servercount));
+  ZOO_LOG_INFO(("__do_arcus_update_grouplist: count=%u", servercount));
   for (x= 0; x < servercount; x++) {
-    ZOO_LOG_INFO(("server[%u] groupname=%s %s hostname=%s port=%u\n",
+    ZOO_LOG_INFO(("server[%u] groupname=%s %s hostname=%s port=%u",
             x, serverinfo[x].groupname,
             serverinfo[x].master ? "master" : "slave",
             serverinfo[x].hostname,
