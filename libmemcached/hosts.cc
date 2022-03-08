@@ -65,6 +65,13 @@ static memcached_return_t update_continuum(memcached_st *ptr);
 static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr);
 #endif
 
+#ifdef KETAMA_HASH_COLLSION
+#ifdef ENABLE_REPLICATION
+memcached_rgroup_st *cmp_rgroups= NULL;
+#endif
+memcached_server_st *cmp_servers= NULL;
+#endif
+
 static int compare_servers(const void *p1, const void *p2)
 {
   int return_value;
@@ -198,7 +205,22 @@ static int continuum_item_cmp(const void *t1, const void *t2)
   /* Why 153? Hmmm... */
   WATCHPOINT_ASSERT(ct1->value != 153);
   if (ct1->value == ct2->value)
+  {
+#ifdef KETAMA_HASH_COLLSION
+#ifdef ENABLE_REPLICATION
+    if (cmp_rgroups != NULL) {
+      return strcmp(cmp_rgroups[ct1->index].groupname, cmp_rgroups[ct2->index].groupname);
+    }
+#endif
+    if (cmp_servers != NULL) {
+      int return_value= strcmp(cmp_servers[ct1->index].hostname, cmp_servers[ct2->index].hostname);
+      if (return_value == 0)
+        return_value= strcmp(cmp_servers[ct1->index].str_port, cmp_servers[ct2->index].str_port);
+      return return_value;
+    }
+#endif
     return 0;
+  }
   if (ct1->value > ct2->value)
     return 1;
   else
@@ -446,7 +468,13 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   WATCHPOINT_ASSERT(new_continuum);
   WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
 
+#ifdef KETAMA_HASH_COLLSION
+  cmp_servers= ptr->servers;
+#endif
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
+#ifdef KETAMA_HASH_COLLSION
+  cmp_servers= NULL;
+#endif
 
   new_ketama_info->continuum= new_continuum;
   new_ketama_info->continuum_points_counter= pointer_counter;
@@ -634,7 +662,13 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   WATCHPOINT_ASSERT(new_continuum);
   WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
 
+#ifdef KETAMA_HASH_COLLSION
+  cmp_rgroups= ptr->rgroups;
+#endif
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
+#ifdef KETAMA_HASH_COLLSION
+  cmp_rgroups= NULL;
+#endif
 
   new_ketama_info->continuum= new_continuum;
   new_ketama_info->continuum_points_counter= pointer_counter;

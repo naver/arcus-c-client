@@ -48,6 +48,13 @@
 #else
 #define MEMCACHED_NI_MAXHOST 1025
 #endif
+#ifdef KETAMA_HASH_COLLSION
+#ifdef NI_MAXSERV
+#define MEMCACHED_NI_MAXSERV NI_MAXSERV
+#else
+#define MEMCACHED_NI_MAXSERV 32
+#endif
+#endif /* KETAMA_HASH_COLLSION */
 
 enum memcached_server_state_t {
   MEMCACHED_SERVER_STATE_NEW, // fd == -1, no address lookup has been done
@@ -106,6 +113,9 @@ struct memcached_server_st {
   char read_buffer[MEMCACHED_MAX_BUFFER];
   char write_buffer[MEMCACHED_MAX_BUFFER];
   char hostname[MEMCACHED_NI_MAXHOST];
+#ifdef KETAMA_HASH_COLLSION
+  char str_port[MEMCACHED_NI_MAXSERV];
+#endif
 };
 
 

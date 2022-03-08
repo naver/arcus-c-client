@@ -80,6 +80,10 @@ static uint32_t dispatch_host(const memcached_st *ptr, uint32_t hash)
       }
       if (right == end)
         right= begin;
+#ifdef KETAMA_HASH_COLLSION
+      while (right > begin && (right-1)->value == hash)
+        right= right-1;
+#endif
       return right->index;
     }
   case MEMCACHED_DISTRIBUTION_MODULA:
