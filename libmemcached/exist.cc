@@ -51,6 +51,9 @@
  */
 
 #include <libmemcached/common.h>
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+#include "libmemcached/arcus_priv.h"
+#endif
 
 static memcached_return_t ascii_exist(memcached_st *memc,
                                       const char *group_key,
@@ -58,6 +61,15 @@ static memcached_return_t ascii_exist(memcached_st *memc,
                                       const char *key,
                                       size_t key_length)
 {
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { sizeof("getattr ") -1, "getattr " },
+    { memcached_array_size(memc->_namespace), memcached_array_string(memc->_namespace) },
+    { key_length, key },
+    { 2, "\r\n" }
+  };
+#else
   struct libmemcached_io_vector_st vector[]=
   {
     { sizeof("add ") -1, "add " },
@@ -69,15 +81,25 @@ static memcached_return_t ascii_exist(memcached_st *memc,
     { 2, "\r\n" },
     { 2, "\r\n" }
   };
+#endif
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(memc, group_key, group_key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(memc, server_key);
 
   /* Send command header */
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  memcached_return_t rc=  memcached_vdo(instance, vector, 4, true);
+#else
   memcached_return_t rc=  memcached_vdo(instance, vector, 8, true);
+#endif
   if (rc == MEMCACHED_SUCCESS)
   {
     char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+    while ((rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_ATTR);
+    if (rc == MEMCACHED_END)
+      rc= MEMCACHED_SUCCESS;
+#else
     rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
 
     if (rc == MEMCACHED_NOTSTORED)
@@ -85,6 +107,7 @@ static memcached_return_t ascii_exist(memcached_st *memc,
 
     if (rc == MEMCACHED_STORED)
       rc= MEMCACHED_NOTFOUND;
+#endif
   }
 
   if (rc == MEMCACHED_WRITE_FAILURE)
@@ -152,6 +175,9 @@ memcached_return_t memcached_exist_by_key(memcached_st *memc,
                                           const char *group_key, size_t group_key_length,
                                           const char *key, size_t key_length)
 {
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  arcus_server_check_for_update(memc);
+#endif
   memcached_return_t rc;
   if (memcached_failed(rc= initialize_query(memc)))
   {
