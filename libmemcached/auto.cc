@@ -113,9 +113,21 @@ do_action:
 #endif
   /* Send command header */
   memcached_return_t rc= memcached_vdo(instance, vector, 7, true);
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  if (memcached_failed(rc))
+  {
+    if (rc == MEMCACHED_WRITE_FAILURE)
+      memcached_io_reset(instance);
+    return memcached_set_error(*instance, rc, MEMCACHED_AT);
+  }
+
+  if (ptr->flags.no_reply)
+    return MEMCACHED_SUCCESS;
+#else
   if (ptr->flags.no_reply or memcached_failed(rc))
   {
     return rc;
+#endif
   }
 
   char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
@@ -214,12 +226,22 @@ static memcached_return_t binary_incr_decr(memcached_st *ptr, uint8_t cmd,
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  memcached_return_t rc= memcached_vdo(instance, vector, 3, true);
+  if (memcached_failed(rc))
+  {
+    if (rc == MEMCACHED_WRITE_FAILURE)
+      memcached_io_reset(instance);
+    return memcached_set_error(*instance, rc, MEMCACHED_AT);
+  }
+#else
   memcached_return_t rc;
   if (memcached_failed(rc= memcached_vdo(instance, vector, 3, true)))
   {
     memcached_io_reset(instance);
     return (rc == MEMCACHED_SUCCESS) ? MEMCACHED_WRITE_FAILURE : rc;
   }
+#endif
 
   if (no_reply)
     return MEMCACHED_SUCCESS;

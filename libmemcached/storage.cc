@@ -196,12 +196,22 @@ do_action:
   }
 
   /* write the header */
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  memcached_return_t rc= memcached_vdo(server, vector, 4, flush);
+    if (memcached_failed(rc))
+  {
+    if (rc == MEMCACHED_WRITE_FAILURE)
+      memcached_io_reset(server);
+    return memcached_set_error(*server, rc, MEMCACHED_AT);
+  }
+#else
   memcached_return_t rc;
   if ((rc= memcached_vdo(server, vector, 4, flush)) != MEMCACHED_SUCCESS)
   {
     memcached_io_reset(server);
     return (rc == MEMCACHED_SUCCESS) ? MEMCACHED_WRITE_FAILURE : rc;
   }
+#endif
 
   if (verb == SET_OP && ptr->number_of_replicas > 0)
   {
@@ -218,10 +228,19 @@ do_action:
 
       instance= memcached_server_instance_fetch(ptr, server_key);
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+      rc= memcached_vdo(instance, vector, 4, false);
+      if (memcached_failed(rc))
+      {
+        if (rc == MEMCACHED_WRITE_FAILURE)
+          memcached_io_reset(instance);
+      }
+#else
       if (memcached_vdo(instance, vector, 4, false) != MEMCACHED_SUCCESS)
       {
         memcached_io_reset(instance);
       }
+#endif
       else
       {
         memcached_server_response_decrement(instance);
@@ -354,6 +373,40 @@ do_action:
   /* Send command header */
   memcached_return_t rc= memcached_vdo(instance, vector, 11, to_write);
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  if (memcached_failed(rc))
+  {
+    if (rc == MEMCACHED_WRITE_FAILURE)
+      memcached_io_reset(instance);
+    return memcached_set_error(*instance, rc, MEMCACHED_AT);
+  }
+
+  if (to_write == false)
+    return MEMCACHED_BUFFERED;
+
+  if (ptr->flags.no_reply)
+    return MEMCACHED_SUCCESS;
+
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+
+  if (rc == MEMCACHED_STORED)
+  {
+    rc= MEMCACHED_SUCCESS;
+    return rc;
+  }
+#ifdef ENABLE_REPLICATION
+  if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true) {
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
+  }
+#endif
+#else
   if (rc == MEMCACHED_SUCCESS)
   {
     if (ptr->flags.no_reply)
@@ -389,6 +442,7 @@ do_action:
 
   if (rc == MEMCACHED_WRITE_FAILURE)
     memcached_io_reset(instance);
+#endif
 
   return rc;
 }

@@ -352,11 +352,20 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
       { len, args }
     };
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+    if (memcached_failed(rc))
+    {
+      if (rc == MEMCACHED_WRITE_FAILURE)
+        memcached_io_reset(instance);
+      return memcached_set_error(*instance, rc, MEMCACHED_AT);
+    }
+#else
     if (memcached_vdo(instance, vector, 2, true) != MEMCACHED_SUCCESS)
     {
       memcached_io_reset(instance);
       return MEMCACHED_WRITE_FAILURE;
     }
+#endif
   }
   else
   {

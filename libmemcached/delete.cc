@@ -101,6 +101,37 @@ do_action:
   /* Send command header */
   memcached_return_t rc= memcached_vdo(instance, vector, 5, to_write);
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  if (memcached_failed(rc))
+  {
+    if (rc == MEMCACHED_WRITE_FAILURE)
+      memcached_io_reset(instance);
+    return memcached_set_error(*instance, rc, MEMCACHED_AT);
+  }
+
+  if (to_write == false)
+    return MEMCACHED_BUFFERED;
+
+  if (no_reply)
+    return MEMCACHED_SUCCESS;
+
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+
+  if (rc == MEMCACHED_DELETED)
+    return MEMCACHED_SUCCESS;
+#ifdef ENABLE_REPLICATION
+  if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true) {
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
+  }
+#endif
+#else
   if (rc == MEMCACHED_SUCCESS)
   {
     if (to_write == false)
@@ -134,6 +165,7 @@ do_action:
     memcached_io_reset(instance);
     return rc;
   }
+#endif
 
   return rc;
 }
@@ -184,12 +216,22 @@ do_action:
       memcached_io_write(instance, NULL, 0, true);
   }
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  memcached_return_t rc= memcached_vdo(instance, vector, 3, to_write);
+  if (memcached_failed(rc))
+  {
+    if (rc == MEMCACHED_WRITE_FAILURE)
+      memcached_io_reset(instance);
+    return memcached_set_error(*instance, rc, MEMCACHED_AT);
+  }
+#else
   memcached_return_t rc= MEMCACHED_SUCCESS;
   if ((rc= memcached_vdo(instance, vector, 3, to_write)) != MEMCACHED_SUCCESS)
   {
     memcached_io_reset(instance);
     return rc;
   }
+#endif
 
   unlikely (ptr->number_of_replicas > 0)
   {
@@ -205,10 +247,19 @@ do_action:
 
       replica= memcached_server_instance_fetch(ptr, server_key);
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+      rc= memcached_vdo(replica, vector, 3, to_write);
+      if (memcached_failed(rc))
+      {
+        if (rc == MEMCACHED_WRITE_FAILURE)
+          memcached_io_reset(replica);
+      }
+#else
       if (memcached_vdo(replica, vector, 3, to_write) != MEMCACHED_SUCCESS)
       {
         memcached_io_reset(replica);
       }
+#endif
       else
       {
         memcached_server_response_decrement(replica);
@@ -216,6 +267,29 @@ do_action:
     }
   }
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  if (to_write == false)
+    return MEMCACHED_BUFFERED;
+
+  if (no_reply)
+    return MEMCACHED_SUCCESS
+
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  if (rc == MEMCACHED_DELETED)
+    return MEMCACHED_SUCCESS;
+#ifdef ENABLE_REPLICATION
+  else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true) {
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
+  }
+#endif
+#else
   if (to_write == false)
   {
     rc= MEMCACHED_BUFFERED;
@@ -240,6 +314,7 @@ do_action:
     }
 #endif
   }
+#endif
 
   return rc;
 }

@@ -174,7 +174,11 @@ static inline memcached_return_t version_ascii_instance(memcached_server_st *ins
     uint32_t before_active= instance->cursor_active;
 
     rc= memcached_vdo(instance, vector, 1, true);
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+    if (memcached_failed(rc))
+#else
     if (rc == MEMCACHED_WRITE_FAILURE)
+#endif
     {
       (void)memcached_set_error(*instance, rc, MEMCACHED_AT);
       memcached_io_reset(instance);
@@ -212,7 +216,11 @@ static inline memcached_return_t version_binary_instance(memcached_server_st *in
     uint32_t before_active= instance->cursor_active;
 
     rc= memcached_vdo(instance, vector, 1, true);
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+    if (memcached_failed(rc))
+#else
     if (rc == MEMCACHED_WRITE_FAILURE)
+#endif
     {
       (void)memcached_set_error(*instance, rc, MEMCACHED_AT);
       memcached_io_reset(instance);

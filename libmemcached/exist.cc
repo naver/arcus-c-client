@@ -92,6 +92,28 @@ static memcached_return_t ascii_exist(memcached_st *memc,
 #else
   memcached_return_t rc=  memcached_vdo(instance, vector, 8, true);
 #endif
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  if (memcached_failed(rc)) {
+    if (rc == MEMCACHED_WRITE_FAILURE) {
+      memcached_io_reset(instance);
+    }
+    return memcached_set_error(*instance, rc, MEMCACHED_AT);
+  }
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  while ((rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_ATTR);
+  if (rc == MEMCACHED_END)
+    rc= MEMCACHED_SUCCESS;
+#else
+  rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+
+  if (rc == MEMCACHED_NOTSTORED)
+    rc= MEMCACHED_SUCCESS;
+
+  if (rc == MEMCACHED_STORED)
+    rc= MEMCACHED_NOTFOUND;
+#endif
+#else
   if (rc == MEMCACHED_SUCCESS)
   {
     char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
@@ -113,6 +135,7 @@ static memcached_return_t ascii_exist(memcached_st *memc,
   if (rc == MEMCACHED_WRITE_FAILURE)
     memcached_io_reset(instance);
 
+#endif
   return rc;
 }
 
@@ -148,17 +171,32 @@ static memcached_return_t binary_exist(memcached_st *memc,
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(memc, server_key);
 
   /* write the header */
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  memcached_return_t rc= memcached_vdo(instance, vector, 3, true);
+  if (memcached_failed(rc))
+  {
+    if (rc == MEMCACHED_WRITE_FAILURE)
+      memcached_io_reset(instance);
+    return memcached_set_error(*instance, rc, MEMCACHED_AT);
+  }
+#else
   memcached_return_t rc;
   if ((rc= memcached_vdo(instance, vector, 3, true)) != MEMCACHED_SUCCESS)
   {
     memcached_io_reset(instance);
     return (rc == MEMCACHED_SUCCESS) ? MEMCACHED_WRITE_FAILURE : rc;
   }
+#endif
 
   rc= memcached_response(instance, NULL, 0, NULL);
 
+
   if (rc == MEMCACHED_SUCCESS)
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+    return MEMCACHED_NOTFOUND;
+#else
     rc= MEMCACHED_NOTFOUND;
+#endif
 
   if (rc == MEMCACHED_DATA_EXISTS)
     rc= MEMCACHED_SUCCESS;
