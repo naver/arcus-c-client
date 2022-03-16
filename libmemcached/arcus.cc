@@ -405,10 +405,21 @@ arcus_return_t arcus_proxy_connect(memcached_st *mc,
                                    memcached_pool_st *pool,
                                    memcached_st *proxy)
 {
-  arcus_return_t rc;
+  if (mc == NULL and pool == NULL) {
+    return ARCUS_ERROR;
+  }
+  if (proxy == NULL) {
+    return ARCUS_ERROR;
+  }
+  if (mc != NULL and pool != NULL and mc != memcached_pool_get_master(pool)) {
+    return ARCUS_ERROR;
+  }
+  if (mc == NULL and pool != NULL) {
+    mc= memcached_pool_get_master(pool);
+  }
 
   /* Initiate the Arcus. */
-  rc= do_arcus_init(mc, pool, NULL, NULL);
+  arcus_return_t rc= do_arcus_init(mc, pool, NULL, NULL);
   if (rc == ARCUS_ALREADY_INITIATED) {
     return ARCUS_SUCCESS;
   }
