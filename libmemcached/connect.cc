@@ -662,6 +662,10 @@ memcached_return_t memcached_connect(memcached_server_write_instance_st server)
   {
     memcached_mark_server_as_clean(server);
     rc= memcached_version_instance(server);
+    if (memcached_failed(rc))
+    {
+      return memcached_set_error(*server, rc, MEMCACHED_AT);
+    }
     return rc;
   }
 
