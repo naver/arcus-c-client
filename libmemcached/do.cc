@@ -27,8 +27,9 @@
 
 #include <libmemcached/common.h>
 
-memcached_return_t memcached_do(memcached_server_write_instance_st ptr, const void *command,
-                                size_t command_length, bool with_flush)
+memcached_return_t memcached_do(memcached_server_write_instance_st ptr,
+                                const void *command, size_t command_length,
+                                bool with_flush)
 {
   memcached_return_t rc;
   ssize_t sent_length;
@@ -48,7 +49,9 @@ memcached_return_t memcached_do(memcached_server_write_instance_st ptr, const vo
   ** before they start writing, if there is any data in buffer, clear it out,
   ** otherwise we might get a partial write.
   **/
-  if (ptr->type == MEMCACHED_CONNECTION_UDP && with_flush && ptr->write_buffer_offset > UDP_DATAGRAM_HEADER_LENGTH)
+  if (ptr->type == MEMCACHED_CONNECTION_UDP
+      && with_flush
+      && ptr->write_buffer_offset > UDP_DATAGRAM_HEADER_LENGTH)
   {
     memcached_io_write(ptr, NULL, 0, true);
   }
@@ -58,8 +61,9 @@ memcached_return_t memcached_do(memcached_server_write_instance_st ptr, const vo
   if (sent_length == -1 || (size_t)sent_length != command_length)
   {
     rc= MEMCACHED_WRITE_FAILURE;
+    return rc;
   }
-  else if ((ptr->root->flags.no_reply) == 0)
+  if ((ptr->root->flags.no_reply) == 0)
   {
     memcached_server_response_increment(ptr);
   }
@@ -80,7 +84,8 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
   if (memcached_failed(rc= memcached_connect(ptr)))
   {
     WATCHPOINT_ERROR(rc);
-    assert_msg(ptr->error_messages, "memcached_connect() returned an error but the memcached_server_write_instance_st showed none.");
+    assert_msg(ptr->error_messages, 
+               "memcached_connect() returned an error but the memcached_server_write_instance_st showed none.");
     return rc;
   }
 
@@ -89,7 +94,9 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
   ** before they start writing, if there is any data in buffer, clear it out,
   ** otherwise we might get a partial write.
   **/
-  if (ptr->type == MEMCACHED_CONNECTION_UDP && with_flush && ptr->write_buffer_offset > UDP_DATAGRAM_HEADER_LENGTH)
+  if (ptr->type == MEMCACHED_CONNECTION_UDP
+      && with_flush 
+      && ptr->write_buffer_offset > UDP_DATAGRAM_HEADER_LENGTH)
   {
     memcached_io_write(ptr, NULL, 0, true);
   }
@@ -107,8 +114,9 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
     rc= MEMCACHED_WRITE_FAILURE;
     WATCHPOINT_ERROR(rc);
     WATCHPOINT_ERRNO(errno);
+    return rc;
   }
-  else if ((ptr->root->flags.no_reply) == 0 and (ptr->root->flags.piped == false))
+  if ((ptr->root->flags.no_reply) == 0 and (ptr->root->flags.piped == false))
   {
     memcached_server_response_increment(ptr);
   }
