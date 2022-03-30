@@ -71,7 +71,8 @@ memcached_return_t
 memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
                                                memcached_coll_overflowaction_t overflowaction)
 memcached_return_t
-memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes)
+memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
+                                     bool is_unreadable)
 ```
 
 Set item을 생성하는 예제는 아래와 같다.
@@ -433,9 +434,9 @@ memcached_sop_piped_insert(memcached_st *ptr,
 memcached_return_t
 memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
-                                const size_t *keylengths,
+                                const size_t *keys_length,
                                 const size_t num_of_keys,
-                                const char * const *values, const size_t *values_length,
+                                const char *value, size_t value_length,
                                 memcached_coll_create_attrs_st *attributes,
                                 memcached_return_t *results,
                                 memcached_return_t *piped_rc)

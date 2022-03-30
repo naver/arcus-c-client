@@ -71,7 +71,8 @@ memcached_return_t
 memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
                                                memcached_coll_overflowaction_t overflowaction)
 memcached_return_t
-memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes)
+memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
+                                     bool is_unreadable)
 ```
 
 - memcached_coll_create_attrs_set_flags : attributes에 flags 값을 설정한다.
@@ -483,7 +484,7 @@ memcached_mop_piped_insert(memcached_st *ptr,
 memcached_return_t
 memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
-                                const size_t *keylengths,
+                                const size_t *keys_length,
                                 const size_t numr_of_keys,
                                 const char *mkey, size_t mkey_length,
                                 const char *value, size_t value_length,
@@ -550,7 +551,7 @@ void arcus_map_element_piped_insert(memcached_st *memc)
     assert(MEMCACHED_ALL_SUCCESS == piped_rc);
 
     // 각 key에 대한 결과를 확인한다.
-    for (size_t i=0; i<maxcount; i++)</nowiki>
+    for (size_t i=0; i<maxcount; i++)
     {
         assert(MEMCACHED_STORED == results[i] or MEMCACHED_CREATED_STORED == results[i]);
     }
