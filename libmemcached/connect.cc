@@ -50,7 +50,7 @@ static memcached_return_t connect_poll(memcached_server_st *server)
 
   size_t loop_max= 5;
 
-  if (server->root->poll_timeout == 0)
+  if (server->root->connect_timeout == 0)
   {
     return memcached_set_error(*server, MEMCACHED_TIMEOUT, MEMCACHED_AT);
   }

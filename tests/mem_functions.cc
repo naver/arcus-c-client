@@ -2857,6 +2857,7 @@ static test_return_t user_supplied_bug10(memcached_st *memc)
   memcached_behavior_set(mclone, MEMCACHED_BEHAVIOR_NO_BLOCK, set);
   memcached_behavior_set(mclone, MEMCACHED_BEHAVIOR_TCP_NODELAY, set);
   memcached_behavior_set(mclone, MEMCACHED_BEHAVIOR_POLL_TIMEOUT, uint64_t(0));
+  memcached_behavior_set(mclone, MEMCACHED_BEHAVIOR_CONNECT_TIMEOUT, uint64_t(0));
 
   char *value= (char*)malloc(value_length * sizeof(char));
 
