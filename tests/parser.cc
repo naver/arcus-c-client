@@ -477,7 +477,7 @@ test_return_t random_statement_build_test(memcached_st*)
           char buffer[2048];
           memcached_return_t rc= libmemcached_check_configuration(random_options.c_str(), random_options.size(), buffer, sizeof(buffer));
           test_true_got(rc != MEMCACHED_SUCCESS, "memcached_create_with_options() failed whiled libmemcached_check_configuration() was successful");
-          std::cerr << "Error occured on " << random_options.c_str() << " : " << buffer << std::endl;
+          std::cerr << "Error occurred on " << random_options.c_str() << " : " << buffer << std::endl;
           return TEST_FAILURE;
         }
 #endif

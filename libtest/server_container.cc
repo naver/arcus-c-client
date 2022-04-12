@@ -246,7 +246,7 @@ bool server_startup(server_startup_st& construct, const std::string& server_type
 
   if (server == NULL)
   {
-    Error << "Failure occured while creating server: " <<  server_type;
+    Error << "Failure occurred while creating server: " <<  server_type;
     return false;
   }
 
@@ -349,7 +349,7 @@ bool server_startup_st::start_socket_server(const std::string& server_type, cons
 
   if (server == NULL)
   {
-    Error << "Failure occured while creating server: " <<  server_type;
+    Error << "Failure occurred while creating server: " <<  server_type;
     return false;
   }
 

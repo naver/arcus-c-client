@@ -187,10 +187,10 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
     return "CONTINUE AUTHENTICATION";
 
   case MEMCACHED_PARSE_ERROR:
-    return "ERROR OCCURED WHILE PARSING";
+    return "ERROR OCCURRED WHILE PARSING";
 
   case MEMCACHED_PARSE_USER_ERROR:
-    return "USER INITIATED ERROR OCCURED WHILE PARSING";
+    return "USER INITIATED ERROR OCCURRED WHILE PARSING";
 
   case MEMCACHED_DEPRECATED:
     return "DEPRECATED";

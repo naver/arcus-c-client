@@ -220,7 +220,7 @@ bool Instance::run()
             switch(errno)
             {
             default:
-              std::cerr << "Error occured while reading data from " << _host.c_str() << std::endl;
+              std::cerr << "Error occurred while reading data from " << _host.c_str() << std::endl;
               return false;
             }
           }

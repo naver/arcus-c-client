@@ -402,7 +402,7 @@ static memcached_return_t unix_socket_connect(memcached_server_st *server)
 
 static memcached_return_t network_connect(memcached_server_st *server)
 {
-  bool timeout_error_occured= false;
+  bool timeout_error_occurred= false;
 
   WATCHPOINT_ASSERT(server->fd == INVALID_SOCKET);
   WATCHPOINT_ASSERT(server->cursor_active == 0);
@@ -480,7 +480,7 @@ static memcached_return_t network_connect(memcached_server_st *server)
     switch (get_socket_errno())
     {
     case ETIMEDOUT:
-      timeout_error_occured= true;
+      timeout_error_occurred= true;
       break;
 
     case EWOULDBLOCK:
@@ -499,7 +499,7 @@ static memcached_return_t network_connect(memcached_server_st *server)
         // A timeout here is treated as an error, we will not retry
         if (rc == MEMCACHED_TIMEOUT)
         {
-          timeout_error_occured= true;
+          timeout_error_occurred= true;
         }
       }
       break;
@@ -526,7 +526,7 @@ static memcached_return_t network_connect(memcached_server_st *server)
 
   WATCHPOINT_ASSERT(server->fd == INVALID_SOCKET);
 
-  if (timeout_error_occured)
+  if (timeout_error_occurred)
   {
     if (server->fd != INVALID_SOCKET)
     {
@@ -542,7 +542,7 @@ static memcached_return_t network_connect(memcached_server_st *server)
     return memcached_server_error_return(server);
   }
 
-  if (timeout_error_occured and server->state < MEMCACHED_SERVER_STATE_IN_PROGRESS)
+  if (timeout_error_occurred and server->state < MEMCACHED_SERVER_STATE_IN_PROGRESS)
   {
     return memcached_set_error(*server, MEMCACHED_TIMEOUT, MEMCACHED_AT);
   }

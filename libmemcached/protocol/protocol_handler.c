@@ -96,7 +96,7 @@ static ssize_t default_send(const void *cookie,
  * Try to drain the output buffers without blocking
  *
  * @param client the client to drain
- * @return false if an error occured (connection should be shut down)
+ * @return false if an error occurred (connection should be shut down)
  *         true otherwise (please note that there may be more data to
  *              left in the buffer to send)
  */

@@ -259,7 +259,7 @@ static memcached_return_t io_wait(memcached_server_write_instance_st ptr,
 
       return MEMCACHED_SUCCESS;
 
-    case 0: // Timeout occured, we let the while() loop do its thing.
+    case 0: // Timeout occurred, we let the while() loop do its thing.
       return memcached_set_error(*ptr, MEMCACHED_TIMEOUT, MEMCACHED_AT);
 
     default:
