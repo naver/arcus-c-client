@@ -77,7 +77,7 @@ bool kill_pid(pid_t pid_arg)
       }
     }
 
-    Error << "Error occured while waitpid(" << strerror(errno) << ") on pid " << int(pid_arg);
+    Error << "Error occurred while waitpid(" << strerror(errno) << ") on pid " << int(pid_arg);
 
     return false;
   }

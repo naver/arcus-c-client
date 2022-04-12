@@ -46,11 +46,11 @@ void Context::abort(const char *error_arg, yytokentype last_token, const char *l
 
   if (error_arg)
   {
-    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occured while parsing: %s", error_arg);
+    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occurred while parsing: %s", error_arg);
     return;
   }
 
-  memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occured while parsing: %s", memcached_strerror(NULL, MEMCACHED_PARSE_ERROR));
+  memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occurred while parsing: %s", memcached_strerror(NULL, MEMCACHED_PARSE_ERROR));
 }
 
 void Context::error(const char *error_arg, yytokentype last_token, const char *last_token_str)
@@ -58,7 +58,7 @@ void Context::error(const char *error_arg, yytokentype last_token, const char *l
   rc= MEMCACHED_PARSE_ERROR;
   if (not error_arg)
   {
-    memcached_set_parser_error(*memc, MEMCACHED_AT, "Unknown error occured during parsing (%s)", last_token_str ? last_token_str : " ");
+    memcached_set_parser_error(*memc, MEMCACHED_AT, "Unknown error occurred during parsing (%s)", last_token_str ? last_token_str : " ");
     return;
   }
 
@@ -74,7 +74,7 @@ void Context::error(const char *error_arg, yytokentype last_token, const char *l
   { }
   else if (error_arg)
   {
-    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occured during parsing (%s)", error_arg);
+    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occurred during parsing (%s)", error_arg);
     return;
   }
 
@@ -84,11 +84,11 @@ void Context::error(const char *error_arg, yytokentype last_token, const char *l
   }
   else if (last_token == UNKNOWN)
   {
-    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occured durring parsing, an unknown token was found.");
+    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occurred durring parsing, an unknown token was found.");
   }
   else
   {
-    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occured while parsing (%s)", last_token_str ? last_token_str : " ");
+    memcached_set_parser_error(*memc, MEMCACHED_AT, "Error occurred while parsing (%s)", last_token_str ? last_token_str : " ");
   }
 }
 

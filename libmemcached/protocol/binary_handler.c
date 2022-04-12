@@ -959,7 +959,7 @@ static memcached_binary_protocol_command_handler comcode_v0_v1_remap[256]= {
  * if it's present.
  * @param client the client connection to operate on
  * @param header the command to execute
- * @return true if success or false if a fatal error occured so that the
+ * @return true if success or false if a fatal error occurred so that the
  *         connection should be shut down.
  */
 static protocol_binary_response_status execute_command(memcached_protocol_client_st *client, protocol_binary_request_header *header)

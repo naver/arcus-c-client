@@ -175,7 +175,7 @@ test_return_t string_alloc_append_multiple(void*)
   memcached_st *memc= memcached_create(NULL);
 
   memcached_string_st *error_string= memcached_string_create(memc, NULL, 1024);
-  memcached_string_append(error_string, test_literal_param("Error occured while parsing: "));
+  memcached_string_append(error_string, test_literal_param("Error occurred while parsing: "));
   memcached_string_append(error_string, test_string_make_from_cstr("jog the strlen() method"));
   memcached_string_append(error_string, test_literal_param(" ("));
 

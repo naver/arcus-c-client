@@ -653,7 +653,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
   arcus_server_check_for_update(ptr);
 
   memcached_return_t rc;
-  bool failures_occured_in_sending= false;
+  bool failures_occurred_in_sending= false;
   unsigned int master_server_key= (unsigned int)-1; /* 0 is a valid server id! */
 
   if (memcached_failed(rc= before_get_query(ptr, group_key, group_key_length,
@@ -790,7 +790,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
 
       if (write_result == -1)
       {
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
         hosts_failed[server_key]= true;
         continue;
       }
@@ -809,7 +809,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
       if (write_result == -1)
       {
         memcached_server_response_reset(instance);
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
         hosts_failed[server_key]= true;
         continue;
       }
@@ -843,7 +843,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
       /* We need to do something about non-connnected hosts in the future */
       if ((memcached_io_write(instance, "\r\n", 2, true)) == -1)
       {
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
       }
       else
       {
@@ -854,7 +854,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
 
   LIBMEMCACHED_MEMCACHED_MGET_END();
 
-  if (failures_occured_in_sending && success_happened)
+  if (failures_occurred_in_sending && success_happened)
   {
     return MEMCACHED_SOME_ERRORS;
   }

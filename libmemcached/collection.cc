@@ -2122,7 +2122,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   }
 
   /* Send the request (buffered) */
-  bool failures_occured_in_sending= false;
+  bool failures_occurred_in_sending= false;
   size_t hosts_connected= 0;
   bool hosts_failed[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { false };
   for (size_t i=0; i<number_of_keys; i++)
@@ -2167,7 +2167,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
 
       if ((memcached_io_writev(instance, vector, 5, false)) == -1)
       {
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
         hosts_failed[serverkey]= true;
         continue;
       }
@@ -2184,7 +2184,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       if ((memcached_io_writev(instance, vector, 2, false)) == -1)
       {
         memcached_server_response_reset(instance);
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
         hosts_failed[serverkey]= true;
         continue;
       }
@@ -2214,7 +2214,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
       /* We need to do something about non-connnected hosts in the future */
       if ((memcached_io_write(instance, "\r\n", 2, true)) == -1)
       {
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
       }
       else
       {
@@ -2223,7 +2223,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     }
   }
 
-  if (failures_occured_in_sending && success_happened)
+  if (failures_occurred_in_sending && success_happened)
   {
     return MEMCACHED_SOME_ERRORS;
   }
@@ -2736,7 +2736,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   }
 
   /* Send the request (buffered) */
-  bool failures_occured_in_sending= false;
+  bool failures_occurred_in_sending= false;
   size_t hosts_connected= 0;
   bool hosts_failed[MAX_SERVERS_FOR_MULTI_KEY_OPERATION]= { false };
   for (size_t i=0; i<number_of_keys; i++)
@@ -2781,7 +2781,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
 
       if ((memcached_io_writev(instance, vector, 5, false)) == -1)
       {
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
         hosts_failed[serverkey]= true;
         continue;
       }
@@ -2798,7 +2798,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       if ((memcached_io_writev(instance, vector, 2, false)) == -1)
       {
         memcached_server_response_reset(instance);
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
         hosts_failed[serverkey]= true;
         continue;
       }
@@ -2828,7 +2828,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
       /* We need to do something about non-connnected hosts in the future */
       if ((memcached_io_write(instance, "\r\n", 2, true)) == -1)
       {
-        failures_occured_in_sending= true;
+        failures_occurred_in_sending= true;
       }
       else
       {
@@ -2837,7 +2837,7 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     }
   }
 
-  if (failures_occured_in_sending && success_happened)
+  if (failures_occurred_in_sending && success_happened)
   {
     return MEMCACHED_SOME_ERRORS;
   }
