@@ -61,7 +61,7 @@ enum memc_read_or_write {
 };
 
 /*
- * The udp request id consists of two seperate sections
+ * The udp request id consists of two separate sections
  *   1) The thread id
  *   2) The message number
  * The thread id should only be set when the memcached_st struct is created
@@ -158,11 +158,11 @@ static bool repack_input_buffer(memcached_server_write_instance_st ptr)
 /**
  * If the we have callbacks connected to this server structure
  * we may start process the input queue and fire the callbacks
- * for the incomming messages. This function is _only_ called
+ * for the incoming messages. This function is _only_ called
  * when the input buffer is full, so that we _know_ that we have
  * at least _one_ message to process.
  *
- * @param ptr the server to star processing iput messages for
+ * @param ptr the server to star processing input messages for
  * @return true if we processed anything, false otherwise
  */
 static bool process_input_buffer(memcached_server_write_instance_st ptr)
@@ -443,7 +443,7 @@ static ssize_t io_flush(memcached_server_write_instance_st ptr,
   // Need to study this assert() WATCHPOINT_ASSERT(return_length ==
   // ptr->write_buffer_offset);
 
-  // if we are a udp server, the begining of the buffer is reserverd for
+  // if we are a udp server, the begining of the buffer is reserved for
   // the upd frame header
   if (ptr->type == MEMCACHED_CONNECTION_UDP)
     ptr->write_buffer_offset= UDP_DATAGRAM_HEADER_LENGTH;
@@ -510,7 +510,7 @@ static memcached_return_t _io_fill(memcached_server_write_instance_st ptr)
         looking for '\n'. We do not care for UDB which requests 8 bytes
         at once. Generally, this means that connection went away. Since
         for blocking I/O we do not return 0 and for non-blocking case
-        it will return EGAIN if data is not immediatly available.
+        it will return EAGAIN if data is not immediately available.
       */
       WATCHPOINT_STRING("We had a zero length recv()");
       memcached_quit_server(ptr, true);
@@ -530,7 +530,7 @@ static memcached_return_t _io_fill(memcached_server_write_instance_st ptr)
 memcached_return_t memcached_io_read(memcached_server_write_instance_st ptr,
                                      void *buffer, size_t length, ssize_t *nread)
 {
-  assert_msg(ptr, "Programmer error, memcached_io_read() recieved an invalid memcached_server_write_instance_st"); // Programmer error
+  assert_msg(ptr, "Programmer error, memcached_io_read() received an invalid memcached_server_write_instance_st"); // Programmer error
   if (ptr->fd == INVALID_SOCKET)
   {
     //assert_msg(int(ptr->state) <= int(MEMCACHED_SERVER_STATE_ADDRINFO), "Programmer error, invalid socket state");
