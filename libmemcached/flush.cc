@@ -219,11 +219,18 @@ static memcached_return_t memcached_flush_binary(memcached_st *ptr,
       request.message.header.request.opcode= PROTOCOL_BINARY_CMD_FLUSH;
     }
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+    memcached_return_t rc = memcached_do(instance, request.bytes, sizeof(request.bytes), true);
+    if (rc != MEMCACHED_SUCCESS) {
+      return rc;
+    }
+#else
     if (memcached_do(instance, request.bytes, sizeof(request.bytes), true) != MEMCACHED_SUCCESS) 
     {
       memcached_io_reset(instance);
       return MEMCACHED_WRITE_FAILURE;
     } 
+#endif
   }
 
   for (uint32_t x= 0; x < memcached_server_count(ptr); x++)

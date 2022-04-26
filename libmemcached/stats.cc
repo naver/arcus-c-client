@@ -352,20 +352,34 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
       { len, args }
     };
 
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+    rc = memcached_vdo(instance, vector, 2, true);
+    if (rc != MEMCACHED_SUCCESS) {
+      return rc;
+    }
+#else
     if (memcached_vdo(instance, vector, 2, true) != MEMCACHED_SUCCESS)
     {
       memcached_io_reset(instance);
       return MEMCACHED_WRITE_FAILURE;
     }
+#endif
   }
   else
   {
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+    memcached_return_t rc = memcached_do(instance, request.bytes, sizeof(request.bytes), true);
+    if (rc != MEMCACHED_SUCCESS) {
+      return rc;
+    }
+#else
     if (memcached_do(instance, request.bytes,
                      sizeof(request.bytes), true) != MEMCACHED_SUCCESS)
     {
       memcached_io_reset(instance);
       return MEMCACHED_WRITE_FAILURE;
     }
+#endif 
   }
 
   memcached_server_response_decrement(instance);
@@ -434,7 +448,11 @@ static memcached_return_t ascii_stats_fetch(memcached_stat_st *memc_stat,
   }
 
   memcached_return_t rc= memcached_do(instance, buffer, (size_t)write_length, true);
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  if (rc == MEMCACHED_SUCCESS)
+#else
   if (memcached_success(rc))
+#endif
   {
     char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
     while ((rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_STAT)

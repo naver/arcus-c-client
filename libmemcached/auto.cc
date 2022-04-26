@@ -113,7 +113,11 @@ do_action:
 #endif
   /* Send command header */
   memcached_return_t rc= memcached_vdo(instance, vector, 7, true);
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  if (ptr->flags.no_reply or rc != MEMCACHED_SUCCESS)
+#else
   if (ptr->flags.no_reply or memcached_failed(rc))
+#endif
   {
     return rc;
   }
@@ -214,6 +218,12 @@ static memcached_return_t binary_incr_decr(memcached_st *ptr, uint8_t cmd,
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
+#ifdef MEMCACHED_VDO_ERROR_HANDLING
+  memcached_return_t rc= memcached_vdo(instance, vector, 3, true);
+  if (no_reply or rc != MEMCACHED_SUCCESS) {
+    return rc;
+  }
+#else
   memcached_return_t rc;
   if (memcached_failed(rc= memcached_vdo(instance, vector, 3, true)))
   {
@@ -223,6 +233,7 @@ do_action:
 
   if (no_reply)
     return MEMCACHED_SUCCESS;
+#endif
 
   rc= memcached_response(instance, (char*)value, sizeof(*value), NULL);
 #ifdef ENABLE_REPLICATION
