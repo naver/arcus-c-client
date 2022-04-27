@@ -110,12 +110,6 @@ static memcached_return_t ascii_exist(memcached_st *memc,
 #endif
   }
 
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-    memcached_io_reset(instance);
-#endif
-
   return rc;
 }
 
@@ -151,19 +145,10 @@ static memcached_return_t binary_exist(memcached_st *memc,
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(memc, server_key);
 
   /* write the header */
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
   memcached_return_t rc= memcached_vdo(instance, vector, 3, true);
   if (rc != MEMCACHED_SUCCESS) {
     return rc;
   }
-#else
-  memcached_return_t rc;
-  if ((rc= memcached_vdo(instance, vector, 3, true)) != MEMCACHED_SUCCESS)
-  {
-    memcached_io_reset(instance);
-    return (rc == MEMCACHED_SUCCESS) ? MEMCACHED_WRITE_FAILURE : rc;
-  }
-#endif
 
   rc= memcached_response(instance, NULL, 0, NULL);
 

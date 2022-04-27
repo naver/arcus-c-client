@@ -79,18 +79,10 @@ static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
     }
 
     memcached_return_t rrc= memcached_vdo(instance, vector, 1, true);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
     if (rrc != MEMCACHED_SUCCESS)
-#else
-    if (memcached_failed(rrc))
-#endif
     {
       errors_happened= true;
       (void)memcached_set_error(*instance, rrc, MEMCACHED_AT);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-      memcached_io_reset(instance);
-#endif
       continue;
     }
     success++;
@@ -140,18 +132,10 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
     }
 
     memcached_return_t rrc= memcached_vdo(instance, vector, 1, true);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
     if (rrc != MEMCACHED_SUCCESS)
-#else
-    if (memcached_failed(rrc))
-#endif
     {
       errors_happened= true;
       (void)memcached_set_error(*instance, rrc, MEMCACHED_AT);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-      memcached_io_reset(instance);
-#endif
       continue;
     }
     success++;
@@ -188,17 +172,9 @@ static inline memcached_return_t version_ascii_instance(memcached_server_st *ins
     uint32_t before_active= instance->cursor_active;
 
     rc= memcached_vdo(instance, vector, 1, true);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
     if (rc != MEMCACHED_SUCCESS)
-#else
-    if (rc == MEMCACHED_WRITE_FAILURE)
-#endif
     {
       (void)memcached_set_error(*instance, rc, MEMCACHED_AT);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-      memcached_io_reset(instance);
-#endif
       return rc;
     }
     /* If no_reply or piped is set, cursor_active is not increased in memcached_vdo().
@@ -233,17 +209,9 @@ static inline memcached_return_t version_binary_instance(memcached_server_st *in
     uint32_t before_active= instance->cursor_active;
 
     rc= memcached_vdo(instance, vector, 1, true);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
     if (rc != MEMCACHED_SUCCESS)
-#else
-    if (rc == MEMCACHED_WRITE_FAILURE)
-#endif
     {
       (void)memcached_set_error(*instance, rc, MEMCACHED_AT);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-      memcached_io_reset(instance);
-#endif
       return rc;
     }
     /* If no_reply or piped is set, cursor_active is not increased in memcached_vdo().

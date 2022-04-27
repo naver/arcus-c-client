@@ -199,13 +199,7 @@ static memcached_return_t ascii_get_by_key(memcached_st *ptr,
   };
 
   rc= memcached_vdo(instance, vector, 4, true);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
   if (rc != MEMCACHED_SUCCESS) {
-#else
-  if (memcached_failed(rc))
-  {
-    memcached_io_reset(instance);
-#endif
     memcached_set_error(*ptr, rc, MEMCACHED_AT);
   }
   return rc;

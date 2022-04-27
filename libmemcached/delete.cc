@@ -129,14 +129,6 @@ do_action:
 #endif
     }
   }
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  else
-  {
-    memcached_io_reset(instance);
-    return rc;
-  }
-#endif
 
   return rc;
 }
@@ -187,15 +179,8 @@ do_action:
       memcached_io_write(instance, NULL, 0, true);
   }
 
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
   memcached_return_t rc= memcached_vdo(instance, vector, 3, to_write);
   if (rc != MEMCACHED_SUCCESS) {
-#else
-  memcached_return_t rc= MEMCACHED_SUCCESS;
-  if ((rc= memcached_vdo(instance, vector, 3, to_write)) != MEMCACHED_SUCCESS)
-  {
-    memcached_io_reset(instance);
-#endif
     return rc;
   }
 
@@ -213,20 +198,9 @@ do_action:
 
       replica= memcached_server_instance_fetch(ptr, server_key);
 
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
       if (memcached_vdo(replica, vector, 3, to_write) == MEMCACHED_SUCCESS) {
         memcached_server_response_decrement(replica);
       }
-#else
-      if (memcached_vdo(replica, vector, 3, to_write) != MEMCACHED_SUCCESS)
-      {
-        memcached_io_reset(replica);
-      }
-      else
-      {
-        memcached_server_response_decrement(replica);
-      }
-#endif
     }
   }
 

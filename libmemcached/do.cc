@@ -61,9 +61,7 @@ memcached_return_t memcached_do(memcached_server_write_instance_st ptr,
   if (sent_length == -1 || (size_t)sent_length != command_length)
   {
     rc= MEMCACHED_WRITE_FAILURE;
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
     memcached_io_reset(ptr);
-#endif
     return rc;
   }
   if ((ptr->root->flags.no_reply) == 0)
@@ -117,9 +115,7 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
     rc= MEMCACHED_WRITE_FAILURE;
     WATCHPOINT_ERROR(rc);
     WATCHPOINT_ERRNO(errno);
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
     memcached_io_reset(ptr);
-#endif
     return rc;
   }
   if ((ptr->root->flags.no_reply) == 0 and (ptr->root->flags.piped == false))

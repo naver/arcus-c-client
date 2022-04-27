@@ -763,12 +763,6 @@ do_action:
     }
   }
 
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-    memcached_io_reset(instance);
-#endif
-
   return rc;
 }
 
@@ -1046,14 +1040,6 @@ do_action:
     }
   }
 
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
-
   return rc;
 }
 
@@ -1192,11 +1178,6 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   rc= memcached_vdo(instance, vector, 7, to_write);
   if (rc != MEMCACHED_SUCCESS)
   {
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-    if (rc == MEMCACHED_WRITE_FAILURE)
-      memcached_io_reset(instance);
-#endif
     return rc;
   }
 
@@ -1270,11 +1251,6 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
   rc= memcached_vdo(instance, vector, 6, to_write);
   if (rc != MEMCACHED_SUCCESS)
   {
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-    if (rc == MEMCACHED_WRITE_FAILURE)
-      memcached_io_reset(instance);
-#endif
     return rc;
   }
 
@@ -1437,12 +1413,6 @@ do_action:
       }
     }
   }
-
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-    memcached_io_reset(instance);
-#endif
 
   return rc;
 }
@@ -1670,14 +1640,6 @@ do_action:
       }
     }
   }
-
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
 
   return rc;
 }
@@ -1983,14 +1945,6 @@ do_action:
     libmemcached_free(ptr, mkey_buffer);
     mkey_buffer= NULL;
   }
-
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
 
   return rc;
 }
@@ -2360,14 +2314,6 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
     }
   }
 
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
-
   return rc;
 }
 
@@ -2465,14 +2411,6 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
       }
     }
   }
-
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
 
   return rc;
 }
@@ -2581,14 +2519,6 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
       }
     }
   }
-
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
 
   return rc;
 }
@@ -2956,14 +2886,6 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
       }
     }
   }
-
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
 
   return rc;
 }
@@ -3539,14 +3461,6 @@ do_action:
     }
   }
 
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
-
   return rc;
 }
 
@@ -3826,14 +3740,6 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
       }
     }
   }
-
-#ifdef MEMCACHED_VDO_ERROR_HANDLING
-#else
-  if (rc == MEMCACHED_WRITE_FAILURE)
-  {
-    memcached_io_reset(instance);
-  }
-#endif
 
   return rc;
 }
