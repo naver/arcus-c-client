@@ -57,18 +57,17 @@ memcached_return_t memcached_do(memcached_server_write_instance_st ptr,
   }
 
   sent_length= memcached_io_write(ptr, command, command_length, with_flush);
-
   if (sent_length == -1 || (size_t)sent_length != command_length)
   {
     rc= MEMCACHED_WRITE_FAILURE;
     memcached_io_reset(ptr);
     return rc;
   }
+
   if ((ptr->root->flags.no_reply) == 0)
   {
     memcached_server_response_increment(ptr);
   }
-
   return rc;
 }
 
@@ -102,14 +101,13 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
     memcached_io_write(ptr, NULL, 0, true);
   }
 
-  sent_length= memcached_io_writev(ptr, vector, count, with_flush);
-
   size_t command_length= 0;
-  for (uint32_t x= 0; x < count; ++x, vector++)
+  for (uint32_t x= 0; x < count; ++x)
   {
-    command_length+= vector->length;
+    command_length+= vector[x].length;
   }
 
+  sent_length= memcached_io_writev(ptr, vector, count, with_flush);
   if (sent_length == -1 or size_t(sent_length) != command_length)
   {
     rc= MEMCACHED_WRITE_FAILURE;
@@ -118,10 +116,10 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
     memcached_io_reset(ptr);
     return rc;
   }
+
   if ((ptr->root->flags.no_reply) == 0 and (ptr->root->flags.piped == false))
   {
     memcached_server_response_increment(ptr);
   }
-
   return rc;
 }
