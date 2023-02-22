@@ -235,7 +235,8 @@ memcached_return_t
 memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
                                                memcached_coll_overflowaction_t overflowaction)
 memcached_return_t
-memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes)
+memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
+                                     bool is_unreadable)
 ```
 
 B+tree item을 생성하는 예제는 아래와 같다.
@@ -988,7 +989,7 @@ memcached_bop_ext_piped_insert(memcached_st *ptr,
 memcached_return_t
 memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
-                                const size_t *keylengths,
+                                const size_t *keys_length,
                                 size_t number_of_keys,
                                 const uint64_t bkey,
                                 const unsigned char *eflag, size_t eflag_length,
@@ -1000,7 +1001,7 @@ memcached_bop_piped_insert_bulk(memcached_st *ptr,
 memcached_return_t
 memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
-                                const size_t *keylengths,
+                                const size_t *keys_length,
                                 size_t number_of_keys,
                                 const unsigned char *bkey, size_t bkey_length,
                                 const unsigned char *eflag, size_t eflag_length,

@@ -71,7 +71,8 @@ memcached_return_t
 memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
                                                memcached_coll_overflowaction_t overflowaction)
 memcached_return_t
-memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes)
+memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
+                                     bool is_unreadable)
 ```
 
 - memcached_coll_create_attrs_set_flags : attributes에 flags 값을 설정한다.
@@ -420,10 +421,10 @@ memcached_lop_piped_insert(memcached_st *ptr,
 ``` c
 memcached_return_t
 memcached_lop_piped_insert_bulk(memcached_st *ptr,
-                                const char * const *keys, const size_t *keylengths,
+                                const char * const *keys, const size_t *keys_length,
                                 const size_t numr_of_keys,
-                                const int32_t *indexes,
-                                const char * const *values, const size_t *valuelengths,
+                                const int32_t index,
+                                const char *value, size_t value_length,
                                 memcached_coll_create_attrs_st *attributes,
                                 memcached_return_t *results,
                                 memcached_return_t *piped_rc)
@@ -431,8 +432,8 @@ memcached_lop_piped_insert_bulk(memcached_st *ptr,
 
 - keys, keys_length: 다수 key들을 지정
 - numr_of_keys: key들의 수
-- indexes: list index array (0-based index)
-- values, values_length: 각 list에 삽입할 element의 value와 그 길이
+- index: list index array (0-based index)
+- value, value_length: 각 list에 삽입할 element의 value와 그 길이
 - attributes: 해당 list가 없을 시에, attrbiutes에 따라 list를 생성 후에 삽입한다.
 
 List element 일괄 삽입의 결과는 아래의 인자를 통해 받는다.
@@ -484,7 +485,7 @@ void arcus_list_element_piped_insert(memcached_st *memc)
     assert(MEMCACHED_ALL_SUCCESS == piped_rc);
 
     // 각 key에 대한 결과를 확인한다.
-    for (size_t i=0; i<maxcount; i++)</nowiki>
+    for (size_t i=0; i<maxcount; i++)
     {
         assert(MEMCACHED_STORED == results[i] or MEMCACHED_CREATED_STORED == results[i]);
     }
