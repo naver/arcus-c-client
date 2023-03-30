@@ -27,9 +27,13 @@ my $libmemcached_version = "0.53";
 my $arcus_describe = `git describe`;
 chomp $arcus_describe;
 
-unless ($arcus_describe =~ m/^\d+\.\d+\.\d+/) {
-    $arcus_describe = 'unknown';
-}
+#unless ($arcus_describe =~ m/^\d+\.\d+\.\d+/) {
+#    $arcus_describe = 'unknown';
+#}
+my $unknown_version_message = "Can't find recent tag from current commit.
+If you forked the repository, the tag might not be included.
+You need to fetch tags from upstream repository.";
+$arcus_describe =~ m/^\d+\.\d+\.\d+/ or die $unknown_version_message;
 
 $arcus_describe =~ s/-/_/g;
 
