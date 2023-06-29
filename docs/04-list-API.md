@@ -132,7 +132,7 @@ memcached_lop_insert(memcached_st *ptr,
 - key, key_length: list item의 key
 - index: list index (0-based index)
   - 0, 1, 2, ... : list의 앞에서 시작하여 각 element 위치를 나타냄
-  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄 
+  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄
 - value, value_lenth: 삽입할 element의 value
 - attributes: List 없을 시에 attributes에 따라 empty list를 생성 후에 element 삽입한다.
 
@@ -201,7 +201,7 @@ memcached_lop_delete(memcached_st *ptr,
 
 - index: single list index (0-based index)
   - 0, 1, 2, ... : list의 앞에서 시작하여 각 element 위치를 나타냄
-  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄 
+  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄
 - drop_if_empty: element 삭제로 empty list가 될 경우, 그 list도 삭제할 것인지를 지정
 
 둘째, list index range로 다수의 element를 삭제하는 함수이다.
@@ -216,7 +216,7 @@ memcached_lop_delete_by_range(memcached_st *ptr,
 
 - from, to: list index range (0-based index)
   - 0, 1, 2, ... : list의 앞에서 시작하여 각 element 위치를 나타냄
-  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄 
+  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄
 - drop_if_empty: element 삭제로 empty list가 될 경우, 그 list도 삭제할 것인지를 지정
 
 Response code는 아래와 같다.
@@ -228,7 +228,7 @@ Response code는 아래와 같다.
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 List가 없음.
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 index나 index 범위에 해당하는 element가 없음.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 List가 아님.
-  
+
 
 List element를 삭제하는 예제는 아래와 같다.
 
@@ -271,7 +271,7 @@ List element를 조회하는 함수는 두 가지가 있다.
 
 첫째, 하나의 list index로 하나의 element만 조회하는 함수이다.
 
-``` c 
+``` c
 memcached_return_t
 memcached_lop_get(memcached_st *ptr,
                   const char *key, size_t key_length,
@@ -282,7 +282,7 @@ memcached_lop_get(memcached_st *ptr,
 
 - index: single list index (0-based index)
   - 0, 1, 2, ... : list의 앞에서 시작하여 각 element 위치를 나타냄
-  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄 
+  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄
 - with_delete: 조회와 함께 삭제도 수행할 것인지를 지정
 - drop_if_empty: element 삭제로 empty list가 될 경우, 그 list도 삭제할 것인지를 지정
 
@@ -300,7 +300,7 @@ memcached_lop_get_by_range(memcached_st *ptr,
 
 - from, to: list index range (0-based index)
   - 0, 1, 2, ... : list의 앞에서 시작하여 각 element 위치를 나타냄
-  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄 
+  - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄
 - with_delete: 조회와 함께 삭제도 수행할 것인지를 지정
 - drop_if_empty: element 삭제로 empty list가 될 경우, 그 list도 삭제할 것인지를 지정
 
@@ -345,7 +345,7 @@ List element를 조회하는 예제는 아래와 같다.
 void arcus_list_element_get(memcached_st *memc)
 {
     uint32_t flags= 10;
-    uint32_t exptime= 600; 
+    uint32_t exptime= 600;
     uint32_t maxcount= 1000;
 
     memcached_coll_create_attrs_st attributes;
@@ -353,7 +353,7 @@ void arcus_list_element_get(memcached_st *memc)
     memcached_return_t rc;
     memcached_coll_result_st *result;
 
-    for (uint32_t i=0; i<maxcount; i++)    { 
+    for (uint32_t i=0; i<maxcount; i++)    {
         char buffer[15];
         size_t buffer_len= snprintf(buffer, 15, "value%d", i);
         rc= memcached_lop_insert(memc, "a_list", strlen("a_list"), i,
@@ -416,13 +416,13 @@ memcached_lop_piped_insert(memcached_st *ptr,
 - values, values_length: 다수 element 각각의 value와 그 길이
 - attributes: 해당 list가 없을 시에, attrbiutes에 따라 list를 생성 후에 삽입한다.
 
-둘째, 여러 key들이 가리키는 list들에 각각 하나의 element를 삽입하는 함수이다. 
+둘째, 여러 key들이 가리키는 list들에 각각 하나의 element를 삽입하는 함수이다.
 
 ``` c
 memcached_return_t
 memcached_lop_piped_insert_bulk(memcached_st *ptr,
-                                const char * const *keys, const size_t *keys_length,
-                                const size_t numr_of_keys,
+                                const char * const *keys, const size_t *key_length,
+                                size_t number_of_keys,
                                 const int32_t index,
                                 const char *value, size_t value_length,
                                 memcached_coll_create_attrs_st *attributes,
@@ -431,8 +431,8 @@ memcached_lop_piped_insert_bulk(memcached_st *ptr,
 ```
 
 - keys, keys_length: 다수 key들을 지정
-- numr_of_keys: key들의 수
-- index: list index array (0-based index)
+- number_of_keys: key들의 수
+- index: list index (0-based index)
 - value, value_length: 각 list에 삽입할 element의 value와 그 길이
 - attributes: 해당 list가 없을 시에, attrbiutes에 따라 list를 생성 후에 삽입한다.
 
