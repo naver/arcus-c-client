@@ -1806,7 +1806,6 @@ static test_return_t mget_result_alloc_test(memcached_st *memc)
   test_compare(MEMCACHED_SUCCESS,
                memcached_mget(memc, keys, key_length, 3));
 
-  uint32_t x= 0;
   while ((results= memcached_fetch_result(memc, NULL, &rc)))
   {
     test_true(results);
@@ -1816,7 +1815,6 @@ static test_return_t mget_result_alloc_test(memcached_st *memc)
                 memcached_result_value(results),
                 memcached_result_length(results));
     memcached_result_free(results);
-    x++;
   }
 
   return TEST_SUCCESS;
@@ -1902,7 +1900,6 @@ static test_return_t mget_test(memcached_st *memc)
   test_compare(MEMCACHED_SUCCESS,
                memcached_mget(memc, keys, key_length, 3));
 
-  uint32_t x= 0;
   while ((return_value= memcached_fetch(memc, return_key, &return_key_length,
                                         &return_value_length, &flags, &rc)))
   {
@@ -1914,7 +1911,6 @@ static test_return_t mget_test(memcached_st *memc)
       test_memcmp(return_value, return_key, return_value_length);
     }
     free(return_value);
-    x++;
   }
 
   return TEST_SUCCESS;
@@ -2474,7 +2470,7 @@ static test_return_t user_supplied_bug2(memcached_st *memc)
 #endif
 
   size_t total_value_length= 0;
-  for (uint32_t x= 0, errors= 0; total_value_length < 24576 ; x++)
+  for (uint32_t x= 0; total_value_length < 24576 ; x++)
   {
     uint32_t flags= 0;
     size_t val_len= 0;
@@ -2486,11 +2482,7 @@ static test_return_t user_supplied_bug2(memcached_st *memc)
     char *getval= memcached_get(memc, key, key_length, &val_len, &flags, &rc);
     if (memcached_failed(rc))
     {
-      if (rc == MEMCACHED_NOTFOUND)
-      {
-        errors++;
-      }
-      else
+      if (rc != MEMCACHED_NOTFOUND)
       {
         test_true(rc);
       }
@@ -2500,7 +2492,6 @@ static test_return_t user_supplied_bug2(memcached_st *memc)
     test_compare(uint32_t(HALDENBRAND_FLAG_KEY), flags);
 
     total_value_length+= val_len;
-    errors= 0;
     free(getval);
   }
 
@@ -2590,7 +2581,6 @@ static test_return_t user_supplied_bug4(memcached_st *memc)
     size_t return_key_length;
     size_t return_value_length;
     uint32_t flags;
-    uint32_t x= 0;
     while ((return_value= memcached_fetch(memc, return_key, &return_key_length,
                                           &return_value_length, &flags, &rc)))
     {
@@ -2599,7 +2589,6 @@ static test_return_t user_supplied_bug4(memcached_st *memc)
       test_true(return_key_length == return_value_length);
       test_memcmp(return_value, return_key, return_value_length);
       free(return_value);
-      x++;
     }
   }
 
