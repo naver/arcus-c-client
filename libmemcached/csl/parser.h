@@ -132,7 +132,6 @@ extern int config_debug;
 
 
 
-int config_parse (Context *context, yyscan_t *scanner);
 
 
 #endif /* !YY_CONFIG_LIBMEMCACHED_CSL_PARSER_H_INCLUDED  */

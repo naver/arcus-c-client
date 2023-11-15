@@ -88,11 +88,11 @@
 
 int conf_lex(YYSTYPE* lvalp, void* scanner);
 
-#define select_yychar(__context) yychar == UNKNOWN ? ( (__context)->previous_token == END ? UNKNOWN : (__context)->previous_token ) : yychar   
+#define select_yychar(__context) yychar == UNKNOWN ? ( (__context)->previous_token == END ? UNKNOWN : (__context)->previous_token ) : yychar
 
 #define stryytname(__yytokentype) ((__yytokentype) <  YYNTOKENS ) ? yytname[(__yytokentype)] : ""
 
-#define parser_abort(__context, __error_message) do { (__context)->abort((__error_message), yytokentype(select_yychar(__context)), stryytname(YYTRANSLATE(select_yychar(__context)))); YYABORT; } while (0) 
+#define parser_abort(__context, __error_message) do { (__context)->abort((__error_message), yytokentype(select_yychar(__context)), stryytname(YYTRANSLATE(select_yychar(__context)))); YYABORT; } while (0)
 
 // This is bison calling error.
 inline void __config_error(Context *context, yyscan_t *scanner, const char *error, int last_token, const char *last_token_str)
@@ -1262,6 +1262,8 @@ yydestruct (const char *yymsg,
   YY_IGNORE_MAYBE_UNINITIALIZED_END
 }
 
+/* Prevent warnings from -Wmissing-prototypes.  */
+int yyparse (Context *context, yyscan_t *scanner);
 
 
 
@@ -1693,7 +1695,7 @@ yyreduce:
           {
             if ((context->rc= memcached_behavior_set(context->memc, MEMCACHED_BEHAVIOR_HASH, (yyvsp[0].hash))) != MEMCACHED_SUCCESS)
             {
-              parser_abort(context, NULL);; 
+              parser_abort(context, NULL);;
             }
           }
 #line 1700 "libmemcached/csl/parser.cc"
@@ -2282,9 +2284,9 @@ yyreturnlab:
 }
 
 #line 481 "libmemcached/csl/parser.yy"
- 
 
-void Context::start() 
+
+void Context::start()
 {
   config_parse(this, (void **)scanner);
 }
