@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -170,13 +170,16 @@ memcached_return_t memcached_behavior_set(memcached_st *ptr,
 
   case MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED:
     {
+      if (bool(data) == false)
+      {
+        return memcached_behavior_set(ptr, MEMCACHED_BEHAVIOR_KETAMA, true);
+      }
       (void)memcached_behavior_set_key_hash(ptr, MEMCACHED_HASH_MD5);
       (void)memcached_behavior_set_distribution_hash(ptr, MEMCACHED_HASH_MD5);
-      ptr->ketama.weighted= bool(data);
       /**
         @note We try to keep the same distribution going. This should be deprecated and rewritten.
       */
-      return memcached_behavior_set_distribution(ptr, MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA);
+      return memcached_behavior_set_distribution(ptr, MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED);
     }
 
   case MEMCACHED_BEHAVIOR_HASH:
@@ -477,7 +480,7 @@ memcached_return_t memcached_behavior_set_distribution(memcached_st *ptr, memcac
 {
   if (type < MEMCACHED_DISTRIBUTION_CONSISTENT_MAX)
   {
-    if (MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED)
+    if (type == MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED)
     {
       ptr->ketama.weighted= true;
     }
