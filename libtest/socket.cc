@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright 2010-2014 NAVER Corp.
@@ -37,7 +37,7 @@ const char *default_socket()
 
 void set_default_socket(const char *socket)
 {
-  if (socket)
+  if (socket && strlen(socket) < sizeof(global_socket))
   {
     strncpy(global_socket, socket, sizeof(global_socket));
   }
