@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -354,17 +354,21 @@ static memcached_return_t unix_socket_connect(memcached_server_st *server)
 #ifndef WIN32
   WATCHPOINT_ASSERT(server->fd == INVALID_SOCKET);
 
+  struct sockaddr_un servAddr;
+
+  memset(&servAddr, 0, sizeof (struct sockaddr_un));
+  servAddr.sun_family= AF_UNIX;
+  if (strlen(server->hostname) >= sizeof(servAddr.sun_path)) {
+    return memcached_set_error(*server, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                        memcached_literal_param("Invalid unix hostname, unix hostname string was > 108"));
+  }
+  strncpy(servAddr.sun_path, server->hostname, sizeof(servAddr.sun_path)); /* Copy filename */
+
   if ((server->fd= socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
   {
     memcached_set_errno(*server, errno, NULL);
     return MEMCACHED_CONNECTION_FAILURE;
   }
-
-  struct sockaddr_un servAddr;
-
-  memset(&servAddr, 0, sizeof (struct sockaddr_un));
-  servAddr.sun_family= AF_UNIX;
-  strncpy(servAddr.sun_path, server->hostname, sizeof(servAddr.sun_path)); /* Copy filename */
 
   do {
     if (connect(server->fd, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0)
@@ -559,7 +563,7 @@ static memcached_return_t network_connect(memcached_server_st *server)
 */
 static memcached_return_t backoff_handling(memcached_server_write_instance_st server, bool& in_timeout)
 {
-  /* 
+  /*
     If we hit server_failure_limit then something is completely wrong about the server.
 
     1) If autoeject is enabled we do that.
@@ -568,7 +572,7 @@ static memcached_return_t backoff_handling(memcached_server_write_instance_st se
   if (server->server_failure_counter >= server->root->server_failure_limit)
   {
     /*
-      We just auto_eject if we hit this point 
+      We just auto_eject if we hit this point
     */
     if (_is_auto_eject_host(server->root))
     {
