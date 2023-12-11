@@ -78,17 +78,19 @@ AC_DEFUN([PANDORA_CANONICAL_TARGET],[
         [CFLAGS=""])
   AS_IF([test "x${ac_cv_env_CXXFLAGS_set}" = "x"],
         [CXXFLAGS=""])
-  
-  AM_INIT_AUTOMAKE(-Wall -Werror -Wno-portability subdir-objects foreign tar-ustar)
+
+  # A duplicate AM_INIT_AUTOMAKE macro that exists in configure.ac
+  # makes an error at automake 1.16.5 and above.
+  # AM_INIT_AUTOMAKE(-Wall -Werror -Wno-portability subdir-objects foreign tar-ustar)
 
   m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
   m4_if(m4_substr(m4_esyscmd(test -d gnulib && echo 0),0,1),0,[
     gl_EARLY
   ],[
-    PANDORA_EXTENSIONS 
+    PANDORA_EXTENSIONS
   ])
-  
+
   AC_REQUIRE([AC_PROG_CC])
   m4_if(PCT_FORCE_GCC42, [yes], [
     AC_REQUIRE([PANDORA_ENSURE_GCC_VERSION])
@@ -140,7 +142,7 @@ AC_DEFUN([PANDORA_CANONICAL_TARGET],[
   ])
   PANDORA_CXX_CSTDINT
   PANDORA_CXX_CINTTYPES
-  
+
   m4_if(m4_substr(m4_esyscmd(test -d gnulib && echo 0),0,1),0,[
     gl_INIT
     AC_CONFIG_LIBOBJ_DIR([gnulib])
@@ -253,7 +255,7 @@ AC_DEFUN([PANDORA_CANONICAL_TARGET],[
   AC_CHECK_PROGS([SPHINXBUILD], [sphinx-build], [:])
   AS_IF([test "x${SPHINXBUILD}" != "x:"],[
     AC_CACHE_CHECK([if sphinx is new enough],[ac_cv_recent_sphinx],[
-    
+
     ${SPHINXBUILD} -Q -C -b man -d conftest.d . . >/dev/null 2>&1
     AS_IF([test $? -eq 0],[ac_cv_recent_sphinx=yes],
           [ac_cv_recent_sphinx=no])
@@ -268,7 +270,7 @@ AC_DEFUN([PANDORA_CANONICAL_TARGET],[
   m4_if(m4_substr(m4_esyscmd(test -d po && echo 0),0,1),0, [
     AM_PO_SUBDIRS
     IT_PROG_INTLTOOL([0.35],[no-xml])
-    
+
     GETTEXT_PACKAGE=$PACKAGE
     AC_CHECK_LIB(intl, libintl_gettext)
     AC_SUBST([GETTEXT_PACKAGE])
