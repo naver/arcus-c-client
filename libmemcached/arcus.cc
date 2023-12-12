@@ -98,11 +98,10 @@ static inline arcus_return_t do_arcus_init(memcached_st *mc,
 
   /* Set memcached flags (Arcus default) */
   mc->flags.use_sort_hosts= false;
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_NO_BLOCK,        1);
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_TCP_NODELAY,     1);
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1);
-  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_DISTRIBUTION,    MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY);
-  memcached_behavior_set_key_hash(mc, MEMCACHED_HASH_MD5);
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_NO_BLOCK,    1);
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_TCP_NODELAY, 1);
+  memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
+                             MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED);
 
   pthread_mutex_lock(&lock_arcus);
   do {
