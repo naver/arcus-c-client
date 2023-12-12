@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -60,6 +60,7 @@ static uint32_t dispatch_host(const memcached_st *ptr, uint32_t hash)
   case MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY:
+  case MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED:
     {
       WATCHPOINT_ASSERT(ptr->ketama.info);
 

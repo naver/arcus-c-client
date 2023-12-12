@@ -442,7 +442,7 @@ static test_return_t libmemcached_string_distribution_test(memcached_st *)
   {
     test_true(libmemcached_string_distribution(memcached_server_distribution_t(x)));
   }
-  test_compare(7, int(MEMCACHED_DISTRIBUTION_CONSISTENT_MAX));
+  test_compare(8, int(MEMCACHED_DISTRIBUTION_CONSISTENT_MAX));
 
   return TEST_SUCCESS;
 }
