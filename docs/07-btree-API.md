@@ -1102,7 +1102,9 @@ memcached_bop_mget(memcached_st *ptr,
 
 - keys, keys_length: 다수 b+tree item들의 key array
 - number_of_keys: key 개수
+  - key array에 담을 수 있는 최대 key 개수는 200개로 제한된다.
 - query: 조회 조건을 가진 query 구조체
+  - query 구조체를 구성할 때 count는 1 이상, 50 이하의 값을 가져야 한다.
 
 Response code는 아래와 같다.
 
@@ -1251,7 +1253,9 @@ memcached_bop_smget(memcached_st *ptr,
 ```
 - keys, keys_length: 다수 b+tree item들의 key array
 - number_of_keys: key 개수
+  - key array에 담을 수 있는 최대 key 개수는 2000 개로 제한된다.
 - query: 조회 조건을 가진 query 구조체
+  - query 구조체를 구성할 때 count는 1 이상의 값을 가져야 하며, offset + count가 1000을 초과해서는 아니 된다.
 - result: sort-merge 조회 결과는 담는 구조체
 
 Sort-Merge 조회 질의를 표현하는 memcached_bop_query_st 구조체 생성 방법은
