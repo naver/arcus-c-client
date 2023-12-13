@@ -1978,10 +1978,10 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("size of key list should be <= 200"));
   }
-  if (query->count > MEMCACHED_COLL_MAX_BOP_MGET_ELEM_COUNT)
+  if (query->count < 1 or query->count > MEMCACHED_COLL_MAX_BOP_MGET_ELEM_COUNT)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("count should be <= 50"));
+                               memcached_literal_param("count should be beween 1 and 50"));
   }
   if (memcached_server_count(ptr) > MAX_SERVERS_FOR_MULTI_KEY_OPERATION)
   {
@@ -2550,6 +2550,11 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("result is null"));
+  }
+  if (query->count < 1)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("'count' should be > 0"));
   }
   if (query->offset + query->count > MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT)
   {
