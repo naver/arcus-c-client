@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -529,7 +529,7 @@ memcached_return_t memcached_behavior_set_distribution_hash(memcached_st *ptr, m
 
 memcached_hash_t memcached_behavior_get_distribution_hash(memcached_st *ptr)
 {
-  return (memcached_hash_t)hashkit_get_function(&ptr->hashkit);
+  return (memcached_hash_t)hashkit_get_distribution_function(&ptr->hashkit);
 }
 
 const char *libmemcached_string_behavior(const memcached_behavior_t flag)
