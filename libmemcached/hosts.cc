@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -128,7 +128,7 @@ void memcached_server_prune(memcached_st *ptr, bool all_flag)
         }
         ptr->servers[cursor] = ptr->servers[i];
         if (offset == -1) {
-            ptr->servers[cursor].read_ptr = NULL;  
+            ptr->servers[cursor].read_ptr = NULL;
         } else {
             ptr->servers[cursor].read_ptr = &ptr->servers[cursor].read_buffer[offset];
         }
@@ -386,7 +386,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
-          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                      memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
         }
 
@@ -439,7 +439,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
-          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                      memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
         }
 
@@ -712,7 +712,7 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
 }
 #endif
 
-static memcached_return_t server_add(memcached_st *ptr, 
+static memcached_return_t server_add(memcached_st *ptr,
                                      const memcached_string_t& hostname,
                                      in_port_t port,
                                      uint32_t weight,
@@ -829,8 +829,8 @@ memcached_return_t memcached_server_push(memcached_st *ptr, const memcached_serv
 }
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr, 
-                                                         memcached_server_info_st *serverinfo, 
+memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
+                                                         memcached_server_info_st *serverinfo,
                                                          uint32_t servercount)
 {
   if (not serverinfo or servercount == 0) {
@@ -840,7 +840,7 @@ memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
   if (ptr->flags.use_udp) {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_HOST_PROTOCOL, MEMCACHED_AT);
   }
-  
+
   memcached_server_st *new_host_list;
   new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
 									sizeof(memcached_server_st) * servercount));
@@ -853,7 +853,7 @@ memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
 
   for (uint32_t x= 0; x < servercount; x++)
   {
-    if (serverinfo[x].exist == false) 
+    if (serverinfo[x].exist == false)
     {
       memcached_server_write_instance_st instance;
 
@@ -864,7 +864,7 @@ memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
       WATCHPOINT_ASSERT(instance);
 
       memcached_string_t hostname= { memcached_string_make_from_cstr(serverinfo[x].hostname) };
-      if (__server_create_with(ptr, instance, hostname, serverinfo[x].port, 0, 
+      if (__server_create_with(ptr, instance, hostname, serverinfo[x].port, 0,
                               serverinfo[x].port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET) == NULL)
       {
         return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
@@ -985,7 +985,7 @@ memcached_return_t memcached_server_add_with_weight(memcached_st *ptr,
   }
 
   return server_add(ptr, _hostname, port, weight,
-                    _hostname.c_str[0] == '/' ? MEMCACHED_CONNECTION_UNIX_SOCKET 
+                    _hostname.c_str[0] == '/' ? MEMCACHED_CONNECTION_UNIX_SOCKET
                                               : MEMCACHED_CONNECTION_TCP);
 }
 
