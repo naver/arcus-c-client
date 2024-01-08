@@ -168,17 +168,6 @@ memcached_return_t memcached_behavior_set(memcached_st *ptr,
       return memcached_behavior_set_distribution(ptr, MEMCACHED_DISTRIBUTION_MODULA);
     }
 
-  case MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED:
-    {
-      if (data)
-        return memcached_behavior_set_distribution(ptr, MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED);
-
-      /**
-        @note We try to keep the same distribution going. This should be deprecated and rewritten.
-      */
-      return memcached_behavior_set_distribution(ptr, MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA);
-    }
-
   case MEMCACHED_BEHAVIOR_HASH:
     return memcached_behavior_set_key_hash(ptr, (memcached_hash_t)(data));
 
@@ -321,9 +310,6 @@ uint64_t memcached_behavior_get(memcached_st *ptr,
 
   case MEMCACHED_BEHAVIOR_VERIFY_KEY:
     return ptr->flags.verify_key;
-
-  case MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED:
-    return ptr->ketama.weighted;
 
   case MEMCACHED_BEHAVIOR_DISTRIBUTION:
     return ptr->distribution;
@@ -555,7 +541,6 @@ const char *libmemcached_string_behavior(const memcached_behavior_t flag)
   case MEMCACHED_BEHAVIOR_VERIFY_KEY: return "MEMCACHED_BEHAVIOR_VERIFY_KEY";
   case MEMCACHED_BEHAVIOR_CONNECT_TIMEOUT: return "MEMCACHED_BEHAVIOR_CONNECT_TIMEOUT";
   case MEMCACHED_BEHAVIOR_RETRY_TIMEOUT: return "MEMCACHED_BEHAVIOR_RETRY_TIMEOUT";
-  case MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED: return "MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED";
   case MEMCACHED_BEHAVIOR_KETAMA_HASH: return "MEMCACHED_BEHAVIOR_KETAMA_HASH";
   case MEMCACHED_BEHAVIOR_BINARY_PROTOCOL: return "MEMCACHED_BEHAVIOR_BINARY_PROTOCOL";
   case MEMCACHED_BEHAVIOR_SND_TIMEOUT: return "MEMCACHED_BEHAVIOR_SND_TIMEOUT";

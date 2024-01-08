@@ -290,7 +290,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     return MEMCACHED_SUCCESS;
   }
 
-  uint64_t is_ketama_weighted= memcached_behavior_get(ptr, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
+  uint64_t is_ketama_weighted= ptr->ketama.weighted;
   uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
                                                              : MEMCACHED_POINTS_PER_SERVER);
 
@@ -557,7 +557,7 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   }
   list= memcached_rgroup_list(ptr);
 
-  uint64_t is_ketama_weighted= memcached_behavior_get(ptr, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
+  uint64_t is_ketama_weighted= ptr->ketama.weighted;
   uint32_t points_per_server= (uint32_t) (is_ketama_weighted ? MEMCACHED_POINTS_PER_SERVER_KETAMA
                                                              : MEMCACHED_POINTS_PER_SERVER);
 
