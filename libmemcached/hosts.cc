@@ -368,7 +368,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
         char sort_host[MEMCACHED_MAX_HOST_SORT_LENGTH]= "";
         int sort_host_length;
 
-#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
         // Spymemcached ketema key format is: hostname/ip:port-index
         // If hostname is not available then: ip:port-index
         sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
@@ -376,15 +375,6 @@ static memcached_return_t update_continuum(memcached_st *ptr)
                                    list[host_index].hostname,
                                    (uint32_t)list[host_index].port,
                                    pointer_index);
-#else
-        // Spymemcached ketema key format is: hostname/ip:port-index
-        // If hostname is not available then: /ip:port-index
-        sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
-                                   "/%s:%u-%u",
-                                   list[host_index].hostname,
-                                   (uint32_t)list[host_index].port,
-                                   pointer_index);
-#endif
 
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
         {
@@ -416,8 +406,8 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     }
     else
     {
-      for (uint32_t pointer_index= 1;
-           pointer_index <= pointer_per_server / pointer_per_hash;
+      for (uint32_t pointer_index= 0;
+           pointer_index < pointer_per_server / pointer_per_hash;
            pointer_index++)
       {
         char sort_host[MEMCACHED_MAX_HOST_SORT_LENGTH]= "";
@@ -428,7 +418,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
           sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
                                      "%s-%u",
                                      list[host_index].hostname,
-                                     pointer_index - 1);
+                                     pointer_index);
         }
         else
         {
@@ -436,7 +426,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
                                      "%s:%u-%u",
                                      list[host_index].hostname,
                                      (uint32_t)list[host_index].port,
-                                     pointer_index - 1);
+                                     pointer_index);
         }
 
         if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
