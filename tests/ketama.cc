@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -49,13 +49,9 @@ test_return_t ketama_compatibility_libmemcached(memcached_st *)
   memcached_st *memc= memcached_create(NULL);
   test_true(memc);
 
-  test_compare(MEMCACHED_SUCCESS,
-               memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1));
-
-  test_compare(uint64_t(1), memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED));
-
-  test_compare(MEMCACHED_SUCCESS, memcached_behavior_set_distribution(memc, MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA));
-  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA, memcached_behavior_get_distribution(memc));
+  test_compare(MEMCACHED_SUCCESS, memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
+                                                               MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED));
+  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION));
 
   memcached_server_st *server_pool= memcached_servers_parse("10.0.1.1:11211 600,10.0.1.2:11211 300,10.0.1.3:11211 200,10.0.1.4:11211 350,10.0.1.5:11211 1000,10.0.1.6:11211 800,10.0.1.7:11211 950,10.0.1.8:11211 100");
   memcached_server_push(memc, server_pool);
@@ -106,14 +102,12 @@ test_return_t user_supplied_bug18(memcached_st *trash)
   memc= memcached_create(NULL);
   test_true(memc);
 
-  rc= memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1);
+  rc= memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
+                                   MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED);
   test_compare(MEMCACHED_SUCCESS, rc);
 
-  value= memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
-  test_true(value == 1);
-
-  rc= memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_KETAMA_HASH, MEMCACHED_HASH_MD5);
-  test_compare(MEMCACHED_SUCCESS, rc);
+  value= memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION);
+  test_true(value == MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED);
 
   value= memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_HASH);
   test_true(value == MEMCACHED_HASH_MD5);
@@ -162,17 +156,16 @@ test_return_t auto_eject_hosts(memcached_st *trash)
   memcached_server_instance_st instance;
 
   memcached_return_t rc;
+  uint64_t value;
   memcached_st *memc= memcached_create(NULL);
   test_true(memc);
 
-  rc= memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1);
+  rc= memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
+                                   MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED);
   test_compare(MEMCACHED_SUCCESS, rc);
 
-  uint64_t value= memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED);
-  test_true(value == 1);
-
-  rc= memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_KETAMA_HASH, MEMCACHED_HASH_MD5);
-  test_compare(MEMCACHED_SUCCESS, rc);
+  value= memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION);
+  test_true(value == MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED);
 
   value= memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_HASH);
   test_true(value == MEMCACHED_HASH_MD5);
@@ -240,13 +233,9 @@ test_return_t ketama_compatibility_spymemcached(memcached_st *)
   memcached_st *memc= memcached_create(NULL);
   test_true(memc);
 
-  test_compare(MEMCACHED_SUCCESS,
-               memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED, 1));
-
-  test_compare(UINT64_C(1), memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_WEIGHTED));
-
-  test_compare(MEMCACHED_SUCCESS, memcached_behavior_set_distribution(memc, MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY));
-  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY, memcached_behavior_get_distribution(memc));
+  test_compare(MEMCACHED_SUCCESS, memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
+                                                               MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED));
+  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION));
 
   memcached_server_st *server_pool= memcached_servers_parse("10.0.1.1:11211 600,10.0.1.2:11211 300,10.0.1.3:11211 200,10.0.1.4:11211 350,10.0.1.5:11211 1000,10.0.1.6:11211 800,10.0.1.7:11211 950,10.0.1.8:11211 100");
   test_true(server_pool);
