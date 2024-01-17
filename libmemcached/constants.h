@@ -72,8 +72,7 @@
 #define MEMCACHED_MAX_KEY 4001 /* (4000 + 1) We add one to have it null terminated */
 #define MEMCACHED_MAX_BUFFER 8196
 #define MEMCACHED_MAX_HOST_SORT_LENGTH 86 /* Used for Ketama */
-#define MEMCACHED_POINTS_PER_SERVER 100
-#define MEMCACHED_POINTS_PER_SERVER_KETAMA 160
+#define MEMCACHED_POINTS_PER_SERVER 160
 #define MEMCACHED_CONTINUUM_SIZE MEMCACHED_POINTS_PER_SERVER*100 /* This would then set max hosts to 100 */
 #define MEMCACHED_STRIDE 4
 /* poll timeout (or operation timeout): 700ms
