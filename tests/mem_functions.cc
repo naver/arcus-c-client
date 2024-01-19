@@ -442,7 +442,7 @@ static test_return_t libmemcached_string_distribution_test(memcached_st *)
   {
     test_true(libmemcached_string_distribution(memcached_server_distribution_t(x)));
   }
-  test_compare(8, int(MEMCACHED_DISTRIBUTION_CONSISTENT_MAX));
+  test_compare(6, int(MEMCACHED_DISTRIBUTION_CONSISTENT_MAX));
 
   return TEST_SUCCESS;
 }
@@ -3281,8 +3281,8 @@ static test_return_t output_ketama_weighted_keys(memcached_st *)
   test_true(memc);
 
   test_compare(MEMCACHED_SUCCESS, memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
-                                                               MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED));
-  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION));
+                                                               MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY));
+  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION));
 
   test_compare(MEMCACHED_HASH_MD5, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_HASH));
 
@@ -3807,8 +3807,8 @@ static test_return_t pre_behavior_ketama(memcached_st *memc)
 static test_return_t pre_distribution_ketama_weighted(memcached_st *memc)
 {
   test_compare(MEMCACHED_SUCCESS, memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
-                                                               MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED));
-  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION));
+                                                               MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA));
+  test_compare(MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION));
   test_compare(MEMCACHED_HASH_MD5, memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA_HASH));
 
   return TEST_SUCCESS;

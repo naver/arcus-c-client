@@ -162,8 +162,6 @@ memcached_return_t run_distribution(memcached_st *ptr)
   case MEMCACHED_DISTRIBUTION_CONSISTENT:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY:
-  case MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED:
-  case MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED:
 #ifdef ENABLE_REPLICATION
     if (ptr->flags.repl_enabled)
       return update_continuum_based_on_rgroups(ptr);
@@ -352,8 +350,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     }
 
 
-    if (ptr->distribution == MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY ||
-        ptr->distribution == MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED)
+    if (ptr->distribution == MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY)
     {
       for (uint32_t pointer_index= 0;
            pointer_index < pointer_per_server / pointer_per_hash;
@@ -555,10 +552,10 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
     }
   }
 
-  /* Arcus uses only MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED.
+  /* Arcus uses only MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY.
    * So, do not bother supporting other distribution strategies.
    */
-  assert(ptr->distribution == MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED);
+  assert(ptr->distribution == MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY);
 
   for (uint32_t host_index= 0; host_index < memcached_server_count(ptr); ++host_index)
   {
