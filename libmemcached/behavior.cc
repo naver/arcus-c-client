@@ -463,16 +463,12 @@ memcached_return_t memcached_behavior_set_distribution(memcached_st *ptr, memcac
 {
   if (type < MEMCACHED_DISTRIBUTION_CONSISTENT_MAX)
   {
-    if (type == MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED ||
-        type == MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED)
+    if (type == MEMCACHED_DISTRIBUTION_CONSISTENT ||
+        type == MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA ||
+        type == MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY)
     {
       (void)memcached_behavior_set_key_hash(ptr, MEMCACHED_HASH_MD5);
       (void)memcached_behavior_set_distribution_hash(ptr, MEMCACHED_HASH_MD5);
-      ptr->ketama.weighted= true;
-    }
-    else
-    {
-      ptr->ketama.weighted= false;
     }
 
     ptr->distribution= type;
@@ -574,8 +570,6 @@ const char *libmemcached_string_distribution(const memcached_server_distribution
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA: return "MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA";
   case MEMCACHED_DISTRIBUTION_RANDOM: return "MEMCACHED_DISTRIBUTION_RANDOM";
   case MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY: return "MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY";
-  case MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED: return "MEMCACHED_DISTRIBUTION_CONSISTENT_WEIGHTED";
-  case MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED: return "MEMCACHED_DISTRIBUTION_CONSISTENT_SPY_WEIGHTED";
   case MEMCACHED_DISTRIBUTION_VIRTUAL_BUCKET: return "MEMCACHED_DISTRIBUTION_VIRTUAL_BUCKET";
   default:
   case MEMCACHED_DISTRIBUTION_CONSISTENT_MAX: return "INVALID memcached_server_distribution_t";
