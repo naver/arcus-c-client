@@ -431,7 +431,7 @@ static test_return_t libmemcached_string_behavior_test(memcached_st *)
   {
     test_true(libmemcached_string_behavior(memcached_behavior_t(x)));
   }
-  test_compare(35, int(MEMCACHED_BEHAVIOR_MAX));
+  test_compare(34, int(MEMCACHED_BEHAVIOR_MAX));
 
   return TEST_SUCCESS;
 }
@@ -3793,18 +3793,7 @@ static test_return_t pre_hash_fnv1a_32(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
-static test_return_t pre_behavior_ketama(memcached_st *memc)
-{
-  memcached_return_t rc= memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_KETAMA, 1);
-  test_compare(MEMCACHED_SUCCESS, rc);
-
-  uint64_t value= memcached_behavior_get(memc, MEMCACHED_BEHAVIOR_KETAMA);
-  test_compare(value, uint64_t(1));
-
-  return TEST_SUCCESS;
-}
-
-static test_return_t pre_distribution_ketama_weighted(memcached_st *memc)
+static test_return_t pre_distribution_ketama(memcached_st *memc)
 {
   test_compare(MEMCACHED_SUCCESS, memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_DISTRIBUTION,
                                                                MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA));
@@ -11964,8 +11953,8 @@ collection_st collection[] ={
   {"fnv1a_64", (test_callback_fn*)pre_hash_fnv1a_64, 0, tests},
   {"fnv1_32", (test_callback_fn*)pre_hash_fnv1_32, 0, tests},
   {"fnv1a_32", (test_callback_fn*)pre_hash_fnv1a_32, 0, tests},
-  {"ketama", (test_callback_fn*)pre_behavior_ketama, 0, tests},
-  {"ketama_auto_eject_hosts", (test_callback_fn*)pre_behavior_ketama, 0, ketama_auto_eject_hosts},
+  {"ketama", (test_callback_fn*)pre_distribution_ketama, 0, tests},
+  {"ketama_auto_eject_hosts", (test_callback_fn*)pre_distribution_ketama, 0, ketama_auto_eject_hosts},
   {"unix_socket", (test_callback_fn*)pre_unix_socket, 0, tests},
   {"unix_socket_nodelay", (test_callback_fn*)pre_nodelay, 0, tests},
   {"gets", (test_callback_fn*)enable_cas, 0, tests},
@@ -11987,7 +11976,7 @@ collection_st collection[] ={
   {"user written tests", 0, 0, user_tests},
   {"generate", 0, 0, generate_tests},
   {"generate_hsieh", (test_callback_fn*)pre_hsieh, 0, generate_tests},
-  {"generate_ketama", (test_callback_fn*)pre_behavior_ketama, 0, generate_tests},
+  {"generate_ketama", (test_callback_fn*)pre_distribution_ketama, 0, generate_tests},
   {"generate_hsieh_consistent", (test_callback_fn*)enable_consistent_hsieh, 0, generate_tests},
   {"generate_md5", (test_callback_fn*)pre_md5, 0, generate_tests},
   {"generate_murmur", (test_callback_fn*)pre_murmur, 0, generate_tests},
@@ -11997,8 +11986,8 @@ collection_st collection[] ={
   {"generate_corked", (test_callback_fn*)pre_cork, 0, generate_tests},
   {"generate_corked_and_nonblock", (test_callback_fn*)pre_cork_and_nonblock, 0, generate_tests},
   {"consistent_not", 0, 0, consistent_tests},
-  {"consistent_ketama", (test_callback_fn*)pre_behavior_ketama, 0, consistent_tests},
-  {"consistent_ketama_weighted", (test_callback_fn*)pre_distribution_ketama_weighted, 0, consistent_weighted_tests},
+  {"consistent_ketama", (test_callback_fn*)pre_distribution_ketama, 0, consistent_tests},
+  {"consistent_ketama_weighted", (test_callback_fn*)pre_distribution_ketama, 0, consistent_weighted_tests},
   {"ketama_compat", 0, 0, ketama_compatibility},
   {"test_hashes", 0, 0, hash_tests},
   {"replication", (test_callback_fn*)pre_replication, 0, replication_tests},
