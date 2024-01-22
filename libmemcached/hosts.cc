@@ -350,79 +350,42 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     }
 
 
-    if (ptr->distribution == MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY)
-    {
-      for (uint32_t pointer_index= 0;
-           pointer_index < pointer_per_server / pointer_per_hash;
-           pointer_index++)
-      {
-        char sort_host[MEMCACHED_MAX_HOST_SORT_LENGTH]= "";
-        int sort_host_length;
 
-        // Spymemcached ketema key format is: hostname/ip:port-index
-        // If hostname is not available then: ip:port-index
+    for (uint32_t pointer_index= 0;
+         pointer_index < pointer_per_server / pointer_per_hash;
+         pointer_index++)
+    {
+      char sort_host[MEMCACHED_MAX_HOST_SORT_LENGTH]= "";
+      int sort_host_length;
+
+      if (list[host_index].port == MEMCACHED_DEFAULT_PORT &&
+          ptr->distribution     != MEMCACHED_DISTRIBUTION_CONSISTENT_KETAMA_SPY)
+      {
+        sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
+                                   "%s-%u",
+                                   list[host_index].hostname,
+                                   pointer_index);
+      }
+      else
+      {
         sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
                                    "%s:%u-%u",
                                    list[host_index].hostname,
                                    (uint32_t)list[host_index].port,
                                    pointer_index);
-
-        if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
-        {
-          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
-                                     memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
-        }
-
-        if (DEBUG)
-        {
-          fprintf(stdout, "update_continuum: key is %s\n", sort_host);
-        }
-
-        for (uint32_t x= 0; x < pointer_per_hash; x++)
-        {
-          uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
-          new_continuum[continuum_index].index= host_index;
-          new_continuum[continuum_index++].value= value;
-        }
       }
-    }
-    else
-    {
-      for (uint32_t pointer_index= 0;
-           pointer_index < pointer_per_server / pointer_per_hash;
-           pointer_index++)
+
+      if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
       {
-        char sort_host[MEMCACHED_MAX_HOST_SORT_LENGTH]= "";
-        int sort_host_length;
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                                   memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
+      }
 
-        if (list[host_index].port == MEMCACHED_DEFAULT_PORT)
-        {
-          sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
-                                     "%s-%u",
-                                     list[host_index].hostname,
-                                     pointer_index);
-        }
-        else
-        {
-          sort_host_length= snprintf(sort_host, MEMCACHED_MAX_HOST_SORT_LENGTH,
-                                     "%s:%u-%u",
-                                     list[host_index].hostname,
-                                     (uint32_t)list[host_index].port,
-                                     pointer_index);
-        }
-
-        if (sort_host_length >= MEMCACHED_MAX_HOST_SORT_LENGTH || sort_host_length < 0)
-        {
-          return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
-                                     memcached_literal_param("snprintf(MEMCACHED_MAX_HOST_SORT_LENGTH)"));
-        }
-
-
-        for (uint32_t x = 0; x < pointer_per_hash; x++) {
-          uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
-          new_continuum[continuum_index].index= host_index;
-          new_continuum[continuum_index++].value= value;
-        }
+      for (uint32_t x= 0; x < pointer_per_hash; x++)
+      {
+        uint32_t value= ketama_server_hash(sort_host, (size_t)sort_host_length, x);
+        new_continuum[continuum_index].index= host_index;
+        new_continuum[continuum_index++].value= value;
       }
     }
 
