@@ -59,13 +59,13 @@
 #include <cmath>
 #include <sys/time.h>
 
-/* Protoypes (static) */
+/* Prototypes (static) */
 static memcached_return_t update_continuum(memcached_st *ptr);
 #ifdef ENABLE_REPLICATION
 static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr);
 #endif
 
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
 #ifdef ENABLE_REPLICATION
 memcached_rgroup_st *cmp_rgroups= NULL;
 #endif
@@ -205,7 +205,7 @@ static int continuum_item_cmp(const void *t1, const void *t2)
   WATCHPOINT_ASSERT(ct1->value != 153);
   if (ct1->value == ct2->value)
   {
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
 #ifdef ENABLE_REPLICATION
     if (cmp_rgroups != NULL) {
       return strcmp(cmp_rgroups[ct1->index].groupname, cmp_rgroups[ct2->index].groupname);
@@ -434,11 +434,11 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   WATCHPOINT_ASSERT(new_continuum);
   WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
 
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
   cmp_servers= ptr->servers;
 #endif
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
   cmp_servers= NULL;
 #endif
 
@@ -613,11 +613,11 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
   WATCHPOINT_ASSERT(new_continuum);
   WATCHPOINT_ASSERT(memcached_server_count(ptr) * MEMCACHED_POINTS_PER_SERVER <= MEMCACHED_CONTINUUM_SIZE);
 
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
   cmp_rgroups= ptr->rgroups;
 #endif
   qsort(new_continuum, pointer_counter, sizeof(memcached_continuum_item_st), continuum_item_cmp);
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
   cmp_rgroups= NULL;
 #endif
 

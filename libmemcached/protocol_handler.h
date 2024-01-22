@@ -104,7 +104,7 @@ LIBMEMCACHED_API
 void memcached_binary_protocol_set_pedantic(memcached_protocol_st *instance, bool enable);
 
 /**
- * Is the library inpecting each package?
+ * Is the library inspecting each package?
  * @param instance the instance to check
  * @return true it the library is inspecting each package, false otherwise
  */
@@ -124,7 +124,7 @@ void memcached_protocol_destroy_instance(memcached_protocol_st *instance);
  * functions should behave like recv(3socket) and send(3socket).
  *
  * @param instance the instance to specify the IO functions for
- * @param recv the function to call for reciving data
+ * @param recv the function to call for receiving data
  * @param send the function to call for sending data
  */
 LIBMEMCACHED_API
@@ -144,7 +144,7 @@ memcached_protocol_client_st *memcached_protocol_create_client(memcached_protoco
 
 /**
  * Destroy a client handle.
- * The caller needs to close the socket accociated with the client
+ * The caller needs to close the socket associated with the client
  * <b>before</b> calling this function. This function invalidates the
  * client memory area.
  *
@@ -205,7 +205,7 @@ int memcached_protocol_client_get_errno(memcached_protocol_client_st *client);
 /**
  * Get a raw response handler for the given cookie
  * @param cookie the cookie passed along into the callback
- * @return the raw reponse handler you may use if you find
+ * @return the raw response handler you may use if you find
  *         the generic callback too limiting
  */
 LIBMEMCACHED_API

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -48,17 +48,17 @@
 #else
 #define MEMCACHED_NI_MAXHOST 1025
 #endif
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
 #ifdef NI_MAXSERV
 #define MEMCACHED_NI_MAXSERV NI_MAXSERV
 #else
 #define MEMCACHED_NI_MAXSERV 32
 #endif
-#endif /* KETAMA_HASH_COLLSION */
+#endif /* KETAMA_HASH_COLLISION */
 
 enum memcached_server_state_t {
   MEMCACHED_SERVER_STATE_NEW, // fd == -1, no address lookup has been done
-  MEMCACHED_SERVER_STATE_ADDRINFO, // ADDRRESS information has been gathered
+  MEMCACHED_SERVER_STATE_ADDRINFO, // ADDRESS information has been gathered
   MEMCACHED_SERVER_STATE_IN_PROGRESS,
   MEMCACHED_SERVER_STATE_CONNECTED,
   MEMCACHED_SERVER_STATE_IN_TIMEOUT
@@ -102,7 +102,7 @@ struct memcached_server_st {
 #endif
 #ifdef ENABLE_REPLICATION
   /* In replication, a group may have one master and zero or more slaves. */
-  int32_t groupindex; 
+  int32_t groupindex;
   int32_t switchover_sidx;      /* slave index for switchover */
   char    switchover_peer[128]; /* FIXME: constant macro must be defined */
   struct memcached_server_st *next;
@@ -113,7 +113,7 @@ struct memcached_server_st {
   char read_buffer[MEMCACHED_MAX_BUFFER];
   char write_buffer[MEMCACHED_MAX_BUFFER];
   char hostname[MEMCACHED_NI_MAXHOST];
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
   char str_port[MEMCACHED_NI_MAXSERV];
 #endif
 };

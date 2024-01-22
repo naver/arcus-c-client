@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -106,7 +106,7 @@ static inline void memcached_mark_server_for_timeout(memcached_server_write_inst
     }
     else
     {
-      server->next_retry= 1; // Setting the value to 1 causes the timeout to occur immediatly
+      server->next_retry= 1; // Setting the value to 1 causes the timeout to occur immediately
     }
 #ifdef IMMEDIATELY_RECONNECT
     if (server->immediate_reconnect)

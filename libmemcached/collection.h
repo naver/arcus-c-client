@@ -598,7 +598,7 @@ memcached_return_t memcached_bop_ext_range_query_init(memcached_bop_query_st *pt
  * @param bkey_to  last bkey in the range.
  * @param eflag_filter  optional eflag filter, maybe NULL.
  * @param count  number of elements.
- * @param unique boolean value for unique bkey or duplcate bkey retreival.
+ * @param unique boolean value for unique bkey or duplicate bkey retrieval.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_smget_query_init(memcached_bop_query_st *ptr,
@@ -613,7 +613,7 @@ memcached_return_t memcached_bop_smget_query_init(memcached_bop_query_st *ptr,
  * @param bkey_to  last byte-array bkey in the range.
  * @param eflag_filter  optional eflag filter, maybe NULL.
  * @param count  number of elements.
- * @param unique boolean value for unique bkey or duplcate bkey retreival.
+ * @param unique boolean value for unique bkey or duplicate bkey retrieval.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *ptr,
@@ -719,7 +719,7 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
 
 /**
  * B+tree eflag filter used for certain update commands.
- * This is just for convinience.
+ * This is just for convenience.
  */
 struct memcached_coll_update_filter_st {
   size_t fwhere;

@@ -65,7 +65,7 @@
 #define BOP_ARITHMETIC_INITIAL 1
 #define POOL_UPDATE_SERVERLIST 1
 #define POOL_MORE_CONCURRENCY 1
-#define KETAMA_HASH_COLLSION 1
+#define KETAMA_HASH_COLLISION 1
 
 /* Public defines */
 #define MEMCACHED_DEFAULT_PORT 11211
@@ -76,7 +76,7 @@
 #define MEMCACHED_CONTINUUM_SIZE MEMCACHED_POINTS_PER_SERVER*100 /* This would then set max hosts to 100 */
 #define MEMCACHED_STRIDE 4
 /* poll timeout (or operation timeout): 700ms
- * It avoids the occurence of operation timeout
+ * It avoids the occurrence of operation timeout
  * even if two packet retransmissions exist in linux.
  */
 #define MEMCACHED_DEFAULT_TIMEOUT 700

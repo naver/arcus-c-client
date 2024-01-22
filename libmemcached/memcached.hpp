@@ -187,7 +187,7 @@ public:
     tmp_str.append(strstm.str());
 
     //memcached_return_t rc= memcached_server_remove(server);
-    
+
     return false;
   }
 
@@ -214,7 +214,7 @@ public:
 
       // Actual value, null terminated
       ret_val.reserve(memcached_result_length(result) +1);
-      ret_val.assign(memcached_result_value(result), 
+      ret_val.assign(memcached_result_value(result),
                      memcached_result_value(result) +memcached_result_length(result));
 
       // Misc
@@ -346,7 +346,7 @@ public:
    * @param[in] value value of object to write to server
    * @param[in] expiration time to keep the object stored in the server for
    * @param[in] flags flags to store with the object
-   * @return true on succcess; false otherwise
+   * @return true on success; false otherwise
    */
   bool set(const std::string &key,
            const std::vector<char> &value,
@@ -369,7 +369,7 @@ public:
    * @param[in] value value of object to write to server
    * @param[in] expiration time to keep the object stored in the server for
    * @param[in] flags flags to store with the object
-   * @return true on succcess; false otherwise
+   * @return true on success; false otherwise
    */
   bool setByKey(const std::string &master_key,
                 const std::string &key,
@@ -810,7 +810,7 @@ public:
         server_stats[*ptr]= value;
         free(value);
       }
-     
+
       stats_map[server_name]= server_stats;
       free(list);
     }

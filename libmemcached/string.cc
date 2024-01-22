@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -47,7 +47,7 @@ inline static memcached_return_t _string_check(memcached_string_st *string, size
     size_t adjust;
     size_t new_size;
 
-    /* This is the block multiplier. To keep it larger and surive division errors we must round it up */
+    /* This is the block multiplier. To keep it larger and survive division errors we must round it up */
     adjust= (need - (size_t)(string->current_size - (size_t)(string->end - string->string))) / MEMCACHED_BLOCK_SIZE;
     adjust++;
 

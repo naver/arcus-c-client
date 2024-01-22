@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -40,7 +40,7 @@
 
 LIBMEMCACHED_LOCAL
 memcached_return_t memcached_do(memcached_server_write_instance_st ptr,
-                                const void *commmand,
+                                const void *command,
                                 size_t command_length,
                                 bool with_flush);
 

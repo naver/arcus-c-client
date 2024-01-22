@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -87,7 +87,7 @@ void memcached_quit_server(memcached_server_st *ptr, bool io_death)
 
       /*
        * memcached_io_read may call memcached_quit_server with io_death if
-       * it encounters problems, but we don't care about those occurences.
+       * it encounters problems, but we don't care about those occurrences.
        * The intention of that loop is to drain the data sent from the
        * server to ensure that the server processed all of the data we
        * sent to the server.
