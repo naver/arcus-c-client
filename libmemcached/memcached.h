@@ -144,7 +144,7 @@ struct memcached_st {
     bool verify_key:1;
     bool tcp_keepalive:1;
 #ifdef ENABLE_REPLICATION
-    bool repl_enabled:1; /* internaly set and used */
+    bool repl_enabled:1; /* internally set and used */
 #endif
   } flags;
 

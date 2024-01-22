@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -838,7 +838,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
 
     if (memcached_server_response_count(instance))
     {
-      /* We need to do something about non-connnected hosts in the future */
+      /* We need to do something about non-connected hosts in the future */
       if ((memcached_io_write(instance, "\r\n", 2, true)) == -1)
       {
         failures_occurred_in_sending= true;

@@ -1094,9 +1094,9 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
                           (void *)mc, &strings);
   if (zkrc == ZOK) {
     /* TODO (next commit)
-     * Error handling of update_chacelist process,
-     * must distinguish retrys by failure and by event.
-     * If it is retrys by failure, watcher should not register.
+     * Error handling of update_cachelist process,
+     * must distinguish retries by failure and by event.
+     * If it is retries by failure, watcher should not register.
      */
     /* Update the cache server list. */
     do_arcus_zk_update_cachelist(mc, &strings);

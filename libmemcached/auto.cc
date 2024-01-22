@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -137,7 +137,7 @@ do_action:
   }
 
   /*
-    So why recheck responce? Because the protocol is brain dead :)
+    So why recheck response? Because the protocol is brain dead :)
     The number returned might end up equaling one of the string
     values. Less chance of a mistake with strncmp() so we will
     use it. We still called memcached_response() though since it
@@ -379,7 +379,7 @@ memcached_return_t memcached_increment_with_initial_by_key(memcached_st *ptr,
     //rc= MEMCACHED_PROTOCOL_ERROR;
     rc= binary_incr_decr(ptr, PROTOCOL_BINARY_CMD_INCREMENT,
                          group_key, group_key_length, key, key_length,
-                         offset, initial, expiration, value); 
+                         offset, initial, expiration, value);
   }
   else
   {
@@ -441,7 +441,7 @@ memcached_return_t memcached_decrement_with_initial_by_key(memcached_st *ptr,
     //rc= MEMCACHED_PROTOCOL_ERROR;
     rc= binary_incr_decr(ptr, PROTOCOL_BINARY_CMD_DECREMENT,
                          group_key, group_key_length, key, key_length,
-                         offset, initial, expiration, value); 
+                         offset, initial, expiration, value);
   }
   else
   {

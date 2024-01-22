@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -40,7 +40,7 @@
   memcached_result_st are used to internally represent the return values from
   memcached. We use a structure so that long term as identifiers are added
   to memcached we will be able to absorb new attributes without having
-  to addjust the entire API.
+  to adjust the entire API.
 */
 #include <libmemcached/common.h>
 

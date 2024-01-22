@@ -330,7 +330,7 @@ static ssize_t io_flush(memcached_server_write_instance_st ptr,
 
   WATCHPOINT_ASSERT(ptr->fd != INVALID_SOCKET);
 
-  // UDP Sanity check, make sure that we are not sending somthing too big
+  // UDP Sanity check, make sure that we are not sending something too big
   if (ptr->type == MEMCACHED_CONNECTION_UDP && write_length > MAX_UDP_DATAGRAM_LENGTH)
   {
     *error= MEMCACHED_WRITE_FAILURE;
@@ -443,7 +443,7 @@ static ssize_t io_flush(memcached_server_write_instance_st ptr,
   // Need to study this assert() WATCHPOINT_ASSERT(return_length ==
   // ptr->write_buffer_offset);
 
-  // if we are a udp server, the begining of the buffer is reserved for
+  // if we are a udp server, the beginning of the buffer is reserved for
   // the upd frame header
   if (ptr->type == MEMCACHED_CONNECTION_UDP)
     ptr->write_buffer_offset= UDP_DATAGRAM_HEADER_LENGTH;

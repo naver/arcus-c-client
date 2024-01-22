@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -88,7 +88,7 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   self->limit_maxbytes= 0;
   memcpy(self->hostname, hostname.c_str, hostname.size);
   self->hostname[hostname.size]= 0;
-#ifdef KETAMA_HASH_COLLSION
+#ifdef KETAMA_HASH_COLLISION
   snprintf(self->str_port, MEMCACHED_NI_MAXSERV, "%u", (uint32_t)port);
 #endif
 
@@ -129,7 +129,7 @@ memcached_server_st *__server_create_with(memcached_st *memc,
                                           memcached_server_write_instance_st self,
                                           const memcached_string_t& hostname,
                                           const in_port_t port,
-                                          uint32_t weight, 
+                                          uint32_t weight,
                                           const memcached_connection_t type)
 {
   if (memcached_is_valid_servername(hostname) == false)

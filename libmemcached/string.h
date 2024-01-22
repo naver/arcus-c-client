@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -45,7 +45,7 @@
   about them.
 
   1) is_initialized is always valid.
-  2) A string once intialized will always be, until free where we
+  2) A string once initialized will always be, until free where we
      unset this flag.
   3) A string always has a root.
 */

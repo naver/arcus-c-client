@@ -289,7 +289,7 @@ do_rgroup_server_switchover(memcached_rgroup_st *rgroup, int sindex)
 }
 
 /*
- * memcached rgroup sructure management
+ * memcached rgroup structure management
  */
 
 static memcached_rgroup_st *
@@ -746,7 +746,7 @@ void
 memcached_rgroup_sort(memcached_st *memc)
 {
   if (memc->rgroups) {
-    /* sort rgoups */
+    /* sort rgroups */
     qsort(memc->rgroups, memc->number_of_hosts,
           sizeof(memcached_rgroup_st), do_rgroup_compare);
 

@@ -1981,7 +1981,7 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   if (query->count < 1 or query->count > MEMCACHED_COLL_MAX_BOP_MGET_ELEM_COUNT)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("count should be beween 1 and 50"));
+                               memcached_literal_param("count should be between 1 and 50"));
   }
   if (memcached_server_count(ptr) > MAX_SERVERS_FOR_MULTI_KEY_OPERATION)
   {
