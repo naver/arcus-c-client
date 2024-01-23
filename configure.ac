@@ -24,7 +24,7 @@
 # the COPYING file in this directory for full text.
 
 m4_include([m4/version.m4])
-AC_INIT([libmemcached],[VERSION_NUMBER],[http://libmemcached.org/])
+AC_INIT([arcus-c-client],[VERSION_NUMBER],[https://github.com/naver/arcus-c-client])
 
 AC_CONFIG_AUX_DIR(config)
 
