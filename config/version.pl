@@ -28,7 +28,8 @@ my $arcus_describe = `git describe`;
 chomp $arcus_describe;
 
 unless ($arcus_describe =~ m/^\d+\.\d+\.\d+/) {
-    $arcus_describe = '1.13.2-unknown';
+    write_file('m4/version.m4', "m4_define([VERSION_NUMBER], [1.13.2-unknown])\n");
+    exit;
 }
 
 $arcus_describe =~ s/-/_/g;
@@ -40,7 +41,7 @@ if (scalar @arcus_versions > 1) {
     pop(@arcus_versions);
 }
 
-my $arcus_version = join('_', @arcus_versions);
+my $arcus_version = join('-', @arcus_versions);
 
 # VERSION_NUMBER
 #my $version = $libmemcached_version."-arcus-".$arcus_version;
