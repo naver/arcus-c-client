@@ -30,7 +30,7 @@ struct arcus_zk_st
   clientid_t myid;
   char       ensemble_list[1024];
   char       svc_code[256];
-  char       path[256];
+  char       path[512];
   uint32_t   port;
   uint32_t   session_timeout;
   size_t     maxbytes;

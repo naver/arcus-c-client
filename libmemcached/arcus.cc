@@ -556,7 +556,7 @@ static inline int do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *
 static inline int do_add_client_info(arcus_st *arcus)
 {
   int result;
-  char path[250];
+  char path[512];
   char hostname[256];
   struct hostent *host = NULL;
   time_t timer;
@@ -933,12 +933,15 @@ static inline void do_arcus_zk_update_cachelist_by_string(memcached_st *mc,
   memcached_server_info_st *serverinfo;
   char buffer[ARCUS_MAX_PROXY_FILE_LENGTH];
 
+  if (strlen(serverlist) >= ARCUS_MAX_PROXY_FILE_LENGTH) {
+    return;
+  }
+  strncpy(buffer, serverlist, ARCUS_MAX_PROXY_FILE_LENGTH);
+
   serverinfo = static_cast<memcached_server_info_st *>(libmemcached_malloc(mc, sizeof(memcached_server_info_st)*(size+1)));
   if (not serverinfo) {
     return;
   }
-
-  strncpy(buffer, serverlist, ARCUS_MAX_PROXY_FILE_LENGTH);
 
   /* Parse the cache server list strings. */
   if (size > 0) {

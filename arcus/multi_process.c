@@ -102,7 +102,7 @@ static inline void process_child(memcached_st *proxy_mc)
 
       // results
       memcached_return_t errors[NUM_OF_PIPED_ITEMS];
-      memset(errors, 0, NUM_OF_PIPED_ITEMS);
+      memset(errors, 0, NUM_OF_PIPED_ITEMS * sizeof(memcached_return_t));
 
       // do piped insert
       memcached_return_t piped_rc;
@@ -117,7 +117,7 @@ static inline void process_child(memcached_st *proxy_mc)
       memcached_coll_attrs_set_maxbkeyrange(&attrs, maxbkeyrange);
 
       rc = memcached_set_attrs(mc, key, strlen(key), &attrs);
-    
+
       rc = memcached_get_attrs(mc, key, strlen(key), &attrs);
       maxbkeyrange = memcached_coll_attrs_get_maxbkeyrange(&attrs);
 
@@ -247,7 +247,7 @@ static inline void process_child(memcached_st *proxy_mc)
 int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
 {
   memcached_st *proxy_mc;
-  arcus_return_t rc; 
+  arcus_return_t rc;
   int i;
 
   proxy_mc = memcached_create(NULL);
@@ -266,12 +266,12 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
       case 0:
         process_child(proxy_mc);
         exit(EXIT_SUCCESS);
-      case -1: 
+      case -1:
         perror("fork error");
         exit(EXIT_FAILURE);
       default:
         break;
-    }   
+    }
   }
 
   //siginfo_t info;
