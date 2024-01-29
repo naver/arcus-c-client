@@ -526,7 +526,7 @@ static memcached_return_t update_continuum_based_on_rgroups(memcached_st *ptr)
     {
         if (!all_weights_same) {
           float pct= (float)list[host_index].weight / (float)total_weight;
-          pointer_per_server= (uint32_t) ((floor((float) (pct * MEMCACHED_POINTS_PER_SERVER_KETAMA / 4 * (float)live_servers + 0.0000000001))) * 4);
+          pointer_per_server= (uint32_t) ((floor((float) (pct * MEMCACHED_POINTS_PER_SERVER / 4 * (float)live_servers + 0.0000000001))) * 4);
         }
         if (DEBUG)
         {
