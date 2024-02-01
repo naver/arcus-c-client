@@ -20,8 +20,6 @@ BUILT_SOURCES=
 EXTRA_DIST= \
 	    ${srcdir}/m4/pandora_*.m4 \
 	    .quickly \
-	    README.FIRST \
-	    README.win32 \
 	    config/autorun.sh \
 	    config/pandora-plugin \
 	    config/uncrustify.cfg
