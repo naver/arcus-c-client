@@ -28,7 +28,7 @@ my $arcus_describe = `git describe`;
 chomp $arcus_describe;
 
 unless ($arcus_describe =~ m/^\d+\.\d+\.\d+/) {
-    write_file('m4/version.m4', "m4_define([VERSION_NUMBER], [1.13.2-unknown])\n");
+    write_file('m4/version.m4', "m4_define([VERSION_NUMBER], [1.13.3-unknown])\n");
     exit;
 }
 
