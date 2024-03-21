@@ -29,7 +29,7 @@ unsigned int execute_set(memcached_st *memc, pairs_st *pairs, unsigned int numbe
                                          0, 0);
     if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_BUFFERED)
     {
-      fprintf(stderr, "Failured on insert of %.*s\n",
+      fprintf(stderr, "Failure on insert of %.*s\n",
               (unsigned int)pairs[x].key_length, pairs[x].key);
     }
     else

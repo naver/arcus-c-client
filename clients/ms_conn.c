@@ -794,7 +794,7 @@ static int ms_network_connect(ms_conn_t *c,
   int flags= 1;
 
   /*
-   * the memset call clears nonstandard fields in some impementations
+   * the memset call clears nonstandard fields in some implementations
    * that otherwise mess things up.
    */
   memset(&hints, 0, sizeof(hints));

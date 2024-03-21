@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached C test app
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/

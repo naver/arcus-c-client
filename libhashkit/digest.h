@@ -17,7 +17,7 @@ HASHKIT_API
 uint32_t hashkit_digest(const hashkit_st *self, const char *key, size_t key_length);
 
 /**
-  This is a utilitly function provided so that you can directly access hashes with a hashkit_st.
+  This is a utility function provided so that you can directly access hashes with a hashkit_st.
 */
 
 HASHKIT_API

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -26,15 +26,15 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <algorithm> 
-#include <functional> 
+#include <algorithm>
+#include <functional>
 #include <locale>
 
-// trim from end 
+// trim from end
 static inline std::string &rtrim(std::string &s)
-{ 
-  s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end()); 
-  return s; 
+{
+  s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+  return s;
 }
 
 namespace libtest {
@@ -179,7 +179,7 @@ bool server_startup(server_startup_st& construct, const std::string& server_type
       {
         Error << "Libgearman was not found";
       }
-    } 
+    }
     else
     {
       Error << "No gearmand binary is available";

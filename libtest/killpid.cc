@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -109,7 +109,7 @@ bool check_pid(const std::string &filename)
       }
     }
   }
-  
+
   return false;
 }
 
@@ -141,7 +141,7 @@ bool kill_file(const std::string &filename)
       }
     }
   }
-  
+
   return false;
 }
 
@@ -188,6 +188,6 @@ pid_t get_pid_from_file(const std::string &filename, std::stringstream& error_me
     char *current_directory= getcwd(buffer, sizeof(buffer));
     error_message << "Error while opening " << current_directory << "/" << filename << " " << strerror(errno);
   }
-  
+
   return ret;
 }

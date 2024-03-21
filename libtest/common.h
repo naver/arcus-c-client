@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -46,10 +46,10 @@
 #include <sys/wait.h>
 #endif
 
-#ifdef HAVE_SYS_RESOURCE_H 
-#include <sys/resource.h> 
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
 #endif
- 
+
 #ifdef HAVE_FNMATCH_H
 #include <fnmatch.h>
 #endif

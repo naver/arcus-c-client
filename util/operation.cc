@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  DataDifferential Utility Library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -60,7 +60,7 @@ bool Operation::response(std::string &arg)
     arg.append(&_response[4], _response.size() -4);
     return false;
   }
-  else 
+  else
   {
     arg.append(&_response[0], _response.size());
   }

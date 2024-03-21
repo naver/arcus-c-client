@@ -28,7 +28,7 @@ extern "C" {
 #define MAX_VALUE_SIZE            (1024 * 1024)
 
 /* the content of the configuration file for memslap running without configuration file */
-#define DEFAULT_CONGIF_STR \
+#define DEFAULT_CONFIG_STR \
   "key\n"                  \
   "64 64 1\n"              \
   "value\n"                \

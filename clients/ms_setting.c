@@ -323,7 +323,7 @@ static void ms_no_config_file()
     perror(strerror(errno));
     exit(1);
   }
-  fprintf(fd, "%s", DEFAULT_CONGIF_STR);
+  fprintf(fd, "%s", DEFAULT_CONFIG_STR);
   fclose(fd);
 
 exit:

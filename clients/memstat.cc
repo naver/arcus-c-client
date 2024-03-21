@@ -7,7 +7,7 @@
  *
  * Summary:
  *
- * Authors: 
+ * Authors:
  *          Brian Aker
  *          Toru Maesaka
  */
@@ -266,7 +266,7 @@ static void run_analyzer(memcached_st *memc, memcached_stat_st *memc_stat)
 
 static void print_analysis_report(memcached_st *memc,
                                   memcached_analysis_st *report)
-                                  
+
 {
   uint32_t server_count= memcached_server_count(memc);
   memcached_server_instance_st most_consumed_server= memcached_server_instance_by_position(memc, report->most_consumed_server);
@@ -313,7 +313,7 @@ static void options_parse(int argc, char *argv[])
 
   bool opt_version= false;
   bool opt_help= false;
-  while (1) 
+  while (1)
   {
     int option_rv= getopt_long(argc, argv, "Vhvds:a", long_options, &option_index);
 

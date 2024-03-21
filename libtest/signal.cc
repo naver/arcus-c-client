@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -103,7 +103,7 @@ SignalThread::~SignalThread()
 extern "C" {
 
 static void *sig_thread(void *arg)
-{   
+{
   SignalThread *context= (SignalThread*)arg;
 
   context->test();
