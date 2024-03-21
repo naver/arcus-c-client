@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -75,9 +75,9 @@ public:
 
     test_return_t startup(void*);
 
-    /* 
+    /*
       This called on a test if the test requires a flush call (the bool is
-      from test_st) 
+      from test_st)
     */
     test_callback_fn *_flush;
 
@@ -154,7 +154,7 @@ public:
   {
     return _servers;
   }
-  
+
   /**
     Runner represents the callers for the tests. If not implemented we will use
     a set of default implementations.

@@ -428,7 +428,7 @@ int main(int argc, char **argv)
 
   /*
    * Create and initialize the handles to the protocol handlers. I want
-   * to be able to trace the traffic throught the pre/post handlers, and
+   * to be able to trace the traffic through the pre/post handlers, and
    * set up a common handler for unknown messages
    */
   interface->pre_execute= pre_execute;

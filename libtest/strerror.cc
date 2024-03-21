@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -21,7 +21,7 @@
 
 #include <libtest/common.h>
 
-namespace libtest { 
+namespace libtest {
 
 const char *test_strerror(test_return_t code)
 {

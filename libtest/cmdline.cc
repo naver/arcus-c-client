@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -59,7 +59,7 @@ bool exec_cmdline(const std::string& executable, const char *args[])
   return true;
 }
 
-const char *gearmand_binary() 
+const char *gearmand_binary()
 {
   return GEARMAND_BINARY;
 }

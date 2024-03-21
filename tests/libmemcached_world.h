@@ -298,6 +298,6 @@ public:
   }
 };
 
-static LibmemcachedRunner defualt_libmemcached_runner;
+static LibmemcachedRunner default_libmemcached_runner;
 
 #endif /* __TESTS_LIBMEMCACHED_WORLD_H__ */

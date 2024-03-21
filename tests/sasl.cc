@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -73,7 +73,7 @@ static test_return_t sasl_auth_test(memcached_st *memc)
     test_compare(MEMCACHED_INVALID_ARGUMENTS, memcached_destroy_sasl_auth_data(NULL));
     memcached_quit(memc);
 
-    test_compare(MEMCACHED_AUTH_FAILURE, 
+    test_compare(MEMCACHED_AUTH_FAILURE,
                  memcached_set(memc, "foo", 3, "bar", 3, (time_t)0, (uint32_t)0));
     test_compare(MEMCACHED_SUCCESS, memcached_destroy_sasl_auth_data(memc));
 
@@ -116,7 +116,7 @@ void get_world(Framework *world)
   world->collection_startup= (test_callback_fn*)world_container_startup;
   world->collection_shutdown= (test_callback_fn*)world_container_shutdown;
 
-  world->set_runner(&defualt_libmemcached_runner);
+  world->set_runner(&default_libmemcached_runner);
 
   world->set_sasl("memcached", "memcached");
 }

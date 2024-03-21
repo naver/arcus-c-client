@@ -44,11 +44,11 @@ main(int argc, char *argv[])
       false /* do not delete the empty key */,
       &result))
     return -1;
-  
+
   /* Print */
   printf("Retrieved the element. value=%s\n",
     memcached_coll_result_get_value(&result, 0));
   memcached_coll_result_free(&result);
-  
+
   return 0;
 }

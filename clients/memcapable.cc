@@ -48,7 +48,7 @@
 #undef ntohl
 #endif
 
-/* Should we generate coredumps when we enounter an error (-c) */
+/* Should we generate coredumps when we encounter an error (-c) */
 static bool do_core= false;
 /* connection to the server */
 static memcached_socket_t sock;
@@ -199,7 +199,7 @@ static ssize_t timeout_io_op(memcached_socket_t fd, short direction, void *buf, 
     ret= recv(fd, buf, len, 0);
   }
 
-  if (ret == SOCKET_ERROR && get_socket_errno() == EWOULDBLOCK) 
+  if (ret == SOCKET_ERROR && get_socket_errno() == EWOULDBLOCK)
   {
     struct pollfd fds;
     memset(&fds, 0, sizeof(struct pollfd));
@@ -258,7 +258,7 @@ static enum test_return ensure(bool val, const char *expression, const char *fil
 #define execute(expression) do { if (ensure(expression == TEST_PASS, #expression, __FILE__, __LINE__) == TEST_FAIL) return TEST_FAIL; } while (0)
 
 /**
- * Send a chunk of memory over the socket (retry if the call is iterrupted
+ * Send a chunk of memory over the socket (retry if the call is interrupted
  */
 static enum test_return retry_write(const void* buf, size_t len)
 {
@@ -334,7 +334,7 @@ static enum test_return retry_read(void *buf, size_t len)
 }
 
 /**
- * Receive a response from the server and conver the fields in the header
+ * Receive a response from the server and convert the fields in the header
  * to local byte order
  */
 static enum test_return recv_packet(response *rsp)

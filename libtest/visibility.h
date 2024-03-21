@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -31,7 +31,7 @@
 #  define LIBTEST_API __global
 #  define LIBTEST_LOCAL __global
 # elif defined(_MSC_VER)
-#  define LIBTEST_API extern __declspec(dllexport) 
+#  define LIBTEST_API extern __declspec(dllexport)
 #  define LIBTEST_LOCAL extern __declspec(dllexport)
 # else
 #  define LIBTEST_API
@@ -46,7 +46,7 @@
 #   define LIBTEST_API __global
 #   define LIBTEST_LOCAL __hidden
 #  elif defined(_MSC_VER)
-#   define LIBTEST_API extern __declspec(dllexport) 
+#   define LIBTEST_API extern __declspec(dllexport)
 #   define LIBTEST_LOCAL
 #  else
 #   define LIBTEST_API
@@ -54,7 +54,7 @@
 #  endif /* defined(HAVE_VISIBILITY) */
 # else  /* defined(BUILDING_LIBTEST) */
 #  if defined(_MSC_VER)
-#   define LIBTEST_API extern __declspec(dllimport) 
+#   define LIBTEST_API extern __declspec(dllimport)
 #   define LIBTEST_LOCAL
 #  else
 #   define LIBTEST_API

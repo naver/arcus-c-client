@@ -60,13 +60,13 @@ public:
 
   Memcache *getCache()
   {
-    /* 
+    /*
      * pick a random element from the vector of clients. Obviously, this is
      * not very random but suffices as an example!
      */
     uint32_t index= rand() % num_of_clients;
     return clients[index];
-  } 
+  }
 
 private:
 
@@ -172,7 +172,7 @@ int main()
   Memcache first_client("127.0.0.1:19191");
   map< string, map<string, string> > my_stats;
   first_client.getStats(my_stats);
-  
+
   /*
    * Iterate through the retrieved stats.
    */

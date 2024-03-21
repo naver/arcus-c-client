@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached client and server library.
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -54,7 +54,7 @@ static memcached_return_t print_keys_callback(const memcached_st *,
 {
 
   Out << "\t" << key << " (" << key_length << ")";
-  
+
 
   return MEMCACHED_SUCCESS;
 }

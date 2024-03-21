@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright 2010-2014 NAVER Corp.

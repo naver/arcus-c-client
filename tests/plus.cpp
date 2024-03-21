@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -184,7 +184,7 @@ static test_return_t mget_test(memcached_st *original)
 
   test_true(memc.mget(keys));
 
-  test_compare(MEMCACHED_NOTFOUND, 
+  test_compare(MEMCACHED_NOTFOUND,
                memc.fetch(return_key, return_value));
 
   test_true(memc.setAll(keys, values, 50, 9));
@@ -301,5 +301,5 @@ void get_world(Framework *world)
   world->collection_startup= reinterpret_cast<test_callback_fn*>(world_container_startup);
   world->collection_shutdown= reinterpret_cast<test_callback_fn*>(world_container_shutdown);
 
-  world->set_runner(&defualt_libmemcached_runner);
+  world->set_runner(&default_libmemcached_runner);
 }

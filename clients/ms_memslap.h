@@ -105,7 +105,7 @@ typedef struct global
   ms_sync_lock_t warmup_lock;
   ms_sync_lock_t run_lock;
 
-  /* mutex for outputing error log synchronously when memslap crashes */
+  /* mutex for outputting error log synchronously when memslap crashes */
   pthread_mutex_t quit_mutex;
 
   /* mutex for generating key prefix */

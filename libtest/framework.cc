@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libtest
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -32,7 +32,7 @@ static test_return_t _default_callback(void *p)
   return TEST_SUCCESS;
 }
 
-static Runner defualt_runners;
+static Runner default_runners;
 
 Framework::Framework() :
   collections(NULL),
@@ -119,7 +119,7 @@ test_return_t Framework::Item::startup(void* arg)
 
 libtest::Runner *Framework::runner()
 {
-  return _runner ? _runner : &defualt_runners;
+  return _runner ? _runner : &default_runners;
 }
 
 void* Framework::create(test_return_t& arg)
