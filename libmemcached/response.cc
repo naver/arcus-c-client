@@ -255,12 +255,12 @@ static void textual_switchover_peer_check(memcached_server_write_instance_st ins
   if (str_length < buf_length) {
     /* OK */
     memcpy(instance->switchover_peer, startptr, str_length);
-    instance->switchover_peer[str_length]= '\0'; 
+    instance->switchover_peer[str_length]= '\0';
     instance->switchover_sidx= -1; /* undefined */
   } else {
     /* something is wrong */
     memcpy(instance->switchover_peer, startptr, buf_length-1);
-    instance->switchover_peer[buf_length-1]= '\0'; 
+    instance->switchover_peer[buf_length-1]= '\0';
     instance->switchover_sidx= 1; /* set first slave */
   }
 }
@@ -2002,12 +2002,17 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
       /* byte array bkey : starts with 0x */
       if (to_read_string[0] == '0' && to_read_string[1] == 'x')
       {
+        if (result->sub_key_type != MEMCACHED_COLL_QUERY_BOP_EXT &&
+            result->sub_key_type != MEMCACHED_COLL_QUERY_BOP_EXT_RANGE)
+            return MEMCACHED_PROTOCOL_ERROR;
         memcached_conv_str_to_hex(ptr->root, to_read_string+2, read_length-2-1, &result->sub_keys[i].bkey_ext); // except '0x' and '\0'
-        result->sub_key_type = MEMCACHED_COLL_QUERY_BOP_EXT;
       }
       /* normal bkey */
       else
       {
+        if (result->sub_key_type != MEMCACHED_COLL_QUERY_BOP &&
+            result->sub_key_type != MEMCACHED_COLL_QUERY_BOP_RANGE)
+            return MEMCACHED_PROTOCOL_ERROR;
         result->sub_keys[i].bkey = strtoull(to_read_string, &string_ptr, 10);
         result->sub_key_type = MEMCACHED_COLL_QUERY_BOP;
       }
@@ -2280,7 +2285,8 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
     {
       memcached_conv_str_to_hex(ptr->root, to_read_string+2, read_length-2-1,
                                 &result->trimmed_sub_keys[i].bkey_ext); // except '0x' and '\0'
-      if (result->sub_key_type != MEMCACHED_COLL_QUERY_BOP_EXT)
+      if (result->sub_key_type != MEMCACHED_COLL_QUERY_BOP_EXT &&
+          result->sub_key_type != MEMCACHED_COLL_QUERY_BOP_EXT_RANGE)
       {
         memcached_string_free(&result->trimmed_keys[i]);
         return MEMCACHED_PROTOCOL_ERROR;
@@ -2290,7 +2296,8 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
     else
     {
       result->trimmed_sub_keys[i].bkey = strtoull(to_read_string, &string_ptr, 10);
-      if (result->sub_key_type != MEMCACHED_COLL_QUERY_BOP)
+      if (result->sub_key_type != MEMCACHED_COLL_QUERY_BOP &&
+          result->sub_key_type != MEMCACHED_COLL_QUERY_BOP_RANGE)
       {
         memcached_string_free(&result->trimmed_keys[i]);
         return MEMCACHED_PROTOCOL_ERROR;
