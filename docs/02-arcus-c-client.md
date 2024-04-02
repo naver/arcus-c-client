@@ -92,7 +92,7 @@ int main(int argc, char** argv)
     // 생성된 자원을 반환한다.
     arcus_pool_close(pool);
     memcached_pool_destroy(pool);
-    memcached_free(mc);
+    memcached_free(master_mc);
 
     return EXIT_SUCCESS;
 }
