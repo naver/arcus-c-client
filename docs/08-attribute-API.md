@@ -51,7 +51,7 @@ memcached_coll_attrs_set_maxbkeyrange_by_byte(memcached_coll_attrs_st *attrs,
 memcached_return_t
 memcached_coll_attrs_set_readable(memcached_coll_attrs_st *attrs)
 ```
-- memcached_coll_attrs_init : memcached_coll_sttrs_st 구초체를 초기화한다.
+- memcached_coll_attrs_init : memcached_coll_attrs_st 구초체를 초기화한다.
 - memcached_coll_attrs_set_flags : 변경할 Flag 값을 설정한다.
 - memcached_coll_attrs_set_expiretime : 변경할 Expire time 값을 설정한다.
 - memcached_coll_attrs_set_overflowaction : 변경할 Overflowaction을 설정한다.
