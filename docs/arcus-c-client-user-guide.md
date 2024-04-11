@@ -57,7 +57,7 @@ ARCUS C Client User Guide
   - [B+Tree 순위 기반의 Element 조회](07-btree-API.md#btree-순위-기반의-element-조회)
   - [B+Tree 순위와 Element 동시 조회](07-btree-API.md#btree-순위와-element-동시-조회)
 
-- [Item Attribue 연산](08-attribute-API.md)
+- [Item Attribute 연산](08-attribute-API.md)
   - [Attribute 변경](08-attribute-API.md#attribute-%EB%B3%80%EA%B2%BD)
   - [Attribute 조회](08-attribute-API.md#attribute-%EC%A1%B0%ED%9A%8C)
 - [그 외 연산](09-other-API.md)

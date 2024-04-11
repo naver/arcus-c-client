@@ -914,7 +914,7 @@ void arcus_btree_element_get(memcached_st *memc)
     }
 
     // 조회 범위에 아무런 element가 없는 경우
-    result = memcached_coll_result_create(memc, NULL);
+    memcached_coll_result_st *result = memcached_coll_result_create(memc, NULL);
 
     rc= memcached_bop_get_by_range(memc, "btree:a_btree", strlen("btree:a_btree"),
                                    maxcount, maxcount+maxcount,
@@ -989,7 +989,7 @@ memcached_bop_ext_piped_insert(memcached_st *ptr,
 memcached_return_t
 memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
-                                const size_t *keys_length,
+                                const size_t *key_length,
                                 size_t number_of_keys,
                                 const uint64_t bkey,
                                 const unsigned char *eflag, size_t eflag_length,
@@ -1000,18 +1000,18 @@ memcached_bop_piped_insert_bulk(memcached_st *ptr,
 
 memcached_return_t
 memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
-                                const char * const *keys,
-                                const size_t *keys_length,
-                                size_t number_of_keys,
-                                const unsigned char *bkey, size_t bkey_length,
-                                const unsigned char *eflag, size_t eflag_length,
-                                const char *value, size_t value_length,
-                                memcached_coll_create_attrs_st *attributes,
-                                memcached_return_t *results,
-                                memcached_return_t *piped_rc)
+                                    const char * const *keys,
+                                    const size_t *key_length,
+                                    size_t number_of_keys,
+                                    const unsigned char *bkey, size_t bkey_length,
+                                    const unsigned char *eflag, size_t eflag_length,
+                                    const char *value, size_t value_length,
+                                    memcached_coll_create_attrs_st *attributes,
+                                    memcached_return_t *results,
+                                    memcached_return_t *piped_rc)
 ```
 
-- keys, keys_length: 다수 b+tree items의 key array
+- keys, key_length: 다수 b+tree items의 key array
 - number_of_keys: key들의 개수
 - bkey, bkey_length: element의 bkey(b+tree key)
 - eflag, eflag_length: element의 eflag(element flag) (옵션)
@@ -1046,10 +1046,11 @@ void arcus_btree_element_piped_insert(memcached_st *memc)
 
     uint64_t bkeys[100];
     unsigned char **eflags = (unsigned char **)malloc(sizeof(unsigned char *) * 100);
-    size_t elfaglengths[100];
+    size_t eflaglengths[100];
     char **values = (char **)malloc(sizeof(char *) * 100);
+    size_t valuelengths[100];
 
-    uint32_t elfag = 0;
+    uint32_t eflag = 0;
     int i;
 
     // pipe 연산에 필요한 argument를 생성한다.
@@ -1057,7 +1058,7 @@ void arcus_btree_element_piped_insert(memcached_st *memc)
     {
         bkeys[i] = i;
         eflags[i] = (unsigned char *)&eflag;
-        eflaglengts[i] = sizeof(eflag);
+        eflaglengths[i] = sizeof(eflag);
         values[i] = (char *)malloc(sizeof(char)*15);
         valuelengths[i] = snprintf(values[i], 15, "value%llu", (unsigned long long)i);
     }
@@ -1095,12 +1096,12 @@ B+tree element 조회 조건는 query 구조체를 이용하여 명시한다.
 memcached_return_t
 memcached_bop_mget(memcached_st *ptr,
                    const char * const *keys,
-                   const size_t *keys_length,
+                   const size_t *key_length,
                    size_t number_of_keys,
                    memcached_coll_query_st *query)
 ```
 
-- keys, keys_length: 다수 b+tree item들의 key array
+- keys, key_length: 다수 b+tree item들의 key array
 - number_of_keys: key 개수
   - key array에 담을 수 있는 최대 key 개수는 200개로 제한된다.
 - query: 조회 조건을 가진 query 구조체
@@ -1246,12 +1247,12 @@ Sort-Merge 조회를 수행하는 함수는 아래와 같다.
 memcached_return_t
 memcached_bop_smget(memcached_st *ptr,
                     const char * const *keys,
-                    const size_t *keys_length,
-                    size_t num_of_keys,
+                    const size_t *key_length,
+                    size_t number_of_keys,
                     memcached_bop_query_st *query,
-                    memcached_coll_smget_result_st *result)
+                    memcached_coll_smget_result_st *result);
 ```
-- keys, keys_length: 다수 b+tree item들의 key array
+- keys, key_length: 다수 b+tree item들의 key array
 - number_of_keys: key 개수
   - key array에 담을 수 있는 최대 key 개수는 2000 개로 제한된다.
 - query: 조회 조건을 가진 query 구조체
@@ -1426,7 +1427,7 @@ void arcus_btree_element_smget(memcached_st *memc)
 
     // byte array bkey에 대해 중복 bkey 허용한 범위 검색 쿼리를 생성한다.
     memcached_bop_query_st query;
-    memcached_bop_ext_smget_query_init(memc, &query,
+    memcached_bop_ext_smget_query_init(&query,
                                        (unsigned char *)&bkey_from, sizeof(uint32_t),
                                        (unsigned char *)&bkey_to, sizeof(uint32_t),
                                        NULL, 100, false);
@@ -1720,8 +1721,12 @@ void arcus_btree_find_position_with_get(memcached_st *memc)
 
     // 오름차순으로 100번째 bkey의 순위 및 element와 함께 앞뒤 양방향으로 각 10개 element를 조회한다.
     result = memcached_coll_result_create(memc, NULL);
+
+    char bkdata[16];
+    size_t bkdata_len;
+
     bkdata_len= snprintf(bkdata, 15, "%04u", 99);
-    rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:a_btree"),
+    rc= memcached_bop_ext_find_position_with_get(memc, "btree:a_btree", strlen("btree:a_btree"),
                                                  (unsigned char *)bkdata, bkdata_len,
                                                  MEMCACHED_COLL_ORDER_ASC, 10, result);
     assert(rc == MEMCACHED_SUCCESS);
@@ -1742,7 +1747,7 @@ void arcus_btree_find_position_with_get(memcached_st *memc)
     // 내림차순으로 100번째 bkey의 순위 및 element와 함께 앞뒤 양방향으로 각 10개 element들을 조회한다.
     result = memcached_coll_result_create(memc, NULL);
     bkdata_len= snprintf(bkdata, 15, "%04u", ((maxcount-1)-99));
-    rc= memcached_bop_ext_find_position_with_get(memc, test_literal_param("btree:a_btree"),
+    rc= memcached_bop_ext_find_position_with_get(memc, "btree:a_btree", strlen("btree:a_btree"),
                                                  (unsigned char *)bkdata, bkdata_len,
                                                  MEMCACHED_COLL_ORDER_DESC, 10, result);
     assert(rc == MEMCACHED_SUCCESS);

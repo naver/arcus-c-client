@@ -3,7 +3,7 @@
 ARCUS client는 ARCUS admin과 ARCUS cache server군 들과의 연결을 유지하며 client로 들어온 명령을 처리하여 그 결과를 반환한다
 
 ARCUS C client는 C/C++ 개발환경에서 ARCUS를 사용하기 위한 라이브러리로서,
-대표적인 memcached C client인 [libmemcached](https://code.launchpad.net/libmemcached)를 기반으로 개발하였다. 
+대표적인 memcached C client인 [libmemcached](https://code.launchpad.net/libmemcached)를 기반으로 개발하였다.
 따라서 libmemcached의 기능을 대부분 사용할 수 있으며,
 ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등을 추가로 지원한다.
 
@@ -28,23 +28,23 @@ ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등�
   arcus_return_t arcus_connect(memcached_st *mc, const char *ensemble_list, const char *svc_code)
   ```
   싱글 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
-  
+
 - Multi-Threaded
- 
+
   ```c
-  arcus_return_t arcus_pool_connect(memcached_pool_st *pool, const char *ensemble_list, const char *svc_code) 
+  arcus_return_t arcus_pool_connect(memcached_pool_st *pool, const char *ensemble_list, const char *svc_code)
   ```
 
   멀티 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
-  
+
 - Multi-Process
 
   ```c
   arcus_return_t arcus_proxy_create(memcached_st *mc, const char *ensemble_list, const char *svc_code)
   arcus_return_t arcus_proxy_connect(memcached_st *mc, memcached_pool_st *pool, memcached_st *proxy)
   ```
- 
-  `arcus_proxy_create` 함수는 
+
+  `arcus_proxy_create` 함수는
   멀티 프로세스 서버의 부모 프로세스가 ARCUS에 연결한 뒤, 자식 프로세스들이 사용할 proxy를 생성하기 위해 사용한다.
   `arcus_proxy_connect` 함수는
   멀티 프로세스 서버의 자식 프로세스에서 부모 프로세스가 생성한 proxy에 연결하기 위해 사용한다.
@@ -169,7 +169,7 @@ static inline void process_child(memcached_st *proxy_mc)
     arcus_proxy_connect(per_child_mc, pool, proxy_mc);
 
     if (!pool) {
-        fprintf(stderr, "memcahed_pool_create: failed\n");
+        fprintf(stderr, "memcached_pool_create: failed\n");
         goto RETURN;
     }
 
@@ -249,7 +249,7 @@ RELEASE:
 ### 로그 남기기
 
 ARCUS C client는 ARCUS admin과의 연결 상태 및 ARCUS cache server 리스트의 변경 사항에 대해 로그를 남긴다.
-로그는 ZooKeeper client에 내장된 로깅 API를 사용하고 있으며 기본적으로 표준 에러(stderr )로 출력된다.
+로그는 ZooKeeper client에 내장된 로깅 API를 사용하고 있으며 기본적으로 표준 에러(stderr)로 출력된다.
 ARCUS cache server 리스트 변경에 대한 로그는 문제 상황 발생 시 귀중한 힌트가 될 수 있으므로
 별도의 파일로 남기는 것을 추천한다.
 
@@ -286,7 +286,7 @@ const char *memcached_detail_error_message(memcached_st *mc, memcached_return_t 
     - mc_id : 서로다른 mc를 구분하기 위해 사용하는 구분자로, mc 생성마다 1 씩 증가하는 값
     - mc_qid : mc가 현재 수행하는 operation의 query id
     - er_qid : error message를 생성한 operation의 query id
-    - error mssage : 실제 오류 원인이 되는 error message string
+    - error message : 실제 오류 원인이 되는 error message string
 
 위 API는 아래와 같은 방법으로 사용이 가능하며,
 정확한 오류 출력을 위해 `memcached_detail_error_message(memcached_st *mc, memcached_return_t rc)`의 사용을 추천한다.
@@ -336,7 +336,7 @@ ARCUS의 admin인 ZooKeeper에 의해 failed 캐시 노드로 감지되어 cache
 
 그리고, 정상적으로 연결되지 않은 캐시 노드로의 요청에 대해서는
 MEMCACHED_SERVER_TEMPORARILY_DISABLED (“SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY”) 오류가 발생한다.
- 
+
 ### 캐시 API의 응답코드 확인
 
 캐시 명령을 실행한 후에 캐시 서버로부터 받은 응답 코드를 확인할 수 있다.

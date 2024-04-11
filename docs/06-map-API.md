@@ -166,7 +166,7 @@ void arcus_map_element_insert(memcached_st *memc)
     assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
 
     // 2. STORED
-    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey1", strlne("mkey1"),
+    rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey1", strlen("mkey1"),
                              "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
@@ -175,7 +175,7 @@ void arcus_map_element_insert(memcached_st *memc)
     rc= memcached_mop_insert(memc, "a_map", strlen("a_map"), "mkey1", strlen("mkey1"),
                              "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS != rc);
-    assert(MEMCACHED_ELEMENT_EXIST == rc);
+    assert(MEMCACHED_ELEMENT_EXISTS == rc);
 }
 ```
 
@@ -225,7 +225,7 @@ void arcus_map_element_update(memcached_st *memc)
     assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
 
     // 2. UPDATED
-    rc= memcached_mop_update(memc, "a_map", strlen("a_map"), "mkey", strlne("mkey"),
+    rc= memcached_mop_update(memc, "a_map", strlen("a_map"), "mkey", strlen("mkey"),
                              "new_value", strlen("new_value"));
     assert(MEMCACHED_SUCCESS == rc);
     assert(MEMCACHED_UPDATED == memcached_get_last_response_code(memc));
@@ -391,7 +391,7 @@ Map element를 조회하는 예제는 아래와 같다.
 void arcus_map_element_get(memcached_st *memc)
 {
     uint32_t flags= 10;
-    uint32_t exptime= 600; 
+    uint32_t exptime= 600;
     uint32_t maxcount= 1000;
 
     memcached_coll_create_attrs_st attributes;
@@ -399,7 +399,7 @@ void arcus_map_element_get(memcached_st *memc)
     memcached_return_t rc;
     memcached_coll_result_st *result;
 
-    for (uint32_t i=0; i<maxcount; i++)    { 
+    for (uint32_t i=0; i<maxcount; i++) {
         char mkey[15];
         char buffer[15];
         size_t mkey_len = snprintf(mkey, 15, "mkey%d", i);
@@ -456,15 +456,15 @@ void arcus_map_element_get(memcached_st *memc)
 
 ## Map Element 일괄 삽입
 
-Map에 여러 element를 한번에 삽입하는 함수는 두 가지가 있다.
+Map에 여러 elements를 한번에 삽입하는 함수는 두 가지가 있다.
 
-첫째, 하나의 key가 가리키는 map에 다수의 element를 삽입하는 함수이다.
+첫째, 하나의 key가 가리키는 map에 다수의 elements를 삽입하는 함수이다.
 
 ``` c
 memcached_return_t
 memcached_mop_piped_insert(memcached_st *ptr,
                            const char *key, const size_t key_length,
-                           const size_t numr_of_piped_items,
+                           const size_t number_of_piped_items,
                            const char * const *mkeys, const size_t *mkeys_length,
                            const char * const *values, const size_t *values_length,
                            memcached_coll_create_attrs_st *attributes,
@@ -473,19 +473,19 @@ memcached_mop_piped_insert(memcached_st *ptr,
 ```
 
 - key, key_length: 하나의 key를 지정
-- numr_of_piped_items: 한번에 삽입할 element 개수
+- number_of_piped_items: 한번에 삽입할 element 개수
 - mkeys, mkeys_length: 다수 element 각각의 mkey와 그 길이
 - values, values_length: 다수 element 각각의 value와 그 길이
-- attributes: 해당 map이 없을 시에, attrbiutes에 따라 map을 생성 후에 삽입한다.
+- attributes: 해당 map이 없을 시에, attributes에 따라 map을 생성 후에 삽입한다.
 
-둘째, 여러 key들이 가리키는 map들에 각각 하나의 element를 삽입하는 함수이다. 
+둘째, 여러 key들이 가리키는 map들에 각각 하나의 element를 삽입하는 함수이다.
 
 ``` c
 memcached_return_t
 memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
-                                const size_t *keys_length,
-                                const size_t numr_of_keys,
+                                const size_t *key_length,
+                                const size_t number_of_keys,
                                 const char *mkey, size_t mkey_length,
                                 const char *value, size_t value_length,
                                 memcached_coll_create_attrs_st *attributes,
@@ -493,11 +493,11 @@ memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                 memcached_return_t *piped_rc)
 ```
 
-- keys, keys_length: 다수 key들을 지정
-- numr_of_keys: key들의 수
+- keys, key_length: 다수 key들을 지정
+- number_of_keys: key들의 수
 - mkey, mkey_length: element의 mkey
 - value, value_length: element의 value
-- attributes: 해당 map이 없을 시에, attrbiutes에 따라 map을 생성 후에 삽입한다.
+- attributes: 해당 map이 없을 시에, attributes에 따라 map을 생성 후에 삽입한다.
 
 Map element 일괄 삽입의 결과는 아래의 인자를 통해 받는다.
 
@@ -559,7 +559,7 @@ void arcus_map_element_piped_insert(memcached_st *memc)
     for (uint32_t i=0; i<maxcount; i++)
     {
         free((void *)mkeys[i]);
-        free((void *)values[i]);    
+        free((void *)values[i]);
     }
     free((void *)mkeys);
     free((void *)values);
