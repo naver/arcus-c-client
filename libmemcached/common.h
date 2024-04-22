@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  LibMemcached
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -179,7 +179,7 @@ LIBMEMCACHED_LOCAL
 memcached_return_t memcached_key_test(const memcached_st& memc,
                                       const char * const *keys,
                                       const size_t *key_length,
-                                      size_t number_of_keys);
+                                      const size_t number_of_keys);
 #endif
 
 LIBMEMCACHED_LOCAL

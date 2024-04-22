@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -40,7 +40,7 @@
 memcached_return_t memcached_key_test(const memcached_st &memc,
                                       const char * const *keys,
                                       const size_t *key_length,
-                                      size_t number_of_keys)
+                                      const size_t number_of_keys)
 {
   if (not memc.flags.verify_key)
     return MEMCACHED_SUCCESS;
@@ -55,7 +55,7 @@ memcached_return_t memcached_key_test(const memcached_st &memc,
     {
       return rc;
     }
- 
+
     for (size_t y= 0; y < *(key_length + x); y++)
     {
       if ((isgraph(keys[x][y])) == 0)

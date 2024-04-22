@@ -1556,7 +1556,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_mget(memcached_st *ptr,
                                       const char * const *keys,
                                       const size_t *key_length,
-                                      size_t number_of_keys,
+                                      const size_t number_of_keys,
                                       memcached_coll_query_st *query);
 
 /**
@@ -1703,7 +1703,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_smget(memcached_st *ptr,
                                        const char * const *keys,
                                        const size_t *key_length,
-                                       size_t number_of_keys,
+                                       const size_t number_of_keys,
                                        memcached_bop_query_st *query,
                                        memcached_coll_smget_result_st *result);
 
@@ -1955,7 +1955,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_lop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
                                                    const size_t *key_length,
-                                                   size_t number_of_keys,
+                                                   const size_t number_of_keys,
                                                    const int32_t index,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attrs,
@@ -1978,7 +1978,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
                                                    const size_t *key_length,
-                                                   size_t number_of_keys,
+                                                   const size_t number_of_keys,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attrs,
                                                    memcached_return_t *results,
@@ -2002,7 +2002,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_mop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
                                                    const size_t *key_length,
-                                                   size_t number_of_keys,
+                                                   const size_t number_of_keys,
                                                    const char *mkey, size_t mkey_length,
                                                    const char *value, size_t value_length,
                                                    memcached_coll_create_attrs_st *attrs,
@@ -2028,7 +2028,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                                    const char * const *keys,
                                                    const size_t *key_length,
-                                                   size_t number_of_keys,
+                                                   const size_t number_of_keys,
                                                    const uint64_t bkey,
                                                    const unsigned char *eflag, size_t eflag_length,
                                                    const char *value, size_t value_length,
@@ -2056,7 +2056,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
                                                        const char * const *keys,
                                                        const size_t *key_length,
-                                                       size_t number_of_keys,
+                                                       const size_t number_of_keys,
                                                        const unsigned char *bkey, size_t bkey_length,
                                                        const unsigned char *eflag, size_t eflag_length,
                                                        const char *value, size_t value_length,

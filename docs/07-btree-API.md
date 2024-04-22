@@ -990,7 +990,7 @@ memcached_return_t
 memcached_bop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
                                 const size_t *key_length,
-                                size_t number_of_keys,
+                                const size_t number_of_keys,
                                 const uint64_t bkey,
                                 const unsigned char *eflag, size_t eflag_length,
                                 const char *value, size_t value_length,
@@ -1002,7 +1002,7 @@ memcached_return_t
 memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
                                     const char * const *keys,
                                     const size_t *key_length,
-                                    size_t number_of_keys,
+                                    const size_t number_of_keys,
                                     const unsigned char *bkey, size_t bkey_length,
                                     const unsigned char *eflag, size_t eflag_length,
                                     const char *value, size_t value_length,
@@ -1097,7 +1097,7 @@ memcached_return_t
 memcached_bop_mget(memcached_st *ptr,
                    const char * const *keys,
                    const size_t *key_length,
-                   size_t number_of_keys,
+                   const size_t number_of_keys,
                    memcached_coll_query_st *query)
 ```
 
@@ -1248,7 +1248,7 @@ memcached_return_t
 memcached_bop_smget(memcached_st *ptr,
                     const char * const *keys,
                     const size_t *key_length,
-                    size_t number_of_keys,
+                    const size_t number_of_keys,
                     memcached_bop_query_st *query,
                     memcached_coll_smget_result_st *result);
 ```

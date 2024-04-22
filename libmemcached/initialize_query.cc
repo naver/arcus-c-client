@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -92,7 +92,7 @@ memcached_return_t initialize_const_query(const memcached_st *self)
 memcached_return_t before_query(memcached_st *self,
                                 const char * const *keys,
                                 const size_t *key_length,
-                                size_t number_of_keys)
+                                const size_t number_of_keys)
 {
   memcached_return_t rc;
 

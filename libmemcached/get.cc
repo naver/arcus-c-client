@@ -110,7 +110,7 @@ static memcached_return_t before_get_query(memcached_st *ptr,
                                            const size_t group_key_length,
                                            const char * const *keys,
                                            const size_t *key_length,
-                                           size_t number_of_keys)
+                                           const size_t number_of_keys)
 {
   memcached_return_t rc= initialize_query(ptr);
   if (memcached_failed(rc))
@@ -210,7 +210,7 @@ static memcached_return_t simple_binary_mget(memcached_st *ptr,
                                              bool is_group_key_set,
                                              const char * const *keys,
                                              const size_t *key_length,
-                                             size_t number_of_keys, bool mget_mode)
+                                             const size_t number_of_keys, bool mget_mode)
 {
   memcached_return_t rc= MEMCACHED_NOTFOUND;
 
@@ -336,7 +336,7 @@ static memcached_return_t replication_binary_mget(memcached_st *ptr,
                                                   bool* dead_servers,
                                                   const char *const *keys,
                                                   const size_t *key_length,
-                                                  size_t number_of_keys)
+                                                  const size_t number_of_keys)
 {
   memcached_return_t rc= MEMCACHED_NOTFOUND;
   uint32_t start= 0;
@@ -436,7 +436,7 @@ static memcached_return_t binary_mget_by_key(memcached_st *ptr,
                                              bool is_group_key_set,
                                              const char * const *keys,
                                              const size_t *key_length,
-                                             size_t number_of_keys,
+                                             const size_t number_of_keys,
                                              bool mget_mode)
 {
   if (ptr->number_of_replicas == 0)
@@ -646,7 +646,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
                                          size_t group_key_length,
                                          const char * const *keys,
                                          const size_t *key_length,
-                                         size_t number_of_keys)
+                                         const size_t number_of_keys)
 {
   arcus_server_check_for_update(ptr);
 
@@ -866,7 +866,7 @@ memcached_return_t memcached_mget_by_key(memcached_st *ptr,
 memcached_return_t memcached_mget(memcached_st *ptr,
                                   const char * const *keys,
                                   const size_t *key_length,
-                                  size_t number_of_keys)
+                                  const size_t number_of_keys)
 {
   return memcached_mget_by_key(ptr, NULL, 0, keys, key_length, number_of_keys);
 }
@@ -876,7 +876,7 @@ memcached_return_t memcached_mget_execute_by_key(memcached_st *ptr,
                                                  size_t group_key_length,
                                                  const char * const *keys,
                                                  const size_t *key_length,
-                                                 size_t number_of_keys,
+                                                 const size_t number_of_keys,
                                                  memcached_execute_fn *callback,
                                                  void *context,
                                                  unsigned int number_of_callbacks)
@@ -902,7 +902,7 @@ memcached_return_t memcached_mget_execute_by_key(memcached_st *ptr,
 memcached_return_t memcached_mget_execute(memcached_st *ptr,
                                           const char * const *keys,
                                           const size_t *key_length,
-                                          size_t number_of_keys,
+                                          const size_t number_of_keys,
                                           memcached_execute_fn *callback,
                                           void *context,
                                           unsigned int number_of_callbacks)
