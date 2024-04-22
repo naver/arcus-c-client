@@ -17,10 +17,10 @@ Key-value item에 대해 수행 가능한 연산들은 아래와 같다.
 
 key-value item을 저장하는 API로 set, add, replace, prepend/append가 있다.
 
-``` c 
+``` c
 memcached_return_t
 memcached_set(memcached_st *ptr,
-              const char *key, size_t key_length, 
+              const char *key, size_t key_length,
               const char *value, size_t value_length,
               time_t expiration, uint32_t flags)
 memcached_return_t
@@ -43,7 +43,7 @@ memcached_replace(memcached_st *ptr,
 ``` c
 memcached_return_t
 memcached_prepend(memcached_st *ptr,
-                  const char *key, size_t key_length, 
+                  const char *key, size_t key_length,
                   const char *value, size_t value_length,
                   time_t expiration, uint32_t flags)
 memcached_return_t
@@ -81,7 +81,7 @@ memcached_get(memcached_st *ptr,
 memcached_return_t
 memcached_mget(memcached_st *ptr,
                const char * const *keys,  const size_t *key_length,
-               size_t number_of_keys)
+               const size_t number_of_keys)
 char *
 memcached_fetch(memcached_st *ptr,
                 char *key, size_t *key_length,
@@ -103,7 +103,7 @@ Key-value item에서 숫자형 value 값에 대해서만 아래 증감 연산을
 ``` c
 memcached_return_t
 memcached_increment(memcached_st *ptr,
-                    const char *key, size_t key_length, 
+                    const char *key, size_t key_length,
                     uint32_t offset, uint64_t *value)
 memcached_return_t
 memcached_decrement(memcached_st *ptr,

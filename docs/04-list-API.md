@@ -422,7 +422,7 @@ memcached_lop_piped_insert(memcached_st *ptr,
 memcached_return_t
 memcached_lop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys, const size_t *key_length,
-                                size_t number_of_keys,
+                                const size_t number_of_keys,
                                 const int32_t index,
                                 const char *value, size_t value_length,
                                 memcached_coll_create_attrs_st *attributes,
