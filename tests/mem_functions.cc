@@ -11402,6 +11402,74 @@ static test_return_t arcus_1_10_map_insert(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+static test_return_t arcus_1_10_map_upsert(memcached_st *memc)
+{
+  uint32_t flags= 10;
+  int32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  // 1. CREATED_STORED
+  memcached_return_t rc= memcached_mop_upsert(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_CREATED_STORED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+
+  // 2. NOT_FOUND
+  rc= memcached_mop_upsert(memc, test_literal_param("map:no_map"), test_literal_param("mkey"), test_literal_param("value"), NULL);
+  test_true_got(rc == MEMCACHED_NOTFOUND, memcached_strerror(NULL, rc));
+
+  // 3. TYPE_MISMATCH
+  rc= memcached_set(memc, test_literal_param("kv:item"), test_literal_param("value"), 600, 0);
+  test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+  rc= memcached_mop_upsert(memc, test_literal_param("kv:item"), test_literal_param("mkey"), test_literal_param("value"), NULL);
+  test_true_got(rc == MEMCACHED_TYPE_MISMATCH, memcached_strerror(NULL, rc));
+
+  // 4. ELEMENT_REPLACED
+  rc= memcached_mop_upsert(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), test_literal_param("new_value"), NULL);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+
+  memcached_coll_result_st result;
+  memcached_coll_result_create(memc, &result);
+  rc= memcached_mop_get(memc, test_literal_param("map:a_map"), test_literal_param("mkey"), false, false, &result);
+  assert(0 == strcmp("new_value", memcached_coll_result_get_value(&result, (size_t)0)));
+  memcached_coll_result_free(&result);
+
+  // 5. CLIENT_ERROR too large value
+  char too_large[MEMCACHED_COLL_MAX_ELEMENT_SIZE + 1];
+  rc= memcached_mop_upsert(memc, test_literal_param("map:a_map"), test_literal_param("mkey1"), too_large, MEMCACHED_COLL_MAX_ELEMENT_SIZE+1, &attributes);
+  test_true_got(rc == MEMCACHED_CLIENT_ERROR, memcached_strerror(NULL, rc));
+
+  sleep(MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT + 1);
+
+  // 6. OVERFLOWED
+  for (uint32_t i=1; i<maxcount; i++)
+  {
+    char buffer[15];
+    size_t buffer_len= snprintf(buffer, 15, "mkey%d", i);
+    rc= memcached_mop_upsert(memc, test_literal_param("map:a_map"), buffer, buffer_len, test_literal_param("value"), &attributes);
+    test_true_got(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED, memcached_strerror(NULL, rc));
+    test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_STORED, memcached_strerror(NULL, memcached_get_last_response_code(memc)));
+  }
+
+  memcached_coll_attrs_st attrs;
+  memcached_coll_attrs_init(&attrs);
+  memcached_coll_attrs_set_overflowaction(&attrs, OVERFLOWACTION_ERROR);
+  memcached_coll_attrs_set_expiretime(&attrs, 1000);
+
+  rc= memcached_set_attrs(memc, test_literal_param("map:a_map"), &attrs);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+
+  rc= memcached_mop_upsert(memc, test_literal_param("map:a_map"), test_literal_param("mkey1"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+
+  rc= memcached_mop_upsert(memc, test_literal_param("map:a_map"), test_literal_param("last_mkey"), test_literal_param("value"), &attributes);
+  test_true_got(rc == MEMCACHED_OVERFLOWED, memcached_strerror(NULL, rc));
+
+  return TEST_SUCCESS;
+}
+
 static test_return_t arcus_1_10_map_update(memcached_st *memc)
 {
   uint32_t flags= 10;
@@ -11910,6 +11978,7 @@ test_st arcus_1_9_tests[] ={
 test_st arcus_1_10_tests[] ={
   {"arcus_1_10_map_create", true, (test_callback_fn*)arcus_1_10_map_create},
   {"arcus_1_10_map_insert", true, (test_callback_fn*)arcus_1_10_map_insert},
+  {"arcus_1_10_map_upsert", true, (test_callback_fn*)arcus_1_10_map_upsert},
   {"arcus_1_10_map_update", true, (test_callback_fn*)arcus_1_10_map_update},
   {"arcus_1_10_map_delete", true, (test_callback_fn*)arcus_1_10_map_delete},
   {"arcus_1_10_map_delete_all", true, (test_callback_fn*)arcus_1_10_map_delete_all},

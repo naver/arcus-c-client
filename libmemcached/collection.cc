@@ -28,6 +28,7 @@ typedef enum {
   SOP_DELETE_OP,
   SOP_EXIST_OP,
   MOP_INSERT_OP,
+  MOP_UPSERT_OP,
   MOP_UPDATE_OP,
   MOP_GET_OP,
   MOP_DELETE_OP,
@@ -65,6 +66,7 @@ static inline const char *coll_op_string(memcached_coll_action_t verb)
   case SOP_DELETE_OP:           return "sop delete ";
   case SOP_EXIST_OP:            return "sop exist ";
   case MOP_INSERT_OP:           return "mop insert ";
+  case MOP_UPSERT_OP:           return "mop upsert ";
   case MOP_UPDATE_OP:           return "mop update ";
   case MOP_GET_OP:              return "mop get ";
   case MOP_DELETE_OP:           return "mop delete ";
@@ -105,6 +107,7 @@ static inline int coll_op_length(memcached_coll_action_t verb)
   case SOP_DELETE_OP:           return 11;
   case SOP_EXIST_OP:            return 10;
   case MOP_INSERT_OP:           return 11;
+  case MOP_UPSERT_OP:           return 11;
   case MOP_UPDATE_OP:           return 11;
   case MOP_GET_OP:              return 8;
   case MOP_DELETE_OP:           return 11;
@@ -1291,7 +1294,7 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   {
     /* no sub key */
   }
-  else if (verb == MOP_INSERT_OP)
+  else if (verb == MOP_INSERT_OP || verb == MOP_UPSERT_OP)
   {
     size_t mkey_length = query->sub_key.mkey.length;
     if (mkey_length > MEMCACHED_COLL_MAX_MOP_MKEY_LENG)
@@ -1334,7 +1337,8 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   if (attributes)
   {
     bool set_overflowaction= verb != SOP_INSERT_OP &&
-                             verb != MOP_INSERT_OP
+                             verb != MOP_INSERT_OP &&
+                             verb != MOP_UPSERT_OP
                                   && attributes->overflowaction
                                   && attributes->overflowaction != OVERFLOWACTION_NONE;
 
@@ -1406,9 +1410,9 @@ do_action:
       {
         rc= MEMCACHED_SUCCESS;
       }
-      else if (rc == MEMCACHED_REPLACED && verb == BOP_UPSERT_OP)
+      else if (rc == MEMCACHED_REPLACED && (verb == BOP_UPSERT_OP || verb == MOP_UPSERT_OP))
       {
-        /* bop upsert returns REPLACED if the same bkey element is replaced. */
+        /* mop/bop upsert returns REPLACED if the same bkey element is replaced. */
         rc= MEMCACHED_SUCCESS;
       }
     }
@@ -3791,6 +3795,21 @@ memcached_return_t memcached_mop_insert(memcached_st *ptr,
 
   return do_coll_insert(ptr, key, key_length,
                         &query, NULL, attributes, MOP_INSERT_OP);
+}
+
+memcached_return_t memcached_mop_upsert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
+                                        const char *mkey, size_t mkey_length,
+                                        const char *value, size_t value_length,
+                                        memcached_coll_create_attrs_st *attributes)
+{
+  memcached_coll_query_st query;
+  memcached_mop_query_init(&query, mkey, mkey_length);
+  query.value = value;
+  query.value_length = value_length;
+
+  return do_coll_insert(ptr, key, key_length,
+                        &query, NULL, attributes, MOP_UPSERT_OP);
 }
 
 memcached_return_t memcached_mop_update(memcached_st *ptr,
