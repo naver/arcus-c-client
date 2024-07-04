@@ -11,6 +11,7 @@ Map item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 
 - [Map Item 생성](06-map-API.md#map-item-생성) (Map Item 삭제는 key-value item 삭제 함수로 수행한다)
 - [Map Element 삽입](06-map-API.md#map-element-삽입)
+- [Map Element Upsert](06-map-API.md#map-element-upsert)
 - [Map Element 변경](06-map-API.md#map-element-변경)
 - [Map Element 삭제](06-map-API.md#map-element-삭제)
 - [Map Element 조회](06-map-API.md#map-element-조회)
@@ -176,6 +177,71 @@ void arcus_map_element_insert(memcached_st *memc)
                              "value", strlen("value"), &attributes);
     assert(MEMCACHED_SUCCESS != rc);
     assert(MEMCACHED_ELEMENT_EXISTS == rc);
+}
+```
+
+## Map Element Upsert
+
+Map에 하나의 element를 upsert한다.
+Upsert 연산은 해당 element가 없으면 insert하고, 있으면 update하는 연산이다.
+
+``` c
+
+ memcached_return_t
+ memcached_mop_upsert(memcached_st *ptr,
+                      const char *key, size_t key_length,
+                      const char *mkey, size_t mkey_length,
+                      const char *value, size_t value_length,
+                      memcached_coll_create_attrs_st *attributes)
+```
+
+- key, key_length: map item의 key
+- mkey, mkey_length: upsert할 element의 mkey
+- value, value_lenth: upsert할 element의 value
+- attributes: Map 없을 시에 attributes에 따라 empty map을 생성 후에 element 삽입한다.
+
+Response code는 아래와 같다.
+
+- MEMCACHED_SUCCESS
+  - MEMCACHED_STORED: 기존에 존재하던 Map에 element가 삽입됨.
+  - MEMCACHED_CREATED_STORED: Map가 새롭게 생성되고 element가 삽입됨.
+  - MEMCACHED_REPLACED: 기존에 존재하던 Map에서 동일한 mkey를 가진 element를 대체함.
+- not MEMCACHED_SUCCESS
+  - MEMCACHED_NOTFOUND: Map이 존재하지 않음.
+  - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 Map이 아님.
+  - MEMCACHED_OVERFLOWED: Overflow 상태임. (overflowaction=error)
+
+Map element를 upsert하는 예제는 아래와 같다.
+
+``` c
+void arcus_map_element_upsert(memcached_st *memc)
+{
+    memcached_return_t rc;
+
+    uint32_t flags= 10;
+    uint32_t exptime= 600;
+    uint32_t maxcount= 1000;
+
+    memcached_coll_create_attrs_st attributes;
+    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+    // 1. CREATED_STORED
+    rc= memcached_mop_upsert(memc, "a_map", strlen("a_map"), "mkey", strlen("mkey"),
+                             "value", strlen("value"), &attributes);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
+
+    // 2. STORED
+    rc= memcached_mop_upsert(memc, "a_map", strlen("a_map"), "mkey1", strlen("mkey1"),
+                             "value", strlen("value"), &attributes);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
+
+    // 3. REPLACED
+    rc= memcached_mop_upsert(memc, "a_map", strlen("a_map"), "mkey1", strlen("mkey1"),
+                             "value", strlen("value"), &attributes);
+    assert(MEMCACHED_SUCCESS == rc);
+    assert(MEMCACHED_REPLACED == memcached_get_last_response_code(memc));
 }
 ```
 

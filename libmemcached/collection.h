@@ -975,6 +975,25 @@ memcached_return_t memcached_mop_insert(memcached_st *ptr,
                                         memcached_coll_create_attrs_st *attributes);
 
 /**
+ * Upsert (update the element if it exists, insert otherwise) an element into the map item.
+ * Optionally create the item if it does not exist.
+ * @param ptr  memcached handle.
+ * @param key  map item's key.
+ * @param key_length  key length (number of bytes).
+ * @param mkey  map element's key.
+ * @param mkey_length  mkey length (number of bytes).
+ * @param value  buffer holding the element value.
+ * @param value_length  length of the element value (number of bytes).
+ * @param attrs  if not NULL, create the item using the attributes if the item does not exist.
+ */
+LIBMEMCACHED_API
+memcached_return_t memcached_mop_upsert(memcached_st *ptr,
+                                        const char *key, size_t key_length,
+                                        const char *mkey, size_t mkey_length,
+                                        const char *value, size_t value_length,
+                                        memcached_coll_create_attrs_st *attributes);
+
+/**
  * Update the existing element in the map item.
  * @param ptr  memcached handle.
  * @param key  map item's key.
