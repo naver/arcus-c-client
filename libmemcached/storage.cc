@@ -227,7 +227,7 @@ do_action:
     return MEMCACHED_BUFFERED;
   }
 
-  if (noreply)
+  if (noreply or ptr->flags.bulk)
   {
     return MEMCACHED_SUCCESS;
   }
@@ -349,7 +349,7 @@ do_action:
 
   if (rc == MEMCACHED_SUCCESS)
   {
-    if (ptr->flags.no_reply)
+    if (ptr->flags.no_reply or ptr->flags.bulk)
     {
       rc= (to_write == false) ? MEMCACHED_BUFFERED : MEMCACHED_SUCCESS;
     }
@@ -428,6 +428,101 @@ static inline memcached_return_t memcached_send(memcached_st *ptr,
   return rc;
 }
 
+static inline memcached_return_t memcached_send_bulk(memcached_st *ptr,
+                                                     const char * const *group_keys, const size_t *group_key_length,
+                                                     const char * const *keys, const size_t *key_length,
+                                                     size_t number_of_keys,
+                                                     const char * const *values, const size_t *value_length,
+                                                     time_t *expirations,
+                                                     uint32_t flags,
+                                                     uint64_t *cas,
+                                                     memcached_return_t *results,
+                                                     memcached_storage_action_t verb)
+{
+  arcus_server_check_for_update(ptr);
+
+  memcached_return_t rc;
+
+  if (memcached_failed(rc= initialize_query(ptr)))
+  {
+    return rc;
+  }
+
+  /* Check function arguments */
+  if (not group_keys or not group_key_length)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("group key (length) list is null"));
+  }
+  if (not keys or not key_length)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("key (length) list is null"));
+  }
+  if (not values or not value_length)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("value (length) list is null"));
+  }
+  if (verb == CAS_OP and not cas){
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("cas is null"));
+  }
+  if (not results)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("result is null"));
+  }
+
+  ptr->flags.bulk = true;
+
+  for (int i = 0; i < (int)number_of_keys; i++)
+  {
+    if (memcached_failed(memcached_validate_key_length(key_length[i], ptr->flags.binary_protocol)) ||
+        memcached_failed(memcached_key_test(*ptr, (const char **)&keys[i], &key_length[i], 1)))
+    {
+      results[i] = MEMCACHED_BAD_KEY_PROVIDED;
+    }
+    else if (verb == CAS_OP and cas[i] == 0)
+    {
+      results[i] = MEMCACHED_PROTOCOL_ERROR;
+    }
+    else if (ptr->flags.binary_protocol)
+    {
+      results[i] = memcached_send_binary(ptr, group_keys[i], group_key_length[i],
+                                         keys[i], key_length[i], values[i], value_length[i],
+                                         expirations ? expirations[i] : 0, flags,
+                                         cas ? cas[i] : 0, verb);
+    }
+    else
+    {
+      results[i] = memcached_send_ascii(ptr, group_keys[i], group_key_length[i],
+                                        keys[i], key_length[i], values[i], value_length[i],
+                                        expirations ? expirations[i] : 0, flags,
+                                        cas ? cas[i] : 0, verb);
+    }
+  }
+
+  ptr->flags.bulk = false;
+
+  if (ptr->flags.no_reply) {
+    return rc;
+  }
+
+  for (int i = 0; i < (int)number_of_keys; i++)
+  {
+    if (results[i] == MEMCACHED_SUCCESS)
+    {
+      uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_keys[i], group_key_length[i]);
+      memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+
+      char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+      results[i] = memcached_read_one_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    }
+  }
+
+  return rc;
+}
 
 memcached_return_t memcached_set(memcached_st *ptr, const char *key, size_t key_length,
                                  const char *value, size_t value_length,
@@ -605,3 +700,92 @@ memcached_return_t memcached_cas_by_key(memcached_st *ptr,
   return rc;
 }
 
+memcached_return_t memcached_set_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_bulk(ptr, keys, key_length,
+                     keys, key_length, number_of_keys,
+                     values, value_length,
+                     expirations, flags, 0, results, SET_OP);
+  return rc;
+}
+
+memcached_return_t memcached_add_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_bulk(ptr, keys, key_length,
+                     keys, key_length, number_of_keys,
+                     values, value_length,
+                     expirations, flags, 0, results, ADD_OP);
+  return rc;
+}
+
+memcached_return_t memcached_replace_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_bulk(ptr, keys, key_length,
+                     keys, key_length, number_of_keys,
+                     values, value_length,
+                     expirations, flags, NULL, results, REPLACE_OP);
+  return rc;
+}
+
+memcached_return_t memcached_prepend_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_bulk(ptr, keys, key_length,
+                     keys, key_length, number_of_keys,
+                     values, value_length,
+                     expirations, flags, NULL, results, PREPEND_OP);
+  return rc;
+}
+
+ memcached_return_t memcached_append_bulk(memcached_st *ptr,
+                                       const char * const *keys, const size_t *key_length,
+                                       size_t number_of_keys,
+                                       const char * const *values, const size_t *value_length,
+                                       time_t *expirations, uint32_t flags,
+                                       memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_bulk(ptr, keys, key_length,
+                     keys, key_length, number_of_keys,
+                     values, value_length,
+                     expirations, flags, NULL, results, APPEND_OP);
+  return rc;
+}
+
+memcached_return_t memcached_cas_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags, uint64_t *cas,
+                                      memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_bulk(ptr, keys, key_length,
+                     keys, key_length, number_of_keys,
+                     values, value_length,
+                     expirations, flags, cas, results, CAS_OP);
+  return rc;
+}

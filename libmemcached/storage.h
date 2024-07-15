@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -128,6 +128,54 @@ memcached_return_t memcached_cas_by_key(memcached_st *ptr,
                                         time_t expiration,
                                         uint32_t flags,
                                         uint64_t cas);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_set_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_add_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_replace_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_prepend_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_append_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags,
+                                      memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_cas_bulk(memcached_st *ptr,
+                                      const char * const *keys, const size_t *key_length,
+                                      size_t number_of_keys,
+                                      const char * const *values, const size_t *value_length,
+                                      time_t *expirations, uint32_t flags, uint64_t *cas,
+                                      memcached_return_t *results);
 
 #ifdef __cplusplus
 }
