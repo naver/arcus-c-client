@@ -61,6 +61,7 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   self->minor_version= UINT8_MAX;
   self->micro_version= UINT8_MAX;
   self->is_enterprise= false;
+  self->send_failed= false;
   self->type= type;
   self->error_messages= NULL;
   self->read_ptr= self->read_buffer;
@@ -99,6 +100,7 @@ static inline void _server_init(memcached_server_st *self, memcached_st *root,
   /* self->switchover_sidx; */
   /* self->switchover_peer; */
   self->next= NULL;     /* next server pointer */
+  self->switchover_state= MEMCACHED_SUCCESS;
 #endif
 }
 

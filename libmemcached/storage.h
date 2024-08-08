@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -39,6 +39,16 @@
 #define __LIBMEMCACHED_STORAGE_H__
 
 #include "libmemcached/memcached.h"
+
+struct memcached_storage_request_st {
+  char *key;
+  size_t key_length;
+  char *value;
+  size_t value_length;
+  time_t expiration;
+  uint32_t flags;
+  uint64_t cas;
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,6 +138,20 @@ memcached_return_t memcached_cas_by_key(memcached_st *ptr,
                                         time_t expiration,
                                         uint32_t flags,
                                         uint64_t cas);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mset(memcached_st *ptr,
+                                  const memcached_storage_request_st *req,
+                                  const size_t number_of_req,
+                                  memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mset_by_key(memcached_st *ptr,
+                                         const char *group_key,
+                                         size_t group_key_length,
+                                         const memcached_storage_request_st *req,
+                                         const size_t number_of_req,
+                                         memcached_return_t *results);
 
 #ifdef __cplusplus
 }
