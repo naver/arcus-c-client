@@ -121,6 +121,72 @@ static inline uint8_t get_com_code(memcached_storage_action_t verb, bool noreply
   return ret;
 }
 
+static memcached_return_t before_bulk_storage(memcached_st *ptr,
+                                              const char *group_key, size_t group_key_length,
+                                              const memcached_storage_request_st *req,
+                                              const size_t number_of_req)
+{
+  memcached_return_t rc= initialize_query(ptr);
+  if (memcached_failed(rc))
+  {
+    return rc;
+  }
+
+  if (ptr->flags.use_udp)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_NOT_SUPPORTED, MEMCACHED_AT);
+  }
+  if (ptr->flags.buffer_requests)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_NOT_SUPPORTED, MEMCACHED_AT,
+                               memcached_literal_param("buffered request is not supported for multi key operation"));
+  }
+
+  if (req == NULL)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_NOTFOUND, MEMCACHED_AT,
+                               memcached_literal_param("req were null"));
+  }
+  if (number_of_req == 0)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_NOTFOUND, MEMCACHED_AT,
+                               memcached_literal_param("number_of_req were zero"));
+  }
+
+  if (group_key and group_key_length)
+  {
+    if (memcached_failed(memcached_key_test(*ptr, (const char * const *)&group_key, &group_key_length, 1)))
+    {
+      return memcached_set_error(*ptr, MEMCACHED_BAD_KEY_PROVIDED, MEMCACHED_AT,
+                                  memcached_literal_param("A bad group key was provided."));
+    }
+  }
+
+  /*
+    Here is where we pay for the non-block API. We need to remove any data sitting
+    in the queue before we start our store operations.
+
+    It might be optimum to bounce the connection if count > some number.
+  */
+  for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
+  {
+    memcached_server_write_instance_st instance=
+      memcached_server_instance_fetch(ptr, x);
+
+    if (memcached_server_response_count(instance))
+    {
+      char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+
+      if (ptr->flags.no_block)
+        (void)memcached_io_write(instance, NULL, 0, true);
+
+      while(memcached_server_response_count(instance))
+        (void)memcached_response(instance, buffer, sizeof(buffer), &ptr->result);
+    }
+  }
+  return MEMCACHED_SUCCESS;
+}
+
 static memcached_return_t memcached_send_binary(memcached_st *ptr,
                                                 uint32_t server_key,
                                                 const char *key,
@@ -224,7 +290,7 @@ do_action:
     return MEMCACHED_BUFFERED;
   }
 
-  if (noreply)
+  if (noreply or ptr->flags.bulked)
   {
     return MEMCACHED_SUCCESS;
   }
@@ -344,7 +410,7 @@ do_action:
 
   if (rc == MEMCACHED_SUCCESS)
   {
-    if (ptr->flags.no_reply)
+    if (ptr->flags.no_reply or ptr->flags.bulked)
     {
       rc= (to_write == false) ? MEMCACHED_BUFFERED : MEMCACHED_SUCCESS;
     }
@@ -424,6 +490,253 @@ static inline memcached_return_t memcached_send(memcached_st *ptr,
   return rc;
 }
 
+static inline memcached_return_t build_return_t(bool success_occurred, bool failure_occurred)
+{
+  if (success_occurred == false)
+  {
+    return MEMCACHED_FAILURE;
+  }
+  else if (failure_occurred)
+  {
+    return MEMCACHED_SOME_ERRORS;
+  }
+  return MEMCACHED_SUCCESS;
+}
+
+static memcached_return_t memcached_bulk_send(memcached_st *ptr,
+                                              const char *group_key,
+                                              const size_t group_key_length,
+                                              const memcached_storage_request_st *req,
+                                              const size_t number_of_req,
+                                              const memcached_storage_action_t verb,
+                                              memcached_return_t *results)
+{
+  if (ptr == NULL or req == NULL or number_of_req == 0 or results == NULL)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  if (number_of_req > MAX_KEYS_FOR_MULTI_KEY_OPERATION)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("number of requests should be <= MAX_KEYS_FOR_MULTI_KEY_OPERATION"));
+  }
+
+  arcus_server_check_for_update(ptr);
+
+  memcached_return_t rc= before_bulk_storage(ptr, group_key, group_key_length, req, number_of_req);
+  if (memcached_failed(rc))
+  {
+    return rc;
+  }
+
+  bool success_occurred= false;
+  bool failure_occurred= false;
+
+  const bool is_cas= verb == CAS_OP;
+  const bool is_noreply= ptr->flags.no_reply;
+
+  for (size_t i= 0; i < number_of_req; i++)
+  {
+    if (is_cas and req[i].cas == 0)
+    {
+      failure_occurred= true;
+      results[i]= MEMCACHED_INVALID_ARGUMENTS;
+    }
+    else if (memcached_failed(rc= memcached_validate_key_length(req[i].key_length, ptr->flags.binary_protocol)) or
+             memcached_failed(rc= memcached_key_test(*ptr, &(req[i].key), &(req[i].key_length), 1)))
+    {
+      failure_occurred= true;
+      results[i]= rc;
+    }
+    else
+    {
+      results[i]= MEMCACHED_MAXIMUM_RETURN;
+    }
+  }
+
+  uint32_t server_key= -1;
+  memcached_server_write_instance_st instance= NULL;
+
+  const bool group_key_present= (group_key != NULL and group_key_length > 0);
+  memcached_server_write_instance_st instances[MAX_KEYS_FOR_MULTI_KEY_OPERATION]= { NULL };
+  memcached_server_write_instance_st failed_instances[MAX_KEYS_FOR_MULTI_KEY_OPERATION]= { NULL };
+
+#ifdef ENABLE_REPLICATION
+do_action:
+#endif
+  if (group_key_present == true)
+  {
+    server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
+    instance= memcached_server_instance_fetch(ptr, server_key);
+  }
+
+  size_t number_of_failed_instances= 0;
+  ptr->flags.bulked= true;
+
+  for (size_t i= 0; i < number_of_req; i++)
+  {
+    if (results[i] != MEMCACHED_MAXIMUM_RETURN)
+    {
+      continue;
+    }
+
+    if (group_key_present == false)
+    {
+      server_key= memcached_generate_hash_with_redistribution(ptr, req[i].key, req[i].key_length);
+      instance= memcached_server_instance_fetch(ptr, server_key);
+    }
+    instances[i]= instance;
+
+    if (instance->send_failed == true)
+    {
+      results[i]= MEMCACHED_FAILURE;
+      continue;
+    }
+
+    uint64_t cas= (is_cas ? req[i].cas : 0);
+    if (ptr->flags.binary_protocol)
+    {
+      rc= memcached_send_binary(ptr, server_key,
+                                req[i].key, req[i].key_length,
+                                req[i].value, req[i].value_length,
+                                req[i].expiration, req[i].flags,
+                                cas, verb);
+    }
+    else
+    {
+      rc= memcached_send_ascii(ptr, server_key,
+                               req[i].key, req[i].key_length,
+                               req[i].value, req[i].value_length,
+                               req[i].expiration, req[i].flags,
+                               cas, verb);
+    }
+
+    if (memcached_failed(rc))
+    {
+      failure_occurred= true;
+      instance->send_failed= true;
+      failed_instances[number_of_failed_instances++]= instance;
+
+      results[i]= rc;
+    }
+    else if (is_noreply)
+    {
+      success_occurred= true;
+      results[i]= rc;
+    }
+  }
+
+  unlikely (number_of_failed_instances > 0)
+  {
+    for (size_t i= 0; i < number_of_failed_instances; i++)
+    {
+      failed_instances[i]->send_failed= false;
+    }
+  }
+  ptr->flags.bulked= false;
+
+  if (is_noreply == true)
+  {
+    return build_return_t(success_occurred, failure_occurred);
+  }
+
+#ifdef ENABLE_REPLICATION
+  bool switchover_needed_ever= false;
+#endif
+
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  for (size_t i= 0; i < number_of_req; i++)
+  {
+    if (results[i] != MEMCACHED_MAXIMUM_RETURN)
+    {
+      continue;
+    }
+
+    if (memcached_server_response_count(instance= instances[i]) == 0)
+    {
+      failure_occurred= true;
+      results[i]= MEMCACHED_UNKNOWN_READ_FAILURE;
+      continue;
+    }
+
+    rc= memcached_read_one_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    if (rc == MEMCACHED_STORED)
+    {
+      success_occurred= true;
+      results[i]= MEMCACHED_SUCCESS;
+    }
+#ifdef ENABLE_REPLICATION
+    else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+    {
+      switchover_needed_ever= true;
+      instance->switchover_state= rc;
+    }
+#endif
+    else
+    {
+      failure_occurred = true;
+      results[i]= rc;
+    }
+  }
+
+#ifdef ENABLE_REPLICATION
+  likely (switchover_needed_ever == false)
+  {
+    return build_return_t(success_occurred, failure_occurred);
+  }
+
+  bool switchover_done_ever= false;
+  size_t number_of_switchover_failed= 0;
+
+  for (size_t i= 0; i < number_of_req; i++)
+  {
+    if (results[i] != MEMCACHED_MAXIMUM_RETURN)
+    {
+      continue;
+    }
+
+    instance= instances[i];
+    rc= instance->switchover_state;
+
+    if (rc == MEMCACHED_SWITCHOVER || rc == MEMCACHED_REPL_SLAVE)
+    {
+      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
+        switchover_done_ever= true;
+        instance->switchover_state= MEMCACHED_SUCCESS;
+      }
+      else
+      {
+        failure_occurred= true;
+        results[i]= instance->switchover_state= MEMCACHED_FAILURE;
+        failed_instances[number_of_switchover_failed++]= instance;
+      }
+    }
+    else if (rc == MEMCACHED_FAILURE)
+    {
+      results[i]= MEMCACHED_FAILURE;
+    }
+  }
+
+  unlikely (number_of_switchover_failed > 0)
+  {
+    for (size_t i= 0; i < number_of_switchover_failed; i++)
+    {
+      failed_instances[i]->switchover_state= MEMCACHED_SUCCESS;
+    }
+  }
+
+  likely (switchover_done_ever)
+  {
+    goto do_action;
+  }
+#endif
+
+  return build_return_t(success_occurred, failure_occurred);
+}
 
 memcached_return_t memcached_set(memcached_st *ptr, const char *key, size_t key_length,
                                  const char *value, size_t value_length,
@@ -601,3 +914,25 @@ memcached_return_t memcached_cas_by_key(memcached_st *ptr,
   return rc;
 }
 
+memcached_return_t memcached_mset(memcached_st *ptr,
+                                  const memcached_storage_request_st *req,
+                                  const size_t number_of_req,
+                                  memcached_return_t *results)
+{
+  return memcached_mset_by_key(ptr, NULL, 0, req, number_of_req, results);
+}
+
+memcached_return_t memcached_mset_by_key(memcached_st *ptr,
+                                         const char *group_key,
+                                         size_t group_key_length,
+                                         const memcached_storage_request_st *req,
+                                         const size_t number_of_req,
+                                         memcached_return_t *results)
+{
+  memcached_return_t rc;
+  LIBMEMCACHED_MEMCACHED_MSET_START();
+  rc= memcached_bulk_send(ptr, group_key, group_key_length,
+                          req, number_of_req, SET_OP, results);
+  LIBMEMCACHED_MEMCACHED_MSET_END();
+  return rc;
+}

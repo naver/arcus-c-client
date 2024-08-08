@@ -88,7 +88,8 @@ struct memcached_server_st {
   uint8_t major_version; // Default definition of UINT8_MAX means that it has not been set.
   uint8_t minor_version; // ditto
   uint8_t micro_version; // ditto
-  bool    is_enterprise;
+  bool is_enterprise;
+  bool send_failed;
   memcached_connection_t type;
   char *read_ptr;
   size_t read_buffer_length;
@@ -106,6 +107,7 @@ struct memcached_server_st {
   int32_t switchover_sidx;      /* slave index for switchover */
   char    switchover_peer[128]; /* FIXME: constant macro must be defined */
   struct memcached_server_st *next;
+  memcached_return_t switchover_state;
 #endif
   memcached_st *root;
   uint64_t limit_maxbytes;

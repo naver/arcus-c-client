@@ -65,6 +65,16 @@ tests_internals_LDADD+= libtest/libtest.la
 check_PROGRAMS+= tests/internals
 noinst_PROGRAMS+= tests/internals
 
+# Test storage
+tests_storage_SOURCES= tests/storage.cc
+tests_storage_CXXFLAGS =  $(AM_CXXFLAGS) ${PTHREAD_CFLAGS}
+tests_storage_DEPENDENCIES= libmemcachedinternal/libmemcachedinternal.la libtest/libtest.la  libmemcachedinternal/libmemcachedutilinternal.la
+tests_storage_LDADD= libmemcachedinternal/libmemcachedinternal.la
+tests_storage_LDADD+= ${PTHREAD_LIBS}
+tests_storage_LDADD+= libmemcachedinternal/libmemcachedutilinternal.la
+tests_storage_LDADD+= libtest/libtest.la
+check_PROGRAMS+= tests/storage
+noinst_PROGRAMS+= tests/storage
 
 tests_testapp_CXXFLAGS =  $(AM_CXXFLAGS) ${PTHREAD_CFLAGS}
 tests_testapp_CFLAGS= $(AM_CFLAGS) $(NO_CONVERSION) $(NO_STRICT_ALIASING)
@@ -239,7 +249,7 @@ tests_memdump_DEPENDENCIES= libtest/libtest.la $(TESTS_LDADDS)
 tests_memdump_LDADD=  $(tests_memdump_DEPENDENCIES)
 check_PROGRAMS+= tests/memdump
 noinst_PROGRAMS+= tests/memdump
- 
+
 # Test linking with C application
 tests_c_test_SOURCES= tests/c_test.c
 tests_c_test_CFLAGS= ${PTHREAD_CFLAGS}

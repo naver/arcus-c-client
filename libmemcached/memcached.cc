@@ -176,6 +176,7 @@ static inline bool _memcached_init(memcached_st *self)
   self->configure.filename= NULL;
 
   self->flags.piped= false;
+  self->flags.bulked= false;
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
   self->server_manager= NULL;
   self->logfile= NULL;
