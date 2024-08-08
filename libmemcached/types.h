@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -60,6 +60,7 @@ typedef struct memcached_stat_st memcached_stat_st;
 typedef struct memcached_analysis_st memcached_analysis_st;
 typedef struct memcached_result_st memcached_result_st;
 typedef struct memcached_array_st memcached_array_st;
+typedef struct memcached_storage_request_st memcached_storage_request_st;
 typedef struct memcached_error_t memcached_error_t;
 
 // All of the flavors of memcache_server_st

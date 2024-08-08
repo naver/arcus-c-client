@@ -64,6 +64,15 @@ enum memcached_server_state_t {
   MEMCACHED_SERVER_STATE_IN_TIMEOUT
 };
 
+#ifdef ENABLE_REPLICATION
+enum memcached_server_switchover_state_t {
+  MEMCACHED_SERVER_SWITCHOVER_DONE,
+  MEMCACHED_SERVER_SWITCHOVER_NEEDED,
+  MEMCACHED_SERVER_SWITCHOVER_NEEDED_REPL_SLAVE,
+  MEMCACHED_SERVER_SWITCHOVER_FAILED
+};
+#endif
+
 struct memcached_server_st {
   struct {
     bool is_allocated:1;
@@ -88,7 +97,10 @@ struct memcached_server_st {
   uint8_t major_version; // Default definition of UINT8_MAX means that it has not been set.
   uint8_t minor_version; // ditto
   uint8_t micro_version; // ditto
-  bool    is_enterprise;
+  bool    is_enterprise:1;
+  bool send_failed:1;
+  bool recv_failed:1;
+  struct memcached_server_st *next_failed;
   memcached_connection_t type;
   char *read_ptr;
   size_t read_buffer_length;
@@ -106,6 +118,7 @@ struct memcached_server_st {
   int32_t switchover_sidx;      /* slave index for switchover */
   char    switchover_peer[128]; /* FIXME: constant macro must be defined */
   struct memcached_server_st *next;
+  enum memcached_server_switchover_state_t switchover_state;
 #endif
   memcached_st *root;
   uint64_t limit_maxbytes;

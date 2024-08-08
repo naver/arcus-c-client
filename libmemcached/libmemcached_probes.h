@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -111,6 +111,10 @@
 #define	LIBMEMCACHED_MEMCACHED_SET_END_ENABLED() (0)
 #define	LIBMEMCACHED_MEMCACHED_SET_START()
 #define	LIBMEMCACHED_MEMCACHED_SET_START_ENABLED() (0)
+#define	LIBMEMCACHED_MEMCACHED_MSET_END()
+#define	LIBMEMCACHED_MEMCACHED_MSET_END_ENABLED() (0)
+#define	LIBMEMCACHED_MEMCACHED_MSET_START()
+#define	LIBMEMCACHED_MEMCACHED_MSET_START_ENABLED() (0)
 
 #endif
 
