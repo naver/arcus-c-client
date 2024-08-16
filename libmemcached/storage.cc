@@ -122,8 +122,7 @@ static inline uint8_t get_com_code(memcached_storage_action_t verb, bool noreply
 }
 
 static memcached_return_t memcached_send_binary(memcached_st *ptr,
-                                                const char *group_key,
-                                                size_t group_key_length,
+                                                uint32_t server_key,
                                                 const char *key,
                                                 size_t key_length,
                                                 const char *value,
@@ -171,8 +170,6 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
   };
 
   flush= (bool) ((ptr->flags.buffer_requests && verb == SET_OP) ? 0 : 1);
-
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   memcached_server_write_instance_st server= memcached_server_instance_fetch(ptr, server_key);
 
 #ifdef ENABLE_REPLICATION
@@ -248,8 +245,7 @@ do_action:
 }
 
 static memcached_return_t memcached_send_ascii(memcached_st *ptr,
-                                               const char *group_key,
-                                               const size_t group_key_length,
+                                               const uint32_t server_key,
                                                const char *key,
                                                const size_t key_length,
                                                const char *value,
@@ -320,8 +316,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
     to_write= true;
   }
 
-  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
-  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
+  memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);;
 
 #ifdef ENABLE_REPLICATION
 do_action:
@@ -410,16 +405,17 @@ static inline memcached_return_t memcached_send(memcached_st *ptr,
     return MEMCACHED_BAD_KEY_PROVIDED;
   }
 
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
   if (ptr->flags.binary_protocol)
   {
-    rc= memcached_send_binary(ptr, group_key, group_key_length,
+    rc= memcached_send_binary(ptr, server_key,
                               key, key_length,
                               value, value_length, expiration,
                               flags, cas, verb);
   }
   else
   {
-    rc= memcached_send_ascii(ptr, group_key, group_key_length,
+    rc= memcached_send_ascii(ptr, server_key,
                              key, key_length,
                              value, value_length, expiration,
                              flags, cas, verb);
