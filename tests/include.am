@@ -39,6 +39,7 @@ noinst_HEADERS+= \
 		 tests/print.h \
 		 tests/replication.h \
 		 tests/server_add.h \
+		 tests/storage.h \
 		 tests/string.h \
 		 tests/virtual_buckets.h
 
