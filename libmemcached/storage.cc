@@ -922,6 +922,46 @@ memcached_return_t memcached_mset(memcached_st *ptr,
   return memcached_mset_by_key(ptr, NULL, 0, req, number_of_req, results);
 }
 
+memcached_return_t memcached_madd(memcached_st *ptr,
+                                  const memcached_storage_request_st *req,
+                                  const size_t number_of_req,
+                                  memcached_return_t *results)
+{
+  return memcached_madd_by_key(ptr, NULL, 0, req, number_of_req, results);
+}
+
+memcached_return_t memcached_mreplace(memcached_st *ptr,
+                                      const memcached_storage_request_st *req,
+                                      const size_t number_of_req,
+                                      memcached_return_t *results)
+{
+  return memcached_mreplace_by_key(ptr, NULL, 0, req, number_of_req, results);
+}
+
+memcached_return_t memcached_mprepend(memcached_st *ptr,
+                                      const memcached_storage_request_st *req,
+                                      const size_t number_of_req,
+                                      memcached_return_t *results)
+{
+  return memcached_mprepend_by_key(ptr, NULL, 0, req, number_of_req, results);
+}
+
+memcached_return_t memcached_mappend(memcached_st *ptr,
+                                     const memcached_storage_request_st *req,
+                                     const size_t number_of_req,
+                                     memcached_return_t *results)
+{
+  return memcached_mappend_by_key(ptr, NULL, 0, req, number_of_req, results);
+}
+
+memcached_return_t memcached_mcas(memcached_st *ptr,
+                                  const memcached_storage_request_st *req,
+                                  const size_t number_of_req,
+                                  memcached_return_t *results)
+{
+  return memcached_mcas_by_key(ptr, NULL, 0, req, number_of_req, results);
+}
+
 memcached_return_t memcached_mset_by_key(memcached_st *ptr,
                                          const char *group_key,
                                          size_t group_key_length,
@@ -934,5 +974,74 @@ memcached_return_t memcached_mset_by_key(memcached_st *ptr,
   rc= memcached_send_multi(ptr, group_key, group_key_length,
                            req, number_of_req, SET_OP, results);
   LIBMEMCACHED_MEMCACHED_MSET_END();
+  return rc;
+}
+
+memcached_return_t memcached_madd_by_key(memcached_st *ptr,
+                                         const char *group_key,
+                                         size_t group_key_length,
+                                         const memcached_storage_request_st *req,
+                                         const size_t number_of_req,
+                                         memcached_return_t *results)
+{
+  memcached_return_t rc;
+  LIBMEMCACHED_MEMCACHED_MADD_START();
+  rc= memcached_send_multi(ptr, group_key, group_key_length,
+                           req, number_of_req, ADD_OP, results);
+  LIBMEMCACHED_MEMCACHED_MADD_END();
+  return rc;
+}
+
+memcached_return_t memcached_mreplace_by_key(memcached_st *ptr,
+                                             const char *group_key,
+                                             size_t group_key_length,
+                                             const memcached_storage_request_st *req,
+                                             const size_t number_of_req,
+                                             memcached_return_t *results)
+{
+  memcached_return_t rc;
+  LIBMEMCACHED_MEMCACHED_MREPLACE_START();
+  rc= memcached_send_multi(ptr, group_key, group_key_length,
+                           req, number_of_req, REPLACE_OP, results);
+  LIBMEMCACHED_MEMCACHED_MREPLACE_END();
+  return rc;
+}
+
+memcached_return_t memcached_mprepend_by_key(memcached_st *ptr,
+                                             const char *group_key,
+                                             size_t group_key_length,
+                                             const memcached_storage_request_st *req,
+                                             const size_t number_of_req,
+                                             memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_multi(ptr, group_key, group_key_length,
+                           req, number_of_req, PREPEND_OP, results);
+  return rc;
+}
+
+memcached_return_t memcached_mappend_by_key(memcached_st *ptr,
+                                            const char *group_key,
+                                            size_t group_key_length,
+                                            const memcached_storage_request_st *req,
+                                            const size_t number_of_req,
+                                            memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_multi(ptr, group_key, group_key_length,
+                           req, number_of_req, APPEND_OP, results);
+  return rc;
+}
+
+memcached_return_t memcached_mcas_by_key(memcached_st *ptr,
+                                         const char *group_key,
+                                         size_t group_key_length,
+                                         const memcached_storage_request_st *req,
+                                         const size_t number_of_req,
+                                         memcached_return_t *results)
+{
+  memcached_return_t rc;
+  rc= memcached_send_multi(ptr, group_key, group_key_length,
+                           req, number_of_req, CAS_OP, results);
   return rc;
 }

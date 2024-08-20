@@ -146,7 +146,77 @@ memcached_return_t memcached_mset(memcached_st *ptr,
                                   memcached_return_t *results);
 
 LIBMEMCACHED_API
+memcached_return_t memcached_madd(memcached_st *ptr,
+                                  const memcached_storage_request_st *req,
+                                  const size_t number_of_req,
+                                  memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mreplace(memcached_st *ptr,
+                                      const memcached_storage_request_st *req,
+                                      const size_t number_of_req,
+                                      memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mprepend(memcached_st *ptr,
+                                      const memcached_storage_request_st *req,
+                                      const size_t number_of_req,
+                                      memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mappend(memcached_st *ptr,
+                                     const memcached_storage_request_st *req,
+                                     const size_t number_of_req,
+                                     memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mcas(memcached_st *ptr,
+                                  const memcached_storage_request_st *req,
+                                  const size_t number_of_req,
+                                  memcached_return_t *results);
+
+LIBMEMCACHED_API
 memcached_return_t memcached_mset_by_key(memcached_st *ptr,
+                                         const char *group_key,
+                                         size_t group_key_length,
+                                         const memcached_storage_request_st *req,
+                                         const size_t number_of_req,
+                                         memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_madd_by_key(memcached_st *ptr,
+                                         const char *group_key,
+                                         size_t group_key_length,
+                                         const memcached_storage_request_st *req,
+                                         const size_t number_of_req,
+                                         memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mreplace_by_key(memcached_st *ptr,
+                                             const char *group_key,
+                                             size_t group_key_length,
+                                             const memcached_storage_request_st *req,
+                                             const size_t number_of_req,
+                                             memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mprepend_by_key(memcached_st *ptr,
+                                             const char *group_key,
+                                             size_t group_key_length,
+                                             const memcached_storage_request_st *req,
+                                             const size_t number_of_req,
+                                             memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mappend_by_key(memcached_st *ptr,
+                                            const char *group_key,
+                                            size_t group_key_length,
+                                            const memcached_storage_request_st *req,
+                                            const size_t number_of_req,
+                                            memcached_return_t *results);
+
+LIBMEMCACHED_API
+memcached_return_t memcached_mcas_by_key(memcached_st *ptr,
                                          const char *group_key,
                                          size_t group_key_length,
                                          const memcached_storage_request_st *req,
