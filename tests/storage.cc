@@ -5,8 +5,8 @@ using namespace libtest;
 
 #include "tests/storage.h"
 
-#define MSET_COUNT 5
-#define BUFFER_SIZE 64
+#define MSET_COUNT MAX_KEYS_FOR_MULTI_STORE_OPERATION
+#define BUFFER_SIZE 1000 * 1000
 #define EXPIRE_TIME 60
 
 static inline void safe_free(void *ptr)
@@ -55,7 +55,10 @@ static bool do_mset_and_get(memcached_st *mc)
     snprintf(key, BUFFER_SIZE, "MSET:mset-key-%d", i);
 
     memset(value, 0, BUFFER_SIZE);
-    snprintf(value, BUFFER_SIZE, "mset-value-%d-%u", i, (uint32_t) rand());
+    snprintf(value, BUFFER_SIZE, "mset-value-%d-%u-", i, (uint32_t) rand());
+
+    size_t value_length= strlen(value);
+    memset(value + value_length, 97, BUFFER_SIZE - value_length - 1);
 
     req[i].key= key;
     req[i].key_length= strlen(key);
@@ -110,7 +113,6 @@ static bool do_mset_and_get(memcached_st *mc)
     }
 
     printf("memcached_get: flags[%d] is %u\n", i, flags);
-    printf("memcached_get: value[%d] is %s\n", i, value);
 
     if (req[i].value_length != value_length)
     {
@@ -183,12 +185,37 @@ collection_st collection[] ={
 
 #include "tests/libmemcached_world.h"
 
+static server_startup_st *single_server= NULL;
+
+static void *single_server_world_create(server_startup_st& servers, test_return_t& error)
+{
+  single_server= new server_startup_st(servers);
+  if (single_server == NULL)
+  {
+    printf("failed to allocate new server_startup_st object.\n");
+    error= TEST_MEMORY_ALLOCATION_FAILURE;
+    return NULL;
+  }
+
+  single_server->set_count(1);
+  return world_create(*single_server, error);
+}
+
+static bool single_server_world_destroy(void *object)
+{
+  if (single_server != NULL)
+  {
+    delete single_server;
+  }
+  return world_destroy(object);
+}
+
 void get_world(Framework *world)
 {
   world->collections= collection;
 
-  world->_create= (test_callback_create_fn*)world_create;
-  world->_destroy= (test_callback_destroy_fn*)world_destroy;
+  world->_create= (test_callback_create_fn*)single_server_world_create;
+  world->_destroy= (test_callback_destroy_fn*)single_server_world_destroy;
 
   world->item._startup= (test_callback_fn*)world_test_startup;
   world->item.set_pre((test_callback_fn*)world_pre_run);

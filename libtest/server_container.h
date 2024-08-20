@@ -55,6 +55,13 @@ public:
     udp(0)
   { }
 
+  server_startup_st(server_startup_st &source) :
+    _socket(source._socket),
+    _sasl(source._sasl),
+    _count(source._count),
+    udp(source.udp)
+  { }
+
   bool start_socket_server(const std::string& server_type, const in_port_t try_port, int argc, const char *argv[]);
 
   uint32_t count() const
