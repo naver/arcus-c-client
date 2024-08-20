@@ -6,6 +6,7 @@ memcached_return_t memcached_purge(memcached_server_write_instance_st ptr)
   memcached_st *root= (memcached_st *)ptr->root;
 
   if (memcached_is_purging(ptr->root) || /* already purging */
+       ptr->root->flags.multi_store || /* avoid purge when sending multi-storage operation */
       (memcached_server_response_count(ptr) < ptr->root->io_msg_watermark &&
        ptr->io_bytes_sent < ptr->root->io_bytes_watermark) ||
       (ptr->io_bytes_sent >= ptr->root->io_bytes_watermark &&
