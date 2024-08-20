@@ -290,7 +290,7 @@ do_action:
     return MEMCACHED_BUFFERED;
   }
 
-  if (noreply or ptr->flags.bulked)
+  if (noreply or ptr->flags.multi_store)
   {
     return MEMCACHED_SUCCESS;
   }
@@ -410,7 +410,7 @@ do_action:
 
   if (rc == MEMCACHED_SUCCESS)
   {
-    if (ptr->flags.no_reply or ptr->flags.bulked)
+    if (ptr->flags.no_reply or ptr->flags.multi_store)
     {
       rc= (to_write == false) ? MEMCACHED_BUFFERED : MEMCACHED_SUCCESS;
     }
@@ -503,23 +503,23 @@ static inline memcached_return_t build_return_t(bool success_occurred, bool fail
   return MEMCACHED_SUCCESS;
 }
 
-static memcached_return_t memcached_bulk_send(memcached_st *ptr,
-                                              const char *group_key,
-                                              const size_t group_key_length,
-                                              const memcached_storage_request_st *req,
-                                              const size_t number_of_req,
-                                              const memcached_storage_action_t verb,
-                                              memcached_return_t *results)
+static memcached_return_t memcached_send_multi(memcached_st *ptr,
+                                               const char *group_key,
+                                               const size_t group_key_length,
+                                               const memcached_storage_request_st *req,
+                                               const size_t number_of_req,
+                                               const memcached_storage_action_t verb,
+                                               memcached_return_t *results)
 {
   if (ptr == NULL or req == NULL or number_of_req == 0 or results == NULL)
   {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-  if (number_of_req > MAX_KEYS_FOR_MULTI_KEY_OPERATION)
+  if (number_of_req > MAX_KEYS_FOR_MULTI_STORE_OPERATION)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("number of requests should be <= MAX_KEYS_FOR_MULTI_KEY_OPERATION"));
+                               memcached_literal_param("number of requests should be <= MAX_KEYS_FOR_MULTI_STORE_OPERATION"));
   }
 
   arcus_server_check_for_update(ptr);
@@ -559,8 +559,8 @@ static memcached_return_t memcached_bulk_send(memcached_st *ptr,
   memcached_server_write_instance_st instance= NULL;
 
   const bool group_key_present= (group_key != NULL and group_key_length > 0);
-  memcached_server_write_instance_st instances[MAX_KEYS_FOR_MULTI_KEY_OPERATION]= { NULL };
-  memcached_server_write_instance_st failed_instances[MAX_KEYS_FOR_MULTI_KEY_OPERATION]= { NULL };
+  memcached_server_write_instance_st instances[MAX_KEYS_FOR_MULTI_STORE_OPERATION]= { NULL };
+  memcached_server_write_instance_st failed_instances[MAX_KEYS_FOR_MULTI_STORE_OPERATION]= { NULL };
 
 #ifdef ENABLE_REPLICATION
 do_action:
@@ -572,7 +572,7 @@ do_action:
   }
 
   size_t number_of_failed_instances= 0;
-  ptr->flags.bulked= true;
+  ptr->flags.multi_store= true;
 
   for (size_t i= 0; i < number_of_req; i++)
   {
@@ -634,7 +634,7 @@ do_action:
       failed_instances[i]->send_failed= false;
     }
   }
-  ptr->flags.bulked= false;
+  ptr->flags.multi_store= false;
 
   if (is_noreply == true)
   {
@@ -931,8 +931,8 @@ memcached_return_t memcached_mset_by_key(memcached_st *ptr,
 {
   memcached_return_t rc;
   LIBMEMCACHED_MEMCACHED_MSET_START();
-  rc= memcached_bulk_send(ptr, group_key, group_key_length,
-                          req, number_of_req, SET_OP, results);
+  rc= memcached_send_multi(ptr, group_key, group_key_length,
+                           req, number_of_req, SET_OP, results);
   LIBMEMCACHED_MEMCACHED_MSET_END();
   return rc;
 }

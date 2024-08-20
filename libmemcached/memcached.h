@@ -136,7 +136,7 @@ struct memcached_st {
     bool no_block:1; // Don't block
     bool no_reply:1;
     bool piped:1;
-    bool bulked:1;
+    bool multi_store:1;
     bool randomize_replica_read:1;
     bool support_cas:1;
     bool tcp_nodelay:1;
