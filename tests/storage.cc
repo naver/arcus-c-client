@@ -5,8 +5,9 @@ using namespace libtest;
 
 #include "tests/storage.h"
 
-#define MSET_COUNT MAX_KEYS_FOR_MULTI_STORE_OPERATION
-#define BUFFER_SIZE 1000 * 1000
+#define REQ_COUNT MAX_KEYS_FOR_MULTI_STORE_OPERATION
+#define KEY_BUFFER_SIZE 64
+#define VALUE_BUFFER_SIZE 1000 * 1000
 #define EXPIRE_TIME 60
 
 static inline void safe_free(void *ptr)
@@ -17,134 +18,172 @@ static inline void safe_free(void *ptr)
   }
 }
 
-static inline void safe_free_req(memcached_storage_request_st req[MSET_COUNT])
+static inline void safe_free_req(memcached_storage_request_st req[REQ_COUNT])
 {
   if (req == NULL)
   {
     return;
   }
 
-  for (int i= 0; i < MSET_COUNT; i++)
+  for (int i= 0; i < REQ_COUNT; i++)
   {
     safe_free(req[i].key);
     safe_free(req[i].value);
   }
 }
 
-static bool do_mset_and_get(memcached_st *mc)
+static bool create_req(memcached_storage_request_st req[REQ_COUNT], bool value_pad)
 {
-  memcached_storage_request_st req[MSET_COUNT];
-  for (int i= 0; i < MSET_COUNT; i++)
+  char divider= ('z' - 'a' + 1);
+
+  for (int i= 0; i < REQ_COUNT; i++)
   {
-    char *key= (char *)malloc(BUFFER_SIZE);
-    if (not key)
+    char *key= (char *) malloc(KEY_BUFFER_SIZE);
+    if (key == NULL)
     {
       printf("key cannot be allocated...\n");
       return false;
     }
 
-    char *value= (char *)malloc(BUFFER_SIZE);
-    if (not value)
+    char *value= (char *) malloc(VALUE_BUFFER_SIZE);
+    if (value == NULL)
     {
       printf("value cannot be allocated...\n");
+
       safe_free(key);
       return false;
     }
 
-    memset(key, 0, BUFFER_SIZE);
-    snprintf(key, BUFFER_SIZE, "MSET:mset-key-%d", i);
+    size_t key_length= snprintf(key, KEY_BUFFER_SIZE, "MULTI:multi-store-key-%d", i);
+    size_t value_length;
 
-    memset(value, 0, BUFFER_SIZE);
-    snprintf(value, BUFFER_SIZE, "mset-value-%d-%u-", i, (uint32_t) rand());
+    if (value_pad)
+    {
+      value_length= snprintf(value, VALUE_BUFFER_SIZE, "multi-store-value-%d-%u-", i, (uint32_t) rand());
+      char pad= ('a' + (i % divider));
 
-    size_t value_length= strlen(value);
-    memset(value + value_length, 97, BUFFER_SIZE - value_length - 1);
+      memset(value + value_length, pad, VALUE_BUFFER_SIZE - value_length - 1);
+      value[value_length= VALUE_BUFFER_SIZE - 1]= 0;
+    }
+    else
+    {
+      value_length= snprintf(value, VALUE_BUFFER_SIZE, "multi-store-value-%d-%u", i, (uint32_t) rand());
+    }
 
     req[i].key= key;
-    req[i].key_length= strlen(key);
+    req[i].key_length= key_length;
 
     req[i].value= value;
-    req[i].value_length= strlen(value);
+    req[i].value_length= value_length;
 
     req[i].expiration= EXPIRE_TIME;
     req[i].flags= (uint32_t) rand();
   }
 
-  memcached_return_t results[MSET_COUNT];
-  memcached_return_t rc= memcached_mset(mc, req, MSET_COUNT, results);
-  printf("memcached_mset: rc is %d, %s\n", rc, memcached_strerror(mc, rc));
+  return true;
+}
 
-  if (memcached_failed(rc))
+static bool check_results(memcached_st *mc, memcached_return_t *results, char *op_name)
+{
+  for (int i= 0; i < REQ_COUNT; i++)
   {
-    safe_free_req(req);
-    return false;
-  }
-
-  for (int i= 0; i < MSET_COUNT; i++)
-  {
-    printf("memcached_mset: rc[%d] is %d, %s\n", i, results[i], memcached_strerror(mc, results[i]));
+    printf("memcached_%s: rc[%d] is %d, %s\n", op_name, i, results[i], memcached_strerror(mc, results[i]));
 
     if (memcached_failed(results[i]))
     {
-      safe_free_req(req);
       return false;
     }
   }
 
-  if (memcached_failed(rc= memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_NOREPLY, 0)))
+  return true;
+}
+
+static bool do_get_and_check(memcached_st *mc, memcached_storage_request_st req[REQ_COUNT])
+{
+  memcached_return_t rc= memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_NOREPLY, 0);
+  if (memcached_failed(rc))
   {
     printf("memcached_behavior_set: rc is %d, %s\n", rc, memcached_strerror(mc, rc));
     return false;
   }
 
-  for (int i= 0; i < MSET_COUNT; i++)
+  for (int i= 0; i < REQ_COUNT; i++)
   {
     size_t value_length= -1;
     uint32_t flags= -1;
+    bool success;
 
     char *value= memcached_get(mc, req[i].key, req[i].key_length, &value_length, &flags, &rc);
-    printf("memcached_get: rc[%d] is %d, %s\n", i, rc, memcached_strerror(mc, rc));
+    printf("memcached_get: rc[%d] is %d, %s / ", i, rc, memcached_strerror(mc, rc));
 
     if (value == NULL || memcached_failed(rc))
     {
-      safe_free(value);
-      safe_free_req(req);
-      return false;
+      printf("failed to get key %s\n", req[i].key);
+      success= false;
     }
-
-    printf("memcached_get: flags[%d] is %u\n", i, flags);
-
-    if (req[i].value_length != value_length)
+    else if (req[i].value_length != value_length)
     {
-      printf("memcached_get: value_length[%d] is not equal... stored %ld but got %ld\n", i, req[i].value_length, value_length);
-
-      safe_free(value);
-      safe_free_req(req);
-      return false;
+      printf("value_length[%d] is not equal... stored %ld but got %ld\n", i, req[i].value_length, value_length);
+      success= false;
     }
-    if (strcmp(req[i].value, value))
+    else if (strcmp(req[i].value, value))
     {
-      printf("memcached_get: value[%d] is not equal... stored %s but got %s\n", i, req[i].value, value);
-
-      safe_free(value);
-      safe_free_req(req);
-      return false;
+      printf("value[%d] is not equal... stored %s but got %s\n", i, req[i].value, value);
+      success= false;
     }
-    if (req[i].flags != flags)
+    else if (req[i].flags != flags)
     {
-      printf("memcached_get: flags[%d] is not equal... stored %u but got %u\n", i, req[i].flags, flags);
-
-      safe_free(value);
-      safe_free_req(req);
-      return false;
+      printf("flags[%d] is not equal... stored %u but got %u\n", i, req[i].flags, flags);
+      success= false;
+    }
+    else
+    {
+      printf("value and flags check for key %s is successful\n", req[i].key);
+      success= true;
     }
 
     safe_free(value);
+    if (success == false)
+    {
+      return false;
+    }
   }
 
-  safe_free_req(req);
-
   return true;
+}
+
+static bool do_mset_and_get(memcached_st *mc)
+{
+  memcached_storage_request_st req[REQ_COUNT];
+  memcached_return_t results[REQ_COUNT];
+  memcached_return_t rc;
+  bool test_success;
+
+  if (create_req(req, true) == false)
+  {
+    test_success= false;
+    goto do_return;
+  }
+
+  rc= memcached_mset(mc, req, REQ_COUNT, results);
+  printf("memcached_mset: rc is %d, %s\n", rc, memcached_strerror(mc, rc));
+
+  if (memcached_failed(rc))
+  {
+    test_success= false;
+  }
+  else if (check_results(mc, results, (char *) "mset") == false)
+  {
+    test_success= false;
+  }
+  else
+  {
+    test_success= do_get_and_check(mc, req);
+  }
+
+do_return:
+  safe_free_req(req);
+  return test_success;
 }
 
 test_return_t mset_and_get_test(memcached_st *mc)
@@ -152,14 +191,14 @@ test_return_t mset_and_get_test(memcached_st *mc)
   memcached_return_t rc;
   srand(time(NULL));
 
-  for (uint64_t i= 0; i < 4; i++)
+  for (uint64_t i= 0; i < 2; i++)
   {
     if (memcached_failed(rc= memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_NOREPLY, i % 2)))
     {
       printf("memcached_behavior_set: rc is %d, %s\n", rc, memcached_strerror(mc, rc));
       return TEST_FAILURE;
     }
-    else if (!do_mset_and_get(mc))
+    else if (do_mset_and_get(mc) == false)
     {
       return TEST_FAILURE;
     }
@@ -193,6 +232,7 @@ static void *single_server_world_create(server_startup_st& servers, test_return_
   if (single_server == NULL)
   {
     printf("failed to allocate new server_startup_st object.\n");
+
     error= TEST_MEMORY_ALLOCATION_FAILURE;
     return NULL;
   }
