@@ -73,7 +73,7 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_BAD_KEY_PROVIDED, MEMCACHED_AT);
   }
 
-  char offset_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH +1];
+  char offset_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1]; // 1 for space, 1 for null termination
   int offset_buffer_length= snprintf(offset_buffer, sizeof(offset_buffer), " %" PRIu64, offset);
   if (size_t(offset_buffer_length) >= sizeof(offset_buffer) or offset_buffer_length < 0)
   {
@@ -81,7 +81,7 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH)"));
   }
 
-  char initial_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH*3 +3];
+  char initial_buffer[(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1)*3 + 1]; // 1 for each space, 1 for null termination
   int initial_buffer_length= 0;
   if (create)
   {
