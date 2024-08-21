@@ -321,7 +321,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                                                const uint64_t cas,
                                                memcached_storage_action_t verb)
 {
-  char flags_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH +1];
+  char flags_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1]; // 1 for space, 1 for null termination
   int flags_buffer_length= snprintf(flags_buffer, sizeof(flags_buffer), " %u", flags);
   if (size_t(flags_buffer_length) >= sizeof(flags_buffer) or flags_buffer_length < 0)
   {
@@ -329,7 +329,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH)"));
   }
 
-  char expiration_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH +1];
+  char expiration_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1]; // 1 for space, 1 for null termination
   int expiration_buffer_length= snprintf(expiration_buffer, sizeof(expiration_buffer), " %lld", (long long)expiration);
   if (size_t(expiration_buffer_length) >= sizeof(expiration_buffer) or expiration_buffer_length < 0)
   {
@@ -337,7 +337,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH)"));
   }
 
-  char value_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH +1];
+  char value_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1]; // 1 for space, 1 for null termination
   int value_buffer_length= snprintf(value_buffer, sizeof(value_buffer), " %lu", (unsigned long)value_length);
   if (size_t(value_buffer_length) >= sizeof(value_buffer) or value_buffer_length < 0)
   {
@@ -345,7 +345,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH)"));
   }
 
-  char cas_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH +1];
+  char cas_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1]; // 1 for space, 1 for null termination
   int cas_buffer_length= 0;
   if (cas)
   {
