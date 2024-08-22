@@ -125,7 +125,7 @@ static bool repack_input_buffer(memcached_server_write_instance_st ptr)
 #ifdef USE_EAGAIN
           case EAGAIN:
 #endif
-#ifdef TARGET_OS_LINUX
+#ifdef __linux__
           case ERESTART:
 #endif
             break; // No IO is fine, we can just move on
@@ -266,7 +266,7 @@ static memcached_return_t io_wait(memcached_server_write_instance_st ptr,
       WATCHPOINT_ERRNO(get_socket_errno());
       switch (get_socket_errno())
       {
-#ifdef TARGET_OS_LINUX
+#ifdef __linux__
       case ERESTART:
 #endif
       case EINTR:
@@ -476,7 +476,7 @@ static memcached_return_t _io_fill(memcached_server_write_instance_st ptr)
 #ifdef USE_EAGAIN
       case EAGAIN:
 #endif
-#ifdef TARGET_OS_LINUX
+#ifdef __linux__
       case ERESTART:
 #endif
         if (memcached_success(io_wait(ptr, MEM_READ)))
@@ -603,7 +603,7 @@ memcached_return_t memcached_io_slurp(memcached_server_write_instance_st ptr)
 #ifdef USE_EAGAIN
       case EAGAIN:
 #endif
-#ifdef TARGET_OS_LINUX
+#ifdef __linux__
       case ERESTART:
 #endif
         if (memcached_success(io_wait(ptr, MEM_READ)))
