@@ -82,7 +82,7 @@ static memcached_return_t connect_poll(memcached_server_st *server)
     default: // A real error occurred and we need to completely bail
       switch (get_socket_errno())
       {
-#ifdef TARGET_OS_LINUX
+#ifdef __linux__
       case ERESTART:
 #endif
       case EINTR:

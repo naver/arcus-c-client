@@ -105,7 +105,7 @@
 #include <libmemcached/version.h>
 #include <libmemcached/sasl.h>
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-#ifdef TARGET_OS_LINUX
+#ifdef __linux__
 #include <linux/limits.h>
 #endif
 #ifndef PATH_MAX
