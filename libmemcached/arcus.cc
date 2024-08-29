@@ -74,6 +74,10 @@ static pthread_mutex_t azk_mtx  = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  azk_cond = PTHREAD_COND_INITIALIZER;
 static int             azk_count;
 
+/* When using multiple arcus_proxy, ensure that they use different locks name */
+static pthread_mutex_t proxy_lock_mtx   = PTHREAD_MUTEX_INITIALIZER;
+static int             proxy_lock_count = 0;
+
 pthread_mutex_t lock_arcus = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  cond_arcus = PTHREAD_COND_INITIALIZER;
 
@@ -224,7 +228,9 @@ static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
   arcus->proxy.data->mutex.fname = NULL;
 
   char ap_lock_fname[64];
-  snprintf(ap_lock_fname, 64, ".arcus_proxy_lock.%d", getpid());
+  pthread_mutex_lock(&proxy_lock_mtx);
+  snprintf(ap_lock_fname, 64, ".arcus_proxy_lock.%d.%d", getpid(), ++proxy_lock_count);
+  pthread_mutex_unlock(&proxy_lock_mtx);
 
   if (proc_mutex_create(&arcus->proxy.data->mutex, ap_lock_fname) != 0) {
     ZOO_LOG_ERROR(("Cannot create the proxy lock file. You might have to"
