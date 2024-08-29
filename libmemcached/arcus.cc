@@ -224,7 +224,7 @@ static inline arcus_return_t do_arcus_proxy_create(memcached_st *mc,
   arcus->proxy.data->mutex.fname = NULL;
 
   char ap_lock_fname[64];
-  snprintf(ap_lock_fname, 64, ".arcus_proxy_lock.%d", getpid());
+  snprintf(ap_lock_fname, 64, ".arcus_proxy_lock_%s.%d", arcus->zk.svc_code, getpid());
 
   if (proc_mutex_create(&arcus->proxy.data->mutex, ap_lock_fname) != 0) {
     ZOO_LOG_ERROR(("Cannot create the proxy lock file. You might have to"
