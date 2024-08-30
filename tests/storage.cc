@@ -5,7 +5,7 @@ using namespace libtest;
 
 #include "tests/storage.h"
 
-#define REQ_COUNT MAX_KEYS_FOR_MULTI_STORE_OPERATION
+#define REQ_COUNT 100
 #define SMALL_BUFFER_SIZE 64
 #define LARGE_BUFFER_SIZE 1000 * 1000
 #define EXPIRE_TIME 60
