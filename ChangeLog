@@ -1,3 +1,22 @@
+2024-09-02 [version 1.14.0]
+## 🐣 New Features
+* Add `mop upsert` method. #292
+* Add multiple storage method.
+  * `memcached_mset()`
+  * `memcached_madd()`
+  * `memcached_mreplace()`
+  * `memcached_mprepend()`
+  * `memcached_mpppend()`
+  * `memcached_mcas()`
+## 🐛 Bug Fixes
+* Fix buffer size when calling `snprintf()` with leading whitespace and integer value. #304
+* Use `__linux__` instead of `TARGET_OS_LINUX` to check if the current OS is Linux. #306
+* Use different lock filenames for multiple proxy in a process
+## 📝 Documentation
+* Fix typo.
+## ✅ Testing
+* Cancel previous CI in progress when new commits are added. #296
+
 2024-02-22 [version 1.13.3]
 ## 🔧 Enhancements
 * Fix compile warnings on RHEL8 and MacOS.
