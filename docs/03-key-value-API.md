@@ -141,5 +141,5 @@ memcached_delete(memcached_st *ptr,
 ```
 
 주어진 key를 삭제한다.
-expiration 값이 0 이상으로 지정되면 key는 expiration 초 이후에 삭제된다.
+expiration은 현재 지원하지 않으며, 0을 값으로 주어야 한다.
 
