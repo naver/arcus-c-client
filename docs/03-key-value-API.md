@@ -17,7 +17,12 @@ Key-value item에 대해 수행 가능한 연산들은 아래와 같다.
 
 key-value item을 저장하는 API로 set, add, replace, prepend/append가 있다.
 
-``` c
+새로운 아이템을 저장하거나 기존 아이템을 교체하는 API는 다음과 같다.
+- memcached_set: 주어진 key에 value를 저장한다.
+- memcached_add: 주어진 key가 존재하지 않을 경우에만 value를 저장한다.
+- memcached_replace: 주어진 key가 존재하는 경우에만 value를 저장한다.
+
+```c
 memcached_return_t
 memcached_set(memcached_st *ptr,
               const char *key, size_t key_length,
@@ -35,12 +40,33 @@ memcached_replace(memcached_st *ptr,
               time_t expiration, uint32_t flags)
 ```
 
-- memcached_set: 주어진 key에 value를 저장한다.
-- memcached_add: 주어진 key가 존재하지 않을 경우에만 value를 저장한다.
-- memcached_replace: 주어진 key가 존재하는 경우에만 value를 저장한다.
+대표적으로 set을 수행하는 예시는 다음과 같다.
 
+```c
+int arcus_kv_store(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  const char *value= "value";
+  uint32_t exptime= 600;
+  uint32_t flags= 0;
+  memcached_return_t rc;
 
-``` c
+  rc= memcached_set(memc, key, strlen(key), value, strlen(value), exptime, flags);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_set: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  return 0;
+}
+```
+
+존재하는 아이템의 value에 데이터를 추가시키는 API는 다음과 같다.
+- memcached_prepend: 주어진 key의 value에 새로운 데이터를 prepend한다.
+- memcached_append: 주어진 key의 value에 새로운 데이터를 append한다.
+
+```c
 memcached_return_t
 memcached_prepend(memcached_st *ptr,
                   const char *key, size_t key_length,
@@ -53,19 +79,34 @@ memcached_append(memcached_st *ptr,
                   time_t expiration, uint32_t flags)
 ```
 
-- memcached_prepend: 주어진 key의 value에 새로운 데이터를 prepend한다.
-- memcached_append: 주어진 key의 value에 새로운 데이터를 append한다.
+대표적으로 prepend를 수행하는 예시는 다음과 같다.
 
-Key-value item 저장 연산에서 주요 파라미터는 아래와 같다.
-- expiration: key가 현재 시간부터 expire 될 때까지의 시간(초 단위). 시간이 30일을 초과하는 경우 expire 될 unix time을 입력한다.
-  - 0: key가 expire 되지 않도록 설정한다.
-       하지만 ARCUS cache server의 메모리가 부족한 경우 LRU에 의해 언제든지 삭제될 수 있다.
-  - -1: key를 sticky item으로 만든다. Sticky item은 expire 되지 않으며 LRU에 의해 삭제되지도 않는다.
-- flags: value와는 별도로 저장할 수 있는 값으로서 Java client 등에서 내부적으로 사용하는 경우가 많으므로 사용하지 않기를 권한다.
+```c
+int arcus_kv_attach(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  const char *value= "value";
+  uint32_t exptime= 600;
+  uint32_t flags= 0;
+  memcached_return_t rc;
+
+  rc= memcached_prepend(memc, key, strlen(key), value, strlen(value), exptime, flags);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_prepend: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  return 0;
+}
+```
 
 ## Key-Value Item 조회
 
 Key-value item을 조회하는 API는 두 가지가 있다.
+
+하나의 키에 대한 값을 조회하는 API는 아래와 같다.
+반환된 결과가 NULL이 아닌 경우 반드시 free 해주어야 한다.
 
 ```c
 char *
@@ -75,7 +116,39 @@ memcached_get(memcached_st *ptr,
               memcached_return_t *error)
 ```
 
-주어진 key에 대한 value를 조회한다. 반환된 결과는 NULL이 아닌 경우 반드시 free 해주어야 한다.
+하나의 키에 대한 값을 조회하는 예시는 다음과 같다.
+
+```c
+int arcus_kv_get(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  const char *value;
+  size_t value_length;
+  uint32_t flags;
+  memcached_return_t rc;
+
+  value= memcached_get(memc, key, strlen(key), &value_length, &flags, &rc);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  if (value != NULL) {
+    fprintf(stdout, "memcached_get: %s=%s\n", key, value);
+    free((void*)value);
+  } else {
+    fprintf(stdout, "memcached_get: %s=<empty value>.\n", key);
+  }
+  return 0;
+}
+```
+
+여러 키들의 값들을 일괄 조회하는 API는 다음과 같다.
+- `memcached_mget`은 주어진 key 배열에 대한 value들을 조회하는 요청을 보낸다.
+  - keys 인자는 key pointer array이고, key_length 인자는 key length array이다.
+- `memcached_fetch`는 mget 요청에 대한 결과를 하나씩 가져온다.
+  - error 값이 MEMCACHED_END가 될 때까지 계속 실행하면 되며, 반환된 결과가 NULL이 아닌 경우 반드시 free 해주어야 한다.
 
 ```c
 memcached_return_t
@@ -89,18 +162,64 @@ memcached_fetch(memcached_st *ptr,
                 memcached_return_t *error)
 ```
 
-`memcached_mget`은 주어진 key 배열에 대한 value들을 조회하는 요청을 보낸다.
-keys 인자는 key pointer array이고, key_length 인자는 key length array이다.
+여러 키들의 값을 일괄 조회하는 예시는 다음과 같다.
 
-`memcached_fetch`는 mget 요청에 대한 결과를 하나씩 꺼내온다.
-error 값이 MEMCACHED_END가 될 때까지 실행하면 되며, 그 이후에 fetch를 수행하면 MEMCACHED_NOTFOUND가 반환된다.
+```c
+int arcus_kv_mget(memcached_st *memc)
+{
+  const char * const keys[]= { "item:a_key1", "item:a_key2", "item:a_key3" };
+  size_t keys_len[3];
+  size_t number_of_keys = 3;
+  uint32_t flags;
+  memcached_return_t rc;
 
+  for (size_t i=0; i<number_of_keys; i++)
+  {
+    keys_len[i]= strlen(keys[i]);
+  }
+
+  rc= memcached_mget(memc, keys, keys_len, number_of_keys);
+  if (rc == MEMCACHED_FAILURE) {
+    fprintf(stderr, "Failed to memcached_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_SOME_ERRORS);
+  while (true)
+  {
+    char key[MEMCACHED_MAX_KEY];
+    size_t key_length;
+    size_t value_length;
+
+    char *value= memcached_fetch(memc, key, &key_length, &value_length, &flags, &rc);
+    if (memcached_failed(rc)) {
+      fprintf(stderr, "Failed to memcached_fetch: %d(%s)\n", rc, memcached_strerror(memc, rc));
+      return -1;
+    }
+
+    if (rc == MEMCACHED_END) {
+      break;
+    }
+
+    assert(rc == MEMCACHED_SUCCESS);
+    if (value != NULL) {
+      fprintf(stdout, "memcached_mget: %s=%s\n", key, value);
+      free((void*)value);
+    } else {
+      fprintf(stdout, "memcached_mget: %s=<empty value>.\n", key);
+    }
+  }
+  return 0;
+}
+```
 
 ## Key-Value Item 값의 증감
 
-Key-value item에서 숫자형 value 값에 대해서만 아래 증감 연산을 수행할 수 있다.
+특정 key에 해당하는 item이 가진 숫자형 값을 증감 연산하는 API는 다음과 같다.
+- offset 만큼 증가/감소하며, 증감 후의 값을 value 인자로 반환한다.
+- 해당 item이 없거나 해당 item이 숫자형 값을 가지지 않는다면 오류를 낸다.
 
-``` c
+```c
 memcached_return_t
 memcached_increment(memcached_st *ptr,
                     const char *key, size_t key_length,
@@ -111,8 +230,11 @@ memcached_decrement(memcached_st *ptr,
                     uint32_t offset, uint64_t *value)
 ```
 
-주어진 key의 value를 offset 만큼 증가/감소 시킨다.
-주어진 key가 존재하지 않으면, 오류를 낸다.
+특정 key에 해당하는 item이 있다면 증감 연산을 수행하고,
+그 item이 없다면 초기값을 가진 item을 생성하는 API는 다음과 같다.
+- 해당 item이 있다면 offset 만큼 증가/감소한다.
+- 해당 item이 없다면 initial 값을 가진 item을 생성한다.
+- 증감 or 생성 후의 item의 값을 value 인자로 반환한다.
 
 ```c
 memcached_return_t
@@ -127,11 +249,36 @@ memcached_decrement_with_initial(memcached_st *ptr,
                                  uint64_t *value)
 ```
 
-주어진 key의 value를 offset 만큼 증가/감소 시킨다.
-주어진 key가 존재하지 않으면, initial 값으로 저장한다.
+특정 item의 숫자형 값을 증가시키는 예시는 다음과 같다.
 
+```c
+int arcus_kv_arithmetic(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  uint64_t value= 0;
+  // uint64_t initial = 0;
+  uint32_t flags= 10;
+  uint32_t exptime= 600;
+  uint32_t offset= 10;
+  memcached_return_t rc;
+
+  rc= memcached_increment(memc, key, strlen(key), offset, &value);
+  // rc= memcached_increment_with_initial(memc, key, strlen(key), offset, initial, flags, exptime, &value);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_increment: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  fprintf(stdout, "incremented value: %llu\n", value);
+  return 0;
+}
+```
 
 ## Key-Value Item 삭제
+
+주어진 key에 해당하는 item을 삭제하는 API는 다음과 같다.
+expiration은 현재 지원하지 않으며, 0을 값으로 주어야 한다.
 
 ```c
 memcached_return_t
@@ -140,6 +287,21 @@ memcached_delete(memcached_st *ptr,
                  time_t expiration)
 ```
 
-주어진 key를 삭제한다.
-expiration은 현재 지원하지 않으며, 0을 값으로 주어야 한다.
+특정 key를 가진 item을 제거하는 예시는 다음과 같다.
 
+```c
+int arcus_kv_delete(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  memcached_return_t rc;
+
+  rc= memcached_delete(memc, key, strlen(key), 0);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_delete: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  return 0;
+}
+```
