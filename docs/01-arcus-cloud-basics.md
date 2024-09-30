@@ -25,7 +25,7 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
 
 ## 서비스코드
 
-서비스코드(service code)는 ARCUS에서 cache cloud를 구분하는 코드이다. 
+서비스코드(service code)는 ARCUS에서 cache cloud를 구분하는 코드이다.
 ARCUS cache cloud 서비스를 응용들에게 제공한다는 의미에서 "서비스코드"라는 용어를 사용하게 되었다.
 
 하나의 응용에서 하나 이상의 ARCUS cache cloud를 구축하여 사용할 수 있다.
@@ -39,7 +39,7 @@ ARCUS admin은 ZooKeeper를 이용하여 각 서비스 코드에 해당하는 AR
 특정 서비스 코드에 대한 cache server list를 관리하며,
 cache server 추가 및 삭제에 대해 cache server list를 최신 상태로 유지하며,
 서비스 코드에 대한 cache server list 정보를 ARCUS client에게 전달한다.
-ARCUS admin은 highly available하여야 하므로, 
+ARCUS admin은 highly available하여야 하므로,
 여러 ZooKeeper 서버들을 하나의 ZeeKeeper ensemble로 구성하여 사용한다.
 
 ## Cache Key
@@ -76,7 +76,7 @@ ARCUS cache는 simple key-value item 외에 다양한 collection item 유형을 
 ## Expiration, Eviction, and Sticky Item
 
 각 cache item은 expiration time 속성을 가진다.
-이 값의 설정으로 자동 expiration을 지정하거나 expire되지 않도록 지정할 수 있다.
+0을 초과한 값으로 설정하면 자동 expiration이 지정되며, 0으로 설정하면 expire되지 않도록 지정할 수 있다.
 
 ARCUS cache는 memory cache이며, 한정된 메모리 공간을 사용하여 데이터를 caching한다.
 메모리 공간이 모두 사용된 상태에서 새로운 cache item 저장 요청이 들어오면,
@@ -89,3 +89,7 @@ available 메모리 공간을 확보한 후에 새로운 cache item을 저장한
 Sticky item의 삭제는 전적으로 응용에 의해 관리되어야 함을 주의해야 한다.
 그리고, sticky item 역시 메모리에 저장되기 때문에 server가 restart되면 사라지게 된다.
 
+## Flags
+
+각 cache item은 value와 함께 저장하거나 조회하는 flags 값을 가진다.
+이 값은 value의 메타데이터 용도이며, 예시로 value에 저장된 데이터의 유형이나 압축(compression) 여부 등을 나타내기 위해 사용한다.
