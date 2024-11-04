@@ -50,5 +50,12 @@ main(int argc, char *argv[])
     memcached_coll_result_get_value(&result, 0));
   memcached_coll_result_free(&result);
 
+  /* Delete the b+tree */
+  if (MEMCACHED_SUCCESS != memcached_delete(mc, key, key_length, 0))
+    return -1;
+
+  /* Free the memcached object */
+  memcached_free(mc);
+
   return 0;
 }
