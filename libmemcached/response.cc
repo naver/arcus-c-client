@@ -582,6 +582,16 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
       break;
 
     case PROTOCOL_BINARY_CMD_SASL_LIST_MECHS:
+      {
+        if (header.response.keylen || bodylen + 1 > buffer_length) {
+          return MEMCACHED_UNKNOWN_READ_FAILURE;
+        } else {
+          if ((rc = memcached_safe_read(ptr, buffer, bodylen)) != MEMCACHED_SUCCESS) {
+            return MEMCACHED_UNKNOWN_READ_FAILURE;
+          }
+        }
+      }
+      break;
     case PROTOCOL_BINARY_CMD_VERSION:
       {
         char version_buffer[32];
