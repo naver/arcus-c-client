@@ -213,6 +213,61 @@ int arcus_kv_mget(memcached_st *memc)
 }
 ```
 
+## Key-Value Item 값의 CAS
+
+아이템을 조회한 후, 해당 아이템이 변경되지 않았다면 새로운 값을 저장하는 Compare and Set(CAS) API는 다음과 같다
+주의 사항으로, CAS 연산을 수행하기 위해서는 MEMCACHED_BEHAVIOR_SUPPORT_CAS 플래그가 설정된 memcached_st 구조체를 사용해야 한다.
+- key에 해당하는 아이템의 cas 값을 확인한 후, 일치하면 새로운 값을 저장한다.
+- 해당 item이 없거나 cas 값이 일치하지 않으면 오류가 발생한다.
+
+```c
+memcached_return_t
+memcached_cas(memcached_st *ptr,
+              const char *key, size_t key_length,
+              const char *value, size_t value_length,
+              time_t expiration, uint32_t flags,
+              uint64_t cas)
+```
+
+Compare and Set 연산을 수행하는 예시는 다음과 같다.
+
+```c
+int arcus_kv_compare_and_set(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  char *old_value= NULL;
+  char *new_value= NULL;
+  uint64_t cas_value;
+  uint32_t exptime= 600;
+  uint32_t flags= 0;
+  int result= 0;
+  memcached_return_t rc;
+
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_SUPPORT_CAS, true);
+
+  old_value= memcached_get(memc, key, strlen(key), NULL, NULL, &rc);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_gets: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+  cas_value= memcached_result_cas(&memc->result);
+
+  // make a new_value based on the old_value
+  new_value= make_new_value_from_old_value(old_value);
+
+  rc= memcached_cas(memc, key, strlen(key), new_value, strlen(new_value), exptime, flags, cas_value);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_cas: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    result= -1;
+  }
+
+  if (old_value) free(old_value);
+  if (new_value) free(new_value);
+
+  return result;
+}
+```
+
 ## Key-Value Item 값의 증감
 
 특정 key에 해당하는 item이 가진 숫자형 값을 증감 연산하는 API는 다음과 같다.
