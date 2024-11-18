@@ -21,6 +21,7 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
 - [Cache Key](01-arcus-cloud-basics.md#cache-key)
 - [Cache Item](01-arcus-cloud-basics.md#cache-item)
 - [Expiration, Eviction, and Sticky Item](01-arcus-cloud-basics.md#expiration-eviction-and-sticky-item)
+- [Cache Item Flags](01-arcus-cloud-basics.md#cache-item-flags)
 
 
 ## 서비스코드
@@ -89,7 +90,12 @@ available 메모리 공간을 확보한 후에 새로운 cache item을 저장한
 Sticky item의 삭제는 전적으로 응용에 의해 관리되어야 함을 주의해야 한다.
 그리고, sticky item 역시 메모리에 저장되기 때문에 server가 restart되면 사라지게 된다.
 
-## Flags
+## Cache Item Flags
 
-각 cache item은 value와 함께 저장하거나 조회하는 flags 값을 가진다.
-이 값은 value의 메타데이터 용도이며, 예시로 value에 저장된 데이터의 유형이나 압축(compression) 여부 등을 나타내기 위해 사용한다.
+각 cache item은 value와 함께 저장하거나 조회하는 정수형의 flags 값을 가진다.
+Flags 값은 주로 value에 관한 정보를 나타내는 용도이며, 예시로 value에 저장된 데이터의 유형이나 압축(compression) 여부 등을 나타내는 비트 필드로 활용할 수 있다.
+
+주의 사항으로, Cache Item 타입에 따라 flags를 저장하거나 조회하는 방식이 아래와 같이 다르다.
+
+- Key-Value Item에 관한 API에서는 저장 시에 value와 함께 flags 값을 저장하고, 조회 시에 value와 함께 flags 값을 조회한다.
+- Collection Item에 관한 API에서는 collection item 생성 시에 collection attributes에 지정한 flags 값을 저장하고, elements 조회 시에 result 구조체에서 flags 값을 조회한다.
