@@ -208,7 +208,7 @@ if test "x$enable_zk_integration" = "xyes"; then
     saved_LDFLAGS="$LDFLAGS"
     saved_CPPFLAGS="$CPPFLAGS"
     zk_found=no
-    for zkdir in $tryzookeeperdir "" $prefix /usr/local ; do
+    for zkdir in $tryzookeeperdir $prefix "" /usr/local ; do
       LDFLAGS="$saved_LDFLAGS"
       LIBS="$saved_LIBS -lzookeeper_mt"
 
