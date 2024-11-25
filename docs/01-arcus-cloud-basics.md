@@ -20,7 +20,8 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
 - [ARCUS Admin](01-arcus-cloud-basics.md#arcus-admin)
 - [Cache Key](01-arcus-cloud-basics.md#cache-key)
 - [Cache Item](01-arcus-cloud-basics.md#cache-item)
-- [Expiration, Eviction, and Sticky Item](01-arcus-cloud-basics.md#expiration-eviction-and-sticky-item)
+- [Expiration](01-arcus-cloud-basics.md#expiration)
+- [Eviction](01-arcus-cloud-basics.md#eviction)
 - [Cache Item Flags](01-arcus-cloud-basics.md#cache-item-flags)
 
 
@@ -74,21 +75,26 @@ ARCUS cache는 simple key-value item 외에 다양한 collection item 유형을 
   - map item - \<mkey, value\>쌍으로 구성된 데이터 집합을 가지는 item
   - b+tree item - b+tree key 기반으로 정렬된 데이터 집합을 가지는 item
 
-## Expiration, Eviction, and Sticky Item
+## Expiration
 
-각 cache item은 expiration time 속성을 가진다.
-0을 초과한 값으로 설정하면 자동 expiration이 지정되며, 0으로 설정하면 expire되지 않도록 지정할 수 있다.
+각 cache item은 expiration time 속성을 가지며, 자동으로 만료할 시간을 나타낸다.
+Expiration time은 다음과 같이 지정할 수 있다.
+
+- expiration time = 0
+  - 해당 아이템은 만료되지 않는다.
+- 0 < expiration time ≤ (30 * 24 * 60 * 60)초 /* 30일 */
+  - 현재 시각으로부터 지정된 초만큼 뒤의 시각을 expiration time으로 설정한다.
+- expiration time > (30 * 24 * 60 * 60)초 /* 30일 */
+  - 주어진 값을 unix time으로 해석하여 expiration time을 설정한다.
+  - 만약 unix time이 현재 시각보다 이전이면 즉시 expire되므로 주의해야 한다.
+
+## Eviction
 
 ARCUS cache는 memory cache이며, 한정된 메모리 공간을 사용하여 데이터를 caching한다.
 메모리 공간이 모두 사용된 상태에서 새로운 cache item 저장 요청이 들어오면,
 ARCUS cache는 "out of memory" 오류를 내거나
 LRU(least recently used) 기반으로 오랫동안 접근되지 않은 cache item을 evict시켜
 available 메모리 공간을 확보한 후에 새로운 cache item을 저장한다.
-
-특정 응용은 어떤 cache item이 expire & evict 대상이 되지 않기를 원하는 경우도 있다.
-이러한 cache item을 sticky item이라 하며, expiration time을 -1로 설정하면 된다.
-Sticky item의 삭제는 전적으로 응용에 의해 관리되어야 함을 주의해야 한다.
-그리고, sticky item 역시 메모리에 저장되기 때문에 server가 restart되면 사라지게 된다.
 
 ## Cache Item Flags
 
