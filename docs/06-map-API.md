@@ -34,7 +34,7 @@ memcached_mop_create(memcached_st *ptr,
 ```
 
 - key: map item의 key
-- attributes: map item의 속성 정보
+- attributes: map item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
 
 Response code는 아래와 같다.
 
@@ -42,51 +42,6 @@ Response code는 아래와 같다.
   - MEMCACHED_CREATED: Map이 생성됨.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_EXISTS: 동일한 key를 가진 Map이 이미 존재함.
-
-
-Item 생성 시, item 속성 정보를 가지는 attributes 구조체가 필요하다.
-Item 속성 정보를 가지는 attributes 구조체는 아래와 같이 초기화한다.
-Attributes 구조체의 초기화 시에는 필수 속성 정보인 flags, exptime, maxcount 만을 설정할 수 있다.
-
-
-``` c
-memcached_return_t
-memcached_coll_create_attrs_init(memcached_coll_create_attrs_st *attributes,
-                                 uint32_t flags, uint32_t exptime, uint32_t maxcount)
-```
-
-그 외에, 선택적 속성들은 attributes 구조체를 초기화한 이후,
-아래의 함수를 이용하여 개별적으로 지정할 수 있다.
-
-``` c
-memcached_return_t
-memcached_coll_create_attrs_set_flags(memcached_coll_create_attrs_st *attributes,
-                                      uint32_t flags)
-memcached_return_t
-memcached_coll_create_attrs_set_expiretime(memcached_coll_create_attrs_st *attributes,
-                                           uint32_t expiretime)
-memcached_return_t
-memcached_coll_create_attrs_set_maxcount(memcached_coll_create_attrs_st *attributes,
-                                         uint32_t maxcount)
-memcached_return_t
-memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
-                                               memcached_coll_overflowaction_t overflowaction)
-memcached_return_t
-memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
-                                     bool is_unreadable)
-```
-
-- memcached_coll_create_attrs_set_flags : attributes에 flags 값을 설정한다.
-- memcached_coll_create_attrs_set_expiretime : attributes에 expire time을 설정한다.
-- memcached_coll_create_attrs_set_maxcount : attributes에 maxcount 값을 설정한다.
-- memcached_coll_create_attrs_set_overflowaction : Map의 Element 개수가 maxcount를 넘어 섰을 때(overflow)의 동작을 설정한다.
-  - OVERFLOWACTION_ERROR: overflow가 발생하면 오류(MEMCACHED_OVERFLOWED)를 반환하도록 한다.
-  - OVERFLOWACTION_HEAD_TRIM: Map은 지원하지 않는다.
-  - OVERFLOWACTION_TAIL_TRIM: Map은 지원하지 않는다.
-- memcached_coll_create_set_unreadable : 생성 시 unreadable 상태로 만들 것인지 설정한다.
-  Unreadable 상태로 생성된 Map은 readable 상태가 되기 전까지 조회할 수 없다.
-  이렇게 unreadable 상태로 생성된 Map을 readable 상태로 만들기 위해서는 memcached_set_attrs를 사용해야 한다.
-
 
 Map item을 생성하는 예제는 아래와 같다.
 

@@ -197,7 +197,7 @@ memcached_bop_create(memcached_st *ptr,
 ```
 
 - key: b+tree item의 key
-- attributes: b+tree item의 속성 정보
+- attributes: b+tree item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
 
 Response code는 아래와 같다.
 
@@ -205,39 +205,6 @@ Response code는 아래와 같다.
   - MEMCACHED_CREATED: b+tree item이 생성됨.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_EXISTS: 동일한 key를 가진 b+tree가 이미 존재함.
-
-
-Item 생성 시, item 속성 정보를 가지는 attributes 구조체가 필요하다.
-Item 속성 정보를 가지는 attributes 구조체는 아래의 함수로 초기화하며,
-필수 속성 정보인 flags, exptime, maxcount 만을 설정할 수 있다.
-
-
-``` c
-memcached_return_t
-memcached_coll_create_attrs_init(memcached_coll_create_attrs_st *attributes,
-                                 uint32_t flags, uint32_t exptime, uint32_t maxcount)
-```
-
-그 외에, 선택적 속성들은 attributes 구조체를 초기화한 이후,
-아래의 함수를 이용하여 개별적으로 지정할 수 있다.
-
-``` c
-memcached_return_t
-memcached_coll_create_attrs_set_flags(memcached_coll_create_attrs_st *attributes,
-                                      uint32_t flags)
-memcached_return_t
-memcached_coll_create_attrs_set_expiretime(memcached_coll_create_attrs_st *attributes,
-                                           uint32_t expiretime)
-memcached_return_t
-memcached_coll_create_attrs_set_maxcount(memcached_coll_create_attrs_st *attributes,
-                                         uint32_t maxcount)
-memcached_return_t
-memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
-                                               memcached_coll_overflowaction_t overflowaction)
-memcached_return_t
-memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
-                                     bool is_unreadable)
-```
 
 B+tree item을 생성하는 예제는 아래와 같다.
 
