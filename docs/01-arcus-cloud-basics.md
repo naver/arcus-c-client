@@ -22,7 +22,7 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
 - [Cache Item](01-arcus-cloud-basics.md#cache-item)
 - [Expiration](01-arcus-cloud-basics.md#expiration)
 - [Eviction](01-arcus-cloud-basics.md#eviction)
-- [Cache Item Flags](01-arcus-cloud-basics.md#cache-item-flags)
+- [Value Flags](01-arcus-cloud-basics.md#value-flags)
 
 
 ## 서비스코드
@@ -96,7 +96,7 @@ ARCUS cache는 "out of memory" 오류를 내거나
 LRU(least recently used) 기반으로 오랫동안 접근되지 않은 cache item을 evict시켜
 available 메모리 공간을 확보한 후에 새로운 cache item을 저장한다.
 
-## Cache Item Flags
+## Value Flags
 
 각 cache item은 value와 함께 저장하거나 조회하는 정수형의 flags 값을 가진다.
 Flags 값은 주로 value에 관한 정보를 나타내는 용도이며, 예시로 value에 저장된 데이터의 유형이나 압축(compression) 여부 등을 나타내는 비트 필드로 활용할 수 있다.
