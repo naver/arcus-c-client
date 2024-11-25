@@ -9,7 +9,7 @@ ARCUS C Client User Guide
   - [Cache Item](01-arcus-cloud-basics.md#cache-item)
   - [Expiration](01-arcus-cloud-basics.md#expiration)
   - [Eviction](01-arcus-cloud-basics.md#eviction)
-  - [Value Fflags](01-arcus-cloud-basics.md#value-flags)
+  - [Value Flags](01-arcus-cloud-basics.md#value-flags)
 - [ARCUS C Client](02-arcus-c-client.md)
   - [서버 모델에 따른 초기화](02-arcus-c-client.md#%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8D%B8%EC%97%90-%EB%94%B0%EB%A5%B8-%EC%B4%88%EA%B8%B0%ED%99%94)
   - [Client 설정과 사용](02-arcus-c-client.md#client-%EC%84%A4%EC%A0%95%EA%B3%BC-%EC%82%AC%EC%9A%A9)
