@@ -25,14 +25,14 @@ Set item에 수행 가능한 기본 연산들은 다음과 같다.
 
 새로운 empty set item을 생성한다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_create(memcached_st *ptr,
                      const char *key, size_t key_length,
                      memcached_coll_create_attrs_st *attributes)
 ```
 
-- key: set item의 key
+- key, key_length: set item의 key
 - attributes: set item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
 
 Response code는 아래와 같다.
@@ -42,31 +42,29 @@ Response code는 아래와 같다.
 - not MEMCACHED_SUCCESS
   - MEMCACHED_EXISTS: 동일한 key를 가진 set이 이미 존재함.
 
-Set item을 생성하는 예제는 아래와 같다.
+Set item을 생성하는 예시는 아래와 같다.
 
-``` c
-void arcus_set_item_create(memcached_st *memc)
+```c
+int arcus_set_item_create(memcached_st *memc)
 {
-    uint32_t flags= 10;
-    uint32_t exptime= 600;
-    uint32_t maxcount= 1000;
+  const char *key= "set:a_key";
+  uint32_t flags= 0;
+  uint32_t exptime= 600;
+  uint32_t maxcount= 1000;
+  memcached_return_t rc;
 
-    memcached_coll_create_attrs_st attributes;
-    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
 
-    memcached_return_t rc;
+  rc= memcached_sop_create(memc, key, strlen(key), &attributes);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_sop_create: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
 
-    // 비어 있는 Set을 생성한다.
-    rc= memcached_sop_create(memc, "set:an_empty_set", strlen("set:an_empty_set"),
-                             &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_CREATED == memcached_get_last_response_code(memc));
-
-    // 이미 존재하는 key를 이용하여 Set을 생성하면 오류가 발생한다.
-    rc= memcached_sop_create(memc, "set:an_empty_set", strlen("set:an_empty_set"),
-                             &attributes);
-    assert(MEMCACHED_SUCCESS != rc);
-    assert(MEMCACHED_EXISTS == memcached_get_last_response_code(memc));
+  assert(rc == MEMCACHED_SUCCESS);
+  assert(memcached_get_last_response_code(memc) == MEMCACHED_CREATED);
+  return 0;
 }
 ```
 
@@ -74,7 +72,7 @@ void arcus_set_item_create(memcached_st *memc)
 
 Set에 하나의 element를 삽입하는 함수이다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_insert(memcached_st *ptr,
                      const char *key, size_t key_length,
@@ -97,48 +95,32 @@ Response code는 아래와 같다.
   - MEMCACHED_OVERFLOWED: Overflow 상태임. (overflowaction=error, maxcount=count)
   - MEMCACHED_ELEMENT_EXISTS: 동일한 value를 가진 element가 이미 존재하고 있음
 
-Set에 하나의 element를 삽입하는 예제는 아래와 같다.
+Set에 하나의 element를 삽입하는 예시는 아래와 같다.
 
-``` c
-void arcus_set_element_insert(memcached_st *memc)
+```c
+int arcus_set_element_insert(memcached_st *memc)
 {
-    uint32_t flags= 10;
-    uint32_t exptime= 600;
-    uint32_t maxcount= 1000;
+  const char *key= "set:a_key";
+  const char *value= "value";
+  memcached_return_t rc;
 
-    memcached_coll_create_attrs_st attributes;
-    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  uint32_t flags= 0;
+  uint32_t exptime= 600;
+  uint32_t maxcount= 1000;
 
-    memcached_return_t rc;
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
 
-    // 입력할 때 Set이 존재하지 않으면 새로 생성한 뒤 입력한다.
-    rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                            "value", strlen("value"), &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
+  rc= memcached_sop_insert(memc, key, strlen(key), value, strlen(value), &attributes);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_sop_insert: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
 
-    // 이미 존재하는 값을 입력하려 하면 오류가 발생한다.
-    rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                             "value", strlen("value"), NULL);
-    assert(MEMCACHED_SUCCESS != rc);
-    assert(MEMCACHED_ELEMENT_EXISTS == memcached_get_last_response_code(memc));
-
-    // Set의 element 개수가 maxcount에 다다를 때까지 입력한다.
-    for (uint32_t i=1; i<maxcount; i++)
-    {
-        char buffer[15];
-        size_t buffer_len= snprintf(buffer, 15, "value%d", i);
-        rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                                 buffer, buffer_len, &attributes);
-        assert(MEMCACHED_SUCCESS == rc);
-        assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
-    }
-
-    // Set의 element 개수가 maxcount에 다다른 상태에서 새로운 값을 입력하면 오류가 발생한다.
-    rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                             "last_value", strlen("last_value"), &attributes);
-    assert(MEMCACHED_SUCCESS != rc);
-    assert(MEMCACHED_OVERFLOWED == memcached_get_last_response_code(memc));
+  memcached_return_t last_response= memcached_get_last_response_code(memc);
+  assert(rc == MEMCACHED_SUCCESS);
+  assert(last_response == MEMCACHED_STORED || last_response == MEMCACHED_CREATED_STORED);
+  return 0;
 }
 ```
 
@@ -146,7 +128,7 @@ void arcus_set_element_insert(memcached_st *memc)
 
 Set에서 주어진 value를 가진 element를 삭제하는 함수이다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_delete(memcached_st *ptr,
                      const char *key, size_t key_length,
@@ -154,6 +136,7 @@ memcached_sop_delete(memcached_st *ptr,
                      bool drop_if_empty)
 ```
 
+- key, key_length: set item의 key
 - value, value_length: 삭제할 element의 value
 - drop_if_empty: element 삭제로 empty list가 될 경우, 그 list도 삭제할 것인지를 지정
 
@@ -167,49 +150,26 @@ Response code는 아래와 같다.
   - MEMCACHED_NOTFOUND_ELEMENT: 주어진 value를 가지는 element가 없음.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 Set이 아님.
 
+Set에서 하나의 element를 삭제하는 예시는 아래와 같다.
 
-Set에서 하나의 element를 삭제하는 예제이다.
-
-``` c
-void arcus_set_element_delete(memcached_st *memc)
+```c
+int arcus_set_element_delete(memcached_st *memc)
 {
-    uint32_t flags= 10;
-    uint32_t exptime= 600;
-    uint32_t maxcount= 1000;
+  const char *key= "set:a_key";
+  const char *value= "value";
+  bool drop_if_empty= false;
+  memcached_return_t rc;
 
-    memcached_coll_create_attrs_st attributes;
-    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  rc= memcached_sop_delete(memc, key, strlen(key), value, strlen(value), drop_if_empty);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_sop_delete: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
 
-    memcached_return_t rc;
-
-    // 테스트 데이터를 입력한다.
-    rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                             "value1", strlen("value1"), &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
-
-    rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                             "value2", strlen("value2"), &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
-
-    // 삭제를 요청한 값이 Set에 존재하지 않으면 오류가 발생한다.
-    rc= memcached_sop_delete(memc, "set:a_set", strlen("set:a_set"),
-                             "no value", strlen("no value"), true);
-    assert(MEMCACHED_SUCCESS != rc);
-    assert(MEMCACHED_NOTFOUND_ELEMENT == memcached_get_last_response_code(memc));
-
-    // 값 하나를 삭제한다.
-    rc= memcached_sop_delete(memc, "set:a_set", strlen("set:a_set"),
-                             "value1", strlen("value1"), true);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_DELETED == memcached_get_last_response_code(memc));
-
-    // 값 하나를 삭제한다. 삭제 후 empty 상태가 된 Set은 삭제된다.
-    rc= memcached_sop_delete(memc, "set:a_set", strlen("set:a_set"),
-                             "value2", strlen("value2"), true);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_DELETED_DROPPED == memcached_get_last_response_code(memc));
+  memcached_return_t last_response= memcached_get_last_response_code(memc);
+  assert(rc == MEMCACHED_SUCCESS);
+  assert(last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+  return 0;
 }
 ```
 
@@ -217,56 +177,48 @@ void arcus_set_element_delete(memcached_st *memc)
 
 Set에서 주어진 value를 가진 element의 존재 여부를 확인한다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_exist(memcached_st *ptr,
                     const char *key, size_t key_length,
                     const char *value, size_t value_length)
 ```
 
+- key, key_length: set item의 key
 - value, value_length: 존재 여부를 확인할 element의 value
 
 Response code는 아래와 같다.
 
 - MEMCACHED_SUCCESS
   - MEMCACHED_EXIST: 주어진 value를 가지는 element가 존재함.
-  - MEMCACHED_NOT_EXIST: 주어진 value를 가지는 element가 존재하지 않음.
 - not MEMCACHED_SUCCESS
+  - MEMCACHED_NOT_EXIST: 주어진 value를 가지는 element가 존재하지 않음.
   - MEMCACHED_NOTFOUND: 주어진 key에 해당하는 Set이 없음.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 Set이 아님.
   - MEMCACHED_UNREADABLE: 주어진 key에 해당하는 Set이 unreadable 상태임.
 
-Set element의 존재 여부를 확인하는 예제는 아래와 같다.
+Set element의 존재 여부를 확인하는 예시는 아래와 같다.
 
-``` c
-void arcus_set_element_exist(memcached_st *memc)
+```c
+int arcus_set_element_exist(memcached_st *memc)
 {
-    uint32_t flags= 10;
-    uint32_t exptime= 600;
-    uint32_t maxcount= 1000;
+  const char *key= "set:a_key";
+  const char *value= "value";
+  memcached_return_t rc;
 
-    memcached_coll_create_attrs_st attributes;
-    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  rc= memcached_sop_exist(memc, key, strlen(key), value, strlen(value));
+  if (memcached_failed(rc)) {
+    if (rc == MEMCACHED_NOT_EXIST) {
+      return 0; /* element doesn't exist */
+    }
+    fprintf(stderr, "Failed to memcached_sop_exist: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    return -1;
+  }
 
-    memcached_return_t rc;
-
-    // 테스트 데이터를 입력한다.
-    rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                             "value", strlen("value"), &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_CREATED_STORED == memcached_get_last_response_code(memc));
-
-    // 요청한 데이터가 존재하는 않는 경우
-    rc= memcached_sop_exist(memc, "set:a_set", strlen("set:a_set"),
-                            "no value", strlen("no value"));
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_NOT_EXIST == memcached_get_last_response_code(memc));
-
-    // 요청한 데이터가 존재하는 경우
-    rc= memcached_sop_exist(memc, "set:a_set", strlen("set:a_set"),
-                            "value", strlen("value"));
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_EXIST == memcached_get_last_response_code(memc));
+  memcached_return_t last_response= memcached_get_last_response_code(memc);
+  assert(rc == MEMCACHED_SUCCESS);
+  assert(last_response == MEMCACHED_EXIST);
+  return 1; /* element exists */
 }
 ```
 
@@ -274,7 +226,7 @@ void arcus_set_element_exist(memcached_st *memc)
 
 Set element를 조회하는 함수이다. 이 함수는 임의의 count 개 elements를 조회한다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_get(memcached_st *ptr,
                   const char *key, size_t key_length,
@@ -282,10 +234,10 @@ memcached_sop_get(memcached_st *ptr,
                   memcached_coll_result_st *result)
 ```
 
-- count: 조회할 element 개수
+- key, key_length: set item의 key
+- count: 조회할 element 개수를 지정. 0이면 전체 elements를 의미
 - with_delete: 조회와 함께 삭제도 수행할 것인지를 지정
 - drop_if_empty: element 삭제로 empty set이 될 경우, 그 set도 삭제할 것인지를 지정
-
 
 Response code는 아래와 같다.
 
@@ -303,8 +255,7 @@ Response code는 아래와 같다.
 조회 결과는 memcached_coll_result_t 구조체에 저장된다.
 조회 결과에 접근하기 위한 API는 다음과 같다.
 
-
-``` c
+```c
 memcached_coll_result_st *
 memcached_coll_result_create(const memcached_st *ptr, memcached_coll_result_st *result)
 void
@@ -322,54 +273,50 @@ size_t
 memcached_coll_result_get_value_length(memcached_coll_result_st *result, size_t index)
 ```
 
-Set element를 조회하는 예제는 아래와 같다.
+- memcached_coll_result_create : 새로운 result 구조체를 생성한다.
+  - result 인자가 NULL인 경우, result 구조체를 생성 및 초기화하여 반환한다.
+  - result 인자가 NULL이 아닌 경우, 해당 result 구조체를 초기화하여 반환한다.
+- memcached_coll_result_free : 동적으로 할당된 result 구조체 및 result 내부 값들의 메모리를 해제(free)한다.
+- memcached_coll_result_get_type : 조회한 item의 type을 가져온다.
+- memcached_coll_result_get_count : 조회한 item의 count를 가져온다.
+- memcached_coll_result_get_flags : 조회한 item의 flags를 가져온다.
+- memcached_coll_result_get_value : 조회한 item의 value를 가져온다.
+- memcached_coll_result_get_value_length : 조회한 item의 value 길이 정보를 가져온다.
+
+Set element를 조회하는 예시는 아래와 같다.
 
 ``` c
-void arcus_set_element_get(memcached_st *memc)
+int arcus_set_element_get(memcached_st *memc)
 {
-    uint32_t flags= 10;
-    uint32_t exptime= 600;
-    uint32_t maxcount= 1000;
+  const char *key= "set:a_key";
+  size_t count= 0;
+  bool with_delete = false;
+  bool drop_if_empty = false;
+  memcached_coll_result_st result;
+  memcached_return_t rc;
 
-    memcached_coll_create_attrs_st attributes;
-    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  memcached_coll_result_create(memc, &result);
 
-    memcached_return_t rc;
-
-    for (uint32_t i=0; i<maxcount; i++)
-    {
-        char buffer[15];
-        size_t buffer_len= snprintf(buffer, 15, "value%d", i);
-        rc= memcached_sop_insert(memc, "a_set", strlen("a_set"),
-                                 buffer, buffer_len, &attributes);
-        assert(MEMCACHED_SUCCESS == rc);
+  do {
+    rc= memcached_sop_get(memc, key, strlen(key), count, with_delete, drop_if_empty, &result);
+    if (memcached_failed(rc)) {
+      fprintf(stderr, "Failed to memcached_sop_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+      break;
     }
 
-    // 조회 범위에 아무런 element가 없는 경우
-    rc= memcached_sop_create(memc, "an_empty_set", strlen("an_empty_set"),
-                             &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
+    memcached_return_t last_response= memcached_get_last_response_code(memc);
+    assert(rc == MEMCACHED_SUCCESS);
+    assert(last_response == MEMCACHED_END ||
+           last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
 
-    memcached_coll_result_st *result = memcached_coll_result_create(memc, NULL);
+    for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
+      const char* value= memcached_coll_result_get_value(&result, i);
+      fprintf(stdout, "memcached_sop_get: %s : %s\n", key, value);
+    }
+  } while(0);
 
-    rc= memcached_sop_get(memc, "an_empty_set", strlen("an_empty_set"),
-                          maxcount, false, false, result);
-    assert(MEMCACHED_SUCCESS != rc);
-    assert(MEMCACHED_NOTFOUND_ELEMENT == memcached_get_last_response_code(memc));
-
-    memcached_coll_result_free(result);
-
-    // 조회와 동시에 조회된 element를 삭제한다. Empty 상태가 된 Set은 삭제된다.
-    result = memcached_coll_result_create(memc, NULL);
-
-    rc= memcached_sop_get(memc, "a_set", strlen("a_set"),
-                          maxcount, true, true, result);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_DELETED_DROPPED == memcached_get_last_response_code(memc));
-    assert(maxcount == memcached_coll_result_get_count(result));
-
-    // 조회 결과를 삭제한다.
-    memcached_coll_result_free(result);
+  memcached_coll_result_free(&result);
+  return (rc == MEMCACHED_SUCCESS) ? 0 : -1;
 }
 ```
 
@@ -379,7 +326,7 @@ Set에 여러 elements를 한번에 삽입하는 함수는 두 가지가 있다.
 
 첫째, 하나의 key가 가리키는 set에 다수의 elements를 삽입하는 함수이다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_piped_insert(memcached_st *ptr,
                            const char *key, const size_t key_length,
@@ -395,9 +342,63 @@ memcached_sop_piped_insert(memcached_st *ptr,
 - values, values_length: 다수 element 각각의 value와 그 길이
 - attributes: 해당 set이 없을 시에, attributes에 따라 set을 생성 후에 삽입한다.
 
+하나의 key가 가리키는 set에 다수의 elements를 삽입하는 예시는 다음과 같다.
+
+```c
+int arcus_set_element_piped_insert(memcached_st *memc)
+{
+  const char *key= "set:a_key";
+  const char * const values[]= { "value1", "value2", "value3" };
+  size_t number_of_values = 3;
+  size_t values_len[3];
+  memcached_return_t rc;
+  memcached_return_t piped_rc;
+  memcached_return_t results[3];
+
+  uint32_t flags= 0;
+  uint32_t exptime= 600;
+  uint32_t maxcount= 1000;
+
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+
+  for (size_t i=0; i<number_of_values; i++)
+  {
+    values_len[i]= strlen(values[i]);
+  }
+
+  rc= memcached_sop_piped_insert(memc, key, strlen(key),
+                                 number_of_values,
+                                 values, values_len,
+                                 &attributes, results, &piped_rc);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_sop_piped_insert: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  if (piped_rc == MEMCACHED_ALL_FAILURE) {
+    fprintf(stderr, "Failed to memcached_sop_piped_insert: All Failures\n");
+    return -1;
+  }
+
+  if (piped_rc == MEMCACHED_SOME_SUCCESS) {
+    for (size_t i=0; i<number_of_values; i++) {
+      if (results[i] != MEMCACHED_STORED && results[i] != MEMCACHED_CREATED_STORED) {
+        fprintf(stderr, "Failed to memcached_sop_piped_insert: %s : %s %d(%s)\n",
+                key, values[i], results[i], memcached_strerror(memc, results[i]));
+      }
+    }
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  return 0;
+}
+```
+
 둘째, 여러 key들이 가리키는 set들에 각각 하나의 element를 삽입하는 함수이다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_piped_insert_bulk(memcached_st *ptr,
                                 const char * const *keys,
@@ -424,51 +425,57 @@ Set element 일괄 삽입의 결과는 아래의 인자를 통해 받는다.
   - MEMCACHED_SOME_SUCCESS: 일부 element가 저장됨.
   - MEMCACHED_ALL_FAILURE: 전체 element가 저장되지 않음.
 
-Set element 일괄 삽입의 예제는 아래와 같다.
+여러 key들이 가리키는 set들에 각각 하나의 element를 삽입하는 예시는 아래와 같다.
 
-``` c
-void arcus_set_element_piped_insert(memcached_st *memc)
+```c
+int arcus_set_element_piped_insert_bulk(memcached_st *memc)
 {
-    uint32_t flags= 10;
-    uint32_t exptime= 600;
-    uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
+  const char * const keys[]= { "set:a_key1", "set:a_key2", "set:a_key3" };
+  const char *value= "value";
+  size_t keys_len[3];
+  size_t number_of_keys = 3;
+  memcached_return_t rc;
+  memcached_return_t piped_rc;
+  memcached_return_t results[3];
 
-    memcached_coll_create_attrs_st attributes;
-    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  uint32_t flags= 0;
+  uint32_t exptime= 600;
+  uint32_t maxcount= 1000;
 
-    memcached_return_t rc;
-    memcached_return_t piped_rc; // pipe operation의 전체 성공 여부
-    memcached_return_t results[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE]; // 각 key에 대한 응답코드
+  memcached_coll_create_attrs_st attributes;
+  memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
 
-    // 테스트 데이터
-    int32_t indexes[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
-    char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-    size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
+  for (size_t i=0; i<number_of_keys; i++)
+  {
+    keys_len[i]= strlen(keys[i]);
+  }
 
-    for (uint32_t i=0; i<maxcount; i++)
-    {
-        values[i]= (char *)malloc(sizeof(char) * 15);
-        valuelengths[i]= snprintf(values[i], 15, "value%d", i);
+  rc= memcached_sop_piped_insert_bulk(memc, keys, keys_len,
+                                      number_of_keys,
+                                      value, strlen(value),
+                                      &attributes, results, &piped_rc);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_sop_piped_insert: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  if (piped_rc == MEMCACHED_ALL_FAILURE) {
+    fprintf(stderr, "Failed to memcached_sop_piped_insert_bulk: All Failures\n");
+    return -1;
+  }
+
+  if (piped_rc == MEMCACHED_SOME_SUCCESS) {
+    for (size_t i=0; i<number_of_keys; i++) {
+      if (results[i] != MEMCACHED_STORED && results[i] != MEMCACHED_CREATED_STORED) {
+        fprintf(stderr, "Failed to memcached_sop_piped_insert_bulk: %s : %s %d(%s)\n",
+                keys[i], value, results[i], memcached_strerror(memc, results[i]));
+      }
     }
+  }
 
-    // piped insert를 요청한다.
-    rc= memcached_sop_piped_insert(memc, "a_set", strlen("a_set"),
-                                   MEMCACHED_COLL_MAX_PIPED_CMD_SIZE,
-                                   values, valuelengths, &attributes,
-                                   results, &piped_rc);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_ALL_SUCCESS == piped_rc);
-
-    // 각 key에 대한 결과를 확인한다.
-    for (size_t i=0; i<maxcount; i++)
-    {
-        assert(MEMCACHED_STORED == results[i] or
-                MEMCACHED_CREATED_STORED == results[i]);
-    }
-
-    for (uint32_t i=0; i<maxcount; i++)
-        free((void*)values[i]);
-    free((void*)values);
+  assert(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_SOME_ERRORS);
+  return 0;
 }
 ```
 
@@ -476,7 +483,7 @@ void arcus_set_element_piped_insert(memcached_st *memc)
 
 Set에서 여러 elements의 존재 여부를 한번에 확인하는 함수이다.
 
-``` c
+```c
 memcached_return_t
 memcached_sop_piped_exist(memcached_st *ptr,
                           const char *key, size_t key_length,
@@ -499,69 +506,52 @@ Set element 일괄 존재 여부 확인의 결과는 아래의 인자를 통해 
   - MEMCACHED_ALL_EXIST: 모든 element가 존재함.
   - MEMCACHED_SOME_EXIST: 일부 element가 존재함.
   - MEMCACHED_ALL_NOT_EXIST: 모든 element가 존재하지 않음.
+  - MEMCACHED_SOME_SUCCESS: 일부 element 존재 여부 확인에 실패함.
+  - MEMCACHED_ALL_FAILURE: 전체 element 존재 여부 확인에 실패함.
 
-Set element 일괄 존재 여부 확인의 예는 아래와 같다.
+Set elements의 존재 여부를 한번에 확인하는 예시는 다음과 같다.
 
-``` c
-void arcus_set_element_piped_exist(memcached_st *memc)
+```c
+int arcus_set_element_piped_exist(memcached_st *memc)
 {
+  const char *key= "set:a_key";
+  const char * const values[]= { "value1", "value2", "value3" };
+  size_t number_of_values = 3;
+  size_t values_len[3];
+  memcached_return_t rc;
+  memcached_return_t piped_rc;
+  memcached_return_t results[3];
 
-    uint32_t flags= 10;
-    uint32_t exptime= 600;
-    uint32_t maxcount= MEMCACHED_COLL_MAX_PIPED_CMD_SIZE;
+  for (size_t i=0; i<number_of_values; i++)
+  {
+    values_len[i]= strlen(values[i]);
+  }
 
-    memcached_coll_create_attrs_st attributes;
-    memcached_coll_create_attrs_init(&attributes, flags, exptime, maxcount);
+  rc= memcached_sop_piped_exist(memc, key, strlen(key),
+                                number_of_values,
+                                values, values_len,
+                                results, &piped_rc);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_sop_piped_exist: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
+    return -1;
+  }
 
-    memcached_return_t rc;
-    char **values = (char **)malloc(sizeof(char *) * MEMCACHED_COLL_MAX_PIPED_CMD_SIZE);
-    size_t valuelengths[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE];
+  if (piped_rc == MEMCACHED_ALL_FAILURE) {
+    fprintf(stderr, "Failed to memcached_sop_piped_exist: All Failures\n");
+    return -1;
+  }
 
-    // 비어 있는 Set을 하나 생성한다.
-    memcached_sop_create(memc, "set:a_set", strlen("set:a_set"), &attributes);
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_CREATED == memcached_get_last_response_code(memc));
-
-    // 테스트 데이터를 입력한다.
-    for (uint32_t i=0; i<maxcount; i++)
-    {
-        values[i]= (char *)malloc(sizeof(char) * 15);
-        valuelengths[i]= snprintf(values[i], 15, "value%d", i);
-
-        // 일부 데이터를 의도적으로 입력하지 않도록 한다.
-        if ((i % 10) == 0)
-            continue;
-
-        rc= memcached_sop_insert(memc, "set:a_set", strlen("set:a_set"),
-                                 values[i], valuelengths[i], &attributes);
-        assert(MEMCACHED_SUCCESS == rc);
-        assert(MEMCACHED_STORED == memcached_get_last_response_code(memc));
-
+  if (piped_rc == MEMCACHED_SOME_SUCCESS) {
+    for (size_t i=0; i<number_of_values; i++) {
+      if (results[i] != MEMCACHED_EXIST && results[i] != MEMCACHED_NOT_EXIST) {
+        fprintf(stderr, "Failed to memcached_sop_piped_exist: %s : %s %d(%s)\n",
+                key, values[i], results[i], memcached_strerror(memc, results[i]));
+      }
     }
+  }
 
-    // Piped exist 명령을 수행한다.
-    memcached_return_t piped_rc; // 전체 데이터 존재 여부
-    memcached_return_t responses[MEMCACHED_COLL_MAX_PIPED_CMD_SIZE]; // 각 데이터에 대한 존재 여부
-
-    rc= memcached_sop_piped_exist(memc, "set:a_set", strlen("set:a_set"),
-                                  maxcount, values, valuelengths,
-                                  responses, &piped_rc);
-
-    // 일부 데이터가 존재한다는 결과가 나왔다.
-    assert(MEMCACHED_SUCCESS == rc);
-    assert(MEMCACHED_SOME_EXIST == piped_rc);
-
-    // 실제 결과가 맞는지 검증해보자.
-    for (uint32_t i=0; i<maxcount; i++)
-    {
-        if ((i % 10) == 0)
-            assert(MEMCACHED_NOT_EXIST == responses[i]);
-        else
-            assert(MEMCACHED_EXIST == responses[i]);
-    }
-
-    for (uint32_t i=0; i<maxcount; i++)
-        free(values[i]);
-    free(values);
+  assert(rc == MEMCACHED_SUCCESS);
+  return 0;
 }
 ```
