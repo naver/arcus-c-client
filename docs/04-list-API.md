@@ -31,7 +31,7 @@ memcached_lop_create(memcached_st *ptr,
                      memcached_coll_create_attrs_st *attributes)
 ```
 
-- key: list item의 key
+- key, key_length: list item의 key
 - attributes: list item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
 
 Response code는 아래와 같다.
@@ -157,6 +157,7 @@ memcached_lop_delete_by_range(memcached_st *ptr,
                               bool drop_if_empty)
 ```
 
+- key, key_length: list item의 key
 - from, to: list index range (0-based index)
   - 0, 1, 2, ... : list의 앞에서 시작하여 각 element 위치를 나타냄
   - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄
@@ -182,7 +183,6 @@ int arcus_list_element_delete(memcached_st *memc)
   const int32_t index= 0;
   // const int32_t from= 0, to= -1;
   bool drop_if_empty = false;
-
   memcached_return_t rc;
 
   rc= memcached_lop_delete(memc, key, strlen(key), index, drop_if_empty);
@@ -214,6 +214,7 @@ memcached_lop_get(memcached_st *ptr,
                   memcached_coll_result_st *result)
 ```
 
+- key, key_length: list item의 key
 - index: single list index (0-based index)
   - 0, 1, 2, ... : list의 앞에서 시작하여 각 element 위치를 나타냄
   - -1, -2, -3, ... : list의 뒤에서 시작하여 각 element 위치를 나타냄
@@ -297,27 +298,29 @@ int arcus_list_element_get(memcached_st *memc)
 
   memcached_coll_result_create(memc, &result);
 
-  rc= memcached_lop_get(memc, key, strlen(key), index, with_delete, drop_if_empty, &result);
-  // rc= memcached_lop_get_by_range(memc, key, strlen(key), from, to, with_delete, drop_if_empty, &result);
-  if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_lop_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
-    return -1;
-  }
+  do {
+    rc= memcached_lop_get(memc, key, strlen(key), index, with_delete, drop_if_empty, &result);
+    // rc= memcached_lop_get_by_range(memc, key, strlen(key), from, to, with_delete, drop_if_empty, &result);
+    if (memcached_failed(rc)) {
+      fprintf(stderr, "Failed to memcached_lop_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+      break;
+    }
 
-  memcached_return_t last_response= memcached_get_last_response_code(memc);
-  assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_END ||
-         last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+    memcached_return_t last_response= memcached_get_last_response_code(memc);
+    assert(rc == MEMCACHED_SUCCESS);
+    assert(last_response == MEMCACHED_END ||
+           last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
 
-  const char* value= memcached_coll_result_get_value(&result, 0);
-  fprintf(stdout, "memcached_lop_get: %s[%d] : %s\n", key, index, value);
-  /* for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
-    const char* value= memcached_coll_result_get_value(&result, i);
-    fprintf(stdout, "memcached_lop_get: %s[%d] : %s\n", key, i, value);
-  } */
+    const char* value= memcached_coll_result_get_value(&result, 0);
+    fprintf(stdout, "memcached_lop_get: %s[%d] : %s\n", key, index, value);
+    /* for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
+      const char* value= memcached_coll_result_get_value(&result, i);
+      fprintf(stdout, "memcached_lop_get: %s[%d] : %s\n", key, i, value);
+    } */
+  } while(0);
 
   memcached_coll_result_free(&result);
-  return 0;
+  return (rc == MEMCACHED_SUCCESS) ? 0 : -1;
 }
 ```
 
