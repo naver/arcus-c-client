@@ -7356,11 +7356,15 @@ static test_return_t arcus_1_6_set_exist(memcached_st *memc)
 
   // 3. NOT_EXIST
   rc= memcached_sop_exist(memc, test_literal_param("set:a_set"), test_literal_param("no_value"));
-  test_true_got(rc == MEMCACHED_NOT_EXIST, memcached_strerror(NULL, rc));
+  test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_NOT_EXIST,
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
 
   // 4. EXIST
   rc= memcached_sop_exist(memc, test_literal_param("set:a_set"), test_literal_param("value"));
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
+  test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_EXIST,
+                memcached_strerror(NULL, memcached_get_last_response_code(memc)));
 
   return TEST_SUCCESS;
 }
