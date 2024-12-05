@@ -2783,7 +2783,7 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
       rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
       memcached_set_last_response_code(ptr, rc);
 
-      if (rc == MEMCACHED_EXIST)
+      if (rc == MEMCACHED_EXIST or rc == MEMCACHED_NOT_EXIST)
       {
         rc= MEMCACHED_SUCCESS;
       }
