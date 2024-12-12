@@ -255,12 +255,12 @@ static void textual_switchover_peer_check(memcached_server_write_instance_st ins
   if (str_length < buf_length) {
     /* OK */
     memcpy(instance->switchover_peer, startptr, str_length);
-    instance->switchover_peer[str_length]= '\0'; 
+    instance->switchover_peer[str_length]= '\0';
     instance->switchover_sidx= -1; /* undefined */
   } else {
     /* something is wrong */
     memcpy(instance->switchover_peer, startptr, buf_length-1);
-    instance->switchover_peer[buf_length-1]= '\0'; 
+    instance->switchover_peer[buf_length-1]= '\0';
     instance->switchover_sidx= 1; /* set first slave */
   }
 }
@@ -1563,13 +1563,9 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
   case 'V':
     if (memcmp(buffer, "VALUE", 5) == 0)
     {
-      rc= textual_coll_value_fetch(ptr, buffer, result);
-      if (rc == MEMCACHED_SUCCESS)
-      {
-        /* We add back in one to search for END or next VALUE */
-        memcached_server_response_increment(ptr);
-      }
-      return rc;
+      /* We add back in one to search for END or next VALUE */
+      memcached_server_response_increment(ptr);
+      return textual_coll_value_fetch(ptr, buffer, result);
     }
     break;
 
