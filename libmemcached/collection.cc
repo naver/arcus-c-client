@@ -215,6 +215,60 @@ static inline bool space_separated_keys_is_supported(memcached_server_write_inst
   return false;
 }
 
+static int generate_str_bkey_from_query(memcached_coll_query_st *query,
+                                        char *buffer, const int buffer_length,
+                                        bool support_range, memcached_return_t *error)
+{
+  int write_length= -1;
+
+  if (MEMCACHED_COLL_QUERY_BOP == query->type)
+  {
+    write_length= snprintf(buffer, buffer_length, " %llu",
+                           (unsigned long long)query->sub_key.bkey);
+  }
+  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
+  {
+    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
+                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
+  }
+  else if (support_range)
+  {
+    if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
+    {
+      write_length= snprintf(buffer, buffer_length, " %llu..%llu",
+                             (unsigned long long)query->sub_key.bkey_range[0],
+                             (unsigned long long)query->sub_key.bkey_range[1]);
+    }
+    else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
+    {
+      char bkey_str_from[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+      char bkey_str_to[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+      memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[0],
+                                bkey_str_from, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+      memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
+                                bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
+
+      write_length= snprintf(buffer, buffer_length, " 0x%s..0x%s",
+                             bkey_str_from, bkey_str_to);
+    }
+  }
+  else
+  {
+    *error= MEMCACHED_INVALID_ARGUMENTS;
+    return -1;
+  }
+
+  if (write_length < 0 || write_length >= buffer_length)
+  {
+    *error= MEMCACHED_MEMORY_ALLOCATION_FAILURE;
+    return -1;
+  }
+
+  return write_length;
+}
+
 /* Hexadecimal */
 
 int memcached_compare_two_hexadecimal(memcached_hexadecimal_st *lhs,
@@ -1118,17 +1172,10 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   }
   else if (verb == BOP_INSERT_OP)
   {
-    if (MEMCACHED_COLL_QUERY_BOP == query->type)
+    write_length= generate_str_bkey_from_query(query, buffer, buffer_length, false, &rc);
+    if (write_length < 0)
     {
-      write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-    {
-      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
-                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
+      return rc;
     }
 
     if (eflag && eflag->array)
@@ -1329,16 +1376,10 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   }
   else if (verb == BOP_INSERT_OP || verb == BOP_UPSERT_OP)
   {
-    if (MEMCACHED_COLL_QUERY_BOP == query->type)
+    write_length= generate_str_bkey_from_query(query, buffer, buffer_length, false, &rc);
+    if (write_length < 0)
     {
-      write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-    {
-      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
-                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
+      return rc;
     }
 
     if (eflag && eflag->array)
@@ -1509,41 +1550,10 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   }
   else if (verb == BOP_DELETE_OP)
   {
-    if (MEMCACHED_COLL_QUERY_BOP == query->type)
+    write_length= generate_str_bkey_from_query(query, buffer, buffer_length, true, &rc);
+    if (write_length < 0)
     {
-      write_length= snprintf(buffer, buffer_length, " %llu",
-                             (unsigned long long)query->sub_key.bkey);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
-    {
-      write_length= snprintf(buffer, buffer_length, " %llu..%llu",
-                             (unsigned long long)query->sub_key.bkey_range[0],
-                             (unsigned long long)query->sub_key.bkey_range[1]);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-    {
-      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
-                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
-    {
-      char bkey_str_from[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      char bkey_str_to[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[0],
-                                bkey_str_from, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[1],
-                                bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length, " 0x%s..0x%s",
-                             bkey_str_from, bkey_str_to);
-    }
-    else
-    {
-      return MEMCACHED_INVALID_ARGUMENTS;
+      return rc;
     }
 
     /* Filter */
@@ -1806,44 +1816,10 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   }
   else if (verb == BOP_GET_OP)
   {
-    if (MEMCACHED_COLL_QUERY_BOP == query->type)
+    write_length= generate_str_bkey_from_query(query, buffer, buffer_length, true, &rc);
+    if (write_length < 0)
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " %llu",
-                             (unsigned long long)query->sub_key.bkey);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
-    {
-      write_length= snprintf(buffer, buffer_length,
-                             " %llu..%llu",
-                             (unsigned long long)query->sub_key.bkey_range[0],
-                             (unsigned long long)query->sub_key.bkey_range[1]);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-    {
-      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
-                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
-    {
-      char bkey_str_from[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      char bkey_str_to[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[0],
-                                bkey_str_from, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext_range[1],
-                                bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length,
-                             " 0x%s..0x%s",
-                             bkey_str_from, bkey_str_to);
-    }
-    else
-    {
-      return MEMCACHED_INVALID_ARGUMENTS;
+      return rc;
     }
 
     /* Filter */
@@ -2025,44 +2001,10 @@ static memcached_return_t do_coll_mget(memcached_st *ptr,
   if (verb == BOP_MGET_OP)
   {
     /* 1. <bkey or "bkey range"> */
-    if (MEMCACHED_COLL_QUERY_BOP == query->type)
+    write_length= generate_str_bkey_from_query(query, buffer, buffer_length, true, &rc);
+    if (write_length < 0)
     {
-      write_length= snprintf(buffer, buffer_length,
-                             " %llu",
-                             (unsigned long long)query->sub_key.bkey);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
-    {
-      write_length= snprintf(buffer, buffer_length,
-                             " %llu..%llu",
-                             (unsigned long long)query->sub_key.bkey_range[0],
-                             (unsigned long long)query->sub_key.bkey_range[1]);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-    {
-      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
-                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
-    {
-      char bkey_str_from[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      char bkey_str_to[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[0],
-                                bkey_str_from, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-      memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
-                                bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length,
-                             " 0x%s..0x%s",
-                             bkey_str_from, bkey_str_to);
-    }
-    else
-    {
-      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                                 memcached_literal_param("unknown b+tree query type"));
+      return rc;
     }
 
     /* 2. [<eflag_filter>] */
@@ -2275,22 +2217,10 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
                                memcached_literal_param("Not a b+tree operation"));
   }
 
-  if (MEMCACHED_COLL_QUERY_BOP == query->type)
+  write_length= generate_str_bkey_from_query(query, buffer, buffer_length, false, &rc);
+  if (write_length < 0)
   {
-    write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long)query->sub_key.bkey);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-  {
-    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
-                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
-  }
-  else
-  {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("An invalid query was provided"));
+    return rc;
   }
 
   write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %s", order_to_str(order));
@@ -2472,22 +2402,10 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
                                memcached_literal_param("Not a b+tree operation"));
   }
 
-  if (MEMCACHED_COLL_QUERY_BOP == query->type)
+  write_length= generate_str_bkey_from_query(query, buffer, buffer_length, false, &rc);
+  if (write_length < 0)
   {
-    write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long)query->sub_key.bkey);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-  {
-    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
-                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
-  }
-  else
-  {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("An invalid query was provided"));
+    return rc;
   }
 
   /* order */
@@ -2608,43 +2526,10 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   char buffer[buffer_length];
   int write_length= 0;
 
-  if (MEMCACHED_COLL_QUERY_BOP == query->type)
+  write_length= generate_str_bkey_from_query(query, buffer, buffer_length, true, &rc);
+  if (write_length < 0)
   {
-    write_length= snprintf(buffer, buffer_length,
-                           " %llu",
-                           (unsigned long long)query->sub_key.bkey);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
-  {
-    write_length= snprintf(buffer, buffer_length,
-                           " %llu..%llu",
-                           (unsigned long long)query->sub_key.bkey_range[0],
-                           (unsigned long long)query->sub_key.bkey_range[1]);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-  {
-    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
-                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
-  {
-    char bkey_str_from[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    char bkey_str_to[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[0],
-                              bkey_str_from, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
-                              bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    write_length= snprintf(buffer, buffer_length,
-                           " 0x%s..0x%s", bkey_str_from, bkey_str_to);
-  }
-  else
-  {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("unknown b+tree query type"));
+    return rc;
   }
 
   /* Filter */
@@ -3372,17 +3257,10 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   }
   else if (verb == BOP_UPDATE_OP)
   {
-    if (MEMCACHED_COLL_QUERY_BOP == query->type)
+    write_length= generate_str_bkey_from_query(query, buffer, buffer_length, false, &rc);
+    if (write_length < 0)
     {
-      write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
-    }
-    else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-    {
-      char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-      memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
-                                bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-      write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
+      return rc;
     }
   }
 
@@ -3523,17 +3401,10 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
   }
 
   /* 1. sub key */
-  if (MEMCACHED_COLL_QUERY_BOP == query->type)
+  write_length= generate_str_bkey_from_query(query, buffer, buffer_length, false, &rc);
+  if (write_length < 0)
   {
-    write_length= snprintf(buffer, buffer_length, " %llu", (unsigned long long) query->sub_key.bkey);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-  {
-    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(ptr, &query->sub_key.bkey_ext,
-                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
+    return rc;
   }
 
   /* 2. delta */
@@ -3660,42 +3531,10 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   }
 
   /* 1. sub key */
-  if (MEMCACHED_COLL_QUERY_BOP == query->type)
+  write_length= generate_str_bkey_from_query(query, buffer, buffer_length, true, &rc);
+  if (write_length < 0)
   {
-    write_length= snprintf(buffer, buffer_length,
-                           " %llu",
-                           (unsigned long long)query->sub_key.bkey);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_RANGE == query->type)
-  {
-    write_length= snprintf(buffer, buffer_length,
-                           " %llu..%llu",
-                           (unsigned long long)query->sub_key.bkey_range[0],
-                           (unsigned long long)query->sub_key.bkey_range[1]);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
-  {
-    char bkey_str[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext,
-                              bkey_str, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    write_length= snprintf(buffer, buffer_length, " 0x%s", bkey_str);
-  }
-  else if (MEMCACHED_COLL_QUERY_BOP_EXT_RANGE == query->type)
-  {
-    char bkey_str_from[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    char bkey_str_to[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[0],
-                              bkey_str_from, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-    memcached_conv_hex_to_str(NULL, &query->sub_key.bkey_ext_range[1],
-                              bkey_str_to, MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH);
-
-    write_length= snprintf(buffer, buffer_length, " 0x%s..0x%s", bkey_str_from, bkey_str_to);
-  }
-  else
-  {
-      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                                 memcached_literal_param("An invalid query was provided"));
+    return rc;
   }
 
   /* 2. filter */
