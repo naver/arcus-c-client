@@ -4681,20 +4681,15 @@ memcached_return_t memcached_coll_create_attrs_set_unreadable(memcached_coll_cre
 
 static void memcached_coll_query_init(memcached_coll_query_st *ptr)
 {
-  if (not ptr)
-  {
-    return;
+  if (ptr) {
+    ptr->options.is_initialized = true;
+    ptr->value = 0;
+    ptr->value_length = 0;
+    ptr->offset = 0;
+    ptr->count = 0;
+    ptr->eflag_filter = NULL;
+    ptr->smgmode = MEMCACHED_COLL_SMGET_NONE;
   }
-
-  ptr->options.is_initialized = true;
-  ptr->value = 0;
-  ptr->value_length = 0;
-  ptr->offset = 0;
-  ptr->count = 0;
-  ptr->eflag_filter = NULL;
-  ptr->smgmode = MEMCACHED_COLL_SMGET_NONE;
-
-  return;
 }
 
 memcached_return_t memcached_lop_query_init(memcached_coll_query_st *ptr,
