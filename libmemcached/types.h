@@ -92,7 +92,8 @@ typedef struct memcached_coll_query_st memcached_bop_query_st;
 typedef struct memcached_hexadecimal_st memcached_hexadecimal_st;
 typedef struct memcached_mkey_st memcached_mkey_st;
 typedef struct memcached_coll_eflag_filter_st memcached_coll_eflag_filter_st;
-typedef struct memcached_coll_update_filter_st memcached_coll_update_filter_st;
+typedef struct memcached_coll_eflag_update_st memcached_coll_eflag_update_st;
+typedef struct memcached_coll_eflag_update_st memcached_coll_update_filter_st;
 typedef struct memcached_coll_smget_result_st memcached_coll_smget_result_st;
 
 #ifdef __cplusplus
