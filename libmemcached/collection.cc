@@ -4989,11 +4989,11 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
   return MEMCACHED_SUCCESS;
 }
 
-/* memcached_coll_update_filter_st */
+/* memcached_coll_eflag_update_st */
 
-memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
-                                                     const unsigned char *fvalue,
-                                                     const size_t fvalue_length)
+memcached_return_t memcached_coll_eflag_update_init(memcached_coll_eflag_update_st *ptr,
+                                                    const unsigned char *fvalue,
+                                                    const size_t fvalue_length)
 {
   if (not ptr)
   {
@@ -5015,9 +5015,9 @@ memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filte
   return MEMCACHED_SUCCESS;
 }
 
-memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_update_filter_st *ptr,
-                                                            const size_t fwhere,
-                                                            memcached_coll_bitwise_t bitwise_op)
+memcached_return_t memcached_coll_eflag_update_set_bitwise(memcached_coll_eflag_update_st *ptr,
+                                                           const size_t fwhere,
+                                                           memcached_coll_bitwise_t bitwise_op)
 {
   if (not ptr)
   {
@@ -5035,6 +5035,22 @@ memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_updat
   ptr->bitwise.op = bitwise_op;
 
   return MEMCACHED_SUCCESS;
+}
+
+// DEPRECATED
+memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
+                                                     const unsigned char *fvalue,
+                                                     const size_t fvalue_length)
+{
+  return memcached_coll_eflag_update_init(ptr, fvalue, fvalue_length);
+}
+
+// DEPRECATED
+memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_update_filter_st *ptr,
+                                                            const size_t fwhere,
+                                                            memcached_coll_bitwise_t bitwise_op)
+{
+  return memcached_coll_eflag_update_set_bitwise(ptr, fwhere, bitwise_op);
 }
 
 size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr,

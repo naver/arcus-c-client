@@ -721,7 +721,7 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
  * B+tree eflag filter used for certain update commands.
  * This is just for convenience.
  */
-struct memcached_coll_update_filter_st {
+struct memcached_coll_eflag_update_st {
   size_t fwhere;
   size_t flength;
 
@@ -749,9 +749,9 @@ struct memcached_coll_update_filter_st {
  * @param fvalue_length  value length (number of bytes).
  */
 LIBMEMCACHED_API
-memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
-                                                     const unsigned char *fvalue,
-                                                     const size_t fvalue_length);
+memcached_return_t memcached_coll_eflag_update_init(memcached_coll_eflag_update_st *ptr,
+                                                    const unsigned char *fvalue,
+                                                    const size_t fvalue_length);
 
 /**
  * Initialize the b+tree eflag filter used for update commands.
@@ -760,6 +760,18 @@ memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filte
  * @param fwhere  eflag offset.
  * @param bitwise_op  bitwise operator.
  */
+LIBMEMCACHED_API
+memcached_return_t memcached_coll_eflag_update_set_bitwise(memcached_coll_eflag_update_st *ptr,
+                                                           const size_t fwhere,
+                                                           memcached_coll_bitwise_t bitwise_op);
+
+// DEPRECATED
+LIBMEMCACHED_API
+memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
+                                                     const unsigned char *fvalue,
+                                                     const size_t fvalue_length);
+
+// DEPRECATED
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_update_filter_st *ptr,
                                                             const size_t fwhere,
