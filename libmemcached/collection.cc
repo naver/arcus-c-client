@@ -3832,16 +3832,23 @@ memcached_return_t memcached_bop_ext_insert(memcached_st *ptr,
                                             memcached_coll_create_attrs_st *attributes)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
-  query.value = value;
-  query.value_length = value_length;
+  memcached_return_t rc;
 
-  memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
-  eflag_hex.array = (unsigned char *)eflag;
-  eflag_hex.length = eflag_length;
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    query.value = value;
+    query.value_length = value_length;
 
-  return do_coll_insert(ptr, key, key_length,
+    memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
+    eflag_hex.array = (unsigned char *)eflag;
+    eflag_hex.length = eflag_length;
+
+    rc= do_coll_insert(ptr, key, key_length,
                         &query, &eflag_hex, attributes, BOP_INSERT_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_insert(memcached_st *ptr,
@@ -3872,16 +3879,23 @@ memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr,
                                             memcached_coll_create_attrs_st *attributes)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
-  query.value = value;
-  query.value_length = value_length;
+  memcached_return_t rc;
 
-  memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
-  eflag_hex.array = (unsigned char *)eflag;
-  eflag_hex.length = eflag_length;
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    query.value = value;
+    query.value_length = value_length;
 
-  return do_coll_insert(ptr, key, key_length,
-                        &query, &eflag_hex, attributes, BOP_UPSERT_OP);
+    memcached_hexadecimal_st eflag_hex = { NULL, 0, { 0 } };
+    eflag_hex.array = (unsigned char *)eflag;
+    eflag_hex.length = eflag_length;
+
+    rc= do_coll_insert(ptr, key, key_length,
+                          &query, &eflag_hex, attributes, BOP_UPSERT_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_upsert(memcached_st *ptr,
@@ -3925,11 +3939,17 @@ memcached_return_t memcached_bop_ext_update(memcached_st *ptr,
                                             const char *value, size_t value_length)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  memcached_return_t rc;
 
-  return do_coll_update(ptr, key, key_length,
-                        &query, eflag_update, value, value_length,
-                        BOP_UPDATE_OP);
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_update(ptr, key, key_length,
+                       &query, eflag_update, value, value_length,
+                       BOP_UPDATE_OP);
+  }
+
+  return rc;
 }
 
 /* APIs : delete */
@@ -4032,11 +4052,17 @@ memcached_return_t memcached_bop_ext_delete(memcached_st *ptr,
                                             bool drop_if_empty)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, eflag_filter);
+  memcached_return_t rc;
 
-  return do_coll_delete(ptr, key, key_length,
-                        &query, 0, drop_if_empty,
-                        BOP_DELETE_OP);
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, eflag_filter);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_delete(ptr, key, key_length,
+                       &query, 0, drop_if_empty,
+                       BOP_DELETE_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr,
@@ -4047,11 +4073,17 @@ memcached_return_t memcached_bop_ext_delete_by_range(memcached_st *ptr,
                                                      size_t count, bool drop_if_empty)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length, eflag_filter, 0, count);
+  memcached_return_t rc;
 
-  return do_coll_delete(ptr, key, key_length,
-                        &query, count, drop_if_empty,
-                        BOP_DELETE_OP);
+  rc= memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length, eflag_filter, 0, count);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_delete(ptr, key, key_length,
+                       &query, count, drop_if_empty,
+                       BOP_DELETE_OP);
+  }
+
+  return rc;
 }
 
 /* APIs : incr & decr */
@@ -4099,15 +4131,21 @@ memcached_return_t memcached_bop_ext_incr(memcached_st *ptr,
                                           const uint64_t delta, uint64_t *value)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  memcached_return_t rc;
 
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
 #ifdef BOP_ARITHMETIC_INITIAL
-  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
-                            false, 0, NULL, value, BOP_INCR_OP);
+    rc= do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                           false, 0, NULL, value, BOP_INCR_OP);
 #else
-  return do_coll_arithmetic(ptr, key, key_length,
-                            &query, delta, value, BOP_INCR_OP);
+    rc= do_coll_arithmetic(ptr, key, key_length,
+                           &query, delta, value, BOP_INCR_OP);
 #endif
+  }
+
+  return rc;
 }
 
 #ifdef BOP_ARITHMETIC_INITIAL
@@ -4119,14 +4157,20 @@ memcached_return_t memcached_bop_ext_incr_with_initial(memcached_st *ptr,
                                                        uint64_t *value)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  memcached_return_t rc;
 
-  memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
-  eflag_hex.array= (unsigned char *)eflag;
-  eflag_hex.length= eflag_length;
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
+    eflag_hex.array= (unsigned char *)eflag;
+    eflag_hex.length= eflag_length;
 
-  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
-                            true, initial, &eflag_hex, value, BOP_INCR_OP);
+    rc= do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                              true, initial, &eflag_hex, value, BOP_INCR_OP);
+  }
+
+  return rc;
 }
 
 #endif
@@ -4173,15 +4217,21 @@ memcached_return_t memcached_bop_ext_decr(memcached_st *ptr,
                                           const uint64_t delta, uint64_t *value)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  memcached_return_t rc;
 
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
 #ifdef BOP_ARITHMETIC_INITIAL
-  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
-                            false, 0, NULL, value, BOP_DECR_OP);
+    rc= do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                           false, 0, NULL, value, BOP_DECR_OP);
 #else
-  return do_coll_arithmetic(ptr, key, key_length,
-                            &query, delta, value, BOP_DECR_OP);
+    rc= do_coll_arithmetic(ptr, key, key_length,
+                           &query, delta, value, BOP_DECR_OP);
 #endif
+  }
+
+  return rc;
 }
 
 #ifdef BOP_ARITHMETIC_INITIAL
@@ -4193,14 +4243,20 @@ memcached_return_t memcached_bop_ext_decr_with_initial(memcached_st *ptr,
                                                        uint64_t *value)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  memcached_return_t rc;
 
-  memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
-  eflag_hex.array= (unsigned char *)eflag;
-  eflag_hex.length= eflag_length;
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    memcached_hexadecimal_st eflag_hex= { NULL, 0, { 0 } };
+    eflag_hex.array= (unsigned char *)eflag;
+    eflag_hex.length= eflag_length;
 
-  return do_coll_arithmetic(ptr, key, key_length, &query, delta,
-                            true, initial, &eflag_hex, value, BOP_DECR_OP);
+    rc= do_coll_arithmetic(ptr, key, key_length, &query, delta,
+                           true, initial, &eflag_hex, value, BOP_DECR_OP);
+  }
+
+  return rc;
 }
 
 #endif
@@ -4391,11 +4447,17 @@ memcached_return_t memcached_bop_ext_get(memcached_st *ptr,
                                          memcached_coll_result_st *result)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, eflag_filter);
+  memcached_return_t rc;
 
-  return do_coll_get(ptr, key, key_length,
-                     &query, with_delete, drop_if_empty, result,
-                     BOP_GET_OP);
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, eflag_filter);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_get(ptr, key, key_length,
+                    &query, with_delete, drop_if_empty, result,
+                    BOP_GET_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr,
@@ -4408,12 +4470,18 @@ memcached_return_t memcached_bop_ext_get_by_range(memcached_st *ptr,
                                                   memcached_coll_result_st *result)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length,
-                                     eflag_filter, offset, count);
+  memcached_return_t rc;
 
-  return do_coll_get(ptr, key, key_length,
-                     &query, with_delete, drop_if_empty, result,
-                     BOP_GET_OP);
+  rc= memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length,
+                                         eflag_filter, offset, count);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_get(ptr, key, key_length,
+                    &query, with_delete, drop_if_empty, result,
+                    BOP_GET_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_mget(memcached_st *ptr,
@@ -4460,7 +4528,7 @@ memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr,
                                                    size_t *position)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  memcached_return_t rc;
 
   if (order != MEMCACHED_COLL_ORDER_ASC && order != MEMCACHED_COLL_ORDER_DESC)
   {
@@ -4468,7 +4536,13 @@ memcached_return_t memcached_bop_ext_find_position(memcached_st *ptr,
                                memcached_literal_param("Unknown order value.\n"));
   }
 
-  return do_bop_find_position(ptr, key, key_length, &query, order, position, BOP_POSI_OP);
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_bop_find_position(ptr, key, key_length, &query, order, position, BOP_POSI_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_get_by_position(memcached_st *ptr,
@@ -4513,7 +4587,7 @@ memcached_return_t memcached_bop_ext_find_position_with_get(memcached_st *ptr,
                                                  memcached_coll_result_st *result)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  memcached_return_t rc;
 
   if (order != MEMCACHED_COLL_ORDER_ASC && order != MEMCACHED_COLL_ORDER_DESC)
   {
@@ -4521,8 +4595,14 @@ memcached_return_t memcached_bop_ext_find_position_with_get(memcached_st *ptr,
                                memcached_literal_param("Unknown order value.\n"));
   }
 
-  return do_bop_find_position_with_get(ptr, key, key_length, &query, order, count,
-                                       result, BOP_PWG_OP);
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_bop_find_position_with_get(ptr, key, key_length, &query, order, count,
+                                      result, BOP_PWG_OP);
+  }
+
+  return rc;
 }
 
 /* APIs : create */
@@ -4576,9 +4656,14 @@ memcached_return_t memcached_bop_count_by_range(memcached_st *ptr,
                                                 size_t *count)
 {
   memcached_coll_query_st query;
-  memcached_bop_range_query_init(&query, from, to, eflag_filter, 0, 0);
+  memcached_return_t rc= memcached_bop_range_query_init(&query, from, to, eflag_filter, 0, 0);
 
-  return do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_ext_count(memcached_st *ptr,
@@ -4588,9 +4673,15 @@ memcached_return_t memcached_bop_ext_count(memcached_st *ptr,
                                            size_t *count)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_query_init(&query, bkey, bkey_length, eflag_filter);
+  memcached_return_t rc;
 
-  return do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
+  rc= memcached_bop_ext_query_init(&query, bkey, bkey_length, eflag_filter);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
+  }
+
+  return rc;
 }
 
 memcached_return_t memcached_bop_ext_count_by_range(memcached_st *ptr,
@@ -4601,9 +4692,15 @@ memcached_return_t memcached_bop_ext_count_by_range(memcached_st *ptr,
                                                     size_t *count)
 {
   memcached_coll_query_st query;
-  memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length, eflag_filter, 0, 0);
+  memcached_return_t rc;
 
-  return do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
+  rc= memcached_bop_ext_range_query_init(&query, from, from_length, to, to_length, eflag_filter, 0, 0);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_count(ptr, key, key_length, &query, count, BOP_COUNT_OP);
+  }
+
+  return rc;
 }
 
 /* APIs : memcached_coll_create_attrs_st */
@@ -4801,6 +4898,11 @@ memcached_return_t memcached_bop_ext_query_init(memcached_bop_query_st *ptr,
                                                 const unsigned char *bkey, size_t bkey_length,
                                                 memcached_coll_eflag_filter_st *eflag_filter)
 {
+  if (bkey == NULL || bkey_length == 0 || bkey_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
   memcached_coll_query_init(ptr);
 
   ptr->type = MEMCACHED_COLL_QUERY_BOP_EXT;
@@ -4817,6 +4919,12 @@ memcached_return_t memcached_bop_ext_range_query_init(memcached_bop_query_st *pt
                                                       memcached_coll_eflag_filter_st *eflag_filter,
                                                       size_t offset, size_t count)
 {
+  if (bkey_from == NULL || bkey_from_length == 0 || bkey_from_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH ||
+      bkey_to == NULL || bkey_to_length == 0 || bkey_to_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
   memcached_coll_query_init(ptr);
 
   ptr->type = MEMCACHED_COLL_QUERY_BOP_EXT_RANGE;
@@ -4856,6 +4964,12 @@ memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *pt
                                                       memcached_coll_eflag_filter_st *eflag_filter,
                                                       size_t count, bool unique)
 {
+  if (bkey_from == NULL || bkey_from_length == 0 || bkey_from_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH ||
+      bkey_to == NULL || bkey_to_length == 0 || bkey_to_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
   memcached_coll_query_init(ptr);
 
   ptr->type = MEMCACHED_COLL_QUERY_BOP_EXT_RANGE;
@@ -5183,17 +5297,27 @@ memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr,
                                                   memcached_return_t *results,
                                                   memcached_return_t *piped_rc)
 {
+  memcached_coll_query_st *queries;
   memcached_return_t rc;
 
-  memcached_coll_query_st *queries= static_cast<memcached_coll_query_st *>(libmemcached_malloc(ptr, sizeof(memcached_coll_query_st)*number_of_piped_items));
-  for (size_t i=0; i<number_of_piped_items; i++)
+  queries= static_cast<memcached_coll_query_st *>(libmemcached_malloc(ptr, sizeof(memcached_coll_query_st)*number_of_piped_items));
+  if (queries == NULL)
   {
-    memcached_bop_ext_query_init(&queries[i], bkeys[i], bkeys_length[i], NULL);
+    return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
   }
 
-  rc= do_coll_piped_insert(ptr, key, key_length, number_of_piped_items, queries,
-                           eflags, eflags_length, values, values_length,
-                           attributes, results, piped_rc, BOP_INSERT_OP);
+  for (size_t i=0; i<number_of_piped_items; i++)
+  {
+    rc= memcached_bop_ext_query_init(&queries[i], bkeys[i], bkeys_length[i], NULL);
+    if (rc != MEMCACHED_SUCCESS) break;
+  }
+
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= do_coll_piped_insert(ptr, key, key_length, number_of_piped_items, queries,
+                             eflags, eflags_length, values, values_length,
+                             attributes, results, piped_rc, BOP_INSERT_OP);
+  }
 
   libmemcached_free(ptr, queries);
 
@@ -5290,11 +5414,17 @@ memcached_return_t memcached_bop_ext_piped_insert_bulk(memcached_st *ptr,
                                                        memcached_return_t *piped_rc)
 {
   memcached_coll_query_st query_obj;
-  memcached_bop_ext_query_init(&query_obj, bkey, bkey_length, NULL);
-  query_obj.value= value;
-  query_obj.value_length= value_length;
+  memcached_return_t rc;
 
-  return do_coll_piped_insert_bulk(ptr, keys, key_length, number_of_keys,
-                                   &query_obj, eflag, eflag_length, attributes, results, piped_rc,
-                                   BOP_INSERT_OP);
+  rc= memcached_bop_ext_query_init(&query_obj, bkey, bkey_length, NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    query_obj.value= value;
+    query_obj.value_length= value_length;
+
+    rc= do_coll_piped_insert_bulk(ptr, keys, key_length, number_of_keys,
+                                  &query_obj, eflag, eflag_length, attributes, results, piped_rc,
+                                  BOP_INSERT_OP);
+  }
+  return rc;
 }
