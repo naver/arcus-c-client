@@ -385,19 +385,19 @@ static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter
   return write_length;
 }
 
-static inline int memcached_coll_update_filter_to_str(memcached_coll_update_filter_st *filter,
-                                                      char *buffer, size_t buffer_length)
+static inline int memcached_coll_eflag_update_to_str(memcached_coll_eflag_update_st *update,
+                                                     char *buffer, size_t buffer_length)
 {
   const size_t hexa_str_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
   char fvalue_str[hexa_str_length];
   int write_length= 0;
 
-  memcached_conv_hex_to_str(NULL, &filter->comp.fvalue, fvalue_str, hexa_str_length);
+  memcached_conv_hex_to_str(NULL, &update->comp.fvalue, fvalue_str, hexa_str_length);
 
-  if (filter->options.is_bitwised)
+  if (update->options.is_bitwised)
   {
     write_length= snprintf(buffer, buffer_length, " %u %s 0x%s",
-                           (int)filter->fwhere, bitwise_to_str(filter->bitwise.op),
+                           (int)update->fwhere, bitwise_to_str(update->bitwise.op),
                            fvalue_str);
   }
   else
@@ -3317,7 +3317,7 @@ static memcached_return_t do_coll_piped_insert_bulk(memcached_st *ptr,
 static memcached_return_t do_coll_update(memcached_st *ptr,
                                          const char *key, size_t key_length,
                                          memcached_coll_query_st *query,
-                                         memcached_coll_update_filter_st *update_filter,
+                                         memcached_coll_eflag_update_st *eflag_update,
                                          const char *value, int value_length,
                                          memcached_coll_action_t verb)
 {
@@ -3328,7 +3328,7 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
     return rc;
 
   /* Check function arguments */
-  if (not update_filter && not value)
+  if (not eflag_update && not value)
   {
     return memcached_set_error(*ptr, MEMCACHED_NOTHING_TO_UPDATE, MEMCACHED_AT,
                                memcached_literal_param("Nothing to update"));
@@ -3377,11 +3377,11 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
     }
   }
 
-  /* 2. update filter */
-  if (update_filter)
+  /* 2. eflag update */
+  if (eflag_update)
   {
-    int str_length = memcached_coll_update_filter_to_str(update_filter,
-                                                         buffer+write_length, buffer_length-write_length);
+    int str_length = memcached_coll_eflag_update_to_str(eflag_update,
+                                                        buffer+write_length, buffer_length-write_length);
     if (str_length < 0)
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
@@ -3907,28 +3907,28 @@ memcached_return_t memcached_bop_upsert(memcached_st *ptr,
 memcached_return_t memcached_bop_update(memcached_st *ptr,
                                         const char *key, size_t key_length,
                                         const uint64_t bkey,
-                                        memcached_coll_update_filter_st *update_filter,
+                                        memcached_coll_eflag_update_st *eflag_update,
                                         const char *value, size_t value_length)
 {
   memcached_coll_query_st query;
   memcached_bop_query_init(&query, bkey, NULL);
 
   return do_coll_update(ptr, key, key_length,
-                        &query, update_filter, value, value_length,
+                        &query, eflag_update, value, value_length,
                         BOP_UPDATE_OP);
 }
 
 memcached_return_t memcached_bop_ext_update(memcached_st *ptr,
                                             const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
-                                            memcached_coll_update_filter_st *update_filter,
+                                            memcached_coll_eflag_update_st *eflag_update,
                                             const char *value, size_t value_length)
 {
   memcached_coll_query_st query;
   memcached_bop_ext_query_init(&query, bkey, bkey_length, NULL);
 
   return do_coll_update(ptr, key, key_length,
-                        &query, update_filter, value, value_length,
+                        &query, eflag_update, value, value_length,
                         BOP_UPDATE_OP);
 }
 
