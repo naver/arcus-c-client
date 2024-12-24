@@ -405,31 +405,31 @@ static inline int memcached_coll_eflag_filter_to_str(memcached_coll_eflag_filter
                                                      char *buffer, size_t buffer_length)
 {
   const size_t hexa_str_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
-  char foperand_str[hexa_str_length];
+  char value_str[hexa_str_length];
   int write_length= 0;
 
   if (filter->options.is_bitwised)
   {
-    memcached_conv_hex_to_str(NULL, &filter->bitwise.foperand, foperand_str, hexa_str_length);
+    memcached_conv_hex_to_str(NULL, &filter->bitwise.value, value_str, hexa_str_length);
 
     write_length= snprintf(buffer, buffer_length, " %u %s 0x%s %s ",
-                           (int)filter->fwhere,
-                           bitwise_to_str(filter->bitwise.op), foperand_str,
+                           (int)filter->offset,
+                           bitwise_to_str(filter->bitwise.op), value_str,
                            compare_to_str(filter->comp.op));
   }
   else
   {
     write_length= snprintf(buffer, buffer_length, " %u %s ",
-                           (int)filter->fwhere,
+                           (int)filter->offset,
                            compare_to_str(filter->comp.op));
   }
 
   for (int i = 0; i < (int)filter->comp.count; i++)
   {
-    memcached_conv_hex_to_str(NULL, &filter->comp.fvalue[i], foperand_str, hexa_str_length);
+    memcached_conv_hex_to_str(NULL, &filter->comp.values[i], value_str, hexa_str_length);
 
     write_length+= snprintf(buffer+write_length, buffer_length-write_length, "%s0x%s",
-                            ((i == 0)?"":","), foperand_str);
+                            ((i == 0)?"":","), value_str);
   }
 
   if ((size_t)write_length >= buffer_length || write_length < 0)
@@ -443,20 +443,20 @@ static inline int memcached_coll_eflag_update_to_str(memcached_coll_eflag_update
                                                      char *buffer, size_t buffer_length)
 {
   const size_t hexa_str_length= MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH;
-  char fvalue_str[hexa_str_length];
+  char value_str[hexa_str_length];
   int write_length= 0;
 
-  memcached_conv_hex_to_str(NULL, &update->comp.fvalue, fvalue_str, hexa_str_length);
+  memcached_conv_hex_to_str(NULL, &update->value, value_str, hexa_str_length);
 
   if (update->options.is_bitwised)
   {
     write_length= snprintf(buffer, buffer_length, " %u %s 0x%s",
-                           (int)update->fwhere, bitwise_to_str(update->bitwise.op),
-                           fvalue_str);
+                           (int)update->offset, bitwise_to_str(update->bitwop),
+                           value_str);
   }
   else
   {
-    write_length= snprintf(buffer, buffer_length, " 0x%s", fvalue_str);
+    write_length= snprintf(buffer, buffer_length, " 0x%s", value_str);
   }
 
   if ((size_t)write_length >= buffer_length || write_length < 0)
@@ -4836,9 +4836,9 @@ memcached_return_t memcached_bop_ext_smget_query_init(memcached_bop_query_st *pt
 /* APIs : memcached_coll_eflag_filter_st */
 
 memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_st *ptr,
-                                                    const size_t fwhere,
-                                                    const unsigned char *fvalue,
-                                                    const size_t fvalue_length,
+                                                    const size_t offset,
+                                                    const unsigned char *value,
+                                                    const size_t value_length,
                                                     memcached_coll_comp_t comp_op)
 {
   if (not ptr)
@@ -4846,7 +4846,7 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-  if (fvalue_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
+  if (value_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
   {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
@@ -4854,28 +4854,27 @@ memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_
   ptr->options.is_initialized = true;
   ptr->options.is_bitwised = false;
 
-  ptr->fwhere = fwhere;
-  ptr->flength = fvalue_length;
+  ptr->offset = offset;
 
   ptr->comp.op = comp_op;
-  if (fvalue_length > 0) {
+  if (value_length > 0) {
     ptr->comp.count = 1;
   } else {
     ptr->comp.count = 0;
   }
 
-  ptr->comp.fvalue[0].array = (unsigned char *)fvalue;
-  ptr->comp.fvalue[0].length = fvalue_length;
-  ptr->comp.fvalue[0].options.array_is_allocated = false;
+  ptr->comp.values[0].array = (unsigned char *)value;
+  ptr->comp.values[0].length = value_length;
+  ptr->comp.values[0].options.array_is_allocated = false;
 
   return MEMCACHED_SUCCESS;
 }
 
 memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
-                                                     const size_t fwhere,
-                                                     const unsigned char *fvalues,
-                                                     const size_t fvalue_length,
-                                                     const size_t fvalue_count,
+                                                     const size_t offset,
+                                                     const unsigned char *values,
+                                                     const size_t value_length,
+                                                     const size_t value_count,
                                                      memcached_coll_comp_t comp_op)
 {
   if (not ptr)
@@ -4883,21 +4882,21 @@ memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-  if (fvalue_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
+  if (value_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
   {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
   if (comp_op == MEMCACHED_COLL_COMP_EQ || comp_op == MEMCACHED_COLL_COMP_NE)
   {
-    if (fvalue_count > MEMCACHED_COLL_MAX_EFLAGS_COUNT)
+    if (value_count > MEMCACHED_COLL_MAX_EFLAGS_COUNT)
     {
       return MEMCACHED_INVALID_ARGUMENTS;
     }
   }
   else
   {
-    if (fvalue_count > 1)
+    if (value_count > 1)
     {
       return MEMCACHED_INVALID_ARGUMENTS;
     }
@@ -4906,24 +4905,23 @@ memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter
   ptr->options.is_initialized = true;
   ptr->options.is_bitwised = false;
 
-  ptr->fwhere = fwhere;
-  ptr->flength = fvalue_length;
+  ptr->offset = offset;
 
   ptr->comp.op = comp_op;
-  ptr->comp.count = fvalue_count;
+  ptr->comp.count = value_count;
 
-  for (size_t i=0; i<fvalue_count; i++) {
-    ptr->comp.fvalue[i].array = (unsigned char *)fvalues+(i*fvalue_length);
-    ptr->comp.fvalue[i].length = fvalue_length;
-    ptr->comp.fvalue[i].options.array_is_allocated = false;
+  for (size_t i=0; i<value_count; i++) {
+    ptr->comp.values[i].array = (unsigned char *)values+(i*value_length);
+    ptr->comp.values[i].length = value_length;
+    ptr->comp.values[i].options.array_is_allocated = false;
   }
 
   return MEMCACHED_SUCCESS;
 }
 
 memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_filter_st *ptr,
-                                                           const unsigned char *foperand,
-                                                           const size_t foperand_length,
+                                                           const unsigned char *value,
+                                                           const size_t value_length,
                                                            memcached_coll_bitwise_t bitwise_op)
 {
   if (not ptr)
@@ -4936,7 +4934,7 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-  if (ptr->flength != foperand_length)
+  if (ptr->comp.values[0].length != value_length)
   {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
@@ -4944,9 +4942,9 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
   ptr->options.is_bitwised = true;
 
   ptr->bitwise.op = bitwise_op;
-  ptr->bitwise.foperand.array = (unsigned char *)foperand;
-  ptr->bitwise.foperand.length = foperand_length;
-  ptr->bitwise.foperand.options.array_is_allocated = false;
+  ptr->bitwise.value.array = (unsigned char *)value;
+  ptr->bitwise.value.length = value_length;
+  ptr->bitwise.value.options.array_is_allocated = false;
 
   return MEMCACHED_SUCCESS;
 }
@@ -4954,15 +4952,15 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
 /* memcached_coll_eflag_update_st */
 
 memcached_return_t memcached_coll_eflag_update_init(memcached_coll_eflag_update_st *ptr,
-                                                    const unsigned char *fvalue,
-                                                    const size_t fvalue_length)
+                                                    const unsigned char *value,
+                                                    const size_t value_length)
 {
   if (not ptr)
   {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-  if (fvalue_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
+  if (value_length > MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH)
   {
     return MEMCACHED_INVALID_ARGUMENTS;
   }
@@ -4970,49 +4968,49 @@ memcached_return_t memcached_coll_eflag_update_init(memcached_coll_eflag_update_
   ptr->options.is_initialized = true;
   ptr->options.is_bitwised = false;
 
-  ptr->comp.fvalue.array = (unsigned char *)fvalue;
-  ptr->comp.fvalue.length = fvalue_length;
-  ptr->flength = fvalue_length;
+  ptr->value.array = (unsigned char *)value;
+  ptr->value.length = value_length;
+  ptr->value.options.array_is_allocated = false;
 
   return MEMCACHED_SUCCESS;
 }
 
 memcached_return_t memcached_coll_eflag_update_set_bitwise(memcached_coll_eflag_update_st *ptr,
-                                                           const size_t fwhere,
+                                                           const size_t offset,
                                                            memcached_coll_bitwise_t bitwise_op)
 {
   if (not ptr)
   {
-  return MEMCACHED_INVALID_ARGUMENTS;
+    return MEMCACHED_INVALID_ARGUMENTS;
   }
 
   if (not ptr->options.is_initialized)
   {
-  return MEMCACHED_INVALID_ARGUMENTS;
+    return MEMCACHED_INVALID_ARGUMENTS;
   }
 
   ptr->options.is_bitwised = true;
 
-  ptr->fwhere= fwhere;
-  ptr->bitwise.op = bitwise_op;
+  ptr->offset = offset;
+  ptr->bitwop = bitwise_op;
 
   return MEMCACHED_SUCCESS;
 }
 
 // DEPRECATED
 memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
-                                                     const unsigned char *fvalue,
-                                                     const size_t fvalue_length)
+                                                     const unsigned char *value,
+                                                     const size_t value_length)
 {
-  return memcached_coll_eflag_update_init(ptr, fvalue, fvalue_length);
+  return memcached_coll_eflag_update_init(ptr, value, value_length);
 }
 
 // DEPRECATED
 memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_update_filter_st *ptr,
-                                                            const size_t fwhere,
+                                                            const size_t offset,
                                                             memcached_coll_bitwise_t bitwise_op)
 {
-  return memcached_coll_eflag_update_set_bitwise(ptr, fwhere, bitwise_op);
+  return memcached_coll_eflag_update_set_bitwise(ptr, offset, bitwise_op);
 }
 
 size_t memcached_hexadecimal_to_str(memcached_hexadecimal_st *ptr,

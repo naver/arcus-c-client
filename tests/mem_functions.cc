@@ -1563,7 +1563,7 @@ static test_return_t flags_in_filter_test(memcached_st *memc)
   int32_t exptime= 600;
   uint32_t maxcount= 1000;
 
-  const char fvalue[5] = { 0x00, 0x10, 0x11, 0x01, 0x12 };
+  const char eflags[5] = { 0x00, 0x10, 0x11, 0x01, 0x12 };
 
   memcached_return_t rc;
   memcached_coll_create_attrs_st attributes;
@@ -1574,7 +1574,7 @@ static test_return_t flags_in_filter_test(memcached_st *memc)
   {
     char buffer[32];
     size_t buffer_len= snprintf(buffer, 32, "value%lu", (unsigned long)i);
-    rc= memcached_bop_insert(memc, test_literal_param("btree:flags_in_filter"), i, (unsigned char *)&fvalue[i%5], sizeof(fvalue[i%5]), buffer, buffer_len, &attributes);
+    rc= memcached_bop_insert(memc, test_literal_param("btree:flags_in_filter"), i, (unsigned char *)&eflags[i%5], sizeof(eflags[i%5]), buffer, buffer_len, &attributes);
     test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   }
 
@@ -1583,16 +1583,16 @@ static test_return_t flags_in_filter_test(memcached_st *memc)
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(maxcount == count);
 
-  unsigned char find_fvalue[4] = { 0x00, 0x10, 0x11, 0x01 };
+  unsigned char find_eflags[4] = { 0x00, 0x10, 0x11, 0x01 };
   memcached_coll_eflag_filter_st efilter;
-  rc= memcached_coll_eflags_filter_init(&efilter, 0, (const unsigned char *)find_fvalue, 1, 4, MEMCACHED_COLL_COMP_EQ);
+  rc= memcached_coll_eflags_filter_init(&efilter, 0, (const unsigned char *)find_eflags, 1, 4, MEMCACHED_COLL_COMP_EQ);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   rc= memcached_bop_count_by_range(memc, test_literal_param("btree:flags_in_filter"), 0, maxcount, &efilter, &count);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(800 == count);
 
   memcached_coll_eflag_filter_st efilter2;
-  rc= memcached_coll_eflags_filter_init(&efilter2, 0, (const unsigned char *)find_fvalue, 1, 4, MEMCACHED_COLL_COMP_NE);
+  rc= memcached_coll_eflags_filter_init(&efilter2, 0, (const unsigned char *)find_eflags, 1, 4, MEMCACHED_COLL_COMP_NE);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   rc= memcached_bop_count_by_range(memc, test_literal_param("btree:flags_in_filter"), 0, maxcount, &efilter2, &count);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
@@ -1625,10 +1625,10 @@ static test_return_t max_flags_in_filter_test(memcached_st *memc)
   int32_t exptime= 600;
   uint32_t maxcount= 1000;
 
-  unsigned char fvalue[200];
+  unsigned char eflags[200];
   for (size_t i=0; i<200; i++)
   {
-    fvalue[i] = 0x00+i;
+    eflags[i] = 0x00+i;
   }
 
   memcached_return_t rc;
@@ -1640,7 +1640,7 @@ static test_return_t max_flags_in_filter_test(memcached_st *memc)
   {
     char buffer[32];
     size_t buffer_len= snprintf(buffer, 32, "value%lu", (unsigned long)i);
-    rc= memcached_bop_insert(memc, test_literal_param("btree:max_flags_in_filter"), i, (unsigned char *)&fvalue[i%200], sizeof(fvalue[i%200]), buffer, buffer_len, &attributes);
+    rc= memcached_bop_insert(memc, test_literal_param("btree:max_flags_in_filter"), i, (unsigned char *)&eflags[i%200], sizeof(eflags[i%200]), buffer, buffer_len, &attributes);
     test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   }
 
@@ -1649,19 +1649,19 @@ static test_return_t max_flags_in_filter_test(memcached_st *memc)
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(maxcount == count);
 
-  unsigned char find_fvalue[101];
+  unsigned char find_eflags[101];
   for (size_t i=0; i<101; i++)
   {
-    find_fvalue[i] = 0x00+i;
+    find_eflags[i] = 0x00+i;
   }
   memcached_coll_eflag_filter_st efilter;
-  rc= memcached_coll_eflags_filter_init(&efilter, 0, (const unsigned char *)find_fvalue, 1, 100, MEMCACHED_COLL_COMP_EQ);
+  rc= memcached_coll_eflags_filter_init(&efilter, 0, (const unsigned char *)find_eflags, 1, 100, MEMCACHED_COLL_COMP_EQ);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   rc= memcached_bop_count_by_range(memc, test_literal_param("btree:max_flags_in_filter"), 0, maxcount, &efilter, &count);
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true(500 == count);
 
-  rc = memcached_coll_eflags_filter_init(&efilter, 0, (const unsigned char *)find_fvalue, 1, 101, MEMCACHED_COLL_COMP_EQ);
+  rc = memcached_coll_eflags_filter_init(&efilter, 0, (const unsigned char *)find_eflags, 1, 101, MEMCACHED_COLL_COMP_EQ);
   test_true_got(rc == MEMCACHED_INVALID_ARGUMENTS, memcached_strerror(NULL, rc));
 
   return TEST_SUCCESS;
@@ -8107,12 +8107,12 @@ static test_return_t arcus_1_6_btree_smget_errors(memcached_st *memc)
   memcached_coll_smget_result_free(&smget_result);
 
   /* INVALID_ARGUMENTS: (offset + count) <= 1000 */
-  unsigned char fvalue[2] = { 0, 0 };
-  unsigned char foperand[2] = { 0, 1 };
+  unsigned char comp_value[2] = { 0, 0 };
+  unsigned char bitwise_value[2] = { 0, 1 };
 
   memcached_coll_eflag_filter_st filter_object;
-  memcached_coll_eflag_filter_init(&filter_object, 0, (unsigned char *)&fvalue, 2, MEMCACHED_COLL_COMP_EQ);
-  memcached_coll_eflag_filter_set_bitwise(&filter_object, (unsigned char *)&foperand, 2, MEMCACHED_COLL_BITWISE_AND);
+  memcached_coll_eflag_filter_init(&filter_object, 0, (unsigned char *)&comp_value, 2, MEMCACHED_COLL_COMP_EQ);
+  memcached_coll_eflag_filter_set_bitwise(&filter_object, (unsigned char *)&bitwise_value, 2, MEMCACHED_COLL_BITWISE_AND);
 
   memcached_bop_range_query_init(&smget_query, 0, 9223372036854775807, &filter_object, 0, 1001);
   memcached_coll_smget_result_create(memc, &smget_result);
@@ -8136,12 +8136,12 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
   char     buffer[64];
   size_t   vlen;
 
-  const unsigned char fvalue[31] = {
+  const unsigned char eflag[31] = {
     0x00, 0x00, 0x3F, 0x42, 0x0F, 0x00, 0x55, 0xC1, 0xD8, 0xA7,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0x42, 0x0F,
     0x00, 0x55, 0xC1, 0xD8, 0xA7, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x01 };
-  char fvalue_length = 31;
+  char eflag_length = 31;
 
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
@@ -8160,7 +8160,7 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
     bkey = bkeys[i];
     vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
     rc = memcached_bop_insert(memc, key, key_length,
-                              bkey, (unsigned char *)fvalue, fvalue_length,
+                              bkey, (unsigned char *)eflag, eflag_length,
                               buffer, vlen, &attributes);
   }
 
@@ -8168,7 +8168,7 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
   uint64_t bkey_from = 0;
   uint64_t bkey_to = UINT64_MAX;
   memcached_coll_eflag_filter_init(&efilter, 0,
-                                   (const unsigned char *)fvalue, fvalue_length,
+                                   (const unsigned char *)eflag, eflag_length,
                                    MEMCACHED_COLL_COMP_EQ);
   memcached_bop_range_query_init(&smget_query, bkey_from, bkey_to, &efilter, 0, 100);
   memcached_coll_smget_result_create(memc, &smget_result);
@@ -8188,8 +8188,8 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
       test_true(last_bkey <= bkey);
       last_bkey = bkey;
       /* compare eflag */
-      eflag_hex.array = (unsigned char *)fvalue;
-      eflag_hex.length = fvalue_length;
+      eflag_hex.array = (unsigned char *)eflag;
+      eflag_hex.length = eflag_length;
       test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
       /* compare value */
       vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
@@ -10471,12 +10471,12 @@ static test_return_t arcus_1_9_btree_new_smget_errors(memcached_st *memc)
 #endif
 
   /* INVALID_ARGUMENTS: (offset + count) <= 1000 */
-  unsigned char fvalue[2] = { 0, 0 };
-  unsigned char foperand[2] = { 0, 1 };
+  unsigned char comp_value[2] = { 0, 0 };
+  unsigned char bitwise_value[2] = { 0, 1 };
 
   memcached_coll_eflag_filter_st filter_object;
-  memcached_coll_eflag_filter_init(&filter_object, 0, (unsigned char *)&fvalue, 2, MEMCACHED_COLL_COMP_EQ);
-  memcached_coll_eflag_filter_set_bitwise(&filter_object, (unsigned char *)&foperand, 2, MEMCACHED_COLL_BITWISE_AND);
+  memcached_coll_eflag_filter_init(&filter_object, 0, (unsigned char *)&comp_value, 2, MEMCACHED_COLL_COMP_EQ);
+  memcached_coll_eflag_filter_set_bitwise(&filter_object, (unsigned char *)&bitwise_value, 2, MEMCACHED_COLL_BITWISE_AND);
 
   memcached_bop_smget_query_init(&smget_query, 0, 9223372036854775807, &filter_object, 1001, true);
   memcached_coll_smget_result_create(memc, &smget_result);
@@ -10499,12 +10499,12 @@ static test_return_t arcus_1_9_btree_new_smget_one_key(memcached_st *memc)
   char     buffer[64];
   size_t   vlen;
 
-  const unsigned char fvalue[31] = {
+  const unsigned char eflag[31] = {
     0x00, 0x00, 0x3F, 0x42, 0x0F, 0x00, 0x55, 0xC1, 0xD8, 0xA7,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3F, 0x42, 0x0F,
     0x00, 0x55, 0xC1, 0xD8, 0xA7, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x01 };
-  char fvalue_length = 31;
+  char eflag_length = 31;
 
   memcached_coll_create_attrs_st attributes;
   memcached_coll_create_attrs_init(&attributes, 0, 600, 1000);
@@ -10523,7 +10523,7 @@ static test_return_t arcus_1_9_btree_new_smget_one_key(memcached_st *memc)
     bkey = bkeys[i];
     vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
     rc = memcached_bop_insert(memc, key, key_length,
-                              bkey, (unsigned char *)fvalue, fvalue_length,
+                              bkey, (unsigned char *)eflag, eflag_length,
                               buffer, vlen, &attributes);
   }
 
@@ -10531,7 +10531,7 @@ static test_return_t arcus_1_9_btree_new_smget_one_key(memcached_st *memc)
   uint64_t bkey_from = 0;
   uint64_t bkey_to = UINT64_MAX;
   memcached_coll_eflag_filter_init(&efilter, 0,
-                                   (const unsigned char *)fvalue, fvalue_length,
+                                   (const unsigned char *)eflag, eflag_length,
                                    MEMCACHED_COLL_COMP_EQ);
   memcached_bop_smget_query_init(&smget_query, bkey_from, bkey_to, &efilter, 100, false);
   memcached_coll_smget_result_create(memc, &smget_result);
@@ -10553,8 +10553,8 @@ static test_return_t arcus_1_9_btree_new_smget_one_key(memcached_st *memc)
       test_true(last_bkey <= bkey);
       last_bkey = bkey;
       /* compare eflag */
-      eflag_hex.array = (unsigned char *)fvalue;
-      eflag_hex.length = fvalue_length;
+      eflag_hex.array = (unsigned char *)eflag;
+      eflag_hex.length = eflag_length;
       test_true(memcached_compare_two_hexadecimal(&smget_result.eflags[i], &eflag_hex) == 0);
       /* compare value */
       vlen = snprintf(buffer, 63, "value-%llu", (unsigned long long)bkey);
