@@ -649,17 +649,16 @@ typedef enum {
 } memcached_coll_comp_t;
 
 struct memcached_coll_eflag_filter_st {
-  size_t fwhere;
-  size_t flength;
+  size_t offset;
 
   struct {
     memcached_coll_bitwise_t op;
-    memcached_hexadecimal_st foperand;
+    memcached_hexadecimal_st value;
   } bitwise;
 
   struct {
     memcached_coll_comp_t op;
-    memcached_hexadecimal_st fvalue[MEMCACHED_COLL_MAX_EFLAGS_COUNT];
+    memcached_hexadecimal_st values[MEMCACHED_COLL_MAX_EFLAGS_COUNT];
     size_t count;
   } comp;
 
@@ -673,48 +672,48 @@ struct memcached_coll_eflag_filter_st {
  * Initialize the b+tree eflag filter.
  * For details, refer to the Arcus memcached protocol manual.
  * @param ptr  eflag filter structure.
- * @param fwhere  eflag offset where the filter performs the comparison.
- * @param fvalue  value to use in the comparison.
- * @param fvalue_length  value length (number of bytes).
+ * @param offset  eflag offset where the filter performs the comparison.
+ * @param value  value to use in the comparison.
+ * @param value_length  value length (number of bytes).
  * @param comp_op  comparison operator.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_st *ptr,
-                                                    const size_t fwhere,
-                                                    const unsigned char *fvalue,
-                                                    const size_t fvalue_length,
+                                                    const size_t offset,
+                                                    const unsigned char *value,
+                                                    const size_t value_length,
                                                     memcached_coll_comp_t comp_op);
 
 /**
  * Initialize the b+tree eflag filter using multiple comparison values.
  * For details, refer to the Arcus memcached protocol manual.
  * @param ptr  eflag filter structure.
- * @param fwhere  eflag offset where the filter performs the comparison.
- * @param fvalues  array of values to use in the comparison.
- * @param fvalue_length  value length (number of bytes).
- * @param fvalue_count  number of values in the value array.
+ * @param offset  eflag offset where the filter performs the comparison.
+ * @param values  array of values to use in the comparison.
+ * @param value_length  value length (number of bytes).
+ * @param value_count  number of values in the value array.
  * @param comp_op  comparison operator.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
-                                                     const size_t fwhere,
-                                                     const unsigned char *fvalues,
-                                                     const size_t fvalue_length,
-                                                     const size_t fvalue_count,
+                                                     const size_t offset,
+                                                     const unsigned char *values,
+                                                     const size_t value_length,
+                                                     const size_t value_count,
                                                      memcached_coll_comp_t comp_op);
 
 /**
  * Initialize the b+tree eflag filter for bitwise operation.
  * For details, refer to the Arcus memcached protocol manual.
  * @param ptr  eflag filter structure.
- * @param foperand  operand value.
- * @param foperand_length  operand length (number of bytes).
+ * @param value  operand value.
+ * @param value_length  operand length (number of bytes).
  * @param bitwise_op  bitwise operator.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_filter_st *ptr,
-                                                           const unsigned char *foperand,
-                                                           const size_t foperand_length,
+                                                           const unsigned char *value,
+                                                           const size_t value_length,
                                                            memcached_coll_bitwise_t bitwise_op);
 
 /**
@@ -722,18 +721,9 @@ memcached_return_t memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_
  * This is just for convenience.
  */
 struct memcached_coll_eflag_update_st {
-  size_t fwhere;
-  size_t flength;
-
-  struct {
-    memcached_coll_bitwise_t op;
-    memcached_hexadecimal_st foperand;
-  } bitwise;
-
-  struct {
-    memcached_coll_comp_t op;
-    memcached_hexadecimal_st fvalue;
-  } comp;
+  size_t offset;
+  memcached_coll_bitwise_t bitwop;
+  memcached_hexadecimal_st value;
 
   struct {
     bool is_initialized:1;
@@ -745,37 +735,37 @@ struct memcached_coll_eflag_update_st {
  * Initialize the b+tree eflag filter used for update commands.
  * For details, refer to the Arcus memcached protocol manual.
  * @param ptr  filter structure.
- * @param fvalue  comparison value.
- * @param fvalue_length  value length (number of bytes).
+ * @param value  comparison value.
+ * @param value_length  value length (number of bytes).
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflag_update_init(memcached_coll_eflag_update_st *ptr,
-                                                    const unsigned char *fvalue,
-                                                    const size_t fvalue_length);
+                                                    const unsigned char *value,
+                                                    const size_t value_length);
 
 /**
  * Initialize the b+tree eflag filter used for update commands.
  * For details, refer to the Arcus memcached protocol manual.
  * @param ptr  filter structure.
- * @param fwhere  eflag offset.
- * @param bitwise_op  bitwise operator.
+ * @param offset  eflag offset.
+ * @param bitwop  bitwise operator.
  */
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_eflag_update_set_bitwise(memcached_coll_eflag_update_st *ptr,
-                                                           const size_t fwhere,
-                                                           memcached_coll_bitwise_t bitwise_op);
+                                                           const size_t offset,
+                                                           memcached_coll_bitwise_t bitwop);
 
 // DEPRECATED
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_update_filter_init(memcached_coll_update_filter_st *ptr,
-                                                     const unsigned char *fvalue,
-                                                     const size_t fvalue_length);
+                                                     const unsigned char *value,
+                                                     const size_t value_length);
 
 // DEPRECATED
 LIBMEMCACHED_API
 memcached_return_t memcached_coll_update_filter_set_bitwise(memcached_coll_update_filter_st *ptr,
-                                                            const size_t fwhere,
-                                                            memcached_coll_bitwise_t bitwise_op);
+                                                            const size_t offset,
+                                                            memcached_coll_bitwise_t bitwop);
 
 /* COLLECTION APIs */
 
@@ -1203,7 +1193,7 @@ memcached_return_t memcached_bop_ext_upsert(memcached_st *ptr,
  * @param key  b+tree item's key.
  * @param key_length  key length (number of bytes).
  * @param bkey  element bkey.
- * @param update_filter  optional eflag filter, maybe NULL.
+ * @param eflag_update  optional eflag filter, maybe NULL.
  * @param value  buffer holding the element value.
  * @param value_length  length of the element value (number of bytes).
  */
@@ -1211,7 +1201,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_update(memcached_st *ptr,
                                         const char *key, size_t key_length,
                                         const uint64_t bkey,
-                                        memcached_coll_update_filter_st *update_filter,
+                                        memcached_coll_eflag_update_st *eflag_update,
                                         const char *value, size_t value_length);
 
 /**
@@ -1221,7 +1211,7 @@ memcached_return_t memcached_bop_update(memcached_st *ptr,
  * @param key_length  key length (number of bytes).
  * @param bkey  byte-array bkey.
  * @param bkey_length  bkey length (number of bytes).
- * @param update_filter  optional eflag filter, maybe NULL.
+ * @param eflag_update  optional eflag filter, maybe NULL.
  * @param value  buffer holding the element value.
  * @param value_length  length of the element value (number of bytes).
  */
@@ -1229,7 +1219,7 @@ LIBMEMCACHED_API
 memcached_return_t memcached_bop_ext_update(memcached_st *ptr,
                                             const char *key, size_t key_length,
                                             const unsigned char *bkey, size_t bkey_length,
-                                            memcached_coll_update_filter_st *update_filter,
+                                            memcached_coll_eflag_update_st *eflag_update,
                                             const char *value, size_t value_length);
 
 /**

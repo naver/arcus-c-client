@@ -62,17 +62,17 @@ B+tree의 element flag에 대한 filtering을 지정하기 위해선, `eflag_fil
 먼저, `eflag_filter` 구조체를 생성하는 API는 다음과 같다.
 이를 통해, eflag의 전체/부분 값과 특정 값과의 compare 연산을 명시할 수 있다.
 
-``` c
+```c
 memcached_return_t
-memcached_coll_eflag_filter_init(memcached_ coll_eflag_filter_st *ptr,
-                                 const size_t fwhere,
-                                 const unsigned char *fvalue,
-                                 const size_t fvalue_length,
+memcached_coll_eflag_filter_init(memcached_coll_eflag_filter_st *ptr,
+                                 const size_t offset,
+                                 const unsigned char *value,
+                                 const size_t value_length,
                                  memcached_coll_comp_t comp_op)
 ```
 
-- fwhere: eflag에서 비교 연산을 취할 데이터의 시작 offset을 바이트 단위로 지정한다.
-- fvalue: 비교 연산을 취할 데이터 값을 지정한다.
+- offset: eflag에서 비교 연산을 취할 데이터의 시작 offset을 바이트 단위로 지정한다.
+- value, value_length: 비교 연산을 취할 데이터 값을 지정한다.
 - comp_op: 비교 연산을 지정한다.
   - MEMCACHED_COLL_COMP_EQ
   - MEMCACHED_COLL_COMP_NE
@@ -81,22 +81,23 @@ memcached_coll_eflag_filter_init(memcached_ coll_eflag_filter_st *ptr,
   - MEMCACHED_COLL_COMP_GT
   - MEMCACHED_COLL_COMP_GE
 
-비교 연산을 취할 데이터 값인 fvalue는 여러 값을 지정할 수도 있으며, 다음과 같은 API를 사용한다.
-비교 데이터 값은 최대 100개 fvalues를 지정할 수 있으며, MEMCACHED_COLL_COMP_EQ 와 MEMCACHED_COLL_COMP_NE 연산자 만을 지원한다.
+비교 연산을 취할 데이터 값인 value는 여러 값을 지정할 수도 있으며, 다음과 같은 API를 사용한다.
+비교 데이터 값은 최대 100개 values를 지정할 수 있으며, MEMCACHED_COLL_COMP_EQ 와 MEMCACHED_COLL_COMP_NE 연산자 만을 지원한다.
 
-``` c
+```c
 memcached_return_t
 memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
-                                  const size_t fwhere,
-                                  const unsigned char *fvalues,
-                                  const size_t fvalue_length,
-                                  const size_t fvalue_count,
+                                  const size_t offset,
+                                  const unsigned char *values,
+                                  const size_t value_length,
+                                  const size_t value_count,
                                   memcached_coll_comp_t comp_op)
 ```
 
-- fwhere: eflag에서 비교 연산을 취할 데이터의 시작 offset을 바이트 단위로 지정한다.
-- fvalues: 비교 연산을 취할 데이터 값을 array 형태로 지정한다.
-- fvalue_count: 비교 연산을 취할 데이터 값들의 개수를 지정한다.
+- offset: eflag에서 비교 연산을 취할 데이터의 시작 offset을 바이트 단위로 지정한다.
+- values, value_length: 비교 연산을 취할 데이터 값을 array 형태로 지정한다.
+  - 모든 값의 길이는 동일하게 value_length이어야 한다.
+- value_count: 비교 연산을 취할 데이터 값들의 개수를 지정한다.
 - comp_op: 비교 연산을 지정한다.
   - MEMCACHED_COLL_COMP_EQ
   - MEMCACHED_COLL_COMP_NE
@@ -104,20 +105,19 @@ memcached_coll_eflags_filter_init(memcached_coll_eflag_filter_st *ptr,
 eflag의 전체/부분 값에 대해 어떤 operand로 bitwise 연산을 취함으로써 eflag의 특정 bit들만을 골라내어 compare할 수 있다.
 이와 같이 `eflag_filter`에 bitwise 연산을 추가할 경우에는 아래의 API를 이용할 수 있다.
 
-``` c
+```c
 memcached_return_t
 memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_filter_st *ptr,
-                                        memcached_coll_bitwise_t bitwise_op,
-                                        const unsigned char *foperand,
-                                        const size_t foperand_length)
+                                        const unsigned char *value,
+                                        const size_t value_length,
+                                        memcached_coll_bitwise_t bitwise_op)
 ```
 
+- value, value_length: eflag에서 bitwise 연산을 취할 operand를 지정한다.
 - bitwise_op: bitwise 연산을 지정한다.
   - MEMCACHED_COLL_BITWISE_AND
   - MEMCACHED_COLL_BITWISE_OR
   - MEMCACHED_COLL_BITWISE_XOR
-- foperand: eflag에서 bitwise 연산을 취할 operand를 지정한다.
-
 
 ## Element Flag Update 구조체
 
@@ -126,25 +126,25 @@ B+tree의 element flag를 변경하기 위해선 `eflag_update` 구조체를 사
 먼저, `eflag_update` 구조체를 생성하는 API는 다음과 같다.
 이를 통해, 새로 변경하고자 하는 new element flag 값을 지정할 수 있다.
 
-``` c
+```c
 memcached_return_t
 memcached_coll_eflag_update_init(memcached_coll_eflag_update_st *ptr,
-                                 const unsigned char *fvalue,
-                                 const size_t fvalue_length)
+                                 const unsigned char *value,
+                                 const size_t value_length)
 ```
 
 만약, eflag의 부분 값만을 변경하고자 한다면, 아래의 함수를 이용할 수 있다.
-아래 함수로 부분 값의 시작 위치를 명시하여야 하고, 부분 값과 `eflag_update`의 init 시에 명시한  fvalue에 대해
+아래 함수로 부분 값의 시작 위치를 명시하여야 하고, 부분 값과 `eflag_update`의 init 시에 명시한 value에 대해
 취할 bitwise 연산을 명시하여야 한다.
 
-``` c
+```c
 memcached_return_t
 memcached_coll_eflag_update_set_bitwise(memcached_coll_eflag_update_st *ptr,
-                                        const size_t fwhere,
+                                        const size_t offset,
                                         memcached_coll_bitwise_t bitwise_op)
 ```
 
-- fwhere: eflag에서 부분 변경할 부분 데이터의 시작 offset을 바이트 단위로 지정한다.
+- offset: eflag에서 부분 변경할 부분 데이터의 시작 offset을 바이트 단위로 지정한다.
 - bitwise_op: bitwise 연산을 지정한다.
   - MEMCACHED_COLL_BITWISE_AND
   - MEMCACHED_COLL_BITWISE_OR
@@ -400,20 +400,20 @@ memcached_return_t
 memcached_bop_update(memcached_st *ptr,
                      const char *key, size_t key_length,
                      const uint64_t bkey, // bkey of 8 bytes unsigned integer type
-                     memcached_coll_update_filter_st *update_filter,
+                     memcached_coll_eflag_update_st *eflag_update,
                      const char *value, size_t value_length)
 
 memcached_return_t
 memcached_bop_ext_update(memcached_st *ptr,
                      const char *key, size_t key_length,
                      const unsigned char *bkey, size_t bkey_length, // bkey of byte array type
-                     memcached_coll_update_filter_st *update_filter,
+                     memcached_coll_eflag_update_st *eflag_update,
                      const char *value, size_t value_length)
 ```
 
 - key, key_length: b+tree item의 key
 - bkey 또는 bkey, bkey_length: element의 bkey
-- update_filter: element의 eflag 변경 요청을 담은 구조체
+- eflag_update: element의 eflag 변경 요청을 담은 구조체
 - value, value_lenth: element의 new value
 
 Response code는 아래와 같다.
@@ -426,7 +426,7 @@ Response code는 아래와 같다.
   - MEMCACHED_NOTHING_TO_UPDATE: 변경사항이 명시되지 않음.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 B+tree가 아님.
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형과 해당 B+tree의 bkey 유형이 다름.
-  - MEMCACHED_EFLAG_MISMATCH: update_filter에 명시된 eflag 데이터가 존재하지 않음.
+  - MEMCACHED_EFLAG_MISMATCH: eflag_update에 명시된 eflag 데이터가 존재하지 않음.
 
 
 B+tree element를 변경하는 예제는 아래와 같다.

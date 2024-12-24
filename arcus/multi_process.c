@@ -133,14 +133,14 @@ static inline void process_child(memcached_st *proxy_mc)
       uint32_t bkey_to_update = 0;
       uint32_t value_to_update = 9999;
 
-      // update filter
-      uint32_t fvalue = 2001;
-      memcached_coll_update_filter_st update_filter;
-      memcached_coll_update_filter_init(&update_filter, (unsigned char *)&fvalue, sizeof(fvalue));
-      //memcached_bop_update_filter_set_bitwise(&update_filter, fwhere, MEMCACHED_COLL_BITWISE_AND);
+      // eflag update
+      uint32_t eflag_to_update = 2001;
+      memcached_coll_eflag_update_st eflag_update;
+      memcached_coll_eflag_update_init(&eflag_update, (unsigned char *)&eflag_to_update, sizeof(eflag_to_update));
+      // memcached_bop_eflag_update_set_bitwise(&eflag_update, offset, MEMCACHED_COLL_BITWISE_AND);
 
       rc= memcached_bop_update(mc, key, strlen(key),
-        bkey_to_update, &update_filter,
+        bkey_to_update, &eflag_update,
         (const char *)&value_to_update, sizeof(value_to_update));
 
       if (rc != MEMCACHED_SUCCESS)
