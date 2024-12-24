@@ -412,6 +412,30 @@ static inline int memcached_coll_eflag_update_to_str(memcached_coll_eflag_update
   return write_length;
 }
 
+static void initialize_smget_result_from_query(memcached_coll_smget_result_st *result,
+                                               memcached_bop_query_st *query)
+{
+  assert(result and query);
+  result->sub_key_type= query->type;
+  result->offset= query->offset;
+  result->count= query->count;
+  result->smgmode= query->smgmode;
+
+  if (query->type == MEMCACHED_COLL_QUERY_BOP_RANGE)
+  {
+    if (query->sub_key.bkey_range[0] > query->sub_key.bkey_range[1]) {
+      result->options.is_descending= true;
+    }
+  }
+  else if (query->type == MEMCACHED_COLL_QUERY_BOP_EXT_RANGE)
+  {
+    if (memcached_compare_two_hexadecimal(&query->sub_key.bkey_ext_range[0],
+                                          &query->sub_key.bkey_ext_range[1]) == 1) {
+      result->options.is_descending= true;
+    }
+  }
+}
+
 static memcached_return_t do_aggregate_pipe_responses(memcached_st *ptr, memcached_return_t rc)
 {
   memcached_return_t res= (rc != MEMCACHED_SUCCESS ? MEMCACHED_ALL_FAILURE : MEMCACHED_MAXIMUM_RETURN);
@@ -2584,8 +2608,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   char buffer[buffer_length];
   int write_length= 0;
 
-  result->sub_key_type= query->type;
-
   if (MEMCACHED_COLL_QUERY_BOP == query->type)
   {
     write_length= snprintf(buffer, buffer_length,
@@ -2598,10 +2620,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
                            " %llu..%llu",
                            (unsigned long long)query->sub_key.bkey_range[0],
                            (unsigned long long)query->sub_key.bkey_range[1]);
-    if (query->sub_key.bkey_range[0] > query->sub_key.bkey_range[1])
-    {
-      result->options.is_descending= true;
-    }
   }
   else if (MEMCACHED_COLL_QUERY_BOP_EXT == query->type)
   {
@@ -2622,11 +2640,6 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
 
     write_length= snprintf(buffer, buffer_length,
                            " 0x%s..0x%s", bkey_str_from, bkey_str_to);
-
-    if (memcached_compare_two_hexadecimal(&query->sub_key.bkey_ext_range[0], &query->sub_key.bkey_ext_range[1]) == 1)
-    {
-      result->options.is_descending= true;
-    }
   }
   else
   {
@@ -2650,18 +2663,12 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
   /* Options */
   write_length+= snprintf(buffer+write_length, buffer_length-write_length,
                           " %u %u", (int)0, (int)(query->offset + query->count));
-  if (result != NULL)
-  {
-    result->offset= query->offset;
-    result->count= query->count;
-  }
 
   /* smget mode */
   if (query->smgmode != MEMCACHED_COLL_SMGET_NONE)
   {
     write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %s",
                             (query->smgmode == MEMCACHED_COLL_SMGET_DUPLICATE ? "duplicate" : "unique"));
-    result->smgmode= query->smgmode;
   }
 
   if ((size_t)write_length >= buffer_length || write_length < 0)
@@ -2669,6 +2676,8 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_COMMAND_SIZE)"));
   }
+
+  initialize_smget_result_from_query(result, query);
 
   /* Command */
   const char *command= coll_op_string(BOP_SMGET_OP);
