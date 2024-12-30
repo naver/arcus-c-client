@@ -5040,7 +5040,12 @@ memcached_return_t memcached_lop_piped_insert(memcached_st *ptr,
                                               memcached_return_t *results,
                                               memcached_return_t *piped_rc)
 {
-  memcached_return_t rc;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+
+  if (number_of_piped_items <= 0)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
 
   memcached_coll_query_st *queries= static_cast<memcached_coll_query_st *>(libmemcached_malloc(ptr, sizeof(memcached_coll_query_st)*number_of_piped_items));
   for (size_t i=0; i<number_of_piped_items; i++)
@@ -5065,7 +5070,12 @@ memcached_return_t memcached_sop_piped_insert(memcached_st *ptr,
                                               memcached_return_t *results,
                                               memcached_return_t *piped_rc)
 {
-  memcached_return_t rc;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+
+  if (number_of_piped_items <= 0)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
 
   memcached_coll_query_st *queries= static_cast<memcached_coll_query_st *>(libmemcached_malloc(ptr, sizeof(memcached_coll_query_st)*number_of_piped_items));
   for (size_t i=0; i<number_of_piped_items; i++)
@@ -5091,7 +5101,12 @@ memcached_return_t memcached_mop_piped_insert(memcached_st *ptr,
                                               memcached_return_t *results,
                                               memcached_return_t *piped_rc)
 {
-  memcached_return_t rc;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+
+  if (number_of_piped_items <= 0)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
 
   memcached_coll_query_st *queries= static_cast<memcached_coll_query_st *>(libmemcached_malloc(ptr, sizeof(memcached_coll_query_st)*number_of_piped_items));
   for (size_t i=0; i<number_of_piped_items; i++)
@@ -5118,7 +5133,12 @@ memcached_return_t memcached_bop_piped_insert(memcached_st *ptr,
                                               memcached_return_t *results,
                                               memcached_return_t *piped_rc)
 {
-  memcached_return_t rc;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+
+  if (number_of_piped_items <= 0)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
 
   memcached_coll_query_st *queries= static_cast<memcached_coll_query_st *>(libmemcached_malloc(ptr, sizeof(memcached_coll_query_st)*number_of_piped_items));
   for (size_t i=0; i<number_of_piped_items; i++)
@@ -5146,7 +5166,12 @@ memcached_return_t memcached_bop_ext_piped_insert(memcached_st *ptr,
                                                   memcached_return_t *piped_rc)
 {
   memcached_coll_query_st *queries;
-  memcached_return_t rc;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+
+  if (number_of_piped_items <= 0)
+  {
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
 
   queries= static_cast<memcached_coll_query_st *>(libmemcached_malloc(ptr, sizeof(memcached_coll_query_st)*number_of_piped_items));
   if (queries == NULL)
