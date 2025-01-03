@@ -485,6 +485,12 @@ char *memcached_get_by_key(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
+  if (value_length)
+    *value_length= 0;
+
+  if (flags)
+    *flags= 0;
+
   memcached_return_t unused;
   if (error == NULL)
     error= &unused;
@@ -501,11 +507,6 @@ char *memcached_get_by_key(memcached_st *ptr,
     if (memcached_has_current_error(*ptr)) // Find the most accurate error
     {
       *error= memcached_last_error(ptr);
-    }
-
-    if (value_length)
-    {
-      *value_length= 0;
     }
 
     return NULL;
@@ -540,20 +541,36 @@ char *memcached_get_by_key(memcached_st *ptr,
       *error= memcached_last_error(ptr);
     }
 
-    if (value_length)
-      *value_length= 0;
-
     return NULL;
   }
 
-  char *value= memcached_fetch(ptr, NULL, NULL,
-                               value_length, flags, error);
+  char *value= NULL;
+  bool is_value_fetched= false;
+  memcached_result_st *result= &ptr->result;
+
+  while (memcached_fetch_result(ptr, result, error) != NULL)
+  {
+    is_value_fetched= true;
+    if (value != NULL)
+      libmemcached_free(ptr, value);
+    value= memcached_string_take_value(&result->value);
+    if (value_length)
+      *value_length= memcached_string_length(&result->value);
+    if (flags)
+      *flags= result->item_flags;
+  }
+
   assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
   //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
-  /* This is for historical reasons */
-  if (*error == MEMCACHED_END)
+  if (is_value_fetched)
+  {
+    *error= MEMCACHED_SUCCESS;
+  }
+  else if (*error == MEMCACHED_END)
+  {
     *error= MEMCACHED_NOTFOUND;
+  }
 
   if (value == NULL)
   {
@@ -606,18 +623,6 @@ char *memcached_get_by_key(memcached_st *ptr,
 
     return NULL;
   }
-
-  size_t dummy_length;
-  uint32_t dummy_flags;
-  memcached_return_t dummy_error;
-
-  char *dummy_value= memcached_fetch(ptr, NULL, NULL,
-                                     &dummy_length, &dummy_flags,
-                                     &dummy_error);
-  assert_msg(dummy_value == 0, "memcached_fetch() returned additional values beyond the single get it expected");
-  assert_msg(dummy_length == 0, "memcached_fetch() returned additional values beyond the single get it expected");
-  assert_msg(ptr->query_id >= query_id +1, "Programmer error, the query_id was not incremented.");
-  //assert_msg(ptr->query_id == query_id +1, "Programmer error, the query_id was not incremented.");
 
   return value;
 }
