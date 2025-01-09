@@ -56,50 +56,41 @@
 
 static inline bool mget_command_is_supported(memcached_st *ptr, memcached_server_write_instance_st instance)
 {
+  if (instance->major_version == UINT8_MAX || instance->minor_version == UINT8_MAX)
+  {
+    return false;
+  }
+
   /* mgets */
   if (ptr->flags.support_cas)
   {
-    if (instance->major_version != UINT8_MAX && instance->minor_version != UINT8_MAX)
+    if (instance->is_enterprise)
     {
-      if (instance->is_enterprise)
-      {
-        /* >= 0.9.0-E */
-        if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 9))
-        {
-          return true;
-        }
-      }
-      else
-      {
-        /* >= 1.13.0 */
-        if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 13))
-        {
-          return true;
-        }
-      }
+      /* >= 0.9.0-E */
+      if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 9))
+        return true;
+    }
+    else
+    {
+      /* >= 1.13.0 */
+      if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 13))
+        return true;
     }
   }
   /* mget */
   else
   {
-    if (instance->major_version != UINT8_MAX && instance->minor_version != UINT8_MAX)
+    if (instance->is_enterprise)
     {
-      if (instance->is_enterprise)
-      {
-        /* >= 0.7.0-E */
-        if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 7))
-        {
-          return true;
-        }
-      }
-      else
-      {
-        /* >= 1.11.0 */
-        if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 11))
-        {
-          return true;
-        }
-      }
+      /* >= 0.7.0-E */
+      if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 7))
+        return true;
+    }
+    else
+    {
+      /* >= 1.11.0 */
+      if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 11))
+        return true;
     }
   }
   return false;
