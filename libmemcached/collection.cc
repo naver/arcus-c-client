@@ -195,23 +195,22 @@ static inline memcached_coll_type_t str_to_type(const char *value, size_t value_
 
 static inline bool space_separated_keys_is_supported(memcached_server_write_instance_st instance)
 {
-  if (instance->major_version != UINT8_MAX && instance->minor_version != UINT8_MAX)
+  if (instance->major_version == UINT8_MAX || instance->minor_version == UINT8_MAX)
   {
-    if (instance->is_enterprise)
-    {
-      if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 7))
-      {
-        return true;
-      }
-    }
-    else
-    {
-      if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 11))
-      {
-        return true;
-      }
-    }
+    return false;
   }
+
+  if (instance->is_enterprise)
+  {
+    if (instance->major_version > 0 || (instance->major_version == 0 && instance->minor_version >= 7))
+      return true;
+  }
+  else
+  {
+    if (instance->major_version > 1 || (instance->major_version == 1 && instance->minor_version >= 11))
+      return true;
+  }
+
   return false;
 }
 
