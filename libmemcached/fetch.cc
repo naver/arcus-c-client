@@ -63,72 +63,26 @@ char *memcached_fetch(memcached_st *ptr, char *key, size_t *key_length,
   if (not error)
     error= &unused;
 
-
-  unlikely (ptr->flags.use_udp)
-  {
-    if (value_length)
-      *value_length= 0;
-
-    if (key_length)
-      *key_length= 0;
-
-    if (flags)
-      *flags= 0;
-
-    if (key)
-      *key= 0;
-
-    *error= MEMCACHED_NOT_SUPPORTED;
-    return NULL;
-  }
-
   result_buffer= memcached_fetch_result(ptr, result_buffer, error);
-  if (result_buffer == NULL or memcached_failed(*error))
+  if (result_buffer == NULL)
   {
-    WATCHPOINT_ASSERT(result_buffer == NULL);
-    if (value_length)
-      *value_length= 0;
-
-    if (key_length)
-      *key_length= 0;
-
-    if (flags)
-      *flags= 0;
-
-    if (key)
-      *key= 0;
+    if (key)          *key= 0;
+    if (key_length)   *key_length= 0;
+    if (value_length) *value_length= 0;
+    if (flags)        *flags= 0;
 
     return NULL;
-  }
-
-  if (value_length)
-  {
-    *value_length= memcached_string_length(&result_buffer->value);
   }
 
   if (key)
   {
-    if (result_buffer->key_length >= MEMCACHED_MAX_KEY)
-    {
-      *error= MEMCACHED_KEY_TOO_BIG;
-      if (value_length)
-        *value_length= 0;
-
-      if (key_length)
-        *key_length= 0;
-
-      if (flags)
-        *flags= 0;
-
-      if (key)
-        *key= 0;
-
-      return NULL;
-    }
     strncpy(key, result_buffer->item_key, result_buffer->key_length); // For the binary protocol we will cut off the key :(
     if (key_length)
       *key_length= result_buffer->key_length;
   }
+
+  if (value_length)
+    *value_length= memcached_string_length(&result_buffer->value);
 
   if (flags)
     *flags= result_buffer->item_flags;
