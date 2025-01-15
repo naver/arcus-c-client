@@ -76,27 +76,29 @@ static memcached_return_t textual_value_fetch(memcached_server_write_instance_st
   string_ptr= buffer;
   string_ptr+= 6; /* "VALUE " */
 
-
   /* We load the key */
   {
-    char *key;
-    size_t prefix_length;
+    char *key= result->item_key;
+    size_t key_length= 0;
 
-    key= result->item_key;
-    result->key_length= 0;
+    string_ptr += memcached_array_size(ptr->root->_namespace); /* prefix length */
 
-    for (prefix_length= memcached_array_size(ptr->root->_namespace); !(iscntrl(*string_ptr) || isspace(*string_ptr)) ; string_ptr++)
-    {
-      if (prefix_length == 0)
-      {
-        *key= *string_ptr;
-        key++;
-        result->key_length++;
+    while (!iscntrl(*string_ptr) && !isspace(*string_ptr)) {
+      if (key_length < MEMCACHED_MAX_KEY) {
+        key[key_length]= *string_ptr;
       }
-      else
-        prefix_length--;
+      key_length++;
+      string_ptr++;
     }
-    result->item_key[result->key_length]= 0;
+
+    if (key_length < MEMCACHED_MAX_KEY) {
+      key[key_length]= 0;
+      result->key_length= key_length;
+    } else {
+      snprintf(key + MEMCACHED_MAX_KEY - 4, 4, "...");
+      result->key_length= MEMCACHED_MAX_KEY - 1;
+      memcached_set_error(*ptr, MEMCACHED_KEY_TOO_BIG, MEMCACHED_AT);
+    }
   }
 
   if (end_ptr == string_ptr)
@@ -508,7 +510,6 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
       /* FALLTHROUGH */
     case PROTOCOL_BINARY_CMD_GETK:
       {
-        uint16_t keylen= header.response.keylen;
         memcached_result_reset(result);
         result->item_cas= header.response.cas;
 
@@ -521,26 +522,40 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
         result->item_flags= ntohl(result->item_flags);
         bodylen -= header.response.extlen;
 
-        result->key_length= keylen;
-        if (memcached_failed(rc= memcached_safe_read(ptr, result->item_key, keylen)))
+        uint16_t keylen= header.response.keylen;
+        uint16_t prefix_size= memcached_array_size(ptr->root->_namespace);
+
+        if (prefix_size > 0) {
+          if (prefix_size >= keylen) {
+            return memcached_set_error(*ptr, MEMCACHED_UNKNOWN_READ_FAILURE, MEMCACHED_AT);
+          }
+          /* Discard the prefix */
+          if (memcached_failed(memcached_safe_read(ptr, NULL, prefix_size))) {
+            return MEMCACHED_UNKNOWN_READ_FAILURE;
+          }
+          bodylen -= prefix_size;
+          keylen -= prefix_size;
+        }
+
+        uint16_t read_size= keylen < MEMCACHED_MAX_KEY ? keylen : (MEMCACHED_MAX_KEY - 1);
+        if (memcached_failed(rc= memcached_safe_read(ptr, result->item_key, read_size)))
         {
           WATCHPOINT_ERROR(rc);
           return MEMCACHED_UNKNOWN_READ_FAILURE;
         }
 
-        // Only bother with doing this if key_length > 0
-        if (result->key_length)
-        {
-          if (memcached_array_size(ptr->root->_namespace) and memcached_array_size(ptr->root->_namespace) >= result->key_length)
+        if (keylen < MEMCACHED_MAX_KEY) {
+          result->item_key[read_size]= 0;
+          result->key_length= keylen;
+        } else {
+          /* Discard the part of key */
+          if (memcached_failed(memcached_safe_read(ptr, NULL, keylen - read_size)))
           {
-            return memcached_set_error(*ptr, MEMCACHED_UNKNOWN_READ_FAILURE, MEMCACHED_AT);
+            return MEMCACHED_UNKNOWN_READ_FAILURE;
           }
-
-          if (memcached_array_size(ptr->root->_namespace))
-          {
-            result->key_length-= memcached_array_size(ptr->root->_namespace);
-            memmove(result->item_key, result->item_key +memcached_array_size(ptr->root->_namespace), result->key_length);
-          }
+          snprintf(result->item_key + MEMCACHED_MAX_KEY - 4, 4, "...");
+          result->key_length= MEMCACHED_MAX_KEY - 1;
+          memcached_set_error(*ptr, MEMCACHED_KEY_TOO_BIG, MEMCACHED_AT);
         }
 
         bodylen -= keylen;
