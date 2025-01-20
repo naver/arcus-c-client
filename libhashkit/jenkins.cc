@@ -17,7 +17,7 @@
 #define hashmask(n) (hashsize(n)-1)
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
 
-#define mix(a,b,c) \
+#define JENKINS_MIX(a,b,c) \
 { \
   a -= c;  a ^= rot(c, 4);  c += b; \
   b -= a;  b ^= rot(a, 6);  a += c; \
@@ -27,7 +27,7 @@
   c -= b;  c ^= rot(b, 4);  b += a; \
 }
 
-#define final(a,b,c) \
+#define JENKINS_FINAL(a,b,c) \
 { \
   c ^= b; c -= rot(b,14); \
   a ^= c; a -= rot(c,11); \
@@ -76,7 +76,7 @@ uint32_t hashkit_jenkins(const char *key, size_t length, void *)
       a += k[0];
       b += k[1];
       c += k[2];
-      mix(a,b,c);
+      JENKINS_MIX(a,b,c);
       length -= 12;
       k += 3;
     }
@@ -121,7 +121,7 @@ uint32_t hashkit_jenkins(const char *key, size_t length, void *)
       a += k[0] + (((uint32_t)k[1])<<16);
       b += k[2] + (((uint32_t)k[3])<<16);
       c += k[4] + (((uint32_t)k[5])<<16);
-      mix(a,b,c);
+      JENKINS_MIX(a,b,c);
       length -= 12;
       k += 6;
     }
@@ -180,7 +180,7 @@ uint32_t hashkit_jenkins(const char *key, size_t length, void *)
       c += ((uint32_t)k[9])<<8;
       c += ((uint32_t)k[10])<<16;
       c += ((uint32_t)k[11])<<24;
-      mix(a,b,c);
+      JENKINS_MIX(a,b,c);
       length -= 12;
       k += 12;
     }
@@ -208,6 +208,6 @@ uint32_t hashkit_jenkins(const char *key, size_t length, void *)
   }
 #endif
 
-  final(a,b,c);
+  JENKINS_FINAL(a,b,c);
   return c;
 }
