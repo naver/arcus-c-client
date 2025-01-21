@@ -539,7 +539,8 @@ memcached_return_t memcached_io_read(memcached_server_write_instance_st ptr,
   }
 
   char *buffer_ptr= static_cast<char *>(buffer);
-  while (length)
+  size_t remains= length;
+  while (remains)
   {
     if (ptr->read_buffer_length == 0)
     {
@@ -551,27 +552,30 @@ memcached_return_t memcached_io_read(memcached_server_write_instance_st ptr,
         return io_fill_ret;
       }
     }
-    if (length > 1)
+    if (remains > 1)
     {
-      size_t difference= (length > ptr->read_buffer_length) ? ptr->read_buffer_length : length;
-      memcpy(buffer_ptr, ptr->read_ptr, difference);
-
-      length-= difference;
+      size_t difference= (remains > ptr->read_buffer_length) ? ptr->read_buffer_length : remains;
+      if (buffer_ptr) {
+        memcpy(buffer_ptr, ptr->read_ptr, difference);
+        buffer_ptr+= difference;
+      }
       ptr->read_ptr+= difference;
       ptr->read_buffer_length-= difference;
-      buffer_ptr+= difference;
+      remains-= difference;
     }
     else
     {
-      *buffer_ptr= *ptr->read_ptr;
+      if (buffer_ptr) {
+        *buffer_ptr= *ptr->read_ptr;
+        buffer_ptr++;
+      }
       ptr->read_ptr++;
       ptr->read_buffer_length--;
-      buffer_ptr++;
-      break;
+      remains--;
     }
   }
 
-  *nread = (ssize_t)(buffer_ptr - (char*)buffer);
+  *nread = (ssize_t)(length - remains);
 
   return MEMCACHED_SUCCESS;
 }
@@ -855,7 +859,7 @@ memcached_return_t memcached_safe_read(memcached_server_write_instance_st ptr,
     ssize_t nread;
     memcached_return_t rc;
 
-    while (memcached_continue(rc= memcached_io_read(ptr, data + offset, size - offset, &nread))) { };
+    while (memcached_continue(rc= memcached_io_read(ptr, data, size - offset, &nread))) { };
 
     if (memcached_failed(rc))
     {
@@ -863,8 +867,8 @@ memcached_return_t memcached_safe_read(memcached_server_write_instance_st ptr,
     }
 
     offset+= (size_t) nread;
+    if (data) data+= nread;
   }
-
   return MEMCACHED_SUCCESS;
 }
 
