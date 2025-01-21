@@ -19,7 +19,7 @@ Documentation can be found here: http://docs.libmemcached.org/
 
 Want to contribute? If you write more then three good patches, then I will
 just ask you to commit directly to the tree. I am happy to have additional
-people work on this project. Please checkout README.FIRST. 
+people work on this project. Please checkout README.FIRST.
 
 You will need a C99 compiler in order to compile this library. Currently we
 actively support Linux, MacOSX, FreeBSD, and Solaris. A Windows port is
@@ -28,7 +28,7 @@ by someone in the community.
 
 If you are looking for answers to your questions please check out the
 mailing list at:
-http://lists.libmemcached.org/  
+http://lists.libmemcached.org/
 
 Subscription information for the libmemcached mailing list can be found there.
 
@@ -63,7 +63,7 @@ point it is just the typical "./configure; make; make test; make install"
 
 For a tarball release do a "make dist" and for an RPM type "make rpm".
 
-For patches, we prefer you push a branch to launchpad and then submit that 
+For patches, we prefer you push a branch to launchpad and then submit that
 branch to be merged. For more information, see:
 
 https://help.launchpad.net/Code/UploadingABranch
@@ -75,7 +75,7 @@ Cheers,
   -Brian
   Seattle, WA.
 README.win32
-Hi, 
+Hi,
 
 So you want to know how to build libmemcached on Windows? In order to
 have a single build environment you need to install mingw to get a
@@ -119,7 +119,7 @@ ChangeLog
   * Fix in parser for port number.
 
 0.50 Mon Jun 20 10:36:57 PDT 2011
- * Updates to C++ interface 
+ * Updates to C++ interface
  * Custom free allocators need to now check for value before calling free.
  * memcached_fetch_result() now uses the internal result when available (about 25 to 50% faster).
  * Fix for stats structure.
@@ -132,7 +132,7 @@ ChangeLog
   * New error system.
   * New flow control for messages means faster get/set calls.
   * Added new documentation system.
-  * A behavior change has been now made that if you specify a weight for any server, we enable the weight flag and do weight balancing.  
+  * A behavior change has been now made that if you specify a weight for any server, we enable the weight flag and do weight balancing.
   * Added MEMCACHED_BEHAVIOR_REMOVE_FAILED_SERVERS to simplify the setting of AUTO REJECT for servers.
 
 0.48 Tue Mar 15 23:05:18 PDT 2011
@@ -143,7 +143,7 @@ ChangeLog
 0.47 Wed Feb 23 18:46:48 PST 2011
   * Additional fixes for OpenBSD.
   * Bug fix 677609, 456080.
-  * SIGPIPE fix for Linux send(). 
+  * SIGPIPE fix for Linux send().
   * memcapable can now test ascii or binary based on flags.
   * Additional build fixes for SASL.
 
@@ -166,7 +166,7 @@ ChangeLog
 0.43 Wed Jul 28 16:29:47 PDT 2010
   * Added --args to memstat so that a greater range of values can be returned.
   * Prelimanary support for Windows.
-  * memcached_stat_execute() merged. 
+  * memcached_stat_execute() merged.
 
 0.42 Tue Jul  6 12:29:50 PDT 2010
   * Mistake in libtool caused issue with library version
@@ -209,8 +209,8 @@ ChangeLog
 
 0.37 Mon Jan 11 16:29:57 PST 2010
   * Fixed build for libhashkit.
-  * Fixed install path regression.  
-  * Modified RPM to strict check install. 
+  * Fixed install path regression.
+  * Modified RPM to strict check install.
   * Added documentation for memcached_server_cursor();
   * Added memcached_servers_reset().
   * Modified memcached_st to remove dead cursor_server member.
@@ -268,7 +268,7 @@ ChangeLog
   * Added tests to make sure all hash functions are stable.
 
 0.29 Tue May 19 08:26:48 PDT 2009
-  * Fixed malloc usage to calloc for spots where we need zero filled memory. 
+  * Fixed malloc usage to calloc for spots where we need zero filled memory.
   * All code warnings now treated as errors.
   * Fixes for debian packaging.
   * Added new pooling mechanism.
@@ -313,7 +313,7 @@ ChangeLog
   * Added strings.h header for Solaris 9
   * Solaris 64bit fix.
   * Support for weighted Ketama from Yin Chen.
-  * Fix for Chinese 
+  * Fix for Chinese
   * Fix for 0 length key to trigger bad key.
   * Added behaviors MEMCACHED_BEHAVIOR_SND_TIMEOUT, MEMCACHED_BEHAVIOR_RCV_TIMEOUT
   * Support for Binary Protocol added
@@ -403,7 +403,7 @@ ChangeLog
   * Patches from Kevin Dalley for FreeBSD 4.0
   * Added multi delete functions.
   * All get key returns have C style null termination
-  * If memcached_server_list_append is passed NULLs instead of pointers it returns NULL.  
+  * If memcached_server_list_append is passed NULLs instead of pointers it returns NULL.
   * Added memcached_fetch_execute() method
   * Found a bug where memcached_fetch() was not null terminating the result value.
   * memcached_behavior() now has the ability to set "buffering" so that data is not automatically flushed.
@@ -452,7 +452,7 @@ ChangeLog
   * Added memcached_version()... not sure if I will make this public or not.
 
 0.8 Mon Nov  5 10:40:41 PST 2007
-  * Adding support for CRC hash method 
+  * Adding support for CRC hash method
   * Adding support for UNIX sockets
   * Added additional HASHing methods of FNV1_64,FNV1A_64, FNV1_32, FNV1A_32
   * Added pkgconfig support (PKG_CHECK_MODULES)
@@ -469,7 +469,7 @@ ChangeLog
 
 
 0.6 Wed Oct 17 08:41:35 PDT 2007
-  * get value returns are now null terminated (request by Cal Heldenbrand) 
+  * get value returns are now null terminated (request by Cal Heldenbrand)
   * Fixed connections for more hosts then two.
   * Rewrite of the read/write IO systems to handle different sorts of host failures.
   * Added man pages for all functions and tools

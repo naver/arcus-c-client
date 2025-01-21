@@ -41,154 +41,154 @@
 * Use Github Actions instead of Travis for CI test.
 
 2022-02-22 [version 1.13.2]
-	* [FEATURE] supported the 3 replicas in replication.
-	* [FIX] return switchover error code when coll get with delete.
-	* [FIX] fixed wrong aggregate pipe return code in case of failure.
-	* [FIX] hold the pool lock when update the cache list of master mc.
-	* [FIX] fixed the cache list update of member mc in proxy mode.
-	* [ENHANCE] enhanced the cachelist update logic with serverinfo.
-	* [ENHANCE] Not to close and reopen pool connections
-	* [ENHANCE] removed the dual pool repopulation when start at first.
-	* [ENHANCE] optimized the slave comparision in memcached_rgroup_update().
-	* [ENHANCE] optimized the release processing in memcached_pool.
-	* [ENHANCE] ensure more concurrency in memcached pool.
-	* [CLEANUP] fixed the compile warnings.
-	* [CLEANUP] refactored serveral parts of code.
+  * [FEATURE] supported the 3 replicas in replication.
+  * [FIX] return switchover error code when coll get with delete.
+  * [FIX] fixed wrong aggregate pipe return code in case of failure.
+  * [FIX] hold the pool lock when update the cache list of master mc.
+  * [FIX] fixed the cache list update of member mc in proxy mode.
+  * [ENHANCE] enhanced the cachelist update logic with serverinfo.
+  * [ENHANCE] Not to close and reopen pool connections
+  * [ENHANCE] removed the dual pool repopulation when start at first.
+  * [ENHANCE] optimized the slave comparision in memcached_rgroup_update().
+  * [ENHANCE] optimized the release processing in memcached_pool.
+  * [ENHANCE] ensure more concurrency in memcached pool.
+  * [CLEANUP] fixed the compile warnings.
+  * [CLEANUP] refactored serveral parts of code.
 
 2021-07-06 [version 1.13.1]
-	* [FEATURE] enable zookeeper multi thread mode.
-	* [FIX] if MEMCACHED_ERRNO entered in memcached_set_error(),
-	        return instead of assert.
+  * [FEATURE] enable zookeeper multi thread mode.
+  * [FIX] if MEMCACHED_ERRNO entered in memcached_set_error(),
+          return instead of assert.
 
 2021-01-18 [version 1.13.0]
-	* [FEATURE] supported mgets command.
-	* [FIX] check space_sepatated_keys immediately after memcached_connect().
-	* [FIX] check mget command support immediately after memcached_connect().
-	* [INTERNAL] return MEMCACHED_CONNECTION_FAILURE in memcached_fetch_result().
+  * [FEATURE] supported mgets command.
+  * [FIX] check space_sepatated_keys immediately after memcached_connect().
+  * [FIX] check mget command support immediately after memcached_connect().
+  * [INTERNAL] return MEMCACHED_CONNECTION_FAILURE in memcached_fetch_resul  ().
 
 2020-12-09 [version 1.12.0]
-	* [FEATURE] set the max key size to 4000.
-	* [DOC] changed max element bytes: 4KB => 16KB.
-	        (committed at 20200317 and included in 1.10.4)
-	* [DOC] fixed the smget result API and structure names.
+  * [FEATURE] set the max key size to 4000.
+  * [DOC] changed max element bytes: 4KB => 16KB.
+          (committed at 20200317 and included in 1.10.4)
+  * [DOC] fixed the smget result API and structure names.
 
 2020-12-07 [version 1.11.0]
-	* [FEATURE] supported space-separated keys.
-	* [FEATURE] supported mget command, efficient for getting multiple items.
-	* [FEATURE] requested version operation when connect to server.
-	* [FEATURE] increased max key length: 250 => 4K.
-	* [ENHANCE] do memcached_quit_server() if poll timeout occurs in io_flush.
-	* [ENHANCE] increased cluster max size for multi key op: 200 => 1000.
-	* [IMPROVE] reduced string copy when convert eflag/update_filter to string.
-	* [FIX] set purge recursion flag to false before return.
-	* [FIX] handled the host failures in the multi key operation.
-	* [FIX] unset noreply before get operation in noreply_test().
-	* [FIX] fixed unallocated memory access in mkey fetch.
-	* [OTHERS] Refactored some code for readabiblity.
+  * [FEATURE] supported space-separated keys.
+  * [FEATURE] supported mget command, efficient for getting multiple items.
+  * [FEATURE] requested version operation when connect to server.
+  * [FEATURE] increased max key length: 250 => 4K.
+  * [ENHANCE] do memcached_quit_server() if poll timeout occurs in io_flush.
+  * [ENHANCE] increased cluster max size for multi key op: 200 => 1000.
+  * [IMPROVE] reduced string copy when convert eflag/update_filter to string.
+  * [FIX] set purge recursion flag to false before return.
+  * [FIX] handled the host failures in the multi key operation.
+  * [FIX] unset noreply before get operation in noreply_test().
+  * [FIX] fixed unallocated memory access in mkey fetch.
+  * [OTHERS] Refactored some code for readabiblity.
 
 2020-10-22 [version 1.10.5]
-	* [FEATURE] bop incr/decr with initial option.
-	* [FIX] registered "NULL" if hostname lookup fails in do_add_client_info().
-	* [FIX] added the TYPE_MISMATCH handling in kv response
-	* [DOC] changed the description of the max item size
-	* [DOC] refactored the document format and some content.
+  * [FEATURE] bop incr/decr with initial option.
+  * [FIX] registered "NULL" if hostname lookup fails in do_add_client_info().
+  * [FIX] added the TYPE_MISMATCH handling in kv response
+  * [DOC] changed the description of the max item size
+  * [DOC] refactored the document format and some content.
 
 2020-08-04 [version 1.10.4]
-	* [FEATURE] Added memcached_detail_error_message() API.
-	* [FEATURE] Immediate reconnect according to error responses.
-	* [FEATURE] Changed max element bytes. 4KB => 16KB.
-	* [FEATURE] Returned E2BIG if CLIENT_ERROR object too large.
-	* [FEATURE] Changed MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT. 2sec => 1sec.
-	* [ENHANCE] Enlarged the contents of error messages in detail.
-	* [ENHANCE] Stored detail error message in error_messages field.
-	* [ENHANCE] Added arcus ZK manager for processing ZK events.
-	* [FIX] pipe operation is stopped if switchover is done.
-	* [FIX] Fixed version check condition.
-	* [FIX] Fixed several bugs in handling response strings.
-	* [FIX] Added the key test where needed.
-	* [FIX] Do client_info and watcher registration only when needed.
-	* [FIX] Prevent master_mc from being freed while using pool.
-	* [FIX] Changed to create version using m4 file.
-	* [FIX] Fixed simple null pointer dereferencing.
-	* [DOC] Added multi eflag filter description.
-	* [Test] Added test case for PIPE_ERROR bad error.
-	* [OTHERS] Refactored the response module for handling responses.
-	* [OTHERS] Refactored much code for readabiblity.
+  * [FEATURE] Added memcached_detail_error_message() API.
+  * [FEATURE] Immediate reconnect according to error responses.
+  * [FEATURE] Changed max element bytes. 4KB => 16KB.
+  * [FEATURE] Returned E2BIG if CLIENT_ERROR object too large.
+  * [FEATURE] Changed MEMCACHED_SERVER_FAILURE_RETRY_TIMEOUT. 2sec => 1sec.
+  * [ENHANCE] Enlarged the contents of error messages in detail.
+  * [ENHANCE] Stored detail error message in error_messages field.
+  * [ENHANCE] Added arcus ZK manager for processing ZK events.
+  * [FIX] pipe operation is stopped if switchover is done.
+  * [FIX] Fixed version check condition.
+  * [FIX] Fixed several bugs in handling response strings.
+  * [FIX] Added the key test where needed.
+  * [FIX] Do client_info and watcher registration only when needed.
+  * [FIX] Prevent master_mc from being freed while using pool.
+  * [FIX] Changed to create version using m4 file.
+  * [FIX] Fixed simple null pointer dereferencing.
+  * [DOC] Added multi eflag filter description.
+  * [Test] Added test case for PIPE_ERROR bad error.
+  * [OTHERS] Refactored the response module for handling responses.
+  * [OTHERS] Refactored much code for readabiblity.
 
 2019-12-17 [version 1.10.3] (revised)
-	* [FIX] master failover issue by setting serverlist_changed corretly.
-	* [Fix] enable replication by referencing ZK in multi process mode.
-	* [Fix] fixed segfault caused by code tag mistake.
+  * [FIX] master failover issue by setting serverlist_changed corretly.
+  * [Fix] enable replication by referencing ZK in multi process mode.
+  * [Fix] fixed segfault caused by code tag mistake.
 
 2019-11-14 [version 1.10.2]
-	* [Fix] fixed compiler errors reported by @orchistro.
+  * [Fix] fixed compiler errors reported by @orchistro.
 
 2019-11-04 [version 1.10.1]
-	* [Enhance] Update the server list of fetched mcs with ketama version.
-	* [Enhance] Repopulate mc pool only when master's server list is chaned.
-	* [Enhance] Use the shared ketama hashring of master mc in arcus mc pool.
-	* [Enhance] Repopulate mc pool only when the server list is changed.
-	* [Fix] Solved assertion failure when connect has failed.
-	* [Fix] Freed only the rgroup list if replication is enabled.
-	* [Fix] Registered the missed client info if replication is enabled.
-	* [Fix] Solved problems of getting collection attributes(type, readable)
-	* [Internal] Changed the method of confirming arcus cluster type.
+  * [Enhance] Update the server list of fetched mcs with ketama version.
+  * [Enhance] Repopulate mc pool only when master's server list is chaned.
+  * [Enhance] Use the shared ketama hashring of master mc in arcus mc pool.
+  * [Enhance] Repopulate mc pool only when the server list is changed.
+  * [Fix] Solved assertion failure when connect has failed.
+  * [Fix] Freed only the rgroup list if replication is enabled.
+  * [Fix] Registered the missed client info if replication is enabled.
+  * [Fix] Solved problems of getting collection attributes(type, readable)
+  * [Internal] Changed the method of confirming arcus cluster type.
 
 2017-09-26 [version 1.10.0]
-	* [Feature] Support map collection.
+  * [Feature] Support map collection.
 
 2017-09-18 [version 1.9.0]
-	* [Fix] Fix some bugs of existing sort-merge get.
-	   - bugs related to trimmed key and duplicate bkey.
-	* [Feature] Support new sort-merge get operation.
-	   - duplicate or unique sort-merge get.
-	   - OUT_OF_RANGE is treated as missed key.
-	   - Missed keys are given with the causes.
-	   - Trimmed keys and the last bkeys are given.
-	   - offset search condition is removed.
-	* [Feature] Add memcached_coll_result_get_position() API.
+  * [Fix] Fix some bugs of existing sort-merge get.
+     - bugs related to trimmed key and duplicate bkey.
+  * [Feature] Support new sort-merge get operation.
+     - duplicate or unique sort-merge get.
+     - OUT_OF_RANGE is treated as missed key.
+     - Missed keys are given with the causes.
+     - Trimmed keys and the last bkeys are given.
+     - offset search condition is removed.
+  * [Feature] Add memcached_coll_result_get_position() API.
 
 2017-09-11 [version 1.8.0]
-	* [Feature] Add bop position operations.
-	   - memcached_bop_find_position()
-	   - memcached_bop_ext_find_position()
-	   - memcached_bop_get_by_position()
-	   - memcached_bop_find_position_with_get()
-	   - memcached_bop_ext_find_position_with_get()
+  * [Feature] Add bop position operations.
+     - memcached_bop_find_position()
+     - memcached_bop_ext_find_position()
+     - memcached_bop_get_by_position()
+     - memcached_bop_find_position_with_get()
+     - memcached_bop_ext_find_position_with_get()
 
 2017-07-31 [version 1.7.5]
-	* [Feature] Support replication without read on slave feature.
-	* [Fix] the last_response_code setting of piped operations.
-	* [Fix] the piped_return_code setting in do_coll_piped_insert_bulk().
-	* [Fix] the mis-caculated MEMCACHED_COLL_MAX_FILTER_STR_LENGTH value.
-	* [Fix] pipe operation bugs like followings.
-	   - buffer overflow when request string is too long.
-	   - incorrect error handling when memcached_vdo fails.
-	* [Fix] the end condition in the piped exist operation.
-	* [Fix] failed unit tests.
-	* [Fix] semaphore usage on OSX.
-	* [Enhance] Optimize responses alloc/free in do_coll_piped_insert_bulk().
-	* [Enhance] Use separate command buffer size. default and maximum.
-	* [Enhance] Apply multi-value filtering to all filtering operations.
-	* [Other] extensive code refactoring.
+  * [Feature] Support replication without read on slave feature.
+  * [Fix] the last_response_code setting of piped operations.
+  * [Fix] the piped_return_code setting in do_coll_piped_insert_bulk().
+  * [Fix] the mis-caculated MEMCACHED_COLL_MAX_FILTER_STR_LENGTH value.
+  * [Fix] pipe operation bugs like followings.
+     - buffer overflow when request string is too long.
+     - incorrect error handling when memcached_vdo fails.
+  * [Fix] the end condition in the piped exist operation.
+  * [Fix] failed unit tests.
+  * [Fix] semaphore usage on OSX.
+  * [Enhance] Optimize responses alloc/free in do_coll_piped_insert_bulk().
+  * [Enhance] Use separate command buffer size. default and maximum.
+  * [Enhance] Apply multi-value filtering to all filtering operations.
+  * [Other] extensive code refactoring.
 
 2015-10-21 [version 1.7.4]
-	* Fix memory leak by deallcating a string vector gotten from ZK.
+  * Fix memory leak by deallcating a string vector gotten from ZK.
 
 2015-06-22 [version 1.7.3]
-	* Change default poll timeout: 500 => 700 ms.
-	* Use 160 hash points per server when all servers have the same weight.
+  * Change default poll timeout: 500 => 700 ms.
+  * Use 160 hash points per server when all servers have the same weight.
 
 2015-02-01 [version 1.7.2]
-	* Fix smget error handling bug.
-	* Fix result_idx initialization bug in merge_results()
+  * Fix smget error handling bug.
+  * Fix result_idx initialization bug in merge_results()
 
 2014-11-13 [version 1.7.1]
-	* Disable registering client info in ZK ensemble.
-	* Modify the memcached.h file to include the arcus.h file.
-	* Make unit tests success in an environment that uses both IPv4 and IPv6.
-	* Revert to the orginal inteface of arcus_connect() function.
-	* Add ARCUS C Client User Guide Document.
+  * Disable registering client info in ZK ensemble.
+  * Modify the memcached.h file to include the arcus.h file.
+  * Make unit tests success in an environment that uses both IPv4 and IPv6.
+  * Revert to the orginal inteface of arcus_connect() function.
+  * Add ARCUS C Client User Guide Document.
 
 2014-05-15
-	* arcus-c-client 1.7.0 is opened. (Apache License 2.0)
+  * arcus-c-client 1.7.0 is opened. (Apache License 2.0)

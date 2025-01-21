@@ -23,7 +23,7 @@
 #ifndef __LIBTEST_GET_H__
 #define __LIBTEST_GET_H__
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -31,7 +31,7 @@ extern "C" {
   LIBTEST_API
     void get_world(Framework *world);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 

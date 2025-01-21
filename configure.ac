@@ -295,7 +295,7 @@ AS_IF([test "x$ac_cv_header_atomic_h" = "xyes"],[
       AC_CHECK_FUNCS(atomic_add_32)
       AS_IF([test "x$ac_cv_func_atomic_add_64" = "xyes" -a "x$ac_cv_func_atomic_add_32" = "xyes"],[
             AC_DEFINE([USE_ATOMIC_H],
-	              [1],
+                      [1],
                       [Define to true if you want to use functions from atomic.h])])])
 
 AC_CHECK_HEADERS_ONCE(winsock2.h poll.h sys/wait.h fnmatch.h)

@@ -76,7 +76,7 @@ def write_external_configure(plugin, plugin_file):
   if not os.path.exists('m4'):
     os.mkdir('m4')
   plugin_file.write("""
-AC_PREREQ(2.59)dnl		Minimum Autoconf version required.
+AC_PREREQ(2.59)dnl    Minimum Autoconf version required.
 AC_INIT([%(name)s],[%(version)s],[%(url)s])
 AC_CONFIG_SRCDIR([%(main_source)s])
 AC_CONFIG_AUX_DIR(config)
@@ -664,17 +664,17 @@ if not os.path.exists("config/pandora-plugin.am") or "write" in actions:
 # pandora-plugin.list: datestamp preserved list
 ${srcdir}/config/pandora-plugin.list: .plugin.scan
 .plugin.scan:
-	@cd ${top_srcdir} && python config/pandora-plugin plugin-list
+  @cd ${top_srcdir} && python config/pandora-plugin plugin-list
 
 # Plugins affect configure; so to prevent configure running twice in a tarball
 # build (once up front, once with the right list of plugins, we ship the
 # generated list of plugins and the housekeeping material for that list so it
 # is likewise not updated.
 EXTRA_DIST += \
-	config/pandora-plugin.am \
-	config/pandora-plugin.ac \
-	config/pandora-plugin \
-	config/pandora-plugin.ini
+  config/pandora-plugin.am \
+  config/pandora-plugin.ac \
+  config/pandora-plugin \
+  config/pandora-plugin.ini
 
 
 # Seed the list of plugin LDADDS which plugins may extend.

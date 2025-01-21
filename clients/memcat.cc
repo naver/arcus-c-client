@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
               argv[optind], memcached_strerror(memc, rc));
       if (memcached_last_error_errno(memc))
       {
-	fprintf(stderr, " system error %s", strerror(memcached_last_error_errno(memc)));
+        fprintf(stderr, " system error %s", strerror(memcached_last_error_errno(memc)));
       }
       fprintf(stderr, "\n");
 

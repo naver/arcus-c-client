@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
     {
       static const char *opstr[] = { "set", "add", "replace" };
       printf("op: %s\nsource file: %s\nlength: %lu\n"
-	     "key: %s\nflags: %x\nexpires: %lu\n",
-	     opstr[opt_method - OPT_SET], argv[optind], (unsigned long)sbuf.st_size,
-	     ptr, opt_flags, (unsigned long)opt_expires);
+             "key: %s\nflags: %x\nexpires: %lu\n",
+             opstr[opt_method - OPT_SET], argv[optind], (unsigned long)sbuf.st_size,
+             ptr, opt_flags, (unsigned long)opt_expires);
     }
 
     char *file_buffer_ptr;
@@ -196,11 +196,11 @@ int main(int argc, char *argv[])
     if (opt_method == OPT_ADD)
       rc= memcached_add(memc, ptr, strlen(ptr),
                         file_buffer_ptr, (size_t)sbuf.st_size,
-			opt_expires, opt_flags);
+                        opt_expires, opt_flags);
     else if (opt_method == OPT_REPLACE)
       rc= memcached_replace(memc, ptr, strlen(ptr),
-			    file_buffer_ptr, (size_t)sbuf.st_size,
-			    opt_expires, opt_flags);
+                            file_buffer_ptr, (size_t)sbuf.st_size,
+                            opt_expires, opt_flags);
     else
       rc= memcached_set(memc, ptr, strlen(ptr),
                         file_buffer_ptr, (size_t)sbuf.st_size,
@@ -209,9 +209,9 @@ int main(int argc, char *argv[])
     if (rc != MEMCACHED_SUCCESS)
     {
       fprintf(stderr, "memcp: %s: memcache error %s",
-	      ptr, memcached_strerror(memc, rc));
+              ptr, memcached_strerror(memc, rc));
       if (memcached_last_error_errno(memc))
-	fprintf(stderr, " system error %s", strerror(memcached_last_error_errno(memc)));
+        fprintf(stderr, " system error %s", strerror(memcached_last_error_errno(memc)));
       fprintf(stderr, "\n");
 
       exit_code= EXIT_FAILURE;
