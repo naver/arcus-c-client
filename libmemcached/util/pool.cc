@@ -781,7 +781,7 @@ static void mc_list_update_cachelist(memcached_pool_st* pool)
 
     /* update chachelist without pool lock */
     (void)member_update_cachelist(mc, pool);
-    
+
     (void)pthread_mutex_lock(&pool->mutex);
     /* push the mc into mc_list */
     mc_list_add(pool, false, mc); /* false: to the tail side */
@@ -809,7 +809,7 @@ static void mc_pool_update_cachelist(memcached_pool_st* pool)
 
     /* update chachelist without pool lock */
     (void)member_update_cachelist(mc, pool);
-    
+
     (void)pthread_mutex_lock(&pool->mutex);
     /* push the mc into mc_pool */
     mc_pool_add(pool, mc);

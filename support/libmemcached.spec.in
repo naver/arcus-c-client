@@ -37,7 +37,7 @@ Requires: %{name} = %{version}-%{release}
 
 %description devel
 This package contains the header files and development libraries
-for %{name}. If you like to develop programs using %{name}, 
+for %{name}. If you like to develop programs using %{name},
 you will need to install %{name}-devel.
 
 
@@ -60,7 +60,7 @@ you will need to install %{name}-devel.
 
 %check
 # test suite cannot run in mock (same port use for memcache server on all arch)
-# 1 test seems to fail.. 
+# 1 test seems to fail..
 #%{__make} test
 
 
@@ -72,10 +72,10 @@ you will need to install %{name}-devel.
 
 
 %postun -p /sbin/ldconfig
- 
+
 
 %files
-%defattr (-,root,root,-) 
+%defattr (-,root,root,-)
 %doc AUTHORS COPYING NEWS README THANKS TODO
 %{_bindir}/mem*
 %exclude %{_libdir}/libmemcached.la
@@ -107,7 +107,7 @@ you will need to install %{name}-devel.
 
 
 %files devel
-%defattr (-,root,root,-) 
+%defattr (-,root,root,-)
 %doc examples
 %{_includedir}/libhashkit/algorithm.h
 %{_includedir}/libhashkit/behavior.h
@@ -288,7 +288,7 @@ you will need to install %{name}-devel.
 
 %changelog
 * Fri Jan  8 2010 Brian Aker <brian@tangent.org> - 0.37-1
-- Modified to be explicit in install include files. 
+- Modified to be explicit in install include files.
 
 * Sat Apr 25 2009 Remi Collet <rpms@famillecollet.com> - 0.28-1
 - Initial RPM from Brian Aker spec
