@@ -9,7 +9,7 @@ dnl with or without modifications, as long as this notice is preserved.
 
 
 AC_DEFUN([PANDORA_HAVE_GCC_ATOMICS],[
-	
+
   AC_CACHE_CHECK(
     [whether the compiler provides atomic builtins],
     [ac_cv_gcc_atomic_builtins],

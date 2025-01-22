@@ -46,7 +46,7 @@ static memcached_return_t ascii_dump(memcached_st *ptr, memcached_dump_fn *callb
 
       if ((size_t)write_length >= buffer_length || write_length < 0)
       {
-        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+        return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                    memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
       }
 
@@ -127,7 +127,7 @@ memcached_return_t memcached_dump(memcached_st *ptr, memcached_dump_fn *callback
     return rc;
   }
 
-  /* 
+  /*
     No support for Binary protocol yet
     @todo Fix this so that we just flush, switch to ascii, and then go back to binary.
   */

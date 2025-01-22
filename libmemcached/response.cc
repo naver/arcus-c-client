@@ -2575,7 +2575,7 @@ memcached_return_t memcached_coll_smget_response(memcached_server_write_instance
   }
 
   if (ptr->root->flags.binary_protocol == true) {
-	  fprintf(stderr, "Binary protocols for the collection are not supported.\n");
+          fprintf(stderr, "Binary protocols for the collection are not supported.\n");
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 

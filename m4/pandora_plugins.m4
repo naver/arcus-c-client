@@ -15,7 +15,7 @@ AC_DEFUN([PANDORA_PLUGINS],[
   dnl going to get there...
   dnl ANYWAY - syscmd gets called during aclocal - so before automake. It will
   dnl get called probably during autoconf too, so it's important to protect
-  dnl with test -f ... if the files exist, we don't have the chicken/egg 
+  dnl with test -f ... if the files exist, we don't have the chicken/egg
   dnl problem and therefore don't need to do anything here
   m4_syscmd([PYTHON=${PYTHON:-python} && $PYTHON config/pandora-plugin > /dev/null])
   m4_syscmd([test -f config/plugin.stamp || touch config/plugin.stamp aclocal.m4])

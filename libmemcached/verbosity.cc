@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -88,7 +88,7 @@ memcached_return_t memcached_verbosity(memcached_st *ptr, uint32_t verbosity)
                                  "verbosity %u\r\n", verbosity);
   if (send_length >= MEMCACHED_DEFAULT_COMMAND_SIZE || send_length < 0)
   {
-    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
   }
 

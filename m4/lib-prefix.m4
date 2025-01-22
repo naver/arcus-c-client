@@ -187,7 +187,7 @@ AC_DEFUN([AC_LIB_PREPARE_MULTILIB],
         [AC_RUN_IFELSE([
            AC_LANG_PROGRAM([], [[
              return sizeof(void*) == 8 ? 0 : 1;
-           ]])            
+           ]])
            ], [gl_cv_solaris_64bit=yes], [gl_cv_solaris_64bit=no])
         ])
       if test $gl_cv_solaris_64bit = yes; then
@@ -201,7 +201,7 @@ AC_DEFUN([AC_LIB_PREPARE_MULTILIB],
     *)
       searchpath=`(LC_ALL=C $CC -print-search-dirs) 2>/dev/null | sed -n -e 's,^libraries: ,,p' | sed -e 's,^=,,'`
       if test -n "$searchpath"; then
-        acl_save_IFS="${IFS= 	}"; IFS=":"
+        acl_save_IFS="${IFS=    }"; IFS=":"
         for searchdir in $searchpath; do
           if test -d "$searchdir"; then
             case "$searchdir" in

@@ -480,7 +480,7 @@ void flush(uint32_t when __attribute__((unused)))
   /* @TODO implement support for when != 0 */
   ib_trx_t transaction= ib_trx_begin(IB_TRX_REPEATABLE_READ);
   ib_crsr_t cursor= NULL;
-	ib_err_t err= DB_SUCCESS;
+        ib_err_t err= DB_SUCCESS;
 
   checked(ib_cursor_open_table(tablename, transaction, &cursor));
   checked(ib_cursor_first(cursor));

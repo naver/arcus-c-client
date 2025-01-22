@@ -42,7 +42,7 @@ AC_DEFUN([PANDORA_BUILDING_FROM_VC],[
       ],[
       vc_changelog=yes
       ])
-  
+
     [
 
     PANDORA_RELEASE_DATE=`date +%Y.%m`
@@ -79,7 +79,7 @@ AC_DEFUN([PANDORA_BUILDING_FROM_VC],[
       mkdir -p config
     fi
 
-    if test "${pandora_building_from_bzr}" = "yes" -o ! -f config/pandora_vc_revinfo ; then 
+    if test "${pandora_building_from_bzr}" = "yes" -o ! -f config/pandora_vc_revinfo ; then
       cat > config/pandora_vc_revinfo.tmp <<EOF
 PANDORA_VC_REVNO=${PANDORA_VC_REVNO}
 PANDORA_VC_REVID=${PANDORA_VC_REVID}
@@ -96,7 +96,7 @@ EOF
     fi
   ])
 ])
-  
+
 AC_DEFUN([_PANDORA_READ_FROM_FILE],[
   $1=`grep $1 $2 | cut -f2 -d=`
 ])
@@ -125,7 +125,7 @@ AC_DEFUN([PANDORA_VC_VERSION],[
   ],[
     PANDORA_RELEASE_COMMENT="trunk"
   ])
-    
+
   AS_IF([test "x${PANDORA_VC_TAG}" != "x"],[
     PANDORA_RELEASE_VERSION="${PANDORA_VC_TAG}"
   ],[

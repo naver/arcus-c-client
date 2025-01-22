@@ -38,7 +38,7 @@ AC_DEFUN([_PANDORA_SEARCH_LIBMEMCACHED],[
   ],[
     ac_cv_libmemcachedprotocol="no"
   ])
-  
+
   AC_CACHE_CHECK([if libmemcached has memcached_server_fn],
     [pandora_cv_libmemcached_server_fn],
     [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -85,7 +85,7 @@ AC_DEFUN([_PANDORA_RECENT_LIBMEMCACHED],[
   ])
 
   AM_CONDITIONAL(HAVE_LIBMEMCACHED,[test "x${ac_cv_libmemcached}" = "xyes" -a "x${pandora_cv_recent_libmemcached}" = "xyes"])
-  
+
 ])
 
 AC_DEFUN([PANDORA_HAVE_LIBMEMCACHED],[

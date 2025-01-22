@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libHashKit Functions Test
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -410,12 +410,12 @@ static test_return_t hashkit_set_custom_function_test(hashkit_st *hashk)
   const char **ptr;
 
 
-  test_compare(HASHKIT_SUCCESS, 
+  test_compare(HASHKIT_SUCCESS,
                hashkit_set_custom_function(hashk, hash_test_function, NULL));
 
   for (ptr= list_to_hash, x= 0; *ptr; ptr++, x++)
   {
-    test_compare(md5_values[x], 
+    test_compare(md5_values[x],
                  hashkit_digest(hashk, *ptr, strlen(*ptr)));
   }
 

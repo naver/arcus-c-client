@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Configure Scripting Language
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -116,13 +116,13 @@ public:
   memcached_return_t &rc;
 
 protected:
-  void init_scanner();   
+  void init_scanner();
   void destroy_scanner();
 
 private:
   bool _is_server;
   bool _end;
   char _hostname[NI_MAXHOST];
-}; 
+};
 
 #endif /* __LIBMEMCACHED_CSL_CONTEXT_H__ */

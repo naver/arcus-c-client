@@ -29,7 +29,7 @@ extensions = []
 
 extensions = ['sphinxcontrib.googleanalytics']
 
-# Google 
+# Google
 googleanalytics_id = 'UA-15307604-2'
 googleanalytics_enabled = 'True'
 

@@ -10,7 +10,7 @@ AC_DEFUN([DETECT_EAGAIN],
 #include <errno.h>
                         ], [
 int error = EAGAIN;
-switch (error) 
+switch (error)
 {
   case EAGAIN:
   case EWOULDBLOCK:

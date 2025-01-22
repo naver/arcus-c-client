@@ -40,14 +40,14 @@
 
 struct memcached_st;
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
 LIBTEST_LOCAL
 test_return_t virtual_back_map(memcached_st *);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 

@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -51,6 +51,6 @@ AC_DEFUN([PANDORA_WITH_PHP],[
   AC_SUBST(PHP_ARCH_DIR)
 
   AM_CONDITIONAL(BUILD_PHP, test "$with_php" = "yes")
-  
+
 ])
 

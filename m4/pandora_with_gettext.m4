@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -11,7 +11,7 @@ dnl From Monty Taylor
 
 AC_DEFUN([PANDORA_WITH_GETTEXT],[
 
-  
+
   m4_syscmd([if test -d po ; then
     echo "# This file is auto-generated from configure. Do not edit directly" > po/POTFILES.in.stamp
     PACKAGE=$(grep ^AC_INIT configure.ac | cut -f2-3 -d[ | cut -f1 -d])

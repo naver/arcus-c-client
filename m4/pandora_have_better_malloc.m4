@@ -19,19 +19,19 @@ AC_DEFUN([PANDORA_HAVE_BETTER_MALLOC],[
         ;;
       esac
     ])
-  
+
   AC_ARG_ENABLE([tcmalloc],
     [AS_HELP_STRING([--enable-tcmalloc],
        [Enable linking with tcmalloc @<:@default=off@:>@])],
     [ac_enable_tcmalloc="$enableval"],
     [ac_enable_tcmalloc="no"])
-  
+
   AC_ARG_ENABLE([mtmalloc],
     [AS_HELP_STRING([--disable-mtmalloc],
        [Enable linking with mtmalloc @<:@default=on@:>@])],
     [ac_enable_mtmalloc="$enableval"],
     [ac_enable_mtmalloc="yes"])
-  
+
   save_LIBS="${LIBS}"
   LIBS=
   AS_IF([test "x$ac_enable_umem" = "xyes"],[

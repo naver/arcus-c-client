@@ -62,12 +62,12 @@ ndb_init();
 
   AS_IF([test "x${ac_cv_libndbclient}" = "xno"],[
     CPPFLAGS="${save_CPPFLAGS}"
-  ])    
+  ])
   LIBS="${save_LIBS}"
-  
+
   AM_CONDITIONAL(HAVE_LIBNDBCLIENT, [test "x${ac_cv_libndbclient}" = "xyes"])
 ])
-  
+
 AC_DEFUN([PANDORA_HAVE_LIBNDBCLIENT],[
   AC_REQUIRE([_PANDORA_SEARCH_LIBNDBCLIENT])
 ])

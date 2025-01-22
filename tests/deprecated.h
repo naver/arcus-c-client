@@ -38,14 +38,14 @@
 #ifndef __TESTS_DEPRECATED_H__
 #define __TESTS_DEPRECATED_H__
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
 test_return_t server_list_null_test(memcached_st *ptr);
 test_return_t regression_bug_728286(memcached_st *);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 

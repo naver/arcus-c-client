@@ -9,7 +9,7 @@ dnl   warnings-always-on always set warnings=error regardless of tarball/vc
 
 dnl @TODO: remove less-warnings option as soon as Drizzle is clean enough to
 dnl        allow it
- 
+
 AC_DEFUN([PANDORA_WARNINGS],[
   m4_define([PW_LESS_WARNINGS],[no])
   m4_define([PW_WARN_ALWAYS_ON],[no])
@@ -24,7 +24,7 @@ AC_DEFUN([PANDORA_WARNINGS],[
       [warnings-always-on],[
         m4_undefine([PW_WARN_ALWAYS_ON])
         m4_define([PW_WARN_ALWAYS_ON],[yes])
-    ]) 
+    ])
   ])
 
   AC_REQUIRE([PANDORA_BUILDING_FROM_VC])
@@ -74,7 +74,7 @@ AC_DEFUN([PANDORA_WARNINGS],[
           ])
 
 
-	 
+
     AS_IF([test "$ac_cv_warnings_as_errors" = "yes"],[
       W_FAIL="-Werror"
       SPHINX_WARNINGS="-W"
@@ -127,7 +127,7 @@ AC_DEFUN([PANDORA_WARNINGS],[
       CC_WARNINGS="${BASE_WARNINGS}"
       CXX_WARNINGS="${BASE_WARNINGS}"
       PROTOSKIP_WARNINGS="-diag-disable 188,981,967,2259,1683,1684,2203"
-      
+
     ],[
       m4_if(PW_LESS_WARNINGS,[no],[
         BASE_WARNINGS_FULL="${W_CONVERSION} -Wstrict-aliasing -Wswitch-enum "
@@ -141,7 +141,7 @@ AC_DEFUN([PANDORA_WARNINGS],[
 
       AS_IF([test "${ac_cv_assert}" = "no"],
             [NO_UNUSED="-Wno-unused-variable -Wno-unused-parameter"])
-  
+
       AC_CACHE_CHECK([whether it is safe to use -Wextra],
         [ac_cv_safe_to_use_Wextra_],
         [save_CFLAGS="$CFLAGS"
@@ -160,7 +160,7 @@ AC_DEFUN([PANDORA_WARNINGS],[
       AS_IF([test "$ac_cv_safe_to_use_Wextra_" = "yes"],
             [BASE_WARNINGS="${BASE_WARNINGS} -Wextra"],
             [BASE_WARNINGS="${BASE_WARNINGS} -W"])
-  
+
       AC_CACHE_CHECK([whether it is safe to use -Wformat],
         [ac_cv_safe_to_use_wformat_],
         [save_CFLAGS="$CFLAGS"
@@ -193,7 +193,7 @@ foo();
       ])
 
 
- 
+
       AC_CACHE_CHECK([whether it is safe to use -Wconversion],
         [ac_cv_safe_to_use_wconversion_],
         [save_CFLAGS="$CFLAGS"
@@ -213,7 +213,7 @@ foo(0);
            [ac_cv_safe_to_use_wconversion_=yes],
            [ac_cv_safe_to_use_wconversion_=no])
          CFLAGS="$save_CFLAGS"])
-  
+
       AS_IF([test "$ac_cv_safe_to_use_wconversion_" = "yes"],
         [W_CONVERSION="-Wconversion"
         AC_CACHE_CHECK([whether it is safe to use -Wconversion with htons],
@@ -232,7 +232,7 @@ uint16_t x= htons(80);
              [ac_cv_safe_to_use_Wconversion_=yes],
              [ac_cv_safe_to_use_Wconversion_=no])
            CFLAGS="$save_CFLAGS"])
-  
+
         AS_IF([test "$ac_cv_safe_to_use_Wconversion_" = "no"],
               [NO_CONVERSION="-Wno-conversion"])
       ])
@@ -258,7 +258,7 @@ uint16_t x= htons(80);
       ])
       AS_IF([test "$ac_cv_safe_to_use_Wmissing_declarations_" = "yes"],
             [CXX_WARNINGS="${CXX_WARNINGS} -Wmissing-declarations"])
-  
+
       AC_CACHE_CHECK([whether it is safe to use -Wframe-larger-than],
         [ac_cv_safe_to_use_Wframe_larger_than_],
         [AC_LANG_PUSH(C++)
@@ -277,7 +277,7 @@ uint16_t x= htons(80);
       ])
       AS_IF([test "$ac_cv_safe_to_use_Wframe_larger_than_" = "yes"],
             [CXX_WARNINGS="${CXX_WARNINGS} -Wframe-larger-than=32768"])
-  
+
       AC_CACHE_CHECK([whether it is safe to use -Wlogical-op],
         [ac_cv_safe_to_use_Wlogical_op_],
         [save_CFLAGS="$CFLAGS"
@@ -293,7 +293,7 @@ uint16_t x= htons(80);
       CFLAGS="$save_CFLAGS"])
       AS_IF([test "$ac_cv_safe_to_use_Wlogical_op_" = "yes"],
             [CC_WARNINGS="${CC_WARNINGS} -Wlogical-op"])
-  
+
       AC_CACHE_CHECK([whether it is safe to use -Wredundant-decls from C++],
         [ac_cv_safe_to_use_Wredundant_decls_],
         [AC_LANG_PUSH(C++)
@@ -363,13 +363,13 @@ inline const EnumDescriptor* GetEnumDescriptor<Table_TableOptions_RowType>() {
       CFLAGS="$save_CFLAGS"])
 
       dnl GCC 3.4 doesn't have -Wno-attributes, so we can't turn them off
-      dnl by using that. 
+      dnl by using that.
       AS_IF([test "$ac_cv_safe_to_use_Wattributes_" != "yes"],[
         AS_IF([test "$ac_cv_safe_to_use_Wno_attributes_" = "yes"],[
           CC_WARNINGS="${CC_WARNINGS} -Wno-attributes"
           NO_ATTRIBUTES="-Wno-attributes"])])
-  
-  
+
+
       NO_REDUNDANT_DECLS="-Wno-redundant-decls"
       dnl TODO: Figure out a better way to deal with this:
       PROTOSKIP_WARNINGS="-Wno-effc++ -Wno-shadow -Wno-missing-braces ${NO_ATTRIBUTES}"

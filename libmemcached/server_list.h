@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -78,8 +78,8 @@ LIBMEMCACHED_API
 
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 LIBMEMCACHED_API
-  memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr, 
-                                                           memcached_server_info_st *serverinfo, 
+  memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
+                                                           memcached_server_info_st *serverinfo,
                                                            uint32_t servercount);
 #endif
 

@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached client and server library.
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -38,7 +38,7 @@
 #ifndef __TESTS_REPLICATION_H__
 #define __TESTS_REPLICATION_H__
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -60,7 +60,7 @@ test_return_t replication_randomize_mget_test(memcached_st *memc);
 LIBTEST_LOCAL
 test_return_t replication_randomize_mget_fail_test(memcached_st *memc);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 

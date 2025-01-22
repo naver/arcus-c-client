@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -197,7 +197,7 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
 
   case MEMCACHED_IN_PROGRESS:
     return "OPERATION IN PROCESS";
-    
+
   case MEMCACHED_SERVER_TEMPORARILY_DISABLED:
     return "SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY";
 
@@ -211,43 +211,43 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
     return "ATTR ERROR bad value";
 
   case MEMCACHED_COUNT:
-	  return "ITEMS COUNT";
+          return "ITEMS COUNT";
 
   case MEMCACHED_ATTR_MISMATCH:
       return "ATTR MISMATCH";
 
   case MEMCACHED_BKEY_MISMATCH:
-	  return "BKEY MISMATCH";
+          return "BKEY MISMATCH";
 
   case MEMCACHED_EFLAG_MISMATCH:
     return "EFLAG MISMATCH";
 
   case MEMCACHED_UNREADABLE:
-	  return "KEY UNREADABLE";
+          return "KEY UNREADABLE";
 
   case MEMCACHED_TRIMMED:
-	  return "TRIMMED";
+          return "TRIMMED";
 
   case MEMCACHED_DUPLICATED:
-	  return "DUPLICATED";
+          return "DUPLICATED";
 
   case MEMCACHED_DUPLICATED_TRIMMED:
-	  return "DUPLICATED TRIMMED";
+          return "DUPLICATED TRIMMED";
 
   case MEMCACHED_RESPONSE:
-	  return "NUMBER OF RESPONSE";
+          return "NUMBER OF RESPONSE";
 
   case MEMCACHED_UPDATED:
-	  return "UPDATED";
+          return "UPDATED";
 
   case MEMCACHED_NOTHING_TO_UPDATE:
-	  return "NOTHING TO UPDATE";
+          return "NOTHING TO UPDATE";
 
   case MEMCACHED_CREATED:
-	  return "COLLECTION CREATED";
+          return "COLLECTION CREATED";
 
   case MEMCACHED_EXISTS:
-	  return "COLLECTION EXISTS";
+          return "COLLECTION EXISTS";
 
   case MEMCACHED_ALL_EXIST:
     return "PIPED SET EXIST : ALL ITEMS EXIST";
@@ -268,7 +268,7 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
     return "PIPED OPERATION : ALL FAILURE";
 
   case MEMCACHED_CREATED_STORED:
-	  return "COLLECTION CREATED AND STORED";
+          return "COLLECTION CREATED AND STORED";
 
   case MEMCACHED_ELEMENT_EXISTS:
     return "ELEMENT EXISTS IN THE COLLECTION";

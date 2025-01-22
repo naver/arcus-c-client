@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -35,8 +35,8 @@
  *
  */
 
-/* 
-  I debated about putting this in the client library since it does an 
+/*
+  I debated about putting this in the client library since it does an
   action I don't really believe belongs in the library.
 
   Frankly its too damn useful not to be here though.
@@ -56,8 +56,8 @@ memcached_server_list_st memcached_servers_parse(const char *server_strings)
 
   end_ptr= server_strings + strlen(server_strings);
 
-  for (begin_ptr= server_strings, string= (char *)index(server_strings, ','); 
-       begin_ptr != end_ptr; 
+  for (begin_ptr= server_strings, string= (char *)index(server_strings, ',');
+       begin_ptr != end_ptr;
        string= (char *)index(begin_ptr, ','))
   {
     char buffer[HUGE_STRING_LEN];

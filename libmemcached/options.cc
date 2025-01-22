@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -66,7 +66,7 @@ static memcached_return_t _parse_file_options(memcached_st& self, memcached_arra
   while (fgets(buffer, sizeof(buffer), fp))
   {
     size_t length= strlen(buffer);
-    
+
     if (length == 1 and buffer[0] == '\n')
       continue;
 

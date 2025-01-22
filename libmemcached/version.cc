@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -53,7 +53,7 @@
 #include <libmemcached/common.h>
 #include "libmemcached/arcus_priv.h"
 
-const char * memcached_lib_version(void) 
+const char * memcached_lib_version(void)
 {
   return LIBMEMCACHED_VERSION_STRING;
 }

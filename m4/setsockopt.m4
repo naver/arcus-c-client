@@ -4,7 +4,7 @@ dnl ---------------------------------------------------------------------------
 AC_DEFUN([SETSOCKOPT_SANITY],[
   AC_CACHE_CHECK([for working SO_SNDTIMEO], [ac_cv_have_so_sndtimeo],
   AC_LANG_PUSH([C])
-  AC_RUN_IFELSE([ 
+  AC_RUN_IFELSE([
     AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -14,11 +14,11 @@ AC_DEFUN([SETSOCKOPT_SANITY],[
    ]],[[
      int sock = socket(AF_INET, SOCK_STREAM, 0);
      struct timeval waittime;
-   
+
      waittime.tv_sec= 0;
      waittime.tv_usec= 500;
-   
-     if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, 
+
+     if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
                     &waittime, (socklen_t)sizeof(struct timeval)) == -1) {
        if (errno == ENOPROTOOPT) {
          return 1;
@@ -37,7 +37,7 @@ AC_DEFUN([SETSOCKOPT_SANITY],[
 
   AC_CACHE_CHECK([for working SO_RCVTIMEO], [ac_cv_have_so_rcvtimeo],
   AC_LANG_PUSH([C])
-  AC_RUN_IFELSE([ 
+  AC_RUN_IFELSE([
     AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -47,11 +47,11 @@ AC_DEFUN([SETSOCKOPT_SANITY],[
    ]],[[
      int sock = socket(AF_INET, SOCK_STREAM, 0);
      struct timeval waittime;
-   
+
      waittime.tv_sec= 0;
      waittime.tv_usec= 500;
-   
-     if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, 
+
+     if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
                     &waittime, (socklen_t)sizeof(struct timeval)) == -1) {
        if (errno == ENOPROTOOPT) {
          return 1;

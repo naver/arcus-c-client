@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached client and server library.
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -51,7 +51,7 @@ test_return_t replication_set_test(memcached_st *memc)
   memcached_st *memc_clone= memcached_clone(NULL, memc);
   memcached_behavior_set(memc_clone, MEMCACHED_BEHAVIOR_NUMBER_OF_REPLICAS, 0);
 
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                memcached_set(memc, "bubba", 5, "0", 1, 0, 0));
 
   /*

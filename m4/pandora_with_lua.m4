@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -11,10 +11,10 @@ dnl From Monty Taylor
 
 AC_DEFUN([PANDORA_WITH_LUA],[
     dnl Check for lua
-    AC_ARG_WITH([lua], 
+    AC_ARG_WITH([lua],
     [AS_HELP_STRING([--with-lua],
       [Build Lua Bindings @<:@default=yes@:>@])],
-    [with_lua=$withval], 
+    [with_lua=$withval],
     [with_lua=yes])
 
   AS_IF([test "x$with_lua" != "xno"],[

@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -33,7 +33,7 @@ AC_DEFUN([PANDORA_WITH_RUBY], [
     changequote(<<, >>)dnl
     ruby_prefix=`$RUBY -rrbconfig -e "print Config::CONFIG['archdir']"`
     strip_ruby_prefix=`$RUBY -rrbconfig -e "print Config::CONFIG['prefix']" | sed 's/\//./g'`
-    
+
     RUBY_LIB=`$RUBY -rrbconfig -e "puts Config::CONFIG['ruby_install_name']"`
     LIBRUBYARG_SHARED=`$RUBY -rrbconfig -e "puts Config::CONFIG['LIBRUBYARG_SHARED']"`
     RUBY_DIR=`$RUBY -rrbconfig -e "puts Config::CONFIG['archdir']"`
@@ -48,7 +48,7 @@ AC_DEFUN([PANDORA_WITH_RUBY], [
     CFLAGS="$ac_save_CFLAGS $RUBY_INCLUDES"
     CPPFLAGS="$ac_save_CPPFLAGS $RUBY_INCLUDES"
     LDFLAGS="$ac_save_LDFLAGS $LIBRUBYARG_SHARED"
-    
+
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <ruby.h>]], [[VALUE rb_ac_test = rb_define_module("actest");]])],[with_ruby="yes";AC_MSG_RESULT(found)],[with_ruby="no";AC_MSG_RESULT(missing)])
 
     CPPFLAGS="$ac_save_CPPFLAGS"

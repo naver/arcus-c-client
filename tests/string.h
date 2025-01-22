@@ -38,7 +38,7 @@
 #ifndef __TESTS_STRING_H__
 #define __TESTS_STRING_H__
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -63,7 +63,7 @@ test_return_t string_alloc_append_toobig(void *);
 LIBTEST_LOCAL
 test_return_t string_alloc_append_multiple(void *);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 

@@ -22,7 +22,7 @@ AC_DEFUN([_PANDORA_SEARCH_LIBEVENT],[
     bufferevent_settimeout(&bev, 1, 1);
     event_init();
     event_loop(EVLOOP_ONCE);
-  ]) 
+  ])
 
   AM_CONDITIONAL(HAVE_LIBEVENT, [test "x${ac_cv_libevent}" = "xyes"])
 

@@ -31,7 +31,7 @@ AC_DEFUN([_PANDORA_SEARCH_LIBPQ],[
   ],[
     ac_cv_libpq="no"
   ])
-  
+
   AM_CONDITIONAL(HAVE_LIBPQ, [test "x${ac_cv_libpq}" = "xyes"])
 ])
 
