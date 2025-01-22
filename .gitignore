@@ -104,5 +104,3 @@ tests/memstat
 tests/sasl
 tests/storage
 unittests/unittests
-devtools/*
-!devtools/maketags.sh
