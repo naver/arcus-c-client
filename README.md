@@ -126,12 +126,12 @@ main(int argc, char *argv[])
       false /* do not delete the empty key */,
       &result))
     return -1;
-  
+
   /* Print */
   printf("Retrieved the element. value=%s\n",
     memcached_coll_result_get_value(&result, 0));
   memcached_coll_result_free(&result);
-  
+
   return 0;
 }
 ```
@@ -186,7 +186,7 @@ use --enable-zk-integration when running configure.
                 --with-memcached_engine=/home1/arcus/lib/default_engine.so
     make
     make test
-    
+
     [...]
     PASS: tests/c_sasl_test
     ===================
@@ -207,9 +207,9 @@ https://github.com/naver/arcus-c-client/issues
 In addition to those who had contributed to the original libmemcached, the
 following people at NAVER have contributed to arcus-c-client.
 
-Hoonmin Kim (harebox) <hoonmin.kim@navercorp.com>; <harebox@gmail.com>  
-YeaSol Kim (ngleader) <sol.k@navercorp.com>; <ngleader@gmail.com>  
-HyongYoub Kim <hyongyoub.kim@navercorp.com>  
+Hoonmin Kim (harebox) <hoonmin.kim@navercorp.com>; <harebox@gmail.com> <br>
+YeaSol Kim (ngleader) <sol.k@navercorp.com>; <ngleader@gmail.com> <br>
+HyongYoub Kim <hyongyoub.kim@navercorp.com> <br>
 
 ## License
 
