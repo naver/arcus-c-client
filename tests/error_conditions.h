@@ -38,13 +38,13 @@
 #ifndef __TESTS_ERROR_CONDITIONS_H__
 #define __TESTS_ERROR_CONDITIONS_H__
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
 test_return_t memcached_increment_MEMCACHED_NO_SERVERS(memcached_st *junk);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 

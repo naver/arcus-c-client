@@ -70,7 +70,7 @@ static test_return_t digest_test(void *)
 static test_return_t set_function_test(void *)
 {
   Hashkit hashk;
-  hashkit_hash_algorithm_t algo_list[]= { 
+  hashkit_hash_algorithm_t algo_list[]= {
     HASHKIT_HASH_DEFAULT,
     HASHKIT_HASH_MD5,
     HASHKIT_HASH_CRC,
@@ -184,7 +184,7 @@ static test_return_t compare_function_test(void *)
   Hashkit a, b;
 
   b= a;
-  
+
   test_true(a == b);
 
   b.set_function(HASHKIT_HASH_MURMUR);

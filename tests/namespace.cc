@@ -1,6 +1,6 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
- *  Libmemcached Client and Server 
+ *
+ *  Libmemcached Client and Server
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
  *  All rights reserved.
@@ -48,19 +48,19 @@ test_return_t memcached_increment_namespace(memcached_st *memc)
 {
   uint64_t new_number;
 
-  test_compare(MEMCACHED_SUCCESS, 
-               memcached_set(memc, 
+  test_compare(MEMCACHED_SUCCESS,
+               memcached_set(memc,
                              test_literal_param("number"),
                              test_literal_param("0"),
                              (time_t)0, (uint32_t)0));
 
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                memcached_increment(memc,
                                    test_literal_param("number"),
                                    1, &new_number));
   test_compare(uint64_t(1), new_number);
 
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                memcached_increment(memc,
                                    test_literal_param("number"),
                                    1, &new_number));
@@ -68,21 +68,21 @@ test_return_t memcached_increment_namespace(memcached_st *memc)
 
   memcached_st *clone= memcached_clone(NULL, memc);
 
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                memcached_callback_set(clone, MEMCACHED_CALLBACK_NAMESPACE, "all_your_bases"));
 
-  test_compare(MEMCACHED_NOTFOUND, 
+  test_compare(MEMCACHED_NOTFOUND,
                memcached_increment(clone,
                                    test_literal_param("number"),
                                    1, &new_number));
 
-  test_compare(MEMCACHED_SUCCESS, 
-               memcached_add(clone, 
+  test_compare(MEMCACHED_SUCCESS,
+               memcached_add(clone,
                              test_literal_param("number"),
                              test_literal_param("10"),
                              (time_t)0, (uint32_t)0));
 
-  char *value= memcached_get(clone, 
+  char *value= memcached_get(clone,
                              test_literal_param("number"),
                              0, 0, 0);
   test_true(value);
@@ -90,13 +90,13 @@ test_return_t memcached_increment_namespace(memcached_st *memc)
   test_strcmp("10", value);
   free(value);
 
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                memcached_increment(clone,
                                    test_literal_param("number"),
                                    1, &new_number));
   test_compare(uint64_t(11), new_number);
 
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                memcached_increment(memc,
                                    test_literal_param("number"),
                                    1, &new_number));

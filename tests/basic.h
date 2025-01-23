@@ -40,7 +40,7 @@
 
 #include <libtest/visibility.h>
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -62,7 +62,7 @@ test_return_t basic_reset_stack_clone_test(memcached_st *memc);
 LIBTEST_LOCAL
 test_return_t basic_reset_heap_clone_test(memcached_st *memc);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 
