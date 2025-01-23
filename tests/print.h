@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached client and server library.
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -38,7 +38,7 @@
 #ifndef __TESTS_PRINT_H__
 #define __TESTS_PRINT_H__
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -47,7 +47,7 @@ memcached_return_t server_print_callback(const memcached_st *ptr,
                                          const memcached_server_st *server,
                                          void *context);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 

@@ -1,6 +1,6 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
- *  Libmemcached Client and Server 
+ *
+ *  Libmemcached Client and Server
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
  *  All rights reserved.
@@ -233,7 +233,7 @@ static test_return_t _test_option(scanner_variable_t *scanner, bool test_true_op
   for (scanner_variable_t *ptr= scanner; ptr->type != NIL; ptr++)
   {
     memcached_st *memc= memcached(ptr->option.c_str, ptr->option.size);
-    
+
     // The case that it should have parsed, but it didn't. We will inspect
     // for an error with libmemcached_check_configuration()
     if (not memc and test_true_opt)
@@ -397,7 +397,7 @@ test_return_t test_include_keyword(memcached_st*)
     return TEST_SKIPPED;
 
   char buffer[BUFSIZ];
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                libmemcached_check_configuration(test_literal_param("INCLUDE \"support/example.cnf\""), buffer, sizeof(buffer)));
 
   return TEST_SUCCESS;
@@ -406,7 +406,7 @@ test_return_t test_include_keyword(memcached_st*)
 test_return_t test_end_keyword(memcached_st*)
 {
   char buffer[BUFSIZ];
-  test_compare(MEMCACHED_SUCCESS, 
+  test_compare(MEMCACHED_SUCCESS,
                libmemcached_check_configuration(test_literal_param("--server=localhost END bad keywords"), buffer, sizeof(buffer)));
 
   return TEST_SUCCESS;
@@ -468,7 +468,7 @@ test_return_t random_statement_build_test(memcached_st*)
     memcached_st *memc_ptr= memcached(random_options.c_str(), random_options.size() -1);
     if (not memc_ptr)
     {
-      switch (errno) 
+      switch (errno)
       {
       case EINVAL:
 #if 0 // Testing framework is not smart enough for this just yet.
@@ -502,7 +502,7 @@ static memcached_return_t dump_server_information(const memcached_st *,
                                                   const memcached_server_st *instance,
                                                   void *)
 {
-  if (strcmp(memcached_server_name(instance), "localhost")) 
+  if (strcmp(memcached_server_name(instance), "localhost"))
   {
     assert(not memcached_server_name(instance));
     return MEMCACHED_FAILURE;

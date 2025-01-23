@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -38,7 +38,7 @@
 #ifndef __TESTS_PARSER_H__
 #define __TESTS_PARSER_H__
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -111,7 +111,7 @@ test_return_t test_parse_socket(memcached_st *);
 LIBTEST_LOCAL
 test_return_t test_namespace_keyword(memcached_st*);
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 
