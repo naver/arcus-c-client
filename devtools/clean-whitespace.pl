@@ -12,7 +12,7 @@ foreach my $f (@files) {
     my $before = do { local $/; <$fh>; };
     close ($fh);
     my $after = $before;
-    $after =~ s/\t/    /g;
+    $after =~ s/\t/    /g unless $f =~ /\.(ac|am)$/;
     $after =~ s/ +$//mg;
     $after .= "\n" unless $after =~ /\n$/;
     next if $after eq $before;
