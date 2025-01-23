@@ -207,9 +207,9 @@ https://github.com/naver/arcus-c-client/issues
 In addition to those who had contributed to the original libmemcached, the
 following people at NAVER have contributed to arcus-c-client.
 
-Hoonmin Kim (harebox) <hoonmin.kim@navercorp.com>; <harebox@gmail.com> <br>
-YeaSol Kim (ngleader) <sol.k@navercorp.com>; <ngleader@gmail.com> <br>
-HyongYoub Kim <hyongyoub.kim@navercorp.com> <br>
+- Hoonmin Kim (harebox) <hoonmin.kim@navercorp.com>; <harebox@gmail.com>
+- YeaSol Kim (ngleader) <sol.k@navercorp.com>; <ngleader@gmail.com>
+- HyongYoub Kim <hyongyoub.kim@navercorp.com>
 
 ## License
 
