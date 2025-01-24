@@ -1,5 +1,5 @@
 /* LibMemcached
- * Copyright (C) 2006-2009 Brian Aker 
+ * Copyright (C) 2006-2009 Brian Aker
  * All rights reserved.
  *
  * Use and distribution licensed under the BSD license.  See
@@ -35,7 +35,7 @@
 #  define LIBMEMCACHED_API __global
 #  define LIBMEMCACHED_LOCAL __global
 # elif defined(_MSC_VER)
-#  define LIBMEMCACHED_API extern __declspec(dllexport) 
+#  define LIBMEMCACHED_API extern __declspec(dllexport)
 #  define LIBMEMCACHED_LOCAL extern __declspec(dllexport)
 # else
 #  define LIBMEMCACHED_API
@@ -50,7 +50,7 @@
 #   define LIBMEMCACHED_API __global
 #   define LIBMEMCACHED_LOCAL __hidden
 #  elif defined(_MSC_VER)
-#   define LIBMEMCACHED_API extern __declspec(dllexport) 
+#   define LIBMEMCACHED_API extern __declspec(dllexport)
 #   define LIBMEMCACHED_LOCAL
 #  else
 #   define LIBMEMCACHED_API
@@ -58,7 +58,7 @@
 #  endif /* defined(HAVE_VISIBILITY) */
 # else  /* defined(BUILDING_LIBMEMCACHED) */
 #  if defined(_MSC_VER)
-#   define LIBMEMCACHED_API extern __declspec(dllimport) 
+#   define LIBMEMCACHED_API extern __declspec(dllimport)
 #   define LIBMEMCACHED_LOCAL
 #  else
 #   define LIBMEMCACHED_API

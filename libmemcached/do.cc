@@ -84,7 +84,7 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
   if (memcached_failed(rc= memcached_connect(ptr)))
   {
     WATCHPOINT_ERROR(rc);
-    assert_msg(ptr->error_messages, 
+    assert_msg(ptr->error_messages,
                "memcached_connect() returned an error but the memcached_server_write_instance_st showed none.");
     return rc;
   }
@@ -95,7 +95,7 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
   ** otherwise we might get a partial write.
   **/
   if (ptr->type == MEMCACHED_CONNECTION_UDP
-      && with_flush 
+      && with_flush
       && ptr->write_buffer_offset > UDP_DATAGRAM_HEADER_LENGTH)
   {
     memcached_io_write(ptr, NULL, 0, true);

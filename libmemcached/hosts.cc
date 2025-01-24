@@ -688,7 +688,7 @@ memcached_return_t memcached_server_push_with_count(memcached_st *ptr,
 
   memcached_server_st *new_host_list;
   new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
-									sizeof(memcached_server_st) * (count + memcached_server_count(ptr))));
+                                                                        sizeof(memcached_server_st) * (count + memcached_server_count(ptr))));
 
   if (not new_host_list)
     return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
@@ -757,7 +757,7 @@ memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
 
   memcached_server_st *new_host_list;
   new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
-									sizeof(memcached_server_st) * servercount));
+                                                                        sizeof(memcached_server_st) * servercount));
 
   if (not new_host_list) {
     return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
