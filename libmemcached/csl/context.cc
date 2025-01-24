@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Configure Scripting Language
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -69,7 +69,7 @@ void Context::error(const char *error_arg, yytokentype last_token, const char *l
   }
 
   // We now test if it is something other then a syntax error, if it  we
-  // return a generic message 
+  // return a generic message
   if (error_arg and strcmp(error_arg, "syntax error") == 0)
   { }
   else if (error_arg)

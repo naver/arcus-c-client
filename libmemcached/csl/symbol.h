@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Configure Scripting Language
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -44,7 +44,7 @@
 
 union YYSTYPE
 {
-  long long number;  
+  long long number;
   memcached_string_t string;
   memcached_string_t option;
   double double_number;
