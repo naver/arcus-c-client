@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  libmcachedd client library.
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -59,7 +59,7 @@ void custom_backtrace(void)
 
   fprintf(stderr, "Number of stack frames obtained: %lu\n", (unsigned long)size);
 
-  for (size_t x= 1; x < size; x++) 
+  for (size_t x= 1; x < size; x++)
   {
     size_t sz= 200;
     char *function= (char *)malloc(sz);
@@ -82,7 +82,7 @@ void custom_backtrace(void)
 
       int status;
       char *ret = abi::__cxa_demangle(begin, function, &sz, &status);
-      if (ret) 
+      if (ret)
       {
         function= ret;
       }

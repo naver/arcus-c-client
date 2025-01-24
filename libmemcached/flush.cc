@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -53,10 +53,10 @@
 #include <libmemcached/common.h>
 #include "libmemcached/arcus_priv.h"
 
-static memcached_return_t memcached_flush_binary(memcached_st *ptr, 
+static memcached_return_t memcached_flush_binary(memcached_st *ptr,
                                                  time_t expiration);
 
-static memcached_return_t memcached_flush_textual(memcached_st *ptr, 
+static memcached_return_t memcached_flush_textual(memcached_st *ptr,
                                                   const char *prefix,
                                                   time_t expiration);
 
@@ -111,7 +111,7 @@ memcached_return_t memcached_flush_by_prefix(memcached_st *ptr,
   LIBMEMCACHED_MEMCACHED_FLUSH_END();
   return rc;
 }
- 
+
 memcached_return_t memcached_flush(memcached_st *ptr, time_t expiration)
 {
   memcached_return_t rc;
@@ -133,7 +133,7 @@ memcached_return_t memcached_flush(memcached_st *ptr, time_t expiration)
   return rc;
 }
 
-static memcached_return_t memcached_flush_textual(memcached_st *ptr, 
+static memcached_return_t memcached_flush_textual(memcached_st *ptr,
                                                   const char *prefix,
                                                   time_t expiration)
 {
@@ -164,7 +164,7 @@ static memcached_return_t memcached_flush_textual(memcached_st *ptr,
     else
     {
       write_length= snprintf(buffer, buffer_length,
-                            "%s%s%s%s%s\r\n", 
+                            "%s%s%s%s%s\r\n",
                             prefix ? "flush_prefix" : "flush_all",
                             prefix ? " " : "",
                             prefix ? prefix : "",
@@ -174,7 +174,7 @@ static memcached_return_t memcached_flush_textual(memcached_st *ptr,
 
     if ((size_t)write_length >= buffer_length || write_length < 0)
     {
-      return memcached_set_error(*instance, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT, 
+      return memcached_set_error(*instance, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
                                  memcached_literal_param("snprintf(MEMCACHED_DEFAULT_COMMAND_SIZE)"));
     }
 
@@ -190,7 +190,7 @@ static memcached_return_t memcached_flush_textual(memcached_st *ptr,
   return MEMCACHED_SUCCESS;
 }
 
-static memcached_return_t memcached_flush_binary(memcached_st *ptr, 
+static memcached_return_t memcached_flush_binary(memcached_st *ptr,
                                                  time_t expiration)
 {
   protocol_binary_request_flush request= {};

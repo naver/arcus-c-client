@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  Libmemcached library
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -191,7 +191,7 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
   if (sasl_startup_state != SASL_OK)
   {
     const char *sasl_error_msg= sasl_errstring(sasl_startup_state, NULL, NULL);
-    return memcached_set_error(*server, MEMCACHED_AUTH_PROBLEM, MEMCACHED_AT, 
+    return memcached_set_error(*server, MEMCACHED_AUTH_PROBLEM, MEMCACHED_AT,
                                memcached_string_make_from_cstr(sasl_error_msg));
   }
   (void)pthread_mutex_unlock(&sasl_startup_state_LOCK);
@@ -204,7 +204,7 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
 
     sasl_dispose(&conn);
 
-    return memcached_set_error(*server, MEMCACHED_AUTH_PROBLEM, MEMCACHED_AT, 
+    return memcached_set_error(*server, MEMCACHED_AUTH_PROBLEM, MEMCACHED_AT,
                                memcached_string_make_from_cstr(sasl_error_msg));
   }
 
@@ -218,7 +218,7 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
 
     sasl_dispose(&conn);
 
-    return memcached_set_error(*server, MEMCACHED_AUTH_PROBLEM, MEMCACHED_AT, 
+    return memcached_set_error(*server, MEMCACHED_AUTH_PROBLEM, MEMCACHED_AT,
                                memcached_string_make_from_cstr(sasl_error_msg));
   }
   uint16_t keylen= (uint16_t)strlen(chosenmech);

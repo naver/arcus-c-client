@@ -1,5 +1,5 @@
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  LibMemcached
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -152,7 +152,7 @@ static void _set(memcached_st& memc, memcached_string_t *str, memcached_return_t
   {
     error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s(%s), %.*s -> %s",
                                errmsg_header,
-                               memcached_strerror(&memc, rc), 
+                               memcached_strerror(&memc, rc),
                                errmsg_ptr,
                                memcached_string_printf(*str), at);
   }
@@ -160,7 +160,7 @@ static void _set(memcached_st& memc, memcached_string_t *str, memcached_return_t
   {
     error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s(%s) -> %s",
                                errmsg_header,
-                               memcached_strerror(&memc, rc), 
+                               memcached_strerror(&memc, rc),
                                errmsg_ptr,
                                at);
   }
@@ -171,45 +171,45 @@ static void _set(memcached_st& memc, memcached_string_t *str, memcached_return_t
   }
   else if (str and str->size)
   {
-    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s, %.*s -> %s", 
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s, %.*s -> %s",
                                errmsg_header,
-                               memcached_strerror(&memc, rc), 
+                               memcached_strerror(&memc, rc),
                                int(str->size), str->c_str, at);
   }
   else
   {
-    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s -> %s", 
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s %s -> %s",
                                errmsg_header, memcached_strerror(&memc, rc), at);
   }
 #else
   if (str and str->size and local_errno)
   {
-    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s(%s), %.*s -> %s", 
-                               memcached_strerror(&memc, rc), 
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s(%s), %.*s -> %s",
+                               memcached_strerror(&memc, rc),
                                errmsg_ptr,
                                memcached_string_printf(*str), at);
   }
   else if (local_errno)
   {
-    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s(%s) -> %s", 
-                               memcached_strerror(&memc, rc), 
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s(%s) -> %s",
+                               memcached_strerror(&memc, rc),
                                errmsg_ptr,
                                at);
   }
   else if (rc == MEMCACHED_PARSE_ERROR and str and str->size)
   {
-    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%.*s -> %s", 
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%.*s -> %s",
                                int(str->size), str->c_str, at);
   }
   else if (str and str->size)
   {
-    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s, %.*s -> %s", 
-                               memcached_strerror(&memc, rc), 
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s, %.*s -> %s",
+                               memcached_strerror(&memc, rc),
                                int(str->size), str->c_str, at);
   }
   else
   {
-    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s -> %s", 
+    error->size= (int)snprintf(error->message, MAX_ERROR_LENGTH, "%s -> %s",
                                memcached_strerror(&memc, rc), at);
   }
 #endif
@@ -595,7 +595,7 @@ const char *memcached_last_error_message(memcached_st *memc)
 
 bool memcached_has_current_error(memcached_st &memc)
 {
-  if (memc.error_messages 
+  if (memc.error_messages
       and memc.error_messages->query_id == memc.query_id
       and memcached_failed(memc.error_messages->rc))
   {

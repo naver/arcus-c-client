@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*  vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
- * 
+ *
  *  LibMemcached
  *
  *  Copyright (C) 2011 Data Differential, http://datadifferential.com/
@@ -54,7 +54,7 @@
 #ifndef __LIBMEMCACHED_IS_H__
 #define __LIBMEMCACHED_IS_H__
 
-/* These are private */ 
+/* These are private */
 #define memcached_is_allocated(__object) ((__object)->options.is_allocated)
 #define memcached_is_initialized(__object) ((__object)->options.is_initialized)
 #define memcached_is_purging(__object) ((__object)->state.is_purging)
