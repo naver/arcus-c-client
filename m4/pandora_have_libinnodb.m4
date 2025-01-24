@@ -49,7 +49,7 @@ AC_DEFUN([_PANDORA_SEARCH_LIBINNODB],[
     AC_MSG_WARN([${PACKAGE} requires at least version 1.0.6 of Embedded InnoDB])
     ac_cv_libinnodb=no
   ])
-        
+
   AM_CONDITIONAL(HAVE_LIBINNODB, [test "x${ac_cv_libinnodb}" = "xyes"])
 ])
 

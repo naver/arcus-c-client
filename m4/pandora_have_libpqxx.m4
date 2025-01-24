@@ -1,5 +1,5 @@
 dnl  Copyright (C) 2010 Padraig O'Sullivan
-dnl This file is free software; 
+dnl This file is free software;
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
 
@@ -27,9 +27,9 @@ AC_DEFUN([_PANDORA_SEARCH_LIBPQXX],[
   ],[
     ac_cv_libpqxx="no"
   ])
-  
+
   AM_CONDITIONAL(HAVE_LIBPQXX, [test "x${ac_cv_libpqxx}" = "xyes"])
-  
+
 ])
 
 AC_DEFUN([PANDORA_HAVE_LIBPQXX],[

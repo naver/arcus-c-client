@@ -27,9 +27,9 @@ AC_DEFUN([_PANDORA_SEARCH_THRIFT],[
   ],[
     ac_cv_thrift="no"
   ])
-  
+
   AM_CONDITIONAL(HAVE_THRIFT, [test "x${ac_cv_thrift}" = "xyes"])
-  
+
 ])
 
 AC_DEFUN([PANDORA_HAVE_THRIFT],[

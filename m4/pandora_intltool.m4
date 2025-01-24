@@ -29,27 +29,27 @@ AC_PREREQ([2.50])dnl
 AC_REQUIRE([AM_NLS])dnl
 
 case "$am__api_version" in
-    1.[01234])
-	AC_MSG_ERROR([Automake 1.5 or newer is required to use intltool])
+  1.[01234])
+    AC_MSG_ERROR([Automake 1.5 or newer is required to use intltool])
     ;;
-    *)
+  *)
     ;;
 esac
 
 if test -n "$1"; then
-    AC_MSG_CHECKING([for intltool >= $1])
+  AC_MSG_CHECKING([for intltool >= $1])
 
-    INTLTOOL_REQUIRED_VERSION_AS_INT=`echo $1 | awk -F. '{ print $ 1 * 1000 + $ 2 * 100 + $ 3; }'`
-    INTLTOOL_APPLIED_VERSION=`intltool-update --version | head -1 | cut -d" " -f3`
-    [INTLTOOL_APPLIED_VERSION_AS_INT=`echo $INTLTOOL_APPLIED_VERSION | awk -F. '{ print $ 1 * 1000 + $ 2 * 100 + $ 3; }'`
-    ]
-    AC_MSG_RESULT([$INTLTOOL_APPLIED_VERSION found])
-    AS_IF([test "$INTLTOOL_APPLIED_VERSION_AS_INT" -ge "$INTLTOOL_REQUIRED_VERSION_AS_INT"],[
-      pandora_have_intltool=yes
-    ],[
-      pandora_have_intltool=no
-      AC_MSG_WARN([Your intltool is too old.  You need intltool $1 or later.])
-    ])
+  INTLTOOL_REQUIRED_VERSION_AS_INT=`echo $1 | awk -F. '{ print $ 1 * 1000 + $ 2 * 100 + $ 3; }'`
+  INTLTOOL_APPLIED_VERSION=`intltool-update --version | head -1 | cut -d" " -f3`
+  [INTLTOOL_APPLIED_VERSION_AS_INT=`echo $INTLTOOL_APPLIED_VERSION | awk -F. '{ print $ 1 * 1000 + $ 2 * 100 + $ 3; }'`
+  ]
+  AC_MSG_RESULT([$INTLTOOL_APPLIED_VERSION found])
+  AS_IF([test "$INTLTOOL_APPLIED_VERSION_AS_INT" -ge "$INTLTOOL_REQUIRED_VERSION_AS_INT"],[
+    pandora_have_intltool=yes
+  ],[
+    pandora_have_intltool=no
+    AC_MSG_WARN([Your intltool is too old.  You need intltool $1 or later.])
+  ])
 fi
 AC_CHECK_HEADERS([libintl.h])
 AS_IF([test "x${ac_cv_header_libintl_h}" = "xfalse" -o "x${ac_cv_header_libintl_h}" = "xno"],[
@@ -60,27 +60,27 @@ AC_PATH_PROG(INTLTOOL_UPDATE, [intltool-update])
 AC_PATH_PROG(INTLTOOL_MERGE, [intltool-merge])
 AC_PATH_PROG(INTLTOOL_EXTRACT, [intltool-extract])
 if test -z "$INTLTOOL_UPDATE" -o -z "$INTLTOOL_MERGE" -o -z "$INTLTOOL_EXTRACT"; then
-    AC_MSG_WARN([The intltool scripts were not found. Please install intltool.])
-    AC_MSG_WARN([On Debian: apt-get install intltool. On Redhat: yum install intltool])
+  AC_MSG_WARN([The intltool scripts were not found. Please install intltool.])
+  AC_MSG_WARN([On Debian: apt-get install intltool. On Redhat: yum install intltool])
 fi
 
-  INTLTOOL_DESKTOP_RULE='%.desktop:   %.desktop.in   $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-INTLTOOL_DIRECTORY_RULE='%.directory: %.directory.in $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-     INTLTOOL_KEYS_RULE='%.keys:      %.keys.in      $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -k -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-     INTLTOOL_PROP_RULE='%.prop:      %.prop.in      $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
+  INTLTOOL_DESKTOP_RULE='%.desktop:   %.desktop.in   $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+INTLTOOL_DIRECTORY_RULE='%.directory: %.directory.in $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+     INTLTOOL_KEYS_RULE='%.keys:      %.keys.in      $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -k -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+     INTLTOOL_PROP_RULE='%.prop:      %.prop.in      $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
       INTLTOOL_OAF_RULE='%.oaf:       %.oaf.in       $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -o -p $(top_srcdir)/po $< [$]@'
-     INTLTOOL_PONG_RULE='%.pong:      %.pong.in      $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-   INTLTOOL_SERVER_RULE='%.server:    %.server.in    $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -o -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-    INTLTOOL_SHEET_RULE='%.sheet:     %.sheet.in     $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-INTLTOOL_SOUNDLIST_RULE='%.soundlist: %.soundlist.in $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-       INTLTOOL_UI_RULE='%.ui:        %.ui.in        $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-      INTLTOOL_XML_RULE='%.xml:       %.xml.in       $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-      INTLTOOL_XML_NOMERGE_RULE='%.xml:       %.xml.in       $(INTLTOOL_MERGE) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u /tmp $< [$]@' 
-      INTLTOOL_XAM_RULE='%.xam:       %.xml.in       $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-      INTLTOOL_KBD_RULE='%.kbd:       %.kbd.in       $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -m -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-    INTLTOOL_CAVES_RULE='%.caves:     %.caves.in     $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-  INTLTOOL_SCHEMAS_RULE='%.schemas:   %.schemas.in   $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -s -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
-    INTLTOOL_THEME_RULE='%.theme:     %.theme.in     $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@' 
+     INTLTOOL_PONG_RULE='%.pong:      %.pong.in      $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+   INTLTOOL_SERVER_RULE='%.server:    %.server.in    $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -o -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+    INTLTOOL_SHEET_RULE='%.sheet:     %.sheet.in     $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+INTLTOOL_SOUNDLIST_RULE='%.soundlist: %.soundlist.in $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+       INTLTOOL_UI_RULE='%.ui:        %.ui.in        $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+      INTLTOOL_XML_RULE='%.xml:       %.xml.in       $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+      INTLTOOL_XML_NOMERGE_RULE='%.xml:       %.xml.in       $(INTLTOOL_MERGE) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u /tmp $< [$]@'
+      INTLTOOL_XAM_RULE='%.xam:       %.xml.in       $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+      INTLTOOL_KBD_RULE='%.kbd:       %.kbd.in       $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -m -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+    INTLTOOL_CAVES_RULE='%.caves:     %.caves.in     $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+  INTLTOOL_SCHEMAS_RULE='%.schemas:   %.schemas.in   $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -s -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
+    INTLTOOL_THEME_RULE='%.theme:     %.theme.in     $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
     INTLTOOL_SERVICE_RULE='%.service: %.service.in   $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
    INTLTOOL_POLICY_RULE='%.policy:    %.policy.in    $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; LC_ALL=C $(INTLTOOL_MERGE) -x -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< [$]@'
 
@@ -110,34 +110,34 @@ AC_PATH_PROG(MSGMERGE, msgmerge)
 AC_PATH_PROG(MSGFMT, msgfmt)
 AC_PATH_PROG(GMSGFMT, gmsgfmt, $MSGFMT)
 if test -z "$XGETTEXT" -o -z "$MSGMERGE" -o -z "$MSGFMT"; then
-    AC_MSG_WARN([GNU gettext tools not found; required for intltool])
+  AC_MSG_WARN([GNU gettext tools not found; required for intltool])
 fi
 xgversion="`$XGETTEXT --version|grep '(GNU ' 2> /dev/null`"
 mmversion="`$MSGMERGE --version|grep '(GNU ' 2> /dev/null`"
 mfversion="`$MSGFMT --version|grep '(GNU ' 2> /dev/null`"
 if test -z "$xgversion" -o -z "$mmversion" -o -z "$mfversion"; then
-    AC_MSG_WARN([GNU gettext tools not found; required for intltool])
+  AC_MSG_WARN([GNU gettext tools not found; required for intltool])
 fi
 
 AC_PATH_PROG(INTLTOOL_PERL, perl)
 if test -z "$INTLTOOL_PERL"; then
-   AC_MSG_WARN([perl not found])
+  AC_MSG_WARN([perl not found])
 fi
 AC_MSG_CHECKING([for perl >= 5.8.1])
 $INTLTOOL_PERL -e "use 5.8.1;" > /dev/null 2>&1
 if test $? -ne 0; then
-   AC_MSG_WARN([perl 5.8.1 is required for intltool])
+  AC_MSG_WARN([perl 5.8.1 is required for intltool])
 else
-   IT_PERL_VERSION="`$INTLTOOL_PERL -e \"printf '%vd', $^V\"`"
-   AC_MSG_RESULT([$IT_PERL_VERSION])
+  IT_PERL_VERSION="`$INTLTOOL_PERL -e \"printf '%vd', $^V\"`"
+  AC_MSG_RESULT([$IT_PERL_VERSION])
 fi
 if test "x$2" != "xno-xml"; then
-   AC_MSG_CHECKING([for XML::Parser])
-   if `$INTLTOOL_PERL -e "require XML::Parser" 2>/dev/null`; then
-       AC_MSG_RESULT([ok])
-   else
-       AC_MSG_WARN([XML::Parser perl module is required for intltool])
-   fi
+  AC_MSG_CHECKING([for XML::Parser])
+  if `$INTLTOOL_PERL -e "require XML::Parser" 2>/dev/null`; then
+    AC_MSG_RESULT([ok])
+  else
+    AC_MSG_WARN([XML::Parser perl module is required for intltool])
+  fi
 fi
 
 # Substitute ALL_LINGUAS so we can use it in po/Makefile
@@ -185,23 +185,21 @@ dnl of config.status.
 AC_CONFIG_COMMANDS_PRE([
   AC_CONFIG_COMMANDS([$1/stamp-it], [
     if [ ! grep "^# INTLTOOL_MAKEFILE$" "$1/Makefile.in" > /dev/null ]; then
-       AC_MSG_WARN([$1/Makefile.in.in was not created by intltoolize.])
+      AC_MSG_WARN([$1/Makefile.in.in was not created by intltoolize.])
     else
-	    rm -f "$1/stamp-it" "$1/stamp-it.tmp" "$1/POTFILES" "$1/Makefile.tmp"
-	    >"$1/stamp-it.tmp"
-	    [sed '/^#/d
-		 s/^[[].*] *//
-		 /^[ 	]*$/d
-		'"s|^|	$ac_top_srcdir/|" \
-	      "$srcdir/$1/POTFILES.in" | sed '$!s/$/ \\/' >"$1/POTFILES"
-	    ]
-	    [sed '/^POTFILES =/,/[^\\]$/ {
-			/^POTFILES =/!d
-			r $1/POTFILES
-		  }
-		 ' "$1/Makefile.in" >"$1/Makefile"]
-	    rm -f "$1/Makefile.tmp"
-	    mv "$1/stamp-it.tmp" "$1/stamp-it"
+      rm -f "$1/stamp-it" "$1/stamp-it.tmp" "$1/POTFILES" "$1/Makefile.tmp" >"$1/stamp-it.tmp"
+      [ sed "/^#/d
+            s/^[[].*] *//
+            /^[[:space:]]*$/d
+            s|^| $ac_top_srcdir/|" \
+            "$srcdir/$1/POTFILES.in" | \
+        sed '$!s/$/ \\/' >"$1/POTFILES" ]
+      [ sed '/^POTFILES =/,/[^\\]$/ {
+               /^POTFILES =/!d
+               r $1/POTFILES
+             }' "$1/Makefile.in" > "$1/Makefile" ]
+      rm -f "$1/Makefile.tmp"
+      mv "$1/stamp-it.tmp" "$1/stamp-it"
     fi
   ])
 ])dnl

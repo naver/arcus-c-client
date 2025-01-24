@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -12,10 +12,10 @@ dnl From Monty Taylor
 
 AC_DEFUN([PANDORA_WITH_PERL], [
 
-  AC_ARG_WITH([perl], 
+  AC_ARG_WITH([perl],
     [AS_HELP_STRING([--with-perl],
       [Build Perl Bindings @<:@default=yes@:>@])],
-    [with_perl=$withval], 
+    [with_perl=$withval],
     [with_perl=yes])
 
   AC_ARG_WITH([perl-arch],
@@ -43,7 +43,7 @@ AC_DEFUN([PANDORA_WITH_PERL], [
 
     AC_CACHE_CHECK([for Perl development headers],
       [pandora_cv_perl_dev],[
-        
+
         save_CPPFLAGS="${CPPFLAGS}"
         CPPFLAGS="${CPPFLAGS} ${PERL_CPPFLAGS}"
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -70,7 +70,7 @@ AC_DEFUN([PANDORA_WITH_PERL], [
         ])
         pandora_cv_perl_archdir="${pandora_cv_perl_archdir}"
     ])
- 
+
     PERL_ARCHDIR="${pandora_cv_perl_archdir}"
   ])
   AC_SUBST([PERL_CPPFLAGS])

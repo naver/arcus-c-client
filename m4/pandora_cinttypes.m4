@@ -5,7 +5,7 @@
 
 # We check two things: where the include file is for cinttypes. We
 # include AC_TRY_COMPILE for all the combinations we've seen in the
-# wild.  We define one of HAVE_CINTTYPES or HAVE_TR1_CINTTYPES or 
+# wild.  We define one of HAVE_CINTTYPES or HAVE_TR1_CINTTYPES or
 # HAVE_BOOST_CINTTYPES depending
 # on location.
 

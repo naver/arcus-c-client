@@ -10,7 +10,7 @@ dnl
 AC_DEFUN([PANDORA_WITH_MYSQL],[
   AC_ARG_WITH([mysql],
     [AS_HELP_STRING([--with-mysql=PATH],
-        [path to mysql_config binary or mysql prefix dir])], 
+        [path to mysql_config binary or mysql prefix dir])],
       [with_mysql=$withval],
       [with_mysql=":"])
 
@@ -19,7 +19,7 @@ AC_DEFUN([PANDORA_WITH_MYSQL],[
   dnl   2) the location of mysql_config is given: we'll use that to determine
   dnl   3) a directory argument is given: that will be mysql_base
 
-     
+
   dnl option 1: nothing, we need to insert something into MYSQL_CONFIG
   AS_IF([test "x$with_mysql" = "x:"],[
     AC_CHECK_PROGS(MYSQL_CONFIG,[mysql_config])
@@ -60,7 +60,7 @@ MYSQL mysql;
   ])
 
   AM_CONDITIONAL(HAVE_LIBMYSQLCLIENT, [test "x${ac_cv_libmysqlclient_r}" = "xyes"])
-  
+
 AC_DEFUN([PANDORA_HAVE_LIBMYSQLCLIENT],[
   AC_REQUIRE([_PANDORA_SEARCH_LIBMYSQLCLIENT])
 ])
@@ -83,7 +83,7 @@ AC_DEFUN([PANDORA_REQUIRE_LIBMYSQLCLIENT],[
     IBASE=`$MYSQL_CONFIG --include`
     ADDIFLAGS=""
     # add regular MySQL C flags
-    ADDCFLAGS=`$MYSQL_CONFIG --cflags` 
+    ADDCFLAGS=`$MYSQL_CONFIG --cflags`
     # add NdbAPI specific C flags
     LDFLAGS="$LDFLAGS "`$MYSQL_CONFIG --libs_r | sed 's/-lmysqlclient_r//'`
     ])
@@ -97,11 +97,11 @@ AC_DEFUN([PANDORA_REQUIRE_LIBMYSQLCLIENT],[
     ADDIFLAGS="$ADDIFLAGS $IBASE/ndb/mgmapi"
     ADDIFLAGS="$ADDIFLAGS $IBASE"
 
-    CFLAGS="$CFLAGS $ADDCFLAGS $ADDIFLAGS"    
-    CXXFLAGS="$CXXFLAGS $ADDCFLAGS $ADDIFLAGS" 
-    MYSQL_INCLUDES="$IBASE $ADDIFLAGS"   
+    CFLAGS="$CFLAGS $ADDCFLAGS $ADDIFLAGS"
+    CXXFLAGS="$CXXFLAGS $ADDCFLAGS $ADDIFLAGS"
+    MYSQL_INCLUDES="$IBASE $ADDIFLAGS"
 
-    
+
     dnl AC_CHECK_LIB([mysqlclient_r],[safe_mutex_init],,[AC_MSG_ERROR([Can't link against libmysqlclient_r])])
     dnl First test to see if we can run with only ndbclient
     AC_CHECK_LIB([ndbclient],[decimal_bin_size],,[dnl else
@@ -113,7 +113,7 @@ AC_DEFUN([PANDORA_REQUIRE_LIBMYSQLCLIENT],[
           AC_MSG_ERROR([Can't find decimal_bin_size])])])
     AC_MSG_CHECKING(for NdbApi headers)
      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <NdbApi.hpp>]], [[int attr=NdbTransaction::Commit; ]])],[ndbapi_found="yes"],[])
-    AS_IF([test "$ndbapi_found" = "yes"], 
+    AS_IF([test "$ndbapi_found" = "yes"],
        [AC_MSG_RESULT(found)],
        [AC_MSG_ERROR([Couldn't find NdbApi.hpp!])])
     AC_MSG_CHECKING(for NDB_LE_ThreadConfigLoop)
@@ -125,22 +125,21 @@ AC_DEFUN([PANDORA_REQUIRE_LIBMYSQLCLIENT],[
         [AC_MSG_RESULT(missing)])
 
     LDFLAGS="$LDFLAGS $LIBS"
-  
+
 
     MYSQL_MAJOR_VERSION=`$MYSQL_CONFIG --version | sed -e 's/\.//g' -e 's/-//g' -e 's/[A-Za-z]//g' | cut -c1-2`
 
-    case "$MYSQL_MAJOR_VERSION" in 
+    case "$MYSQL_MAJOR_VERSION" in
       50) AC_DEFINE(MYSQL_50, [1], [mysql5.0])
-	;;
+        ;;
       51) AC_DEFINE(MYSQL_51, [1], [mysql5.1])
         ;;
       *) echo "Unsupported version of MySQL Detected!"
         ;;
      esac
-    
+
     AC_SUBST(MYSQL_MAJOR_VERSION)
     AC_SUBST(MYSQL_CONFIG)
-    
-  
+
 ])
 

@@ -26,7 +26,7 @@ AC_DEFUN([_PANDORA_SEARCH_LIBDRIZZLE],[
   ],[
     ac_cv_libdrizzle="no"
   ])
-  
+
   AM_CONDITIONAL(HAVE_LIBDRIZZLE, [test "x${ac_cv_libdrizzle}" = "xyes"])
 ])
 

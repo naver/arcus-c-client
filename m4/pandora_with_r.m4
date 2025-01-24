@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -11,10 +11,10 @@ dnl From Monty Taylor
 
 AC_DEFUN([PANDORA_WITH_R],[
     dnl Check for GNU R
-    AC_ARG_WITH([r], 
+    AC_ARG_WITH([r],
     [AS_HELP_STRING([--with-r],
       [Build R Bindings @<:@default=yes@:>@])],
-    [with_r=$withval], 
+    [with_r=$withval],
     [with_r=yes])
 
   AS_IF([test "x$with_r" != "xno"],[

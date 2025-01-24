@@ -8,8 +8,8 @@ AC_DEFUN([PANDORA_OPTIMIZE],[
   dnl First check for gcc and g++
   AS_IF([test "$GCC" = "yes" -a "$INTELCC" = "no"],[
 
-    dnl The following is required for portable results of floating point 
-    dnl calculations on PowerPC. The same must also be done for IA-64, but 
+    dnl The following is required for portable results of floating point
+    dnl calculations on PowerPC. The same must also be done for IA-64, but
     dnl this options is missing in the IA-64 gcc backend.
     case "$target_cpu" in
       *ppc* | *powerpc*)

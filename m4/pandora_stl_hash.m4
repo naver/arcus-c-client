@@ -75,7 +75,7 @@ std::tr1::unordered_map<int, int> t
               [if the compiler has boost::unordered_set])
     pandora_has_unordered=yes
   ])
-    
+
   AS_IF([test "x${pandora_has_unordered}" != "xyes"],[
     AC_MSG_WARN([could not find an STL unordered_map])
   ])

@@ -27,7 +27,7 @@ AC_DEFUN([_PANDORA_SEARCH_BOOST],[
   ],[
     ac_cv_boost="no"
   ])
-  
+
 
   AS_IF([test "x$1" != "x"],[
     AC_CACHE_CHECK([if boost is recent enough],
@@ -78,7 +78,7 @@ AC_DEFUN([_PANDORA_SEARCH_BOOST],[
   ])
 
   AM_CONDITIONAL(HAVE_BOOST, [test "x${ac_cv_boost}" = "xyes"])
-  
+
 ])
 
 AC_DEFUN([PANDORA_HAVE_BOOST],[

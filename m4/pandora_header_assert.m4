@@ -17,7 +17,7 @@ AC_DEFUN([PANDORA_HEADER_ASSERT],
     [ac_cv_assert="yes"])
   AC_MSG_RESULT([$ac_cv_assert])
 
-  AS_IF([test "$ac_cv_assert" = "no"], 
+  AS_IF([test "$ac_cv_assert" = "no"],
     [AC_DEFINE(NDEBUG, 1, [Define to 1 if assertions should be disabled.])])
 ])
 

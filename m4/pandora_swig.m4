@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystem
@@ -12,7 +12,7 @@ dnl From Monty Taylor
 AC_DEFUN([PANDORA_SWIG],[
 
   AC_PROG_SWIG(1.3.31)
-  
+
   AC_DEFINE_UNQUOTED([SWIG_TYPE_TABLE],
     [$PACKAGE],
     [Type Table name for SWIG symbol table])

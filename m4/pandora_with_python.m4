@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -12,12 +12,12 @@ dnl From Monty Taylor
 
 AC_DEFUN([PANDORA_WITH_PYTHON], [
 
-  AC_ARG_WITH([python], 
+  AC_ARG_WITH([python],
     [AS_HELP_STRING([--with-python],
       [Build Python Bindings @<:@default=yes@:>@])],
     [with_python=$withval
      python_requested=$withval
-    ], 
+    ],
     [with_python=yes
      python_requested=no
     ])

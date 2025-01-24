@@ -2,7 +2,7 @@ dnl  Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems, Inc.
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
- 
+
 dnl Provides support for finding libtokyocabinet.
 dnl LIBTOKYOCABINET_CFLAGS will be set, in addition to LIBTOKYOCABINET and LTLIBTOKYOCABINET
 

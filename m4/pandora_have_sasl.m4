@@ -15,29 +15,27 @@ AC_DEFUN([_PANDORA_SEARCH_SASL],[
     [ac_enable_sasl="$enableval"],
     [ac_enable_sasl="yes"])
 
-  AS_IF([test "x$ac_enable_sasl" = "xyes"],
-    [
-      AC_LIB_HAVE_LINKFLAGS(sasl,,[
+  AS_IF([test "x$ac_enable_sasl" = "xyes"],[
+    AC_LIB_HAVE_LINKFLAGS(sasl,,[
+      #include <stdlib.h>
+      #include <sasl/sasl.h>
+    ],[
+      sasl_server_init(NULL, NULL);
+    ])
+
+    AS_IF([test "x${ac_cv_libsasl}" != "xyes"],[
+      AC_LIB_HAVE_LINKFLAGS(sasl2,,[
         #include <stdlib.h>
         #include <sasl/sasl.h>
       ],[
         sasl_server_init(NULL, NULL);
       ])
-
-      AS_IF([test "x${ac_cv_libsasl}" != "xyes" ],
-            [
-              AC_LIB_HAVE_LINKFLAGS(sasl2,,[
-                #include <stdlib.h>
-                #include <sasl/sasl.h>
-              ],[
-                sasl_server_init(NULL, NULL);
-              ])
-              HAVE_LIBSASL="$HAVE_LIBSASL2"
-              LIBSASL="$LIBSASL2"
-              LIBSASL_PREFIX="$LIBSASL2_PREFIX"
-	      LTLIBSASL="$LT_LIBSASL2"
-            ])
+      HAVE_LIBSASL="$HAVE_LIBSASL2"
+      LIBSASL="$LIBSASL2"
+      LIBSASL_PREFIX="$LIBSASL2_PREFIX"
+      LTLIBSASL="$LT_LIBSASL2"
     ])
+  ])
 
   AS_IF([test "x${ac_cv_libsasl}" = "xyes" -o "x${ac_cv_libsasl2}" = "xyes"],
         [ac_cv_sasl=yes],

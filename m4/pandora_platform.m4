@@ -1,6 +1,6 @@
 dnl -*- mode: m4; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 dnl vim:expandtab:shiftwidth=2:tabstop=2:smarttab:
-dnl   
+dnl
 dnl pandora-build: A pedantic build system
 dnl Copyright (C) 2009 Sun Microsystems, Inc.
 dnl This file is free software; Sun Microsystems
@@ -97,7 +97,7 @@ AC_DEFUN([PANDORA_PLATFORM],[
   AC_CHECK_DECL([__ICC], [INTELCC="yes"], [INTELCC="no"])
 
   AS_IF([test "$INTELCC" = "yes"], [enable_rpath=no])
- 
+
   dnl By default, Sun Studio grabs special versions of limits.h and string.h
   dnl when you use <cstring> and <climits>. By setting this define, we can
   dnl disable that and cause those to wrap the standard headers instead.
