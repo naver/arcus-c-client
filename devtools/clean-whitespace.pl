@@ -7,7 +7,7 @@ my @files = `git ls-files` or die;
 
 foreach my $f (@files) {
     chomp($f);
-    next if $f =~ /\.png$/;
+    next if $f =~ /\.(png|m4)$/;
     open(my $fh, $f) or die;
     my $before = do { local $/; <$fh>; };
     close ($fh);
