@@ -307,7 +307,7 @@ mc = memcached_create(NULL);
 memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_POLL_TIMEOUT, (uint64_t)timeout);
 ```
 
-timeout 시간은 밀리초(ms) 단위이며, 기본 값은 MEMCACHED_DEFAULT_TIMEOUT (500ms) 이다.
+timeout 시간은 밀리초(ms) 단위이며, 기본 값은 MEMCACHED_DEFAULT_TIMEOUT (700ms) 이다.
 
 ### 캐시 노드에 대한 CONNECTION TIMEOUT 지정
 
