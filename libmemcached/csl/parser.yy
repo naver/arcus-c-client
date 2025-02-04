@@ -67,7 +67,7 @@ inline void __config_error(Context *context, yyscan_t *scanner, const char *erro
   }
 }
 
-#define config_error(__context, __scanner, __error_msg) do { __config_error((__context), (__scanner), (__error_msg), select_yychar(__context), stryytname(YYTRANSLATE(select_yychar(__context)))); } while (0)
+#define config_error(__context, __scanner, __error_msg) do { (void) config_nerrs; __config_error((__context), (__scanner), (__error_msg), select_yychar(__context), stryytname(YYTRANSLATE(select_yychar(__context)))); } while (0)
 
 
 %}
@@ -142,8 +142,8 @@ inline void __config_error(Context *context, yyscan_t *scanner, const char *erro
 %token RANDOM
 
 /* Boolean values */
-%token <boolean> TRUE
-%token <boolean> FALSE
+%token <boolean> MC_TRUE
+%token <boolean> MC_FALSE
 
 %nonassoc ','
 %nonassoc '='

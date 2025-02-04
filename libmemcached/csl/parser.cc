@@ -91,11 +91,11 @@
 
 int conf_lex(YYSTYPE* lvalp, void* scanner);
 
-#define select_yychar(__context) yychar == UNKNOWN ? ( (__context)->previous_token == END ? UNKNOWN : (__context)->previous_token ) : yychar   
+#define select_yychar(__context) yychar == UNKNOWN ? ( (__context)->previous_token == END ? UNKNOWN : (__context)->previous_token ) : yychar
 
 #define stryytname(__yytokentype) ((__yytokentype) <  YYNTOKENS ) ? yytname[(__yytokentype)] : ""
 
-#define parser_abort(__context, __error_message) do { (__context)->abort((__error_message), yytokentype(select_yychar(__context)), stryytname(YYTRANSLATE(select_yychar(__context)))); YYABORT; } while (0) 
+#define parser_abort(__context, __error_message) do { (__context)->abort((__error_message), yytokentype(select_yychar(__context)), stryytname(YYTRANSLATE(select_yychar(__context)))); YYABORT; } while (0)
 
 // This is bison calling error.
 inline void __config_error(Context *context, yyscan_t *scanner, const char *error, int last_token, const char *last_token_str)
@@ -110,7 +110,7 @@ inline void __config_error(Context *context, yyscan_t *scanner, const char *erro
   }
 }
 
-#define config_error(__context, __scanner, __error_msg) do { __config_error((__context), (__scanner), (__error_msg), select_yychar(__context), stryytname(YYTRANSLATE(select_yychar(__context)))); } while (0)
+#define config_error(__context, __scanner, __error_msg) do { (void) config_nerrs; __config_error((__context), (__scanner), (__error_msg), select_yychar(__context), stryytname(YYTRANSLATE(select_yychar(__context)))); } while (0)
 
 
 
@@ -564,8 +564,8 @@ static const char *const yytname[] =
   "USER_DATA", "USE_UDP", "VERIFY_KEY", "_TCP_KEEPALIVE", "_TCP_KEEPIDLE",
   "_TCP_NODELAY", "NAMESPACE", "POOL_MIN", "POOL_MAX", "MD5", "CRC",
   "FNV1_64", "FNV1A_64", "FNV1_32", "FNV1A_32", "HSIEH", "MURMUR",
-  "JENKINS", "CONSISTENT", "MODULA", "RANDOM", "MC_TRUE", "MC_FALSE", "','",
-  "'='", "FLOAT", "NUMBER", "PORT", "WEIGHT_START", "IPADDRESS",
+  "JENKINS", "CONSISTENT", "MODULA", "RANDOM", "MC_TRUE", "MC_FALSE",
+  "','", "'='", "FLOAT", "NUMBER", "PORT", "WEIGHT_START", "IPADDRESS",
   "HOSTNAME", "STRING", "QUOTED_STRING", "FILE_PATH", "' '", "$accept",
   "begin", "statement", "expression", "behaviors", "behavior_number",
   "behavior_boolean", "optional_port", "optional_weight", "hash", "string",
@@ -1715,7 +1715,7 @@ yyreduce:
     {
             if ((context->rc= memcached_behavior_set(context->memc, MEMCACHED_BEHAVIOR_HASH, (yyvsp[(2) - (2)].hash))) != MEMCACHED_SUCCESS)
             {
-              parser_abort(context, NULL);; 
+              parser_abort(context, NULL);;
             }
           ;}
     break;
@@ -2338,9 +2338,9 @@ yyreturn:
 
 /* Line 1684 of yacc.c  */
 #line 481 "libmemcached/csl/parser.yy"
- 
 
-void Context::start() 
+
+void Context::start()
 {
   config_parse(this, (void **)scanner);
 }
