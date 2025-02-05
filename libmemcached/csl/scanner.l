@@ -138,8 +138,8 @@ SERVERS         { yyextra->begin= yytext; return yyextra->previous_token= SERVER
 END             { yyextra->begin= yytext; return yyextra->previous_token= END; }
 ERROR           { yyextra->begin= yytext; return yyextra->previous_token= ERROR; }
 
-TRUE            { return yyextra->previous_token= TRUE; }
-FALSE           { return yyextra->previous_token= FALSE; }
+MC_TRUE            { return yyextra->previous_token= MC_TRUE; }
+MC_FALSE           { return yyextra->previous_token= MC_FALSE; }
 
 
 "--"[[:alnum:]]*   {
