@@ -29,7 +29,7 @@
  * Result structure for collection operations.
  */
 struct memcached_coll_result_st {
-  char item_key[MEMCACHED_MAX_KEY];
+  char item_key[MEMCACHED_MAX_KEY + 1];
   size_t key_length;
 
   memcached_coll_type_t type;

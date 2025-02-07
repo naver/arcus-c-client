@@ -202,7 +202,7 @@ static inline memcached_return_t memcached_validate_key_length(size_t key_length
   }
   else
   {
-    if (key_length >= MEMCACHED_MAX_KEY)
+    if (key_length > MEMCACHED_MAX_KEY)
     {
       return MEMCACHED_BAD_KEY_PROVIDED;
     }

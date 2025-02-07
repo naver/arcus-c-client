@@ -183,7 +183,7 @@ static inline void process_child(memcached_st *proxy_mc)
 
       rc = memcached_mget(mc, keys, lengths, 20);
 
-      char key[MEMCACHED_MAX_KEY];
+      char key[MEMCACHED_MAX_KEY + 1];
       size_t key_length;
 
       for (i=0; i<20; i++)
@@ -215,7 +215,7 @@ static inline void process_child(memcached_st *proxy_mc)
 
       rc = memcached_mget(mc, keys, lengths, 5);
 
-      char key[MEMCACHED_MAX_KEY];
+      char key[MEMCACHED_MAX_KEY + 1];
       size_t key_length;
 
       for (i=0; i<5; i++)

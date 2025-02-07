@@ -46,7 +46,7 @@ struct memcached_result_st {
   memcached_st *root;
   memcached_string_st value;
   uint64_t count;
-  char item_key[MEMCACHED_MAX_KEY];
+  char item_key[MEMCACHED_MAX_KEY + 1];
   struct {
     bool is_allocated:1;
     bool is_initialized:1;

@@ -84,19 +84,19 @@ static memcached_return_t textual_value_fetch(memcached_server_write_instance_st
     string_ptr += memcached_array_size(ptr->root->_namespace); /* prefix length */
 
     while (!iscntrl(*string_ptr) && !isspace(*string_ptr)) {
-      if (key_length < MEMCACHED_MAX_KEY) {
+      if (key_length <= MEMCACHED_MAX_KEY) {
         key[key_length]= *string_ptr;
       }
       key_length++;
       string_ptr++;
     }
 
-    if (key_length < MEMCACHED_MAX_KEY) {
+    if (key_length <= MEMCACHED_MAX_KEY) {
       key[key_length]= 0;
       result->key_length= key_length;
     } else {
-      snprintf(key + MEMCACHED_MAX_KEY - 4, 4, "...");
-      result->key_length= MEMCACHED_MAX_KEY - 1;
+      snprintf(key + MEMCACHED_MAX_KEY - 3, 4, "...");
+      result->key_length= MEMCACHED_MAX_KEY;
       memcached_set_error(*ptr, MEMCACHED_KEY_TOO_BIG, MEMCACHED_AT);
     }
   }
@@ -537,14 +537,14 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
           keylen -= prefix_size;
         }
 
-        uint16_t read_size= keylen < MEMCACHED_MAX_KEY ? keylen : (MEMCACHED_MAX_KEY - 1);
+        uint16_t read_size= keylen <= MEMCACHED_MAX_KEY ? keylen : MEMCACHED_MAX_KEY;
         if (memcached_failed(rc= memcached_safe_read(ptr, result->item_key, read_size)))
         {
           WATCHPOINT_ERROR(rc);
           return MEMCACHED_UNKNOWN_READ_FAILURE;
         }
 
-        if (keylen < MEMCACHED_MAX_KEY) {
+        if (keylen <= MEMCACHED_MAX_KEY) {
           result->item_key[read_size]= 0;
           result->key_length= keylen;
         } else {
@@ -553,8 +553,8 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
           {
             return MEMCACHED_UNKNOWN_READ_FAILURE;
           }
-          snprintf(result->item_key + MEMCACHED_MAX_KEY - 4, 4, "...");
-          result->key_length= MEMCACHED_MAX_KEY - 1;
+          snprintf(result->item_key + MEMCACHED_MAX_KEY - 3, 4, "...");
+          result->key_length= MEMCACHED_MAX_KEY;
           memcached_set_error(*ptr, MEMCACHED_KEY_TOO_BIG, MEMCACHED_AT);
         }
 
@@ -1971,7 +1971,7 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
   memcached_return_t rrc;
 
   char *value_ptr;
-  char to_read_string[MEMCACHED_MAX_KEY+1];
+  char to_read_string[MEMCACHED_MAX_KEY+2];
 
   for (i=0; i<ecount; i++)
   {
@@ -1979,7 +1979,7 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
 
     /* <key> */
     {
-      rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY);
+      rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+1);
       if (rrc != MEMCACHED_SUCCESS)
       {
         fprintf(stderr, "[debug] key_fetch_error=%s\n", to_read_string);
@@ -2158,16 +2158,16 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
 
   for (size_t i=0; i<kcount; i++)
   {
-    char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
+    char to_read_string[MEMCACHED_MAX_KEY+3]; // +2: "\r\n"
     ssize_t read_length= 0;
 
     /* <missed key> */
-    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+1);
+    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+2);
     if (rrc != MEMCACHED_SUCCESS && rrc != MEMCACHED_END)
     {
       return rrc;
     }
-    if (read_length > MEMCACHED_MAX_KEY)
+    if (read_length > MEMCACHED_MAX_KEY+1)
     {
       goto read_error;
     }
@@ -2187,7 +2187,7 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
     {
       /* <missed cause> */
       /* MEMCACHED_MAX_KEY is enough length for reading cause string */
-      rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+1);
+      rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+2);
       if (rrc != MEMCACHED_END)
       {
         memcached_string_free(&result->missed_keys[i]);
@@ -2259,18 +2259,18 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
 
   for (size_t i=0; i<kcount; i++)
   {
-    char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
+    char to_read_string[MEMCACHED_MAX_KEY+3]; // +2: "\r\n"
     ssize_t read_length= 0;
 
     /* <trimmed key> */
-    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+1);
+    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+2);
     if (rrc != MEMCACHED_SUCCESS)
     {
       if (rrc == MEMCACHED_END) /* "\r\n" is found */
         rrc= MEMCACHED_PROTOCOL_ERROR;
       return rrc;
     }
-    if (read_length > MEMCACHED_MAX_KEY)
+    if (read_length > MEMCACHED_MAX_KEY + 1)
     {
       goto read_error;
     }

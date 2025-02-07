@@ -179,7 +179,7 @@ memcached_result_st *memcached_fetch_result(memcached_st *ptr,
   bool connection_failures= false;
   while ((server= memcached_io_get_readable_server(ptr)))
   {
-    char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY];
+    char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY + 1];
     *error= memcached_response(server, buffer, sizeof(buffer), result);
 
     if (*error == MEMCACHED_IN_PROGRESS)
@@ -336,7 +336,7 @@ memcached_coll_fetch_result(memcached_st *ptr,
   memcached_server_st *server;
   while ((server= memcached_io_get_readable_server(ptr)))
   {
-    char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY];
+    char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY + 1];
     *error= memcached_coll_response(server, buffer, sizeof(buffer), result);
 
     if (*error == MEMCACHED_IN_PROGRESS)

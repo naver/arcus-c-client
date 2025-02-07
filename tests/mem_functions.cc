@@ -920,8 +920,8 @@ static test_return_t bad_key_test(memcached_st *memc)
                  memcached_callback_set(memc_clone, MEMCACHED_CALLBACK_NAMESPACE, NULL));
 
     std::vector <char> longkey;
-    longkey.insert(longkey.end(), MEMCACHED_MAX_KEY, 'a');
-    test_compare(longkey.size(), size_t(MEMCACHED_MAX_KEY));
+    longkey.insert(longkey.end(), MEMCACHED_MAX_KEY + 1, 'a');
+    test_compare(longkey.size(), size_t(MEMCACHED_MAX_KEY + 1));
     {
       size_t string_length;
       // We subtract 1
@@ -1301,7 +1301,7 @@ static test_return_t mget_end(memcached_st *memc)
   // retrieve both via mget
   test_compare(MEMCACHED_SUCCESS, memcached_mget(memc, keys, lengths, test_array_length(keys)));
 
-  char key[MEMCACHED_MAX_KEY];
+  char key[MEMCACHED_MAX_KEY + 1];
   size_t key_length;
 
   // this should get both
@@ -1867,7 +1867,7 @@ static test_return_t mget_test(memcached_st *memc)
   const char *keys[]= {"fudge", "son", "food"};
   size_t key_length[]= {5, 3, 4};
 
-  char return_key[MEMCACHED_MAX_KEY];
+  char return_key[MEMCACHED_MAX_KEY + 1];
   size_t return_key_length;
   char *return_value;
   size_t return_value_length;
@@ -1927,7 +1927,7 @@ static test_return_t mget_longkey_test(memcached_st *memc)
     memset(keys[x], x + '0', key_length[x]);
   }
 
-  char return_key[MEMCACHED_MAX_KEY];
+  char return_key[MEMCACHED_MAX_KEY + 1];
   size_t return_key_length;
   char *return_value;
   size_t return_value_length;
@@ -2378,7 +2378,7 @@ static test_return_t MEMCACHED_BEHAVIOR_TCP_KEEPIDLE_test(memcached_st *memc)
 static test_return_t fetch_all_results(memcached_st *memc, unsigned int &keys_returned, const memcached_return_t expect)
 {
   memcached_return_t rc;
-  char return_key[MEMCACHED_MAX_KEY];
+  char return_key[MEMCACHED_MAX_KEY + 1];
   size_t return_key_length;
   char *return_value;
   size_t return_value_length;
@@ -2576,7 +2576,7 @@ static test_return_t user_supplied_bug4(memcached_st *memc)
 
   {
     char *return_value;
-    char return_key[MEMCACHED_MAX_KEY];
+    char return_key[MEMCACHED_MAX_KEY + 1];
     memcached_return_t rc;
     size_t return_key_length;
     size_t return_value_length;
@@ -2655,7 +2655,7 @@ static test_return_t user_supplied_bug6(memcached_st *memc)
 {
   const char *keys[]= {"036790384900", "036790384902", "036790384904", "036790384906"};
   size_t key_length[]=  {strlen("036790384900"), strlen("036790384902"), strlen("036790384904"), strlen("036790384906")};
-  char return_key[MEMCACHED_MAX_KEY];
+  char return_key[MEMCACHED_MAX_KEY + 1];
   size_t return_key_length;
   char *value;
   size_t value_length;
@@ -2755,7 +2755,7 @@ static test_return_t user_supplied_bug7(memcached_st *memc)
 {
   const char *keys= "036790384900";
   size_t key_length=  strlen(keys);
-  char return_key[MEMCACHED_MAX_KEY];
+  char return_key[MEMCACHED_MAX_KEY + 1];
   size_t return_key_length;
   char *value;
   size_t value_length;
@@ -2801,7 +2801,7 @@ static test_return_t user_supplied_bug9(memcached_st *memc)
   uint32_t flags;
   unsigned count= 0;
 
-  char return_key[MEMCACHED_MAX_KEY];
+  char return_key[MEMCACHED_MAX_KEY + 1];
   size_t return_key_length;
   char *return_value;
   size_t return_value_length;
@@ -3226,7 +3226,7 @@ static test_return_t _user_supplied_bug21(memcached_st* memc, size_t key_count)
 
   memcached_return_t rc;
   uint32_t flags;
-  char return_key[MEMCACHED_MAX_KEY];
+  char return_key[MEMCACHED_MAX_KEY + 1];
   size_t return_key_length;
   char *return_value;
   size_t return_value_length;
@@ -5816,7 +5816,7 @@ static test_return_t regression_bug_490486(memcached_st *memc)
     test_compare(MEMCACHED_SUCCESS, rc);
 
     char* the_value= NULL;
-    char the_key[MEMCACHED_MAX_KEY];
+    char the_key[MEMCACHED_MAX_KEY + 1];
     size_t the_key_length;
     size_t the_value_length;
     uint32_t the_flags;

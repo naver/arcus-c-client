@@ -187,7 +187,7 @@ int arcus_kv_mget(memcached_st *memc)
   assert(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_SOME_ERRORS);
   while (true)
   {
-    char key[MEMCACHED_MAX_KEY];
+    char key[MEMCACHED_MAX_KEY + 1];
     size_t key_length;
     size_t value_length;
 
