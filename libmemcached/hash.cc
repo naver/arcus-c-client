@@ -116,7 +116,7 @@ static inline uint32_t _generate_hash_wrapper(const memcached_st *ptr, const cha
     size_t temp_length= memcached_array_size(ptr->_namespace) + key_length;
     char temp[MEMCACHED_MAX_KEY];
 
-    if (temp_length > MEMCACHED_MAX_KEY -1)
+    if (temp_length >= MEMCACHED_MAX_KEY)
       return 0;
 
     strncpy(temp, memcached_array_string(ptr->_namespace), memcached_array_size(ptr->_namespace));
