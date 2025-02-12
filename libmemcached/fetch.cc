@@ -108,7 +108,7 @@ char *memcached_fetch(memcached_st *ptr, char *key, size_t *key_length,
 
   if (key)
   {
-    if (result_buffer->key_length > MEMCACHED_MAX_KEY)
+    if (result_buffer->key_length >= MEMCACHED_MAX_KEY)
     {
       *error= MEMCACHED_KEY_TOO_BIG;
       if (value_length)
