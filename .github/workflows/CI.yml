@@ -14,12 +14,12 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install Arcus C Client Dependency Packages
       run: sudo apt-get install -qq build-essential libtool pandora-build
     - name: Cache Arcus Server Directory
       id: arcus-cache
-      uses: actions/cache@v3.3.2
+      uses: actions/cache@v4
       with:
         path: ~/arcus
         key: ${{runner.os}}-arcus
