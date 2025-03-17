@@ -3054,17 +3054,19 @@ static test_return_t user_supplied_bug15(memcached_st *memc)
                                &length, &flags, &rc);
 
     test_compare(MEMCACHED_SUCCESS, rc);
-    test_false(value);
+    test_false(value == NULL);
     test_zero(length);
     test_zero(flags);
+    free(value);
 
     value= memcached_get(memc, test_literal_param("mykey"),
                          &length, &flags, &rc);
 
     test_compare(MEMCACHED_SUCCESS, rc);
-    test_true(value == NULL);
+    test_true(value != NULL);
     test_zero(length);
     test_zero(flags);
+    free(value);
   }
 
   return TEST_SUCCESS;
@@ -3085,9 +3087,10 @@ static test_return_t user_supplied_bug16(memcached_st *memc)
                        &length, &flags, &rc);
 
   test_compare(MEMCACHED_SUCCESS, rc);
-  test_true(value == NULL);
+  test_true(value != NULL);
   test_zero(length);
   test_compare(flags, UINT32_MAX);
+  free(value);
 
   return TEST_SUCCESS;
 }
