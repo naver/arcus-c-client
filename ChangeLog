@@ -1,44 +1,44 @@
 2024-09-02 [version 1.14.0]
 ## 🐣 New Features
-* Add `mop upsert` method. #292
-* Add multiple storage method.
-  * `memcached_mset()`
-  * `memcached_madd()`
-  * `memcached_mreplace()`
-  * `memcached_mprepend()`
-  * `memcached_mpppend()`
-  * `memcached_mcas()`
+  - Add `mop upsert` method. #292
+  - Add multiple storage method.
+    - `memcached_mset()`
+    - `memcached_madd()`
+    - `memcached_mreplace()`
+    - `memcached_mprepend()`
+    - `memcached_mpppend()`
+    - `memcached_mcas()`
 ## 🐛 Bug Fixes
-* Fix buffer size when calling `snprintf()` with leading whitespace and integer value. #304
-* Use `__linux__` instead of `TARGET_OS_LINUX` to check if the current OS is Linux. #306
-* Use different lock filenames for multiple proxy in a process
+  - Fix buffer size when calling `snprintf()` with leading whitespace and integer value. #304
+  - Use `__linux__` instead of `TARGET_OS_LINUX` to check if the current OS is Linux. #306
+  - Use different lock filenames for multiple proxy in a process
 ## 📝 Documentation
-* Fix typo.
+  - Fix typo.
 ## ✅ Testing
-* Cancel previous CI in progress when new commits are added. #296
+  - Cancel previous CI in progress when new commits are added. #296
 
 2024-02-22 [version 1.13.3]
 ## 🔧 Enhancements
-* Fix compile warnings on RHEL8 and MacOS.
-* Do not use `#pragma once`.
-* Select smallest host as owner when ketama hash collided. #237
-* Add parameter validation in `arcus_proxy_connect()`.
-* Move io reset from where calls `memcached_vdo()` to where fails inside of `memcached_vdo()`. #250
-* Use `<latest-release>-unknown` version when git describe fails.
-* Add a limit of count about bop mget/smget commands.
-* Import `scanner.l` and `parser.yy` from libmemcached-0.53.
-* Refactor ketama weighted related implementation. #263 #273 #274 #275 #276 #277
-* Fix package name and info to 'arcus-c-client'.
+  - Fix compile warnings on RHEL8 and MacOS.
+  - Do not use `#pragma once`.
+  - Select smallest host as owner when ketama hash collided. #237
+  - Add parameter validation in `arcus_proxy_connect()`.
+  - Move io reset from where calls `memcached_vdo()` to where fails inside of `memcached_vdo()`. #250
+  - Use `<latest-release>-unknown` version when git describe fails.
+  - Add a limit of count about bop mget/smget commands.
+  - Import `scanner.l` and `parser.yy` from libmemcached-0.53.
+  - Refactor ketama weighted related implementation. #263 #273 #274 #275 #276 #277
+  - Fix package name and info to 'arcus-c-client'.
 ## 🐛 Bug Fixes
-* Call `arcus_server_check_for_update()` in `memcached_exist_by_key()`. #241
-* Check `mc->connect_timeout` instead of `mc->poll_timeout` in `connect_poll()`. #247
-* Remove a duplicate init macro in configure.ac. #267
-* Return `hashkit_get_distribution_function()` instead of `hashkit_get_function()` in `memcached_behavior_get_distribution_hash()`.
+  - Call `arcus_server_check_for_update()` in `memcached_exist_by_key()`. #241
+  - Check `mc->connect_timeout` instead of `mc->poll_timeout` in `connect_poll()`. #247
+  - Remove a duplicate init macro in configure.ac. #267
+  - Return `hashkit_get_distribution_function()` instead of `hashkit_get_function()` in `memcached_behavior_get_distribution_hash()`.
 ## 📝 Documentation
-* Add unit test FAQ.
-* Fix inconsistencies between code and documentation.
+  - Add unit test FAQ.
+  - Fix inconsistencies between code and documentation.
 ## ✅ Testing
-* Use Github Actions instead of Travis for CI test.
+  - Use Github Actions instead of Travis for CI test.
 
 2022-02-22 [version 1.13.2]
   * [FEATURE] supported the 3 replicas in replication.
