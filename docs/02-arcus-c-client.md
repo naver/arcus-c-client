@@ -25,14 +25,16 @@ ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등�
 - Single-Threaded
 
   ```c
-  arcus_return_t arcus_connect(memcached_st *mc, const char *ensemble_list, const char *svc_code)
+  arcus_return_t arcus_connect(memcached_st *mc,
+                               const char *ensemble_list, const char *svc_code)
   ```
   싱글 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
 
 - Multi-Threaded
 
   ```c
-  arcus_return_t arcus_pool_connect(memcached_pool_st *pool, const char *ensemble_list, const char *svc_code)
+  arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
+                                    const char *ensemble_list, const char *svc_code)
   ```
 
   멀티 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
@@ -40,8 +42,10 @@ ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등�
 - Multi-Process
 
   ```c
-  arcus_return_t arcus_proxy_create(memcached_st *mc, const char *ensemble_list, const char *svc_code)
-  arcus_return_t arcus_proxy_connect(memcached_st *mc, memcached_pool_st *pool, memcached_st *proxy)
+  arcus_return_t arcus_proxy_create(memcached_st *mc,
+                                    const char *ensemble_list, const char *svc_code)
+  arcus_return_t arcus_proxy_connect(memcached_st *mc,
+                                     memcached_pool_st *pool, memcached_st *proxy)
   ```
 
   `arcus_proxy_create` 함수는
@@ -82,7 +86,9 @@ int main(int argc, char** argv)
     pool = memcached_pool_create(master_mc, initial, max);
 
     // 3. ARCUS admin에 연결한다.
-    arcus_return_t error = arcus_pool_connect(pool, "dev.arcuscloud.nhncorp.com:17288", "dev");
+    char *ensemble_list = "dev.arcuscloud.nhncorp.com:17288";
+    char *svc_code = "dev";
+    arcus_return_t error = arcus_pool_connect(pool, ensemble_list, svc_code);
 
     if (error != ARCUS_SUCCESS) {
         fprintf(stderr, "arcus_connect() failed, reason=%s\n", arcus_strerror(error));
@@ -139,16 +145,19 @@ static void *my_app_thread(void *ctx_pool)
             uint64_t value = 100;
 
             snprintf(key, 100, "test:kv_%d", getpid());
-            rc = memcached_set(mc, key, strlen(key), (char *)&value, sizeof(value), 600, 0);
+            rc = memcached_set(mc, key, strlen(key),
+                               (char *)&value, sizeof(value), 600, 0);
             if (rc != MEMCACHED_SUCCESS) {
-                fprintf(stderr, "memcached_set: %s", memcached_detail_error_message(mc, rc));
+                fprintf(stderr, "memcached_set: %s",
+                        memcached_detail_error_message(mc, rc));
             }
         }
 
         // pool에 memcached_st 구조체를 반환한다.
         rc = memcached_pool_release(pool, mc);
         if (rc != MEMCACHED_SUCCESS) {
-            fprintf(stderr, "memcached_pool_release: %s\n", memcached_strerror(NULL, rc));
+            fprintf(stderr, "memcached_pool_release: %s\n",
+                    memcached_strerror(NULL, rc));
         }
     }
 
@@ -164,8 +173,9 @@ static inline void process_child(memcached_st *proxy_mc)
     memcached_st *per_child_mc = memcached_create(NULL);
 
     // 자식 프로세스가 멀티 쓰레드로 동작한다면 memcached_st 구조체에 대한 pool을 생성한다.
-    memcached_pool_st *pool = memcached_pool_create(per_child_mc, NUM_OF_WORKERS/2, NUM_OF_WORKERS);
-  // 부모 프로세스의 memcached_st 구조체를 이용하여 캐시 서버 리스트를 업데이트 받는다.
+    memcached_pool_st *pool = memcached_pool_create(per_child_mc,
+                                                    NUM_OF_WORKERS/2, NUM_OF_WORKERS);
+    // 부모 프로세스의 memcached_st 구조체를 이용하여 캐시 서버 리스트를 업데이트 받는다.
     arcus_proxy_connect(per_child_mc, pool, proxy_mc);
 
     if (!pool) {
@@ -202,7 +212,9 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
     proxy_mc = memcached_create(NULL);
 
     // ARCUS admin과 연결을 유지하는 쓰레드를 생성하여 캐시 서버 정보를 업데이트 받는다.
-    rc = arcus_proxy_create(proxy_mc, "dev.arcuscloud.nhncorp.com:17288", "test1_6");
+    char *ensemble_list = "dev.arcuscloud.nhncorp.com:17288";
+    char *svc_code = "test1_6";
+    rc = arcus_proxy_create(proxy_mc, ensemble_list, svc_code);
 
     if (rc != ARCUS_SUCCESS) {
         goto RELEASE;

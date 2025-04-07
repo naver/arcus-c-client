@@ -58,7 +58,8 @@ int arcus_set_item_create(memcached_st *memc)
 
   rc= memcached_sop_create(memc, key, strlen(key), &attributes);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_sop_create: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_sop_create: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -113,13 +114,15 @@ int arcus_set_element_insert(memcached_st *memc)
 
   rc= memcached_sop_insert(memc, key, strlen(key), value, strlen(value), &attributes);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_sop_insert: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_sop_insert: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
   memcached_return_t last_response= memcached_get_last_response_code(memc);
   assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_STORED || last_response == MEMCACHED_CREATED_STORED);
+  assert(last_response == MEMCACHED_STORED ||
+         last_response == MEMCACHED_CREATED_STORED);
   return 0;
 }
 ```
@@ -160,15 +163,18 @@ int arcus_set_element_delete(memcached_st *memc)
   bool drop_if_empty= false;
   memcached_return_t rc;
 
-  rc= memcached_sop_delete(memc, key, strlen(key), value, strlen(value), drop_if_empty);
+  rc= memcached_sop_delete(memc, key, strlen(key),
+                           value, strlen(value), drop_if_empty);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_sop_delete: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_sop_delete: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
   memcached_return_t last_response= memcached_get_last_response_code(memc);
   assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+  assert(last_response == MEMCACHED_DELETED ||
+         last_response == MEMCACHED_DELETED_DROPPED);
   return 0;
 }
 ```
@@ -211,7 +217,8 @@ int arcus_set_element_exist(memcached_st *memc)
     if (rc == MEMCACHED_NOT_EXIST) {
       return 0; /* element doesn't exist */
     }
-    fprintf(stderr, "Failed to memcached_sop_exist: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_sop_exist: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -298,16 +305,19 @@ int arcus_set_element_get(memcached_st *memc)
   memcached_coll_result_create(memc, &result);
 
   do {
-    rc= memcached_sop_get(memc, key, strlen(key), count, with_delete, drop_if_empty, &result);
+    rc= memcached_sop_get(memc, key, strlen(key),
+                          count, with_delete, drop_if_empty, &result);
     if (memcached_failed(rc)) {
-      fprintf(stderr, "Failed to memcached_sop_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+      fprintf(stderr, "Failed to memcached_sop_get: %d(%s)\n",
+              rc, memcached_strerror(memc, rc));
       break;
     }
 
     memcached_return_t last_response= memcached_get_last_response_code(memc);
     assert(rc == MEMCACHED_SUCCESS);
     assert(last_response == MEMCACHED_END ||
-           last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+           last_response == MEMCACHED_DELETED ||
+           last_response == MEMCACHED_DELETED_DROPPED);
 
     for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
       const char* value= memcached_coll_result_get_value(&result, i);

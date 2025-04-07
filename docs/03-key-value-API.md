@@ -53,7 +53,8 @@ int arcus_kv_store(memcached_st *memc)
 
   rc= memcached_set(memc, key, strlen(key), value, strlen(value), exptime, flags);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_set: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_set: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -92,7 +93,8 @@ int arcus_kv_attach(memcached_st *memc)
 
   rc= memcached_prepend(memc, key, strlen(key), value, strlen(value), exptime, flags);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_prepend: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_prepend: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -129,7 +131,8 @@ int arcus_kv_get(memcached_st *memc)
 
   value= memcached_get(memc, key, strlen(key), &value_length, &flags, &rc);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_get: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -180,7 +183,8 @@ int arcus_kv_mget(memcached_st *memc)
 
   rc= memcached_mget(memc, keys, keys_len, number_of_keys);
   if (rc == MEMCACHED_FAILURE) {
-    fprintf(stderr, "Failed to memcached_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_get: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -193,7 +197,8 @@ int arcus_kv_mget(memcached_st *memc)
 
     char *value= memcached_fetch(memc, key, &key_length, &value_length, &flags, &rc);
     if (memcached_failed(rc)) {
-      fprintf(stderr, "Failed to memcached_fetch: %d(%s)\n", rc, memcached_strerror(memc, rc));
+      fprintf(stderr, "Failed to memcached_fetch: %d(%s)\n",
+              rc, memcached_strerror(memc, rc));
       return -1;
     }
 
@@ -247,7 +252,8 @@ int arcus_kv_compare_and_set(memcached_st *memc)
 
   old_value= memcached_get(memc, key, strlen(key), NULL, NULL, &rc);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_gets: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_gets: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
   cas_value= memcached_result_cas(&memc->result);
@@ -255,9 +261,11 @@ int arcus_kv_compare_and_set(memcached_st *memc)
   // make a new_value based on the old_value
   new_value= make_new_value_from_old_value(old_value);
 
-  rc= memcached_cas(memc, key, strlen(key), new_value, strlen(new_value), exptime, flags, cas_value);
+  rc= memcached_cas(memc, key, strlen(key),
+                    new_value, strlen(new_value), exptime, flags, cas_value);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_cas: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_cas: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     result= -1;
   }
 
@@ -318,9 +326,11 @@ int arcus_kv_arithmetic(memcached_st *memc)
   memcached_return_t rc;
 
   rc= memcached_increment(memc, key, strlen(key), offset, &value);
-  // rc= memcached_increment_with_initial(memc, key, strlen(key), offset, initial, flags, exptime, &value);
+  /* rc= memcached_increment_with_initial(memc, key, strlen(key),
+                                          offset, initial, flags, exptime, &value); */
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_increment: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_increment: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -352,7 +362,8 @@ int arcus_kv_delete(memcached_st *memc)
 
   rc= memcached_delete(memc, key, strlen(key), 0);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_delete: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_delete: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 

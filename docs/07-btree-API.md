@@ -178,8 +178,10 @@ memcached_bop_range_query_init(memcached_bop_query_st *ptr,
 
 memcached_return_t
 memcached_bop_ext_range_query_init (memcached_bop_query_st *ptr,
-                                    const unsigned char *bkey_from, const size_t bkey_from_length,
-                                    const unsigned char *bkey_to, const size_t bkey_to_length,
+                                    const unsigned char *bkey_from,
+                                    const size_t bkey_from_length,
+                                    const unsigned char *bkey_to,
+                                    const size_t bkey_to_length,
                                     memcached_bop_eflag_filter_st *eflag_filter,
                                     size_t offset, size_t count)
 ```
@@ -241,7 +243,7 @@ B+Tree에 하나의 element를 삽입한다.
 memcached_return_t
 memcached_bop_insert(memcached_st *ptr,
                      const char *key, size_t key_length,
-                     const uint64_t bkey, // bkey of 8 bytes unsigned integer type
+                     const uint64_t bkey,
                      const unsigned char *eflag, size_t eflag_length,
                      const char *value, size_t value_length,
                      memcached_coll_create_attrs_st *attributes)
@@ -249,7 +251,7 @@ memcached_bop_insert(memcached_st *ptr,
 memcached_return_t
 memcached_bop_ext_insert(memcached_st *ptr,
                          const char *key, size_t key_length,
-                         const unsigned char *bkey, size_t bkey_length, // bkey of byte array type
+                         const unsigned char *bkey, size_t bkey_length,
                          const unsigned char *eflag, size_t eflag_length,
                          const char *value, size_t value_length,
                          memcached_coll_create_attrs_st *attributes)
@@ -295,8 +297,9 @@ int arcus_btree_element_insert(memcached_st *memc)
 
   rc= memcached_bop_insert(memc, key, strlen(key), bkey, eflag, sizeof(eflag),
                            value, strlen(value), &attributes);
-  /* rc= memcached_bop_ext_insert(memc, key, strlen(key), bkey, sizeof(bkey),
-                                  eflag, sizeof(eflag), value, strlen(value), &attributes); */
+  /* rc= memcached_bop_ext_insert(memc, key, strlen(key),
+                                  bkey, sizeof(bkey), eflag, sizeof(eflag),
+                                  value, strlen(value), &attributes); */
   if (memcached_failed(rc)) {
     fprintf(stderr, "Failed to memcached_bop_insert: %d(%s)\n",
             rc, memcached_strerror(memc, rc));
@@ -305,7 +308,8 @@ int arcus_btree_element_insert(memcached_st *memc)
 
   memcached_return_t last_response= memcached_get_last_response_code(memc);
   assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_STORED || last_response == MEMCACHED_CREATED_STORED);
+  assert(last_response == MEMCACHED_STORED ||
+         last_response == MEMCACHED_CREATED_STORED);
   return 0;
 }
 ```
@@ -324,7 +328,7 @@ Upsert 연산은 해당 element가 없으면 insert하고, 있으면 update하�
 memcached_return_t
 memcached_bop_upsert(memcached_st *ptr,
                      const char *key, size_t key_length,
-                     const uint64_t bkey, // bkey of 8 bytes unsigned integer type
+                     const uint64_t bkey,
                      const unsigned char *eflag, size_t eflag_length,
                      const char *value, size_t value_length,
                      memcached_coll_create_attrs_st *attributes)
@@ -332,7 +336,7 @@ memcached_bop_upsert(memcached_st *ptr,
 memcached_return_t
 memcached_bop_ext_upsert(memcached_st *ptr,
                          const char *key, size_t key_length,
-                         const unsigned char *bkey, size_t bkey_length, // bkey of byte array type
+                         const unsigned char *bkey, size_t bkey_length,
                          const unsigned char *eflag, size_t eflag_length,
                          const char *value, size_t value_length,
                          memcached_coll_create_attrs_st *attributes)
@@ -378,8 +382,9 @@ int arcus_btree_element_upsert(memcached_st *memc)
 
   rc= memcached_bop_upsert(memc, key, strlen(key), bkey, eflag, sizeof(eflag),
                            value, strlen(value), &attributes);
-  /* rc= memcached_bop_ext_upsert(memc, key, strlen(key), bkey, sizeof(bkey),
-                                  eflag, sizeof(eflag), value, strlen(value), &attributes); */
+  /* rc= memcached_bop_ext_upsert(memc, key, strlen(key),
+                                  bkey, sizeof(bkey), eflag, sizeof(eflag),
+                                  value, strlen(value), &attributes); */
   if (memcached_failed(rc)) {
     fprintf(stderr, "Failed to memcached_bop_upsert: %d(%s)\n",
             rc, memcached_strerror(memc, rc));
@@ -404,14 +409,14 @@ B+Tree에서 하나의 element를 변경하는 함수이다. Element의 eflag �
 memcached_return_t
 memcached_bop_update(memcached_st *ptr,
                      const char *key, size_t key_length,
-                     const uint64_t bkey, // bkey of 8 bytes unsigned integer type
+                     const uint64_t bkey,
                      memcached_coll_eflag_update_st *eflag_update,
                      const char *value, size_t value_length)
 
 memcached_return_t
 memcached_bop_ext_update(memcached_st *ptr,
                          const char *key, size_t key_length,
-                         const unsigned char *bkey, size_t bkey_length, // bkey of byte array type
+                         const unsigned char *bkey, size_t bkey_length,
                          memcached_coll_eflag_update_st *eflag_update,
                          const char *value, size_t value_length)
 ```
@@ -454,7 +459,8 @@ int arcus_btree_element_update(memcached_st *memc)
   /* rc= memcached_bop_ext_update(memc, key, strlen(key), bkey, sizeof(bkey),
                                   &eflag_update, value, strlen(value)); */
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_bop_update: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_bop_update: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -476,14 +482,14 @@ B+tree에서 element를 삭제하는 함수들은 두 유형이 있다.
 memcached_return_t
 memcached_bop_delete(memcached_st *ptr,
                      const char *key, size_t key_length,
-                     const uint64_t bkey, // bkey of 8 bytes unsigned integer type
+                     const uint64_t bkey,
                      memcached_coll_eflag_filter_st *eflag_filter,
                      bool drop_if_empty)
 
 memcached_return_t
 memcached_bop_ext_delete(memcached_st *ptr,
                          const char *key, size_t key_length,
-                         const unsigned char *bkey, size_t bkey_length, // bkey of byte array type
+                         const unsigned char *bkey, size_t bkey_length,
                          memcached_coll_eflag_filter_st *eflag_filter,
                          bool drop_if_empty)
 ```
@@ -535,7 +541,7 @@ int arcus_btree_element_delete_by_range(memcached_st *memc)
   const uint64_t from= 0, to= UINT64_MAX;
   /* const unsigned char from[MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH]= {0, };
      const unsigned char to[MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH]
-                        = {[0 ... MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH - 1] = 0xff}; */
+                  = {[0 ... MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH - 1] = 0xff}; */
   size_t count= 0;
   bool drop_if_empty= false;
   memcached_return_t rc;
@@ -545,7 +551,8 @@ int arcus_btree_element_delete_by_range(memcached_st *memc)
   memcached_coll_comp_t comp_op= MEMCACHED_COLL_COMP_EQ;
 
   memcached_coll_eflag_filter_st eflag_filter;
-  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset, comp_value, sizeof(comp_value), comp_op);
+  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset,
+                                   comp_value, sizeof(comp_value), comp_op);
 
   rc= memcached_bop_delete_by_range(memc, key, strlen(key),
                                     from, to, &eflag_filter, count, drop_if_empty);
@@ -560,7 +567,8 @@ int arcus_btree_element_delete_by_range(memcached_st *memc)
 
   memcached_return_t last_response= memcached_get_last_response_code(memc);
   assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+  assert(last_response == MEMCACHED_DELETED ||
+         last_response == MEMCACHED_DELETED_DROPPED);
   return 0;
 }
 ```
@@ -627,9 +635,11 @@ int arcus_btree_element_arithmetic(memcached_st *memc)
   memcached_return_t rc;
 
   rc= memcached_bop_incr(memc, key, strlen(key), bkey, delta, &value);
-  // rc= memcached_bop_ext_incr(memc, key, strlen(key), bkey, sizeof(bkey), delta, &value);
+  /* rc= memcached_bop_ext_incr(memc, key, strlen(key),
+                                bkey, sizeof(bkey), delta, &value); */
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_bop_incr: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_bop_incr: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -712,9 +722,11 @@ int arcus_btree_element_count_by_range(memcached_st *memc)
   memcached_coll_comp_t comp_op= MEMCACHED_COLL_COMP_EQ;
 
   memcached_coll_eflag_filter_st eflag_filter;
-  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset, comp_value, sizeof(comp_value), comp_op);
+  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset,
+                                   comp_value, sizeof(comp_value), comp_op);
 
-  rc= memcached_bop_count_by_range(memc, key, strlen(key), from, to, &eflag_filter, &count);
+  rc= memcached_bop_count_by_range(memc, key, strlen(key),
+                                   from, to, &eflag_filter, &count);
   /* rc= memcached_bop_ext_count_by_range(memc, key, strlen(key),
                                           from, sizeof(from), to, sizeof(to),
                                           &eflag_filter, &count); */
@@ -821,7 +833,8 @@ Response code는 아래와 같다.
 
 ```c
 memcached_coll_result_st *
-memcached_coll_result_create(const memcached_st *ptr, memcached_coll_result_st *result)
+memcached_coll_result_create(const memcached_st *ptr,
+                             memcached_coll_result_st *result)
 void
 memcached_coll_result_free(memcached_coll_result_st *result)
 
@@ -861,13 +874,15 @@ int arcus_btree_element_get_by_range(memcached_st *memc)
   memcached_coll_comp_t comp_op= MEMCACHED_COLL_COMP_EQ;
 
   memcached_coll_eflag_filter_st eflag_filter;
-  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset, comp_value, sizeof(comp_value), comp_op);
+  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset,
+                                   comp_value, sizeof(comp_value), comp_op);
 
   memcached_coll_result_create(memc, &result);
 
   do {
-    rc= memcached_bop_get_by_range(memc, key, strlen(key), from, to, &eflag_filter,
-                                   offset, count, with_delete, drop_if_empty, &result);
+    rc= memcached_bop_get_by_range(memc, key, strlen(key), from, to,
+                                   &eflag_filter, offset, count,
+                                   with_delete, drop_if_empty, &result);
     /* rc= memcached_bop_ext_get_by_range(memc, key, strlen(key),
                                           from, sizeof(from), to, sizeof(to),
                                           &eflag_filter, offset, count,
@@ -880,17 +895,22 @@ int arcus_btree_element_get_by_range(memcached_st *memc)
 
     memcached_return_t last_response= memcached_get_last_response_code(memc);
     assert(rc == MEMCACHED_SUCCESS);
-    assert(last_response == MEMCACHED_END || last_response == MEMCACHED_TRIMMED ||
-           last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+    assert(last_response == MEMCACHED_END ||
+           last_response == MEMCACHED_TRIMMED ||
+           last_response == MEMCACHED_DELETED ||
+           last_response == MEMCACHED_DELETED_DROPPED);
 
     for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
       uint64_t bkey= memcached_coll_result_get_bkey(&result, i);
-      /* memcached_hexadecimal_st *hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
+      /* memcached_hexadecimal_st *hex_bkey;
          char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+         hex_bkey = memcached_coll_result_get_bkey_ext(&result, i);
          memcached_hexadecimal_to_str(hex_bkey, str_bkey, sizeof(str_bkey)); */
       const char* value= memcached_coll_result_get_value(&result, i);
-      fprintf(stdout, "memcached_bop_get_by_range: %s : %llu => %s\n", key, bkey, value);
-      // fprintf(stdout, "memcached_bop_get_by_range: %s : %s => %s\n", key, str_bkey, value);
+      fprintf(stdout, "memcached_bop_get_by_range: %s : %llu => %s\n",
+              key, bkey, value);
+      /* fprintf(stdout, "memcached_bop_get_by_range: %s : %s => %s\n",
+                 key, str_bkey, value); */
     }
   } while(0);
 
@@ -921,11 +941,13 @@ int arcus_btree_element_get_by_query(memcached_st *memc)
   memcached_coll_comp_t comp_op= MEMCACHED_COLL_COMP_EQ;
 
   memcached_coll_eflag_filter_st eflag_filter;
-  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset, comp_value, sizeof(comp_value), comp_op);
+  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset,
+                                   comp_value, sizeof(comp_value), comp_op);
 
   memcached_coll_query_st query;
   memcached_bop_range_query_init(&query, from, to, &eflag_filter, offset, count);
-  // memcached_bop_ext_range_query_init(&query, from, sizeof(from), to, sizeof(to), &eflag_filter, offset, count);
+  /* memcached_bop_ext_range_query_init(&query, from, sizeof(from), to, sizeof(to),
+                                        &eflag_filter, offset, count); */
 
   memcached_coll_result_create(memc, &result);
 
@@ -933,23 +955,29 @@ int arcus_btree_element_get_by_query(memcached_st *memc)
     rc= memcached_bop_get_by_query(memc, key, strlen(key), &query,
                                    with_delete, drop_if_empty, &result);
     if (memcached_failed(rc)) {
-      fprintf(stderr, "Failed to memcached_bop_get_by_query: %d(%s)\n", rc, memcached_strerror(memc, rc));
+      fprintf(stderr, "Failed to memcached_bop_get_by_query: %d(%s)\n",
+              rc, memcached_strerror(memc, rc));
       break;
     }
 
     memcached_return_t last_response= memcached_get_last_response_code(memc);
     assert(rc == MEMCACHED_SUCCESS);
-    assert(last_response == MEMCACHED_END || last_response == MEMCACHED_TRIMMED ||
-           last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+    assert(last_response == MEMCACHED_END ||
+           last_response == MEMCACHED_TRIMMED ||
+           last_response == MEMCACHED_DELETED ||
+           last_response == MEMCACHED_DELETED_DROPPED);
 
     for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
       uint64_t bkey= memcached_coll_result_get_bkey(&result, i);
-      /* memcached_hexadecimal_st *hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
+      /* memcached_hexadecimal_st *hex_bkey;
          char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+         hex_bkey= memcached_coll_result_get_bkey_ext(&result, i)
          memcached_hexadecimal_to_str(hex_bkey, str_bkey, sizeof(str_bkey)); */
       const char* value= memcached_coll_result_get_value(&result, i);
-      fprintf(stdout, "memcached_bop_get_by_query: %s : %llu => %s\n", key, bkey, value);
-      // fprintf(stdout, "memcached_bop_get_by_query: %s : %s => %s\n", key, str_bkey, value);
+      fprintf(stdout, "memcached_bop_get_by_query: %s : %llu => %s\n",
+              key, bkey, value);
+      /* fprintf(stdout, "memcached_bop_get_by_query: %s : %s => %s\n",
+                 key, str_bkey, value); */
     }
   } while(0);
 
@@ -968,22 +996,29 @@ B+tree에 여러 element를 한번에 삽입하는 함수는 두 유형이 있�
 ```c
 memcached_return_t
 memcached_bop_piped_insert(memcached_st *ptr,
-                           const char *key, const size_t key_length,
+                           const char *key,
+                           const size_t key_length,
                            const size_t number_of_piped_items,
                            const uint64_t *bkeys,
-                           const unsigned char * const *eflags, const size_t *eflags_length,
-                           const char * const *values, const size_t *values_length,
+                           const unsigned char * const *eflags,
+                           const size_t *eflags_length,
+                           const char * const *values,
+                           const size_t *values_length,
                            memcached_coll_create_attrs_st *attributes,
                            memcached_return_t *results,
                            memcached_return_t *piped_rc)
 
 memcached_return_t
 memcached_bop_ext_piped_insert(memcached_st *ptr,
-                               const char *key, const size_t key_length,
+                               const char *key,
+                               const size_t key_length,
                                const size_t number_of_piped_items,
-                               const unsigned char * const *bkeys, const size_t *bkeys_length,
-                               const unsigned char * const *eflags, const size_t *eflags_length,
-                               const char * const *values, const size_t *values_length,
+                               const unsigned char * const *bkeys,
+                               const size_t *bkeys_length,
+                               const unsigned char * const *eflags,
+                               const size_t *eflags_length,
+                               const char * const *values,
+                               const size_t *values_length,
                                memcached_coll_create_attrs_st *attributes,
                                memcached_return_t *results,
                                memcached_return_t *piped_rc)
@@ -1050,12 +1085,12 @@ B+tree에 여러 element를 한번에 삽입하는 예시는 다음과 같다.
 int arcus_btree_element_piped_insert(memcached_st *memc)
 {
   const char *key= "btree:a_key";
-  const char * const values[]= { "value1", "value2", "value3" };
-  const uint64_t bkeys[]= { 0, 1, 2 };
-  /* unsigned char bkeys[][MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH]= { {0,}, {1, }, {2, } };
-     unsigned char *bkeys_ptr[]= { bkeys[0], bkeys[1], bkeys[2] }; */
-  unsigned char eflags[3][MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH]= { {0,} };
-  unsigned char *eflags_ptr[3]= { eflags[0], eflags[1], eflags[2] };
+  const char * const values[]= {"value1", "value2", "value3"};
+  const uint64_t bkeys[]= {0, 1, 2};
+  /* unsigned char bkeys[][MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH]= {{0, }, {1, }, {2, }};
+     unsigned char *bkeys_ptr[]= {bkeys[0], bkeys[1], bkeys[2]}; */
+  unsigned char eflags[3][MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH]= {{0,}};
+  unsigned char *eflags_ptr[3]= {eflags[0], eflags[1], eflags[2]};
   size_t number_of_piped_items= 3;
   size_t bkeys_len[3];
   size_t values_len[3];
@@ -1083,7 +1118,8 @@ int arcus_btree_element_piped_insert(memcached_st *memc)
                                  &attributes, results, &piped_rc);
   /* rc= memcached_bop_ext_piped_insert(memc, key, strlen(key), number_of_piped_items,
                                         bkeys_ptr, bkeys_len, eflags_ptr, eflags_len,
-                                        values, values_len, &attributes, results, &piped_rc); */
+                                        values, values_len, &attributes, results,
+                                        &piped_rc); */
   if (memcached_failed(rc)) {
     fprintf(stderr, "Failed to memcached_bop_piped_insert: %d(%s)\n",
             rc, memcached_strerror(memc, rc));
@@ -1097,14 +1133,18 @@ int arcus_btree_element_piped_insert(memcached_st *memc)
 
   if (piped_rc == MEMCACHED_SOME_SUCCESS) {
     for (size_t i=0; i<number_of_piped_items; i++) {
-      fprintf(stderr, "Failed to memcached_bop_piped_insert: %s : %llu => %s %d(%s)\n",
-              key, bkeys[i], values[i], results[i], memcached_strerror(memc, results[i]));
-      /* memcached_hexadecimal_st hex_bkey= { (unsigned char *)bkeys[i],
-                                              sizeof(bkeys[i]), { 0 } };
+      fprintf(stderr, "Failed to memcached_bop_piped_insert: "
+                      "%s : %llu => %s %d(%s)\n",
+              key, bkeys[i], values[i], results[i],
+              memcached_strerror(memc, results[i]));
+      /* memcached_hexadecimal_st hex_bkey= {(unsigned char *)bkeys[i],
+                                             sizeof(bkeys[i]), 0};
          char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
          memcached_hexadecimal_to_str(&hex_bkey, str_bkey, sizeof(str_bkey));
-         fprintf(stderr, "Failed to memcached_bop_piped_insert: %s : %s => %s %d(%s)\n",
-                 key, str_bkey, values[i], results[i], memcached_strerror(memc, results[i])); */
+         fprintf(stderr, "Failed to memcached_bop_piped_insert: "
+                         "%s : %s => %s %d(%s)\n",
+                 key, str_bkey, values[i], results[i],
+                 memcached_strerror(memc, results[i])); */
     }
   }
 
@@ -1162,14 +1202,18 @@ int arcus_btree_element_piped_insert_bulk(memcached_st *memc)
   }
 
   if (piped_rc == MEMCACHED_SOME_SUCCESS) {
-    /* memcached_hexadecimal_st hex_bkey= { (unsigned char *)bkey, sizeof(bkey), { 0 } };
+    /* memcached_hexadecimal_st hex_bkey= {(unsigned char *)bkey, sizeof(bkey), 0};
        char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
        memcached_hexadecimal_to_str(&hex_bkey, str_bkey, sizeof(str_bkey)); */
     for (size_t i=0; i<number_of_keys; i++) {
-      fprintf(stderr, "Failed to memcached_bop_piped_insert_bulk: %s : %llu => %s %d(%s)\n",
-              keys[i], bkey, value, results[i], memcached_strerror(memc, results[i]));
-      /* fprintf(stderr, "Failed to memcached_bop_piped_insert_bulk: %s : %s => %s %d(%s)\n",
-                 keys[i], str_bkey, value, results[i], memcached_strerror(memc, results[i])); */
+      fprintf(stderr, "Failed to memcached_bop_piped_insert_bulk: "
+                      "%s : %llu => %s %d(%s)\n",
+              keys[i], bkey, value, results[i],
+              memcached_strerror(memc, results[i]));
+      /* fprintf(stderr, "Failed to memcached_bop_piped_insert_bulk: "
+                         "%s : %s => %s %d(%s)\n",
+                 keys[i], str_bkey, value, results[i],
+                 memcached_strerror(memc, results[i])); */
     }
   }
 
@@ -1238,7 +1282,7 @@ B+tree element 일괄 조회하는 예시는 아래와 같다.
 ```c
 int arcus_btree_element_mget(memcached_st *memc)
 {
-  const char * const keys[]= { "btree:a_key1", "btree:a_key2", "btree:a_key3" };
+  const char * const keys[]= {"btree:a_key1", "btree:a_key2", "btree:a_key3"};
   const uint64_t from= UINT64_MAX, to= 0;
   /* const unsigned char from[MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH]
                   = {[0 ... MEMCACHED_COLL_MAX_BYTE_ARRAY_LENGTH - 1] = 0xff};
@@ -1254,7 +1298,8 @@ int arcus_btree_element_mget(memcached_st *memc)
   memcached_coll_comp_t comp_op= MEMCACHED_COLL_COMP_EQ;
 
   memcached_coll_eflag_filter_st eflag_filter;
-  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset, comp_value, sizeof(comp_value), comp_op);
+  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset,
+                                   comp_value, sizeof(comp_value), comp_op);
 
   memcached_coll_query_st query;
   memcached_bop_range_query_init(&query, from, to, &eflag_filter, offset, count);
@@ -1268,7 +1313,8 @@ int arcus_btree_element_mget(memcached_st *memc)
 
   rc= memcached_bop_mget(memc, keys, keys_len, number_of_keys, &query);
   if (rc == MEMCACHED_FAILURE) {
-    fprintf(stderr, "Failed to memcached_bop_mget: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_bop_mget: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -1285,12 +1331,15 @@ int arcus_btree_element_mget(memcached_st *memc)
     } else {
       for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
         uint64_t bkey= memcached_coll_result_get_bkey(&result, i);
-        /* memcached_hexadecimal_st *hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
+        /* memcached_hexadecimal_st *hex_bkey;
            char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+           hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
            memcached_hexadecimal_to_str(hex_bkey, str_bkey, sizeof(str_bkey)); */
         const char *value= memcached_coll_result_get_value(&result, i);
-        fprintf(stdout, "memcached_coll_fetch_result: %s : %llu => %s\n", key, bkey, value);
-        // fprintf(stderr, "memcached_coll_fetch_result: %s : %s => %s\n", key, str_bkey, value);
+        fprintf(stdout, "memcached_coll_fetch_result: %s : %llu => %s\n",
+                key, bkey, value);
+        /* fprintf(stderr, "memcached_coll_fetch_result: %s : %s => %s\n",
+                   key, str_bkey, value); */
       }
     }
     memcached_coll_result_free(&result);
@@ -1499,7 +1548,8 @@ int arcus_btree_element_smget(memcached_st *memc)
   memcached_coll_comp_t comp_op= MEMCACHED_COLL_COMP_EQ;
 
   memcached_coll_eflag_filter_st eflag_filter;
-  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset, comp_value, sizeof(comp_value), comp_op);
+  memcached_coll_eflag_filter_init(&eflag_filter, comp_offset,
+                                   comp_value, sizeof(comp_value), comp_op);
 
   memcached_bop_query_st query;
   memcached_bop_smget_query_init(&query, from, to, &eflag_filter, count, unique);
@@ -1515,22 +1565,25 @@ int arcus_btree_element_smget(memcached_st *memc)
 
   rc= memcached_bop_smget(memc, keys, keys_len, number_of_keys, &query, &result);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_bop_smget: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_bop_smget: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
   memcached_return_t last_response= memcached_get_last_response_code(memc);
   assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_END || last_response == MEMCACHED_DUPLICATED ||
-         last_response == MEMCACHED_TRIMMED || last_response == MEMCACHED_DUPLICATED_TRIMMED);
+  assert(last_response == MEMCACHED_END ||
+         last_response == MEMCACHED_DUPLICATED ||
+         last_response == MEMCACHED_TRIMMED ||
+         last_response == MEMCACHED_DUPLICATED_TRIMMED);
 
   for(size_t i=0; i<memcached_coll_smget_result_get_count(&result); i++)
   {
     const char *key= memcached_coll_smget_result_get_key(&result, i);
     uint64_t bkey= memcached_coll_smget_result_get_bkey(&result, i);
-    /* memcached_hexadecimal_st *hex_bkey=
-                memcached_coll_smget_result_get_bkey_ext(&result, i);
+    /* memcached_hexadecimal_st *hex_bkey;
        char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+       hex_bkey= memcached_coll_smget_result_get_bkey_ext(&result, i);
        memcached_hexadecimal_to_str(hex_bkey, str_bkey, sizeof(str_bkey)); */
     const char *value= memcached_coll_smget_result_get_value(&result, i);
 
@@ -1614,9 +1667,11 @@ int arcus_btree_find_position(memcached_st *memc)
 
   size_t position= -1;
   rc= memcached_bop_find_position(memc, key, strlen(key), bkey, order, &position);
-  // rc= memcached_bop_ext_find_position(memc, key, strlen(key), bkey, sizeof(bkey), order, &position);
+  /* rc= memcached_bop_ext_find_position(memc, key, strlen(key),
+                                         bkey, sizeof(bkey), order, &position); */
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_bop_find_position: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_bop_find_position: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -1682,12 +1737,15 @@ int arcus_btree_get_by_position(memcached_st *memc)
       const char *value= memcached_coll_result_get_value(&result, i);
       if (result.sub_key_type != MEMCACHED_COLL_QUERY_BOP_EXT) {
         uint64_t bkey= memcached_coll_result_get_bkey(&result, i);
-        fprintf(stdout, "memcached_bop_get_by_position: %s : %llu => %s\n", key, bkey, value);
+        fprintf(stdout, "memcached_bop_get_by_position: %s : %llu => %s\n",
+                key, bkey, value);
       } else {
-        memcached_hexadecimal_st *hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
+        memcached_hexadecimal_st *hex_bkey;
         char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+        hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
         memcached_hexadecimal_to_str(hex_bkey, str_bkey, sizeof(str_bkey));
-        fprintf(stdout, "memcached_bop_get_by_position: %s : %s => %s\n", key, str_bkey, value);
+        fprintf(stdout, "memcached_bop_get_by_position: %s : %s => %s\n",
+                key, str_bkey, value);
       }
     }
   } while(0);
@@ -1781,8 +1839,9 @@ int arcus_btree_find_position_with_get(memcached_st *memc)
 
     for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
       const uint64_t bkey= memcached_coll_result_get_bkey(&result, i);
-      /* memcached_hexadecimal_st *hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
+      /* memcached_hexadecimal_st *hex_bkey;
          char str_bkey[MEMCACHED_COLL_MAX_BYTE_STRING_LENGTH];
+         hex_bkey= memcached_coll_result_get_bkey_ext(&result, i);
          memcached_hexadecimal_to_str(hex_bkey, str_bkey, sizeof(str_bkey)); */
       const char *value= memcached_coll_result_get_value(&result, i);
       fprintf(stdout, "memcached_bop_find_position_with_get: "
