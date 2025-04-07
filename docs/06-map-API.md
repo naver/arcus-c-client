@@ -58,7 +58,8 @@ int arcus_map_item_create(memcached_st *memc)
 
   rc= memcached_mop_create(memc, key, strlen(key), &attributes);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_mop_create: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_mop_create: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -117,13 +118,15 @@ int arcus_map_element_insert(memcached_st *memc)
   rc= memcached_mop_insert(memc, key, strlen(key), mkey, strlen(mkey),
                            value, strlen(value), &attributes);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_mop_insert: %d(%s)", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_mop_insert: %d(%s)",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
   memcached_return_t last_response= memcached_get_last_response_code(memc);
   assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_STORED || last_response == MEMCACHED_CREATED_STORED);
+  assert(last_response == MEMCACHED_STORED ||
+         last_response == MEMCACHED_CREATED_STORED);
   return 0;
 }
 ```
@@ -178,7 +181,8 @@ int arcus_map_element_upsert(memcached_st *memc)
   rc= memcached_mop_upsert(memc, key, strlen(key), mkey, strlen(mkey),
                            value, strlen(value), &attributes);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_mop_upsert: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_mop_upsert: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -227,7 +231,8 @@ int arcus_map_element_update(memcached_st *memc)
 
   rc= memcached_mop_update(memc, key, strlen(key), mkey, strlen(mkey), value, strlen(value));
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_mop_update: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_mop_update: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
@@ -287,13 +292,15 @@ int arcus_map_element_delete(memcached_st *memc)
   rc= memcached_mop_delete(memc, key, strlen(key), mkey, strlen(mkey), drop_if_empty);
   // rc= memcached_mop_delete_all(memc, key, strlen(key), drop_if_empty);
   if (memcached_failed(rc)) {
-    fprintf(stderr, "Failed to memcached_mop_delete: %d(%s)\n", rc, memcached_strerror(memc, rc));
+    fprintf(stderr, "Failed to memcached_mop_delete: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
     return -1;
   }
 
   memcached_return_t last_response= memcached_get_last_response_code(memc);
   assert(rc == MEMCACHED_SUCCESS);
-  assert(last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+  assert(last_response == MEMCACHED_DELETED ||
+         last_response == MEMCACHED_DELETED_DROPPED);
   return 0;
 }
 ```
@@ -413,18 +420,22 @@ int arcus_map_element_get(memcached_st *memc)
   do {
     rc= memcached_mop_get(memc, key, strlen(key), mkey, strlen(mkey),
                           with_delete, drop_if_empty, &result);
-    // rc= memcached_mop_get_all(memc, key, strlen(key), with_delete, drop_if_empty, &result);
-    /* rc= memcached_mop_get_by_list(memc, key, strlen(key), mkeys, mkeys_len,
-                                     number_of_mkeys, with_delete, drop_if_empty, &result); */
+    /* rc= memcached_mop_get_all(memc, key, strlen(key),
+                                 with_delete, drop_if_empty, &result) */
+    /* rc= memcached_mop_get_by_list(memc, key, strlen(key),
+                                     mkeys, mkeys_len, number_of_mkeys,
+                                     with_delete, drop_if_empty, &result); */
     if (memcached_failed(rc)) {
-      fprintf(stderr, "Failed to memcached_mop_get: %d(%s)\n", rc, memcached_strerror(memc, rc));
+      fprintf(stderr, "Failed to memcached_mop_get: %d(%s)\n",
+              rc, memcached_strerror(memc, rc));
       break;
     }
 
     memcached_return_t last_response= memcached_get_last_response_code(memc);
     assert(rc == MEMCACHED_SUCCESS);
     assert(last_response == MEMCACHED_END ||
-           last_response == MEMCACHED_DELETED || last_response == MEMCACHED_DELETED_DROPPED);
+           last_response == MEMCACHED_DELETED ||
+           last_response == MEMCACHED_DELETED_DROPPED);
 
     for (size_t i=0; i<memcached_coll_result_get_count(&result); i++) {
       const char* value= memcached_coll_result_get_value(&result, i);
@@ -506,9 +517,12 @@ int arcus_map_element_piped_insert(memcached_st *memc)
 
   if (piped_rc == MEMCACHED_SOME_SUCCESS) {
     for (size_t i=0; i<number_of_piped_items; i++) {
-      if (results[i] != MEMCACHED_STORED && results[i] != MEMCACHED_CREATED_STORED) {
-        fprintf(stderr, "Failed to memcached_mop_piped_insert: %s : %s => %s %d(%s)\n",
-                key, mkeys[i], values[i], results[i], memcached_strerror(memc, results[i]));
+      if (results[i] != MEMCACHED_STORED &&
+          results[i] != MEMCACHED_CREATED_STORED) {
+        fprintf(stderr, "Failed to memcached_mop_piped_insert: "
+                        "%s : %s => %s %d(%s)\n",
+                key, mkeys[i], values[i],results[i],
+                memcached_strerror(memc, results[i]));
       }
     }
   }
@@ -593,9 +607,12 @@ int arcus_map_element_piped_insert_bulk(memcached_st *memc)
 
   if (piped_rc == MEMCACHED_SOME_SUCCESS) {
     for (size_t i=0; i<number_of_keys; i++) {
-      if (results[i] != MEMCACHED_STORED && results[i] != MEMCACHED_CREATED_STORED) {
-        fprintf(stderr, "Failed to memcached_mop_piped_insert_bulk: %s : %s => %s %d(%s)\n",
-                keys[i], mkey, value, results[i], memcached_strerror(memc, results[i]));
+      if (results[i] != MEMCACHED_STORED &&
+          results[i] != MEMCACHED_CREATED_STORED) {
+        fprintf(stderr, "Failed to memcached_mop_piped_insert_bulk: "
+                        "%s : %s => %s %d(%s)\n",
+                keys[i], mkey, value, results[i],
+                memcached_strerror(memc, results[i]));
       }
     }
   }
