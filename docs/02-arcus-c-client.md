@@ -86,7 +86,7 @@ int main(int argc, char** argv)
     pool = memcached_pool_create(master_mc, initial, max);
 
     // 3. ARCUS admin에 연결한다.
-    char *ensemble_list = "dev.arcuscloud.nhncorp.com:17288";
+    char *ensemble_list = "dev.arcuscloud.jam2in.com:2181";
     char *svc_code = "dev";
     arcus_return_t error = arcus_pool_connect(pool, ensemble_list, svc_code);
 
@@ -212,7 +212,7 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
     proxy_mc = memcached_create(NULL);
 
     // ARCUS admin과 연결을 유지하는 쓰레드를 생성하여 캐시 서버 정보를 업데이트 받는다.
-    char *ensemble_list = "dev.arcuscloud.nhncorp.com:17288";
+    char *ensemble_list = "dev.arcuscloud.jam2in.com:2181";
     char *svc_code = "test1_6";
     rc = arcus_proxy_create(proxy_mc, ensemble_list, svc_code);
 
