@@ -12,11 +12,11 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - name: Install Arcus C Client Dependency Packages
-      run: sudo apt-get install -qq build-essential libtool pandora-build
+      run: sudo apt-get install -qq build-essential libtool
     - name: Cache Arcus Server Directory
       id: arcus-cache
       uses: actions/cache@v4
@@ -30,7 +30,7 @@ jobs:
            cd arcus-memcached
            ./deps/install.sh $HOME/arcus
            ./config/autorun.sh
-           ./configure --prefix=$HOME/arcus
+           CFLAGS="-Wno-error" ./configure --prefix=$HOME/arcus
            make && make install
     - name: Build Arcus C Client
       run: |
