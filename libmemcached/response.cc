@@ -423,6 +423,21 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
       memcached_server_response_increment(ptr);
       return MEMCACHED_ITEM;
     }
+    else if (memcmp(buffer, "INVALID", 7) == 0)
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("INVALID");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_COMMAND, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     break;
 
   case 'T': /* TYPE MISMATCH */
@@ -852,7 +867,8 @@ memcached_return_t memcached_response(memcached_server_write_instance_st ptr,
                 rc != MEMCACHED_UNREADABLE       and
                 rc != MEMCACHED_NOTSTORED        and
                 rc != MEMCACHED_NOT_SUPPORTED    and
-                rc != MEMCACHED_DATA_EXISTS )
+                rc != MEMCACHED_DATA_EXISTS      and
+                rc != MEMCACHED_INVALID_COMMAND  )
         return rc;
     }
   }
@@ -1141,6 +1157,24 @@ static memcached_return_t get_status_of_coll_pipe_response(memcached_server_writ
     case 'B':
       if (string_len == 13 && memcmp(string_ptr, "BKEY_MISMATCH", string_len) == 0)
         return MEMCACHED_BKEY_MISMATCH;
+      break;
+
+    case 'I':
+      if (string_len > 7 && memcmp(string_ptr, "INVALID", 7) == 0)
+      {
+        // Move past the basic error message and whitespace
+        char *startptr= string_ptr + memcached_literal_param_size("INVALID");
+        if (startptr[0] == ' ')
+        {
+          startptr++;
+        }
+
+        char *endptr= startptr;
+        while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+        return memcached_set_error(*ptr, MEMCACHED_INVALID_COMMAND, MEMCACHED_AT,
+                                   startptr, size_t(endptr - startptr));
+      }
       break;
 
     default:
@@ -1756,6 +1790,21 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
       memcached_server_response_increment(ptr);
       return MEMCACHED_ITEM;
     }
+    else if (memcmp(buffer, "INVALID", 7) == 0)
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("INVALID");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_COMMAND, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     break;
 
   case 'C':
@@ -1919,7 +1968,8 @@ memcached_return_t memcached_coll_response(memcached_server_write_instance_st pt
               rc != MEMCACHED_ELEMENT_EXISTS   and
               rc != MEMCACHED_UNREADABLE       and
               rc != MEMCACHED_CREATED          and
-              rc != MEMCACHED_CREATED_STORED )
+              rc != MEMCACHED_CREATED_STORED   and
+              rc != MEMCACHED_INVALID_COMMAND  )
       return rc;
   }
 
@@ -2454,6 +2504,21 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
       memcached_server_response_increment(ptr);
       return MEMCACHED_ITEM;
     }
+    else if (memcmp(buffer, "INVALID", 7) == 0)
+    {
+      // Move past the basic error message and whitespace
+      char *startptr= buffer + memcached_literal_param_size("INVALID");
+      if (startptr[0] == ' ')
+      {
+        startptr++;
+      }
+
+      char *endptr= startptr;
+      while (*endptr != '\r' && *endptr != '\n') endptr++;
+
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_COMMAND, MEMCACHED_AT,
+                                 startptr, size_t(endptr - startptr));
+    }
     break;
 
   case 'C':
@@ -2596,7 +2661,8 @@ memcached_return_t memcached_coll_smget_response(memcached_server_write_instance
               rc != MEMCACHED_ATTR_MISMATCH      and
               rc != MEMCACHED_BKEY_MISMATCH      and
               rc != MEMCACHED_OUT_OF_RANGE       and
-              rc != MEMCACHED_NOTFOUND )
+              rc != MEMCACHED_NOTFOUND           and
+              rc != MEMCACHED_INVALID_COMMAND    )
       return rc;
   }
 

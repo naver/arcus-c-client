@@ -309,6 +309,9 @@ const char *memcached_strerror(memcached_st *, memcached_return_t rc)
   case MEMCACHED_POSITION:
     return "ELEMENT POSITION";
 
+  case MEMCACHED_INVALID_COMMAND:
+    return "INVALID COMMAND";
+
 #ifdef ENABLE_REPLICATION
   case MEMCACHED_SWITCHOVER:
     return "REPLICATION SWITCHOVER";
