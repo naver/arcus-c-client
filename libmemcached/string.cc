@@ -48,7 +48,7 @@ inline static memcached_return_t _string_check(memcached_string_st *string, size
     size_t new_size;
 
     /* This is the block multiplier. To keep it larger and survive division errors we must round it up */
-    adjust= (need - (size_t)(string->current_size - (size_t)(string->end - string->string))) / MEMCACHED_BLOCK_SIZE;
+    adjust= (need - (size_t)(string->current_size - current_offset)) / MEMCACHED_BLOCK_SIZE;
     adjust++;
 
     new_size= sizeof(char) * (size_t)((adjust * MEMCACHED_BLOCK_SIZE) + string->current_size);
@@ -57,7 +57,6 @@ inline static memcached_return_t _string_check(memcached_string_st *string, size
       return memcached_set_error(*string->root, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
 
     new_value= static_cast<char *>(libmemcached_realloc(string->root, string->string, new_size));
-
     if (not new_value)
     {
       return memcached_set_error(*string->root, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
@@ -65,7 +64,6 @@ inline static memcached_return_t _string_check(memcached_string_st *string, size
 
     string->string= new_value;
     string->end= string->string + current_offset;
-
     string->current_size+= (MEMCACHED_BLOCK_SIZE * adjust);
   }
 
