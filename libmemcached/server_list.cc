@@ -77,7 +77,7 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
   if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight,
                                port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
   {
-    *error= memcached_set_errno(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
+    *error= memcached_set_errno(*new_host_list, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
     return NULL;
   }
 
