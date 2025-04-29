@@ -1971,7 +1971,7 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
   memcached_return_t rrc;
 
   char *value_ptr;
-  char to_read_string[MEMCACHED_MAX_KEY+1];
+  char to_read_string[MEMCACHED_MAX_KEY];
 
   for (i=0; i<ecount; i++)
   {
@@ -1992,8 +1992,8 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
         return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
 
       value_ptr= memcached_string_value_mutable(&result->keys[i]);
-      strncpy(value_ptr, to_read_string, read_length);
-      value_ptr[read_length]= 0;
+      /* to_read_string is already null-terminated string. */
+      memcpy(value_ptr, to_read_string, read_length);
       memcached_string_set_length(&result->keys[i], read_length);
     }
 
@@ -2158,36 +2158,31 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
 
   for (size_t i=0; i<kcount; i++)
   {
-    char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
+    char to_read_string[MEMCACHED_MAX_KEY];
     ssize_t read_length= 0;
 
     /* <missed key> */
-    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+1);
+    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY);
     if (rrc != MEMCACHED_SUCCESS && rrc != MEMCACHED_END)
     {
       return rrc;
     }
-    if (read_length > MEMCACHED_MAX_KEY)
-    {
-      goto read_error;
-    }
 
-    /* prepare memory for key string (+2 bytes to walk the \r\n) */
     if (not memcached_string_create(ptr->root, &result->missed_keys[i], read_length))
     {
       return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
     }
 
     value_ptr= memcached_string_value_mutable(&result->missed_keys[i]);
-    strncpy(value_ptr, to_read_string, read_length);
-    value_ptr[read_length]= 0;
+    /* to_read_string is already null-terminated string. */
+    memcpy(value_ptr, to_read_string, read_length);
     memcached_string_set_length(&result->missed_keys[i], read_length);
 
     if (rrc == MEMCACHED_SUCCESS) /* more data to read */
     {
       /* <missed cause> */
       /* MEMCACHED_MAX_KEY is enough length for reading cause string */
-      rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+1);
+      rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY);
       if (rrc != MEMCACHED_END)
       {
         memcached_string_free(&result->missed_keys[i]);
@@ -2218,9 +2213,6 @@ static memcached_return_t textual_coll_smget_missed_key_fetch(memcached_server_w
   }
 
   return MEMCACHED_SUCCESS;
-
-read_error:
-  return MEMCACHED_PARTIAL_READ;
 }
 
 /*
@@ -2259,31 +2251,26 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
 
   for (size_t i=0; i<kcount; i++)
   {
-    char to_read_string[MEMCACHED_MAX_KEY+2]; // +2: "\r\n"
+    char to_read_string[MEMCACHED_MAX_KEY];
     ssize_t read_length= 0;
 
     /* <trimmed key> */
-    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY+1);
+    rrc= fetch_value_header(ptr, to_read_string, &read_length, MEMCACHED_MAX_KEY);
     if (rrc != MEMCACHED_SUCCESS)
     {
       if (rrc == MEMCACHED_END) /* "\r\n" is found */
         rrc= MEMCACHED_PROTOCOL_ERROR;
       return rrc;
     }
-    if (read_length > MEMCACHED_MAX_KEY)
-    {
-      goto read_error;
-    }
 
-    /* prepare memory for key string (+2 bytes to walk the \r\n) */
     if (not memcached_string_create(ptr->root, &result->trimmed_keys[i], read_length))
     {
       return MEMCACHED_MEMORY_ALLOCATION_FAILURE;
     }
 
     value_ptr= memcached_string_value_mutable(&result->trimmed_keys[i]);
-    strncpy(value_ptr, to_read_string, read_length);
-    value_ptr[read_length]= 0;
+    /* to_read_string is already null-terminated string. */
+    memcpy(value_ptr, to_read_string, read_length);
     memcached_string_set_length(&result->trimmed_keys[i], read_length);
 
     /* <trimmed bkey> */
@@ -2322,9 +2309,6 @@ static memcached_return_t textual_coll_smget_trimmed_key_fetch(memcached_server_
   }
 
   return MEMCACHED_SUCCESS;
-
-read_error:
-  return MEMCACHED_PARTIAL_READ;
 }
 
 static memcached_return_t textual_read_one_coll_smget_response(memcached_server_write_instance_st ptr,
