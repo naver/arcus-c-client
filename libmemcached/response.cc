@@ -481,7 +481,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
   }
 
   WATCHPOINT_STRING(buffer);
-  return MEMCACHED_UNKNOWN_READ_FAILURE;
+  return MEMCACHED_UNDEFINED_RESPONSE;
 }
 
 static memcached_return_t binary_read_one_response(memcached_server_write_instance_st ptr,
@@ -1008,7 +1008,7 @@ static memcached_return_t get_status_of_bop_mget_response(char *string_ptr, int 
   default:
     break;
   }
-  return MEMCACHED_UNKNOWN_READ_FAILURE;
+  return MEMCACHED_UNDEFINED_RESPONSE;
 }
 
 static memcached_return_t get_status_of_coll_pipe_response(memcached_server_write_instance_st ptr,
@@ -1181,7 +1181,7 @@ static memcached_return_t get_status_of_coll_pipe_response(memcached_server_writ
       break;
   }
 
-  return MEMCACHED_UNKNOWN_READ_FAILURE;
+  return MEMCACHED_UNDEFINED_RESPONSE;
 }
 
 static memcached_return_t fetch_value_header(memcached_server_write_instance_st ptr,
@@ -1462,11 +1462,8 @@ static memcached_return_t textual_coll_value_fetch(memcached_server_write_instan
     status= get_status_of_bop_mget_response(string_ptr, string_len);
     if (status != MEMCACHED_SUCCESS && status != MEMCACHED_TRIMMED)
     {
-      if (status != MEMCACHED_UNKNOWN_READ_FAILURE)
-      {
-        if (buffer[read_length] != '\r') /* NOT "\r\n" */
-          status= MEMCACHED_PARTIAL_READ;
-      }
+      if (buffer[read_length] != '\r') /* NOT "\r\n" */
+        status= MEMCACHED_PARTIAL_READ;
       return status;
     }
 
@@ -1546,10 +1543,6 @@ static memcached_return_t textual_coll_piped_response_fetch(memcached_server_wri
       break;
     }
     rc= get_status_of_coll_pipe_response(ptr, buffer, total_read-2);
-    if (rc == MEMCACHED_UNKNOWN_READ_FAILURE)
-    {
-      break;
-    }
     responses[offset+i]= rc;
 #ifdef ENABLE_REPLICATION
     if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
@@ -1866,7 +1859,7 @@ static memcached_return_t textual_read_one_coll_response(memcached_server_write_
   }
 
   WATCHPOINT_STRING(buffer);
-  return MEMCACHED_UNKNOWN_READ_FAILURE;
+  return MEMCACHED_UNDEFINED_RESPONSE;
   /* NOTREACHED */
 }
 
@@ -2568,7 +2561,7 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
   }
 
   WATCHPOINT_STRING(buffer);
-  return MEMCACHED_UNKNOWN_READ_FAILURE;
+  return MEMCACHED_UNDEFINED_RESPONSE;
   /* NOTREACHED */
 }
 
