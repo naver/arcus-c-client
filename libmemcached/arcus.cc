@@ -1126,28 +1126,38 @@ static inline void do_arcus_zk_watch_and_update_cachelist(memcached_st *mc,
 static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh __attribute__((unused)),
                                                  int type,
                                                  int state __attribute__((unused)),
-                                                 const char *path __attribute__((unused)),
+                                                 const char *path,
                                                  void *ctx_mc)
 {
-  if (type == ZOO_CHILD_EVENT) {
+  switch (type)
+  {
+  case ZOO_CHILD_EVENT:
     ZOO_LOG_INFO(("ZOO_CHILD_EVENT from ZK cache list"));
-
-    memcached_st *mc= static_cast<memcached_st *>(ctx_mc);
-    pthread_mutex_lock(&lock_arcus);
-    arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
-    pthread_mutex_unlock(&lock_arcus);
-    if (not arcus || not arcus->zk.handle) {
-      ZOO_LOG_ERROR(("arcus is null"));
-      return;
-    }
-
-    pthread_mutex_lock(&arcus->zk_mgr.lock);
-    arcus->zk_mgr.request.update_cache_list= true;
-    do_arcus_zk_manager_wakeup(mc, true);
-    pthread_mutex_unlock(&arcus->zk_mgr.lock);
-  } else {
-    ZOO_LOG_WARN(("Unexpected event gotten by watcher_cachelist"));
+    break;
+  case ZOO_NOTWATCHING_EVENT:
+    ZOO_LOG_WARN(("Child watch removed. The znode is %s", path));
+    break;
+  case ZOO_SESSION_EVENT:
+    // Do nothing. Session events are handled by do_arcus_zk_watcher_global.
+    return;
+  default:
+    ZOO_LOG_WARN(("Unexpected event gotten by watcher_cachelist. type=%d, path=%s", type, path));
+    return;
   }
+
+  memcached_st *mc= static_cast<memcached_st *>(ctx_mc);
+  pthread_mutex_lock(&lock_arcus);
+  arcus_st *arcus= static_cast<arcus_st *>(memcached_get_server_manager(mc));
+  pthread_mutex_unlock(&lock_arcus);
+  if (not arcus || not arcus->zk.handle) {
+    ZOO_LOG_ERROR(("arcus is null"));
+    return;
+  }
+
+  pthread_mutex_lock(&arcus->zk_mgr.lock);
+  arcus->zk_mgr.request.update_cache_list= true;
+  do_arcus_zk_manager_wakeup(mc, true);
+  pthread_mutex_unlock(&arcus->zk_mgr.lock);
 }
 
 /**
