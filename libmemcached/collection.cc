@@ -2496,18 +2496,17 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("result is null"));
   }
-  if (query->count < 1)
+  if (query->count < 1 || query->count > MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("'count' should be > 0"));
+                               memcached_literal_param("'count' should be > 0 and <= 1000"));
   }
-  if (query->offset + query->count > MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT)
+  if (query->offset != 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("'offset + count' should be <= 1000"));
+                               memcached_literal_param("'offset' should be 0"));
   }
-  if (query->smgmode != MEMCACHED_COLL_SMGET_NONE &&
-      query->smgmode != MEMCACHED_COLL_SMGET_DUPLICATE &&
+  if (query->smgmode != MEMCACHED_COLL_SMGET_DUPLICATE &&
       query->smgmode != MEMCACHED_COLL_SMGET_UNIQUE)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
@@ -2546,14 +2545,11 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
 
   /* Options */
   write_length+= snprintf(buffer+write_length, buffer_length-write_length,
-                          " %u %u", (int)0, (int)(query->offset + query->count));
+                          " %u", (int)query->count);
 
   /* smget mode */
-  if (query->smgmode != MEMCACHED_COLL_SMGET_NONE)
-  {
-    write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %s",
-                            (query->smgmode == MEMCACHED_COLL_SMGET_DUPLICATE ? "duplicate" : "unique"));
-  }
+  write_length+= snprintf(buffer+write_length, buffer_length-write_length, " %s",
+                          (query->smgmode == MEMCACHED_COLL_SMGET_DUPLICATE ? "duplicate" : "unique"));
 
   if ((size_t)write_length >= buffer_length || write_length < 0)
   {
@@ -4632,7 +4628,7 @@ static void memcached_coll_query_init(memcached_coll_query_st *ptr)
     ptr->offset = 0;
     ptr->count = 0;
     ptr->eflag_filter = NULL;
-    ptr->smgmode = MEMCACHED_COLL_SMGET_NONE;
+    ptr->smgmode = MEMCACHED_COLL_SMGET_DUPLICATE;
   }
 }
 

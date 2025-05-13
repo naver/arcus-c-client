@@ -96,7 +96,6 @@ typedef enum {
 
 /* smget mode */
 typedef enum {
-  MEMCACHED_COLL_SMGET_NONE,
   MEMCACHED_COLL_SMGET_DUPLICATE,
   MEMCACHED_COLL_SMGET_UNIQUE
 } memcached_coll_smget_mode_t;

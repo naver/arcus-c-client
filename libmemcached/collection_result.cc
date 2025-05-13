@@ -244,7 +244,7 @@ static inline void _coll_smget_result_init(memcached_coll_smget_result_st *self,
   self->trimmed_sub_keys= NULL;
   self->offset= 0;
   self->count= 0;
-  self->smgmode= MEMCACHED_COLL_SMGET_NONE;
+  self->smgmode= MEMCACHED_COLL_SMGET_DUPLICATE;
   self->root= memc;
   self->options.is_initialized= true;
   self->options.is_descending= false;

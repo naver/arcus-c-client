@@ -371,8 +371,7 @@ memcached_coll_fetch_result(memcached_st *ptr,
 
 static memcached_return_t
 merge_smget_results(memcached_coll_smget_result_st **results,
-                    memcached_return_t *responses, size_t num_results,
-                    memcached_coll_smget_result_st *merged)
+                    size_t num_results, memcached_coll_smget_result_st *merged)
 {
   memcached_return_t rc= MEMCACHED_END;
   size_t result_idx[256];
@@ -463,13 +462,7 @@ merge_smget_results(memcached_coll_smget_result_st **results,
     {
       if (merged->smgmode == MEMCACHED_COLL_SMGET_UNIQUE) {
         /* if there are no more elements in this result. */
-        if (++result_idx[smallest_idx] >= results[smallest_idx]->value_count) {
-          if ((merged->smgmode == MEMCACHED_COLL_SMGET_NONE) &&
-              (responses[smallest_idx] == MEMCACHED_TRIMMED or
-               responses[smallest_idx] == MEMCACHED_DUPLICATED_TRIMMED)) {
-              bkey_trimmed= true;
-          }
-        }
+        ++result_idx[smallest_idx];
         continue;
       }
     }
@@ -516,15 +509,7 @@ merge_smget_results(memcached_coll_smget_result_st **results,
     found_count++;
 
     /* if there are no more elements in this result. */
-    if (++result_idx[smallest_idx] >= results[smallest_idx]->value_count)
-    {
-      if ((merged->smgmode == MEMCACHED_COLL_SMGET_NONE) &&
-          (responses[smallest_idx] == MEMCACHED_TRIMMED or
-           responses[smallest_idx] == MEMCACHED_DUPLICATED_TRIMMED))
-      {
-          bkey_trimmed= true;
-      }
-    }
+    ++result_idx[smallest_idx];
 
     if (merged_count >= merged->count) {
       break; /* the end */
@@ -567,8 +552,7 @@ merge_smget_results(memcached_coll_smget_result_st **results,
     for (size_t x=0; x<results[j]->missed_key_count; x++)
     {
       merged->missed_keys[merged_count]= results[j]->missed_keys[x];
-      if (merged->smgmode != MEMCACHED_COLL_SMGET_NONE)
-        merged->missed_causes[merged_count]= results[j]->missed_causes[x];
+      merged->missed_causes[merged_count]= results[j]->missed_causes[x];
       merged_count++;
     }
     results[j]->missed_key_count= 0;
@@ -843,7 +827,7 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
       }
     }
 
-    memcached_return_t response= merge_smget_results(results_on_each_server, responses_on_each_server, server_idx, result);
+    memcached_return_t response= merge_smget_results(results_on_each_server, server_idx, result);
     memcached_set_last_response_code(ptr, response);
     *error = MEMCACHED_SUCCESS;
     break;
