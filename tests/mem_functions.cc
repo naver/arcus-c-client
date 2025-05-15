@@ -44,6 +44,8 @@
   Test cases
 */
 
+#define DEPRECATE_OLD_SMGET
+
 #include <libmemcached/memcached.h>
 #include <libmemcached/is.h>
 #include <libmemcached/server_instance.h>
@@ -7528,15 +7530,21 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
                        3000, 300, 30, 3,
                        2000, 200, 20, 2,
                        1000, 100, 10, 1 };
+#ifdef DEPRECATE_OLD_SMGET
+#else
   uint64_t sorts[] = {    1,    2,    3,    4,    5,
                          10,   20,   30,   40,   50,
                         100,  200,  300,  400,  500,
                        1000, 2000, 3000, 4000, 5000 };
+#endif
   uint64_t bkey_nbo; /* bkey of network byte order */
   uint64_t bkey;
   uint32_t eflag = 0;
+#ifdef DEPRECATE_OLD_SMGET
+#else
   memcached_hexadecimal_st bkey_hex;
   memcached_hexadecimal_st eflag_hex;
+#endif
   char     buffer[64];
   size_t   vlen;
 
@@ -7575,6 +7583,9 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7609,6 +7620,7 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
       }
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (descending order)*/
@@ -7617,6 +7629,9 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7644,6 +7659,7 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
       }
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
@@ -7679,6 +7695,9 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7709,6 +7728,7 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
       }
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (descending order) */
@@ -7722,6 +7742,9 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 12, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7752,6 +7775,7 @@ static test_return_t arcus_1_6_btree_smget(memcached_st *memc)
       }
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
@@ -7776,8 +7800,11 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   uint64_t bkey_nbo; /* bkey of network byte order */
   uint64_t bkey;
   uint32_t eflag;
+#ifdef DEPRECATE_OLD_SMGET
+#else
   memcached_hexadecimal_st bkey_hex;
   memcached_hexadecimal_st eflag_hex;
+#endif
   char     buffer[64];
   size_t   vlen;
 
@@ -7816,6 +7843,9 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7845,6 +7875,7 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
 #endif
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* 1-2) do smget in descending order */
@@ -7854,6 +7885,9 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7876,6 +7910,7 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
       test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* 1-1) do smget in ascending order with offset=2, count=20 */
@@ -7885,6 +7920,9 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7907,6 +7945,7 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
       test_true(strcmp(buffer, memcached_coll_smget_result_get_value(&smget_result, i)) == 0);
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
@@ -7940,6 +7979,9 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7963,6 +8005,7 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
 #endif
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* 2-2) do smget in descending order */
@@ -7975,6 +8018,9 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -7998,6 +8044,7 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
 #endif
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* 2-3) do smget in ascending order with offset=2, count=20 */
@@ -8010,6 +8057,9 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 100, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8033,6 +8083,7 @@ static test_return_t arcus_1_6_btree_smget_more(memcached_st *memc)
 #endif
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
@@ -8174,6 +8225,9 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, &key, &key_length, 1, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8203,6 +8257,7 @@ static test_return_t arcus_1_6_btree_smget_one_key(memcached_st *memc)
 #endif
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   return TEST_SUCCESS;
@@ -8214,7 +8269,10 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   const char *keys[10];
   size_t key_length[10];
   uint64_t bkeys[] = { 5000, 5000, 500, 50, 5, 4000, 4000, 400, 40, 4 }; /* duplicate */
+#ifdef DEPRECATE_OLD_SMGET
+#else
   uint64_t sorts[] = { 4, 5, 40, 50, 400, 500, 4000, 4000, 5000, 5000 }; /* sorted bkeys */
+#endif
   uint64_t bkey;
   uint32_t eflag = 0;
   char     buffer[64];
@@ -8248,6 +8306,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 10, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8270,6 +8331,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       ***/
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (descending order) : duplicated */
@@ -8279,6 +8341,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 10, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8297,6 +8362,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       ***/
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
@@ -8334,7 +8400,11 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_OUT_OF_RANGE, memcached_strerror(NULL, rc));
+#endif
 
   memcached_coll_smget_result_free(&smget_result);
 
@@ -8344,6 +8414,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED_TRIMMED,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8363,6 +8436,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       ***/
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (descending order): duplicated & trimmed */
@@ -8371,6 +8445,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8384,6 +8461,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (descending order): duplicated & trimmed */
@@ -8392,6 +8470,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8405,6 +8486,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
@@ -8442,7 +8524,11 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_OUT_OF_RANGE, memcached_strerror(NULL, rc));
+#endif
 
   memcached_coll_smget_result_free(&smget_result);
 
@@ -8452,6 +8538,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED_TRIMMED,
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8471,6 +8560,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       ***/
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (descending order): duplicated & trimmed */
@@ -8479,6 +8569,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8492,6 +8585,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (descending order): duplicated & trimmed */
@@ -8500,6 +8594,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 3, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_DUPLICATED, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8513,6 +8610,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim(memcached_st *memc)
       test_true(sorted_bkeys[(6-1)-i] == memcached_coll_smget_result_get_bkey(&smget_result, i));
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* delete btree items */
@@ -8565,6 +8663,9 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 2, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_TRIMMED, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
@@ -8576,6 +8677,7 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
       test_true((20-i) == memcached_coll_smget_result_get_bkey(&smget_result, i));
     }
   }
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (20 ~ 10, offset=5, count=100) */
@@ -8583,11 +8685,15 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 2, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_TRIMMED, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
   test_true(0 == memcached_coll_smget_result_get_count(&smget_result));
   test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (22 ~ 20, offset=5, count=100) */
@@ -8595,11 +8701,15 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 2, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
   test_true(0 == memcached_coll_smget_result_get_count(&smget_result));
   test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (50 ~ 40, offset=0, count=100) */
@@ -8607,11 +8717,15 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 2, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+  test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_SUCCESS, memcached_strerror(NULL, rc));
   test_true_got(memcached_get_last_response_code(memc) == MEMCACHED_END, /* response code */
                 memcached_strerror(NULL, memcached_get_last_response_code(memc)));
   test_true(0 == memcached_coll_smget_result_get_count(&smget_result));
   test_true(0 == memcached_coll_smget_result_get_missed_key_count(&smget_result));
+#endif
   memcached_coll_smget_result_free(&smget_result);
 
   /* do smget operation (9 ~ 5, count=100) */
@@ -8619,7 +8733,11 @@ static test_return_t arcus_1_6_btree_smget_duptrim2(memcached_st *memc)
   memcached_coll_smget_result_create(memc, &smget_result);
 
   rc = memcached_bop_smget(memc, keys, key_length, 2, &smget_query, &smget_result);
+#ifdef DEPRECATE_OLD_SMGET
+    test_true_got(rc == MEMCACHED_DEPRECATED, memcached_strerror(NULL, rc));
+#else
   test_true_got(rc == MEMCACHED_OUT_OF_RANGE, memcached_strerror(NULL, rc));
+#endif
 
   memcached_coll_smget_result_free(&smget_result);
 

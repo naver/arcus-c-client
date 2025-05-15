@@ -2491,20 +2491,24 @@ static memcached_return_t do_bop_smget(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("query is null"));
   }
+  if (query->smgmode == MEMCACHED_COLL_SMGET_NONE) {
+      return memcached_set_error(*ptr, MEMCACHED_DEPRECATED, MEMCACHED_AT,
+                                 memcached_literal_param("Use memcached_bop[_ext]_smget_query_init"));
+  }
   if (not result)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
                                memcached_literal_param("result is null"));
   }
-  if (query->count < 1)
+  if (query->count < 1 || query->count > MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("'count' should be > 0"));
+                               memcached_literal_param("'count' should be > 0 and <= 1000"));
   }
-  if (query->offset + query->count > MEMCACHED_COLL_MAX_BOP_SMGET_ELEM_COUNT)
+  if (query->offset != 0)
   {
     return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("'offset + count' should be <= 1000"));
+                               memcached_literal_param("'offset' should be 0"));
   }
   if (query->smgmode != MEMCACHED_COLL_SMGET_NONE &&
       query->smgmode != MEMCACHED_COLL_SMGET_DUPLICATE &&
