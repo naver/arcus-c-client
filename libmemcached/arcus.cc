@@ -1131,7 +1131,7 @@ static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh __attribute__((un
 {
   if (type == ZOO_CHILD_EVENT) {
       ZOO_LOG_INFO(("ZOO_CHILD_EVENT from ZK cache list"));
-  } else if (type == ZOO_NOWATCHING_EVENT) {
+  } else if (type == ZOO_NOTWATCHING_EVENT) {
       ZOO_LOG_WARN(("Child watch removed. The znode is %s", path));
   } else if (type == ZOO_SESSION_EVENT) {
       // Do nothing. Session events are handled by do_arcus_zk_watcher_global.
