@@ -379,7 +379,7 @@ merge_smget_results(memcached_coll_smget_result_st **results,
   memset(result_idx, 0, 256*sizeof(size_t));
 
   memcached_coll_sub_key_st *prev_sub_key = NULL;
-  memcached_coll_sub_key_st *curr_sub_key;
+  memcached_coll_sub_key_st *curr_sub_key = NULL;
 
   size_t merged_count= 0;
   size_t found_count= 0;
@@ -581,7 +581,7 @@ merge_smget_results(memcached_coll_smget_result_st **results,
   for (size_t i=0; i<merged->trimmed_key_count; i++)
   {
     int smallest_idx= -1;
-    int comp_result;
+    int comp_result= 0;
     bool should_merge= false;
     for (size_t j=0; j<num_results; j++)
     {
@@ -620,15 +620,17 @@ merge_smget_results(memcached_coll_smget_result_st **results,
 
     if (merged->value_count < merged->count)
     {
-      /* compare it with the bkey of the last found element */
-      prev_sub_key = &merged->sub_keys[merged->value_count-1];
-      curr_sub_key = &results[smallest_idx]->trimmed_sub_keys[result_idx[smallest_idx]];
-      if (byte_array_bkey) {
-        comp_result= memcached_compare_two_hexadecimal(&prev_sub_key->bkey_ext,
-                                                       &curr_sub_key->bkey_ext);
-      } else {
-        comp_result= (prev_sub_key->bkey == curr_sub_key->bkey) ? 0
-                   : (prev_sub_key->bkey <  curr_sub_key->bkey) ? -1 : 1;
+      if (merged->value_count > 0) {
+        /* compare it with the bkey of the last found element */
+        prev_sub_key = &merged->sub_keys[merged->value_count-1];
+        curr_sub_key = &results[smallest_idx]->trimmed_sub_keys[result_idx[smallest_idx]];
+        if (byte_array_bkey) {
+          comp_result= memcached_compare_two_hexadecimal(&prev_sub_key->bkey_ext,
+                                                         &curr_sub_key->bkey_ext);
+        } else {
+          comp_result= (prev_sub_key->bkey == curr_sub_key->bkey) ? 0
+                     : (prev_sub_key->bkey <  curr_sub_key->bkey) ? -1 : 1;
+        }
       }
       if (comp_result <= 0) {
           should_merge= true;
@@ -713,6 +715,8 @@ memcached_coll_smget_fetch_result(memcached_st *ptr,
         *error= MEMCACHED_MEMORY_ALLOCATION_FAILURE;
         break;
       }
+
+      each_result->sub_key_type = result->sub_key_type;
     }
 
     char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
