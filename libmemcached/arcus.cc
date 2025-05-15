@@ -1129,18 +1129,14 @@ static inline void do_arcus_zk_watcher_cachelist(zhandle_t *zh __attribute__((un
                                                  const char *path,
                                                  void *ctx_mc)
 {
-  switch (type)
-  {
-  case ZOO_CHILD_EVENT:
-    ZOO_LOG_INFO(("ZOO_CHILD_EVENT from ZK cache list"));
-    break;
-  case ZOO_NOTWATCHING_EVENT:
-    ZOO_LOG_WARN(("Child watch removed. The znode is %s", path));
-    break;
-  case ZOO_SESSION_EVENT:
-    // Do nothing. Session events are handled by do_arcus_zk_watcher_global.
-    return;
-  default:
+  if (type == ZOO_CHILD_EVENT) {
+      ZOO_LOG_INFO(("ZOO_CHILD_EVENT from ZK cache list"));
+  } else if (type == ZOO_NOWATCHING_EVENT) {
+      ZOO_LOG_WARN(("Child watch removed. The znode is %s", path));
+  } else if (type == ZOO_SESSION_EVENT) {
+      // Do nothing. Session events are handled by do_arcus_zk_watcher_global.
+      return;
+  } else {
     ZOO_LOG_WARN(("Unexpected event gotten by watcher_cachelist. type=%d, path=%s", type, path));
     return;
   }
