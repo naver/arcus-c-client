@@ -81,13 +81,17 @@ static test_return_t cat_test(void *)
                memcached_set(memc, test_literal_param("foo"), 0, 0, 0, 0));
 
   memcached_return_t rc;
-  test_null(memcached_get(memc, test_literal_param("foo"), 0, 0, &rc));
+  char *value= memcached_get(memc, test_literal_param("foo"), 0, 0, &rc);
   test_compare(MEMCACHED_SUCCESS, rc);
+  test_true(value != NULL);
+  free(value);
 
   test_true(exec_cmdline(executable, args));
 
-  test_null(memcached_get(memc, test_literal_param("foo"), 0, 0, &rc));
+  value= memcached_get(memc, test_literal_param("foo"), 0, 0, &rc);
   test_compare(MEMCACHED_SUCCESS, rc);
+  test_true(value != NULL);
+  free(value);
 
   memcached_free(memc);
 

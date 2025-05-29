@@ -165,9 +165,6 @@ memcached_return_t memcached_string_append(memcached_string_st *string,
 
 char *memcached_string_c_copy(memcached_string_st *string)
 {
-  if (not memcached_string_length(string))
-    return NULL;
-
   char *c_ptr= static_cast<char *>(libmemcached_malloc(string->root, (memcached_string_length(string)+1) * sizeof(char)));
 
   if (not c_ptr)
