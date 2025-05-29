@@ -1,3 +1,28 @@
+2025-06-02 [version 1.14.1]
+## 🐣 New Features
+  - Add a handler for the `INVALID` error.
+  - Return `MEMCACHED_DEPRECATED` when using old query_init function
+    in memcached_bop_smget
+## 🔧 Enhancements
+  - Log unexpected events received from ZooKeeper watch.
+  - Do not reconnect about unknown response.
+## ⚙️ Internal Changes
+  - Re-generate config string parser using the latest flex.
+  - Validation check for the bkey.
+  - Increase the cursor_active even in case of non-successful VALUE response to read to END.
+  - Do not overwrite a last response on error.
+  - Fix a compile Werror
+## 🐛 Bug Fixes
+  - Add a success case for 'NOT_EXIST' in the exist API.
+  - Fix an overwrite issue for the big key.
+  - Check dependencies in the prefix path before the default path.
+## 📝 Documentation
+  - Update ChangeLog format.
+  - Improve API description.
+## ✅ Testing
+  - Upgrade the ubuntu version for CI.
+  - Upgrade github actions version.
+
 2024-09-02 [version 1.14.0]
 ## 🐣 New Features
   - Add `mop upsert` method. #292
