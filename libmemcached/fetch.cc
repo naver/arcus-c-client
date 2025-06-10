@@ -147,6 +147,7 @@ memcached_result_st *memcached_fetch_result(memcached_st *ptr,
     }
     else if (*error == MEMCACHED_SUCCESS)
     {
+      memcached_set_last_response_code(ptr, *error);
       result->count++;
       return result;
     }
@@ -300,6 +301,7 @@ memcached_coll_fetch_result(memcached_st *ptr,
     else if (*error == MEMCACHED_SUCCESS or *error == MEMCACHED_TRIMMED or
              *error == MEMCACHED_DELETED or *error == MEMCACHED_DELETED_DROPPED)
     {
+      memcached_set_last_response_code(ptr, *error);
       return result;
     }
     else if (*error == MEMCACHED_END)
@@ -308,6 +310,7 @@ memcached_coll_fetch_result(memcached_st *ptr,
     }
     else if (MEMCACHED_OPCODE_IS_MGET(ptr))
     {
+      memcached_set_last_response_code(ptr, *error);
       return result;
     }
     else if (*error != MEMCACHED_NOTFOUND         and
