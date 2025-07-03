@@ -639,6 +639,12 @@ static memcached_return_t server_add(memcached_st *ptr,
     return memcached_set_error(*ptr, MEMCACHED_INVALID_HOST_PROTOCOL, MEMCACHED_AT);
   }
 
+  if (memcached_is_valid_servername(hostname) == false)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                               memcached_literal_param("Invalid hostname provided"));
+  }
+
   memcached_server_st *new_host_list;
   new_host_list= static_cast<memcached_server_st*>(libmemcached_realloc(ptr, memcached_server_list(ptr),
                                                    sizeof(memcached_server_st) * (ptr->number_of_hosts + 1)));
@@ -712,6 +718,11 @@ memcached_return_t memcached_server_push_with_count(memcached_st *ptr,
     WATCHPOINT_ASSERT(instance);
 
     memcached_string_t hostname= { memcached_string_make_from_cstr(list[x].hostname) };
+    if (memcached_is_valid_servername(hostname) == false) {
+      return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                 memcached_literal_param("Invalid hostname provided"));
+    }
+
     if (__server_create_with(ptr, instance,
                              hostname,
                              list[x].port, list[x].weight, list[x].type) == NULL)
@@ -778,6 +789,10 @@ memcached_return_t memcached_server_push_with_serverinfo(memcached_st *ptr,
       WATCHPOINT_ASSERT(instance);
 
       memcached_string_t hostname= { memcached_string_make_from_cstr(serverinfo[x].hostname) };
+      if (memcached_is_valid_servername(hostname) == false) {
+        return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                                   memcached_literal_param("Invalid hostname provided"));
+      }
       if (__server_create_with(ptr, instance, hostname, serverinfo[x].port, 0,
                               serverinfo[x].port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET) == NULL)
       {
@@ -815,11 +830,6 @@ memcached_return_t memcached_server_add_unix_socket_with_weight(memcached_st *pt
   }
 
   memcached_string_t _filename= { memcached_string_make_from_cstr(filename) };
-  if (memcached_is_valid_servername(_filename) == false)
-  {
-    memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                        memcached_literal_param("Invalid filename for socket provided"));
-  }
 
   return server_add(ptr, _filename, 0, weight, MEMCACHED_CONNECTION_UNIX_SOCKET);
 }
@@ -852,11 +862,6 @@ memcached_return_t memcached_server_add_udp_with_weight(memcached_st *ptr,
   }
 
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
-  if (memcached_is_valid_servername(_hostname) == false)
-  {
-    memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                        memcached_literal_param("Invalid hostname provided"));
-  }
 
   return server_add(ptr, _hostname, port, weight, MEMCACHED_CONNECTION_UDP);
 }
@@ -891,12 +896,6 @@ memcached_return_t memcached_server_add_with_weight(memcached_st *ptr,
   }
 
   memcached_string_t _hostname= { hostname, hostname_length };
-
-  if (memcached_is_valid_servername(_hostname) == false)
-  {
-    return memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
-                               memcached_literal_param("Invalid hostname provided"));
-  }
 
   return server_add(ptr, _hostname, port, weight,
                     _hostname.c_str[0] == '/' ? MEMCACHED_CONNECTION_UNIX_SOCKET

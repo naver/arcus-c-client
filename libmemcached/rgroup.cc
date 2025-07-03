@@ -190,6 +190,11 @@ do_rgroup_server_insert(memcached_rgroup_st *rgroup, int sindex,
 
   /* create a new memcached server */
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
+  if (memcached_is_valid_servername(_hostname) == false) {
+    memcached_set_error(*rgroup->root, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                        memcached_literal_param("Invalid hostname provided"));
+    return;
+  }
   server= do_rgroup_server_alloc(rgroup->root);
   assert(server != NULL);
   server= __server_create_with(rgroup->root, server, _hostname, port, 0,
@@ -252,6 +257,11 @@ do_rgroup_server_replace(memcached_rgroup_st *rgroup, int sindex,
 
   /* create a new memcached server */
   memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
+  if (memcached_is_valid_servername(_hostname) == false) {
+    memcached_set_error(*rgroup->root, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                        memcached_literal_param("Invalid hostname provided"));
+    return;
+  }
   new_server= do_rgroup_server_alloc(rgroup->root);
   assert(new_server != NULL);
   new_server= __server_create_with(rgroup->root, new_server, _hostname, port, 0,

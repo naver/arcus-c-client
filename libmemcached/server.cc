@@ -134,12 +134,6 @@ memcached_server_st *__server_create_with(memcached_st *memc,
                                           uint32_t weight,
                                           const memcached_connection_t type)
 {
-  if (memcached_is_valid_servername(hostname) == false)
-  {
-    memcached_set_error(*memc, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT, memcached_literal_param("Invalid hostname provided"));
-    return NULL;
-  }
-
   self= _server_create(self, memc);
 
   if (not self)
@@ -208,6 +202,12 @@ memcached_server_st *memcached_server_clone(memcached_server_st *destination,
   }
 
   memcached_string_t hostname= { memcached_string_make_from_cstr(source->hostname) };
+  if (memcached_is_valid_servername(hostname) == false)
+  {
+    memcached_set_error(*source, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                        memcached_literal_param("Invalid hostname provided"));
+    return NULL;
+  }
   destination= __server_create_with(source->root, destination,
                                     hostname,
                                     source->port, source->weight,
