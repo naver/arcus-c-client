@@ -60,6 +60,13 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
     port= MEMCACHED_DEFAULT_PORT;
   }
 
+  memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
+  if (memcached_is_valid_servername(_hostname) == false) {
+    memcached_set_error(*ptr, MEMCACHED_INVALID_ARGUMENTS, MEMCACHED_AT,
+                        memcached_literal_param("Invalid hostname provided"));
+    return NULL;
+  }
+
   /* Increment count for hosts */
   count= 1;
   if (ptr != NULL) {
@@ -72,8 +79,6 @@ memcached_server_list_append_with_weight(memcached_server_list_st ptr,
     return NULL;
   }
 
-  memcached_string_t _hostname= { memcached_string_make_from_cstr(hostname) };
-  /* @todo Check return type */
   if (not __server_create_with(NULL, &new_host_list[count-1], _hostname, port, weight,
                                port ? MEMCACHED_CONNECTION_TCP : MEMCACHED_CONNECTION_UNIX_SOCKET))
   {
