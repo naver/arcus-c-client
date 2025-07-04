@@ -62,9 +62,9 @@
 
 #include <cassert>
 
-static inline bool memcached_is_valid_servername(const memcached_string_t& arg)
+static inline bool memcached_is_valid_servername(const memcached_string_t &arg)
 {
-  return arg.size > 0 or arg.size < NI_MAXHOST;
+  return (arg.c_str != NULL or arg.size == 0) and arg.size < MEMCACHED_NI_MAXHOST;
 }
 
 static inline void memcached_mark_server_as_clean(memcached_server_write_instance_st server)
