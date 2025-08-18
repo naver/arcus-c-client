@@ -122,6 +122,50 @@ static void sasl_startup_function(void)
 
 } // extern "C"
 
+static memcached_return_t memcached_sasl_mech_binary(memcached_server_st *server,
+                                                     char *buffer, size_t buffer_length)
+{
+  protocol_binary_request_no_extras request= { };
+  request.message.header.request.magic= PROTOCOL_BINARY_REQ;
+  request.message.header.request.opcode= PROTOCOL_BINARY_CMD_SASL_LIST_MECHS;
+
+  if (memcached_io_write(server, request.bytes,
+                         sizeof(request.bytes), 1) != sizeof(request.bytes))
+  {
+    return MEMCACHED_WRITE_FAILURE;
+  }
+
+  memcached_server_response_increment(server);
+
+  return memcached_response(server, buffer, buffer_length, NULL);
+}
+
+static memcached_return_t memcached_sasl_auth_binary(memcached_server_st *server, const char *chosenmech,
+                                                     bool is_first, const char *data, unsigned int len)
+{
+  protocol_binary_request_no_extras request= { };
+  request.message.header.request.magic= PROTOCOL_BINARY_REQ;
+  request.message.header.request.opcode= is_first ? PROTOCOL_BINARY_CMD_SASL_AUTH : PROTOCOL_BINARY_CMD_SASL_STEP;
+  uint16_t keylen= (uint16_t)strlen(chosenmech);
+  request.message.header.request.keylen= htons(keylen);
+  request.message.header.request.bodylen= htonl(len + keylen);
+
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { sizeof(request.bytes), request.bytes },
+    { keylen, chosenmech },
+    { len, data },
+  };
+
+  if (memcached_io_writev(server, vector, 3, true) == -1)
+  {
+    return MEMCACHED_WRITE_FAILURE;
+  }
+  memcached_server_response_increment(server);
+
+  return memcached_response(server, NULL, 0, NULL);
+}
+
 memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *server)
 {
   if (LIBMEMCACHED_WITH_SASL_SUPPORT == 0)
@@ -144,20 +188,8 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
    * support will return UNKNOWN COMMAND, so we can just treat that
    * as authenticated
  */
-  protocol_binary_request_no_extras request= { };
-  request.message.header.request.magic= PROTOCOL_BINARY_REQ;
-  request.message.header.request.opcode= PROTOCOL_BINARY_CMD_SASL_LIST_MECHS;
-
-  if (memcached_io_write(server, request.bytes,
-                         sizeof(request.bytes), 1) != sizeof(request.bytes))
-  {
-    return MEMCACHED_WRITE_FAILURE;
-  }
-
-  memcached_server_response_increment(server);
-
   char mech[MEMCACHED_MAX_BUFFER];
-  memcached_return_t rc= memcached_response(server, mech, sizeof(mech), NULL);
+  memcached_return_t rc= memcached_sasl_mech_binary(server, mech, MEMCACHED_MAX_BUFFER);
   if (memcached_failed(rc))
   {
     if (rc == MEMCACHED_PROTOCOL_ERROR)
@@ -224,35 +256,10 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
     return memcached_set_error(*server, MEMCACHED_AUTH_PROBLEM, MEMCACHED_AT,
                                memcached_string_make_from_cstr(sasl_error_msg));
   }
-  uint16_t keylen= (uint16_t)strlen(chosenmech);
-  request.message.header.request.opcode= PROTOCOL_BINARY_CMD_SASL_AUTH;
-  request.message.header.request.keylen= htons(keylen);
-  request.message.header.request.bodylen= htonl(len + keylen);
 
-  do {
-    /* send the packet */
-
-    struct libmemcached_io_vector_st vector[]=
-    {
-      { sizeof(request.bytes), request.bytes },
-      { keylen, chosenmech },
-      { len, data }
-    };
-
-    if (memcached_io_writev(server, vector, 3, true) == -1)
-    {
-      rc= MEMCACHED_WRITE_FAILURE;
-      break;
-    }
-    memcached_server_response_increment(server);
-
-    /* read the response */
-    rc= memcached_response(server, NULL, 0, NULL);
-    if (rc != MEMCACHED_AUTH_CONTINUE)
-    {
-      break;
-    }
-
+  rc= memcached_sasl_auth_binary(server, chosenmech, true, data, len);
+  while (rc == MEMCACHED_AUTH_CONTINUE)
+  {
     ret= sasl_client_step(conn, memcached_result_value(&server->root->result),
                           (unsigned int)memcached_result_length(&server->root->result),
                           NULL, &data, &len);
@@ -263,9 +270,8 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
       break;
     }
 
-    request.message.header.request.opcode= PROTOCOL_BINARY_CMD_SASL_STEP;
-    request.message.header.request.bodylen= htonl(len + keylen);
-  } while (true);
+    rc= memcached_sasl_auth_binary(server, chosenmech, false, data, len);
+  }
 
   /* Release resources */
   sasl_dispose(&conn);
