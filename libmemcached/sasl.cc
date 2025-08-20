@@ -129,8 +129,7 @@ static memcached_return_t memcached_sasl_mech_binary(memcached_server_st *server
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
   request.message.header.request.opcode= PROTOCOL_BINARY_CMD_SASL_LIST_MECHS;
 
-  if (memcached_io_write(server, request.bytes,
-                         sizeof(request.bytes), 1) != sizeof(request.bytes))
+  if (memcached_io_write(server, request.bytes, sizeof(request.bytes), 1) == -1)
   {
     return MEMCACHED_WRITE_FAILURE;
   }
@@ -166,6 +165,49 @@ static memcached_return_t memcached_sasl_auth_binary(memcached_server_st *server
   return memcached_response(server, NULL, 0, NULL);
 }
 
+static memcached_return_t memcached_sasl_mech_ascii(memcached_server_st *server,
+                                                    char *buffer, size_t buffer_length)
+{
+  if (memcached_io_write(server, "sasl mech\r\n", 11, 1) == -1)
+  {
+    return MEMCACHED_WRITE_FAILURE;
+  }
+  memcached_server_response_increment(server);
+
+  return memcached_response(server, buffer, buffer_length, NULL);
+}
+
+static memcached_return_t memcached_sasl_auth_ascii(memcached_server_st *server, const char *chosenmech,
+                                                    bool is_first, const char *data, unsigned int len)
+{
+  char command[64];
+  unsigned int write_length;
+  if (is_first)
+  {
+    write_length = snprintf(command, sizeof(command), "sasl auth %s %u\r\n", chosenmech, len);
+  }
+  else
+  {
+    write_length = snprintf(command, sizeof(command), "sasl auth %u\r\n", len);
+  }
+
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { write_length, command },
+    { len, data },
+    { 2, "\r\n" }
+  };
+
+  if (memcached_io_writev(server, vector, 3, true) == -1)
+  {
+    return MEMCACHED_WRITE_FAILURE;
+  }
+  memcached_server_response_increment(server);
+
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY];
+  return memcached_response(server, buffer, sizeof(buffer), NULL);
+}
+
 memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *server)
 {
   if (LIBMEMCACHED_WITH_SASL_SUPPORT == 0)
@@ -178,18 +220,14 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
     return MEMCACHED_INVALID_ARGUMENTS;
   }
 
-  /* SANITY CHECK: SASL can only be used with the binary protocol */
-  if (server->root->flags.binary_protocol == false)
-  {
-    return MEMCACHED_PROTOCOL_ERROR;
-  }
-
   /* Try to get the supported mech from the server. Servers without SASL
    * support will return UNKNOWN COMMAND, so we can just treat that
    * as authenticated
  */
   char mech[MEMCACHED_MAX_BUFFER];
-  memcached_return_t rc= memcached_sasl_mech_binary(server, mech, MEMCACHED_MAX_BUFFER);
+  memcached_return_t rc= server->root->flags.binary_protocol
+    ? memcached_sasl_mech_binary(server, mech, sizeof(mech))
+    : memcached_sasl_mech_ascii(server, mech, sizeof(mech));
   if (memcached_failed(rc))
   {
     if (rc == MEMCACHED_PROTOCOL_ERROR)
@@ -257,7 +295,9 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
                                memcached_string_make_from_cstr(sasl_error_msg));
   }
 
-  rc= memcached_sasl_auth_binary(server, chosenmech, true, data, len);
+  rc= server->root->flags.binary_protocol
+    ? memcached_sasl_auth_binary(server, chosenmech, true, data, len)
+    : memcached_sasl_auth_ascii(server, chosenmech, true, data, len);
   while (rc == MEMCACHED_AUTH_CONTINUE)
   {
     ret= sasl_client_step(conn, memcached_result_value(&server->root->result),
@@ -270,7 +310,9 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
       break;
     }
 
-    rc= memcached_sasl_auth_binary(server, chosenmech, false, data, len);
+    rc= server->root->flags.binary_protocol
+      ? memcached_sasl_auth_binary(server, chosenmech, false, data, len)
+      : memcached_sasl_auth_ascii(server, chosenmech, false, data, len);
   }
 
   /* Release resources */
@@ -320,12 +362,6 @@ memcached_return_t memcached_set_sasl_auth_data(memcached_st *ptr,
   if (ptr == NULL or username == NULL or password == NULL)
   {
     return MEMCACHED_INVALID_ARGUMENTS;
-  }
-
-  memcached_return_t ret;
-  if (memcached_failed(ret= memcached_behavior_set(ptr, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL, 1)))
-  {
-    return memcached_set_error(*ptr, ret, MEMCACHED_AT, memcached_literal_param("Unable change to binary protocol which is required for SASL."));
   }
 
   memcached_destroy_sasl_auth_data(ptr);

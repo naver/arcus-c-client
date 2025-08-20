@@ -237,6 +237,80 @@ static memcached_return_t textual_version_fetch(memcached_server_write_instance_
   return MEMCACHED_SUCCESS;
 }
 
+static memcached_return_t textual_sasl_continue_fetch(memcached_server_write_instance_st ptr,
+                                                      char *buffer, size_t buffer_length,
+                                                      memcached_result_st *result)
+{
+  char *string_ptr;
+  char *next_ptr;
+  char *end_ptr;
+  size_t value_length;
+  size_t to_read;
+  ssize_t read_length= 0;
+
+  string_ptr= buffer;
+  end_ptr= buffer + buffer_length;
+
+  memcached_result_reset(result);
+
+  string_ptr+= 14; /* "SASL_CONTINUE " */
+  if (end_ptr <= string_ptr)
+      return MEMCACHED_PARTIAL_READ;
+
+  for (next_ptr= string_ptr; isdigit(*string_ptr); string_ptr++) {};
+  value_length= (size_t)strtoull(next_ptr, &string_ptr, 10);
+
+  if (end_ptr <= string_ptr)
+      return MEMCACHED_PARTIAL_READ;
+
+  if (*string_ptr == '\r')
+  {
+    /* Skip past the \r\n */
+    string_ptr+= 2;
+  }
+
+  if (end_ptr < string_ptr)
+      return MEMCACHED_PARTIAL_READ;
+
+  /* We add two bytes so that we can walk the \r\n */
+  if (memcached_failed(memcached_string_check(&result->value, value_length +2)))
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT);
+  }
+
+  char *value_ptr= memcached_string_value_mutable(&result->value);
+  /*
+    We read the \r\n into the string since not doing so is more
+    cycles then the waster of memory to do so.
+
+    We are null terminating through, which will most likely make
+    some people lazy about using the return length.
+  */
+  to_read= value_length + 2;
+  memcached_return_t rrc= memcached_io_read(ptr, value_ptr, to_read, &read_length);
+  if (memcached_failed(rrc) and rrc == MEMCACHED_IN_PROGRESS)
+  {
+    memcached_quit_server(ptr, true);
+    return memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
+  }
+  else if (memcached_failed(rrc))
+  {
+    return rrc;
+  }
+
+  if (read_length != (ssize_t)(value_length + 2))
+    return MEMCACHED_PARTIAL_READ;
+
+  /* This next bit blows the API, but this is internal.... */
+  char *char_ptr;
+  char_ptr= memcached_string_value_mutable(&result->value);
+  char_ptr[value_length]= 0;
+  char_ptr[value_length +1]= 0;
+  memcached_string_set_length(&result->value, value_length);
+
+  return MEMCACHED_AUTH_CONTINUE;
+}
+
 #ifdef ENABLE_REPLICATION
 static void textual_switchover_peer_check(memcached_server_write_instance_st instance, char *buffer)
 {
@@ -341,6 +415,20 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     else if (memcmp(buffer, "STORED", 6) == 0)
     {
       return MEMCACHED_STORED;
+    }
+    else if (memcmp(buffer, "SASL_MECH", 9) == 0)
+    {
+      memmove(buffer, buffer + 10, total_read);
+      buffer[total_read - 10 - 2] = '\0';
+      return MEMCACHED_SUCCESS;
+    }
+    else if (memcmp(buffer, "SASL_CONTINUE", 13) == 0)
+    {
+      return textual_sasl_continue_fetch(ptr, buffer, buffer_length, result);
+    }
+    else if (memcmp(buffer, "SASL_OK", 7) == 0)
+    {
+      return MEMCACHED_SUCCESS;
     }
 #ifdef ENABLE_REPLICATION
     else if (memcmp(buffer, "SWITCHOVER", 10) == 0)
@@ -468,6 +556,13 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
 
       return memcached_set_error(*ptr, MEMCACHED_CLIENT_ERROR, MEMCACHED_AT,
                                  startptr, size_t(endptr - startptr));
+    }
+    break;
+
+  case 'A':
+    if (memcmp(buffer, "AUTH_ERROR", 10) == 0)
+    {
+      return MEMCACHED_AUTH_FAILURE;
     }
     break;
 
