@@ -891,13 +891,12 @@ memcached_return_t memcached_io_readline(memcached_server_write_instance_st ptr,
      */
       ssize_t nread;
       memcached_return_t rc= memcached_io_read(ptr, buffer_ptr, 1, &nread);
-      if (memcached_failed(rc) and rc == MEMCACHED_IN_PROGRESS)
+      if (memcached_failed(rc))
       {
-        memcached_quit_server(ptr, true);
-        return memcached_set_error(*ptr, rc, MEMCACHED_AT);
-      }
-      else if (memcached_failed(rc))
-      {
+        if (rc == MEMCACHED_IN_PROGRESS) {
+          memcached_quit_server(ptr, true);
+          return memcached_set_error(*ptr, rc, MEMCACHED_AT);
+        }
         return rc;
       }
 

@@ -159,13 +159,12 @@ static memcached_return_t textual_value_fetch(memcached_server_write_instance_st
     */
     to_read= (value_length) + 2;
     memcached_return_t rrc= memcached_io_read(ptr, value_ptr, to_read, &read_length);
-    if (memcached_failed(rrc) and rrc == MEMCACHED_IN_PROGRESS)
+    if (memcached_failed(rrc))
     {
-      memcached_quit_server(ptr, true);
-      return memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
-    }
-    else if (memcached_failed(rrc))
-    {
+      if (rrc == MEMCACHED_IN_PROGRESS) {
+        memcached_quit_server(ptr, true);
+        return memcached_set_error(*ptr, rrc, MEMCACHED_AT);
+      }
       return rrc;
     }
   }
@@ -288,13 +287,12 @@ static memcached_return_t textual_sasl_continue_fetch(memcached_server_write_ins
   */
   to_read= value_length + 2;
   memcached_return_t rrc= memcached_io_read(ptr, value_ptr, to_read, &read_length);
-  if (memcached_failed(rrc) and rrc == MEMCACHED_IN_PROGRESS)
+  if (memcached_failed(rrc))
   {
-    memcached_quit_server(ptr, true);
-    return memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
-  }
-  else if (memcached_failed(rrc))
-  {
+    if (rrc == MEMCACHED_IN_PROGRESS) {
+      memcached_quit_server(ptr, true);
+      return memcached_set_error(*ptr, rrc, MEMCACHED_AT);
+    }
     return rrc;
   }
 
@@ -1295,7 +1293,7 @@ static memcached_return_t fetch_value_header(memcached_server_write_instance_st 
     {
       if (rc == MEMCACHED_IN_PROGRESS) {
         memcached_quit_server(ptr, true);
-        rc = memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
+        rc = memcached_set_error(*ptr, rc, MEMCACHED_AT);
       }
       return rc;
     }
@@ -1457,13 +1455,12 @@ static memcached_return_t textual_coll_element_fetch(memcached_server_write_inst
     */
     to_read= (value_length) + 2;
     rc= memcached_io_read(ptr, value_ptr, to_read, &read_length);
-    if (memcached_failed(rc) and rc == MEMCACHED_IN_PROGRESS)
+    if (memcached_failed(rc))
     {
-      memcached_quit_server(ptr, true);
-      return memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
-    }
-    else if (memcached_failed(rc))
-    {
+      if (rc == MEMCACHED_IN_PROGRESS) {
+        memcached_quit_server(ptr, true);
+        return memcached_set_error(*ptr, rc, MEMCACHED_AT);
+      }
       return rc;
     }
 
@@ -2223,13 +2220,12 @@ static memcached_return_t textual_coll_smget_value_fetch(memcached_server_write_
     */
     to_read= (value_length) + 2;
     rrc= memcached_io_read(ptr, value_ptr, to_read, &read_length);
-    if (memcached_failed(rrc) and rrc == MEMCACHED_IN_PROGRESS)
+    if (memcached_failed(rrc))
     {
-      memcached_quit_server(ptr, true); // ?
-      return memcached_set_error(*ptr, MEMCACHED_IN_PROGRESS, MEMCACHED_AT);
-    }
-    else if (memcached_failed(rrc))
-    {
+      if (rrc == MEMCACHED_IN_PROGRESS) {
+        memcached_quit_server(ptr, true); // ?
+        return memcached_set_error(*ptr, rrc, MEMCACHED_AT);
+      }
       return rrc;
     }
 
