@@ -461,14 +461,9 @@ static inline memcached_return_t memcached_send(memcached_st *ptr,
     return rc;
   }
 
-  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
+  if (memcached_failed(rc= memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
   {
     return rc;
-  }
-
-  if (memcached_failed(memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
-  {
-    return MEMCACHED_BAD_KEY_PROVIDED;
   }
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, group_key, group_key_length);
@@ -543,8 +538,7 @@ static memcached_return_t memcached_send_multi(memcached_st *ptr,
       failure_occurred= true;
       results[i]= MEMCACHED_INVALID_ARGUMENTS;
     }
-    else if (memcached_failed(rc= memcached_validate_key_length(req[i].key_length, ptr->flags.binary_protocol)) or
-             memcached_failed(rc= memcached_key_test(*ptr, &(req[i].key), &(req[i].key_length), 1)))
+    else if (memcached_failed(rc= memcached_key_test(*ptr, &(req[i].key), &(req[i].key_length), 1)))
     {
       failure_occurred= true;
       results[i]= rc;

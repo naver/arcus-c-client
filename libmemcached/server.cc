@@ -292,15 +292,9 @@ memcached_server_instance_st memcached_server_by_key(const memcached_st *ptr,
     return NULL;
   }
 
-  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
+  if (memcached_failed(rc= memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
   {
     *error= rc;
-    return NULL;
-  }
-
-  if (memcached_failed((memcached_key_test(*ptr, (const char **)&key, &key_length, 1))))
-  {
-    *error= MEMCACHED_BAD_KEY_PROVIDED;
     return NULL;
   }
 

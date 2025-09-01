@@ -244,19 +244,6 @@ static memcached_return_t simple_binary_mget(memcached_st *ptr,
     else
       request.message.header.request.opcode= PROTOCOL_BINARY_CMD_GETK;
 
-    memcached_return_t vk;
-    vk= memcached_validate_key_length(key_length[x],
-                                      ptr->flags.binary_protocol);
-    unlikely (vk != MEMCACHED_SUCCESS)
-    {
-      if (x > 0)
-      {
-        memcached_io_reset(instance);
-      }
-
-      return vk;
-    }
-
     request.message.header.request.keylen= htons((uint16_t)(key_length[x] + memcached_array_size(ptr->_namespace)));
     request.message.header.request.datatype= PROTOCOL_BINARY_RAW_BYTES;
     request.message.header.request.bodylen= htonl((uint32_t)( key_length[x] + memcached_array_size(ptr->_namespace)));

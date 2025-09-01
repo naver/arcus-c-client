@@ -53,12 +53,13 @@ memcached_return_t memcached_set_namespace(memcached_st *self, const char *key, 
   }
   else if (key and key_length)
   {
+    memcached_return_t rc;
     bool orig= self->flags.verify_key;
     self->flags.verify_key= true;
-    if (memcached_failed(memcached_key_test(*self, (const char **)&key, &key_length, 1)))
+    if (memcached_failed(rc= memcached_key_test(*self, (const char **)&key, &key_length, 1)))
     {
       self->flags.verify_key= orig;
-      return memcached_set_error(*self, MEMCACHED_BAD_KEY_PROVIDED, MEMCACHED_AT);
+      return memcached_set_error(*self, rc, MEMCACHED_AT);
     }
     self->flags.verify_key= orig;
 

@@ -37,30 +37,59 @@
 
 #include <libmemcached/common.h>
 
+static inline memcached_return_t memcached_validate_key_length(size_t key_length, bool binary)
+{
+  if (key_length == 0)
+  {
+    return MEMCACHED_BAD_KEY_PROVIDED;
+  }
+
+  if (binary)
+  {
+    if (key_length > 0xffff)
+    {
+      return MEMCACHED_BAD_KEY_PROVIDED;
+    }
+  }
+  else
+  {
+    if (key_length >= MEMCACHED_MAX_KEY)
+    {
+      return MEMCACHED_BAD_KEY_PROVIDED;
+    }
+  }
+
+  return MEMCACHED_SUCCESS;
+}
+
 memcached_return_t memcached_key_test(const memcached_st &memc,
                                       const char * const *keys,
                                       const size_t *key_length,
                                       const size_t number_of_keys)
 {
-  if (not memc.flags.verify_key)
-    return MEMCACHED_SUCCESS;
-
-  if (memc.flags.binary_protocol)
-    return MEMCACHED_SUCCESS;
-
-  for (uint32_t x= 0; x < number_of_keys; x++)
+  if (number_of_keys == 0 || keys == NULL || key_length == NULL)
   {
-    memcached_return_t rc= memcached_validate_key_length(*(key_length + x), false);
-    if (memcached_failed(rc))
+    return MEMCACHED_INVALID_ARGUMENTS;
+  }
+
+  memcached_return_t rc;
+  const bool is_binary= memc.flags.binary_protocol;
+  for (size_t x= 0; x < number_of_keys; x++)
+  {
+    rc= memcached_validate_key_length(key_length[x], is_binary);
+    if (rc != MEMCACHED_SUCCESS)
     {
       return rc;
     }
 
-    for (size_t y= 0; y < *(key_length + x); y++)
+    if (memc.flags.verify_key && is_binary == false)
     {
-      if ((isgraph(keys[x][y])) == 0)
+      for (size_t y= 0; y < key_length[x]; y++)
       {
-        return MEMCACHED_BAD_KEY_PROVIDED;
+        if ((isgraph(keys[x][y])) == 0)
+        {
+          return MEMCACHED_BAD_KEY_PROVIDED;
+        }
       }
     }
   }
