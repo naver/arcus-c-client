@@ -68,11 +68,6 @@ static memcached_return_t text_incr_decr(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  if (memcached_failed(memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
-  {
-    return memcached_set_error(*ptr, MEMCACHED_BAD_KEY_PROVIDED, MEMCACHED_AT);
-  }
-
   char offset_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1]; // 1 for space, 1 for null termination
   int offset_buffer_length= snprintf(offset_buffer, sizeof(offset_buffer), " %" PRIu64, offset);
   if (size_t(offset_buffer_length) >= sizeof(offset_buffer) or offset_buffer_length < 0)
@@ -266,7 +261,7 @@ memcached_return_t memcached_increment_by_key(memcached_st *ptr,
     return rc;
   }
 
-  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
+  if (memcached_failed(rc= memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
   {
     return rc;
   }
@@ -306,7 +301,7 @@ memcached_return_t memcached_decrement_by_key(memcached_st *ptr,
     return rc;
   }
 
-  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
+  if (memcached_failed(rc= memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
   {
     return rc;
   }
@@ -368,7 +363,7 @@ memcached_return_t memcached_increment_with_initial_by_key(memcached_st *ptr,
     return rc;
   }
 
-  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
+  if (memcached_failed(rc= memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
   {
     return rc;
   }
@@ -430,7 +425,7 @@ memcached_return_t memcached_decrement_with_initial_by_key(memcached_st *ptr,
     return rc;
   }
 
-  if (memcached_failed(rc= memcached_validate_key_length(key_length, ptr->flags.binary_protocol)))
+  if (memcached_failed(rc= memcached_key_test(*ptr, (const char **)&key, &key_length, 1)))
   {
     return rc;
   }

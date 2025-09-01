@@ -338,11 +338,6 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
   if (args)
   {
     size_t len= strlen(args);
-
-    memcached_return_t rc= memcached_validate_key_length(len, true);
-    unlikely (rc != MEMCACHED_SUCCESS)
-      return rc;
-
     request.message.header.request.keylen= htons((uint16_t)len);
     request.message.header.request.bodylen= htonl((uint32_t) len);
 
@@ -352,7 +347,7 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
       { len, args }
     };
 
-    rc = memcached_vdo(instance, vector, 2, true);
+    memcached_return_t rc = memcached_vdo(instance, vector, 2, true);
     if (rc != MEMCACHED_SUCCESS) {
       return rc;
     }
