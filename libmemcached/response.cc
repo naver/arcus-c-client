@@ -531,6 +531,10 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     {
       return MEMCACHED_TYPE_MISMATCH;
     }
+    else if (memcmp(buffer, "TOUCHED", 7) == 0)
+    {
+      return MEMCACHED_SUCCESS;
+    }
     break;
 
   case 'C': /* CLIENT ERROR */

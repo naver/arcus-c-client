@@ -826,6 +826,44 @@ static test_return_t flush_test(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+static test_return_t touch_test(memcached_st *memc)
+{
+  memcached_return_t rc;
+  size_t string_length;
+  uint32_t flags;
+  const char *key= "foo";
+  const char *value= "when we sanitize";
+
+  if (memc->flags.binary_protocol) {
+    return TEST_SUCCESS;
+  }
+
+  rc= memcached_set(memc, key, strlen(key),
+                    value, strlen(value),
+                    (time_t)0, (uint32_t)0);
+  test_true(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED);
+
+  (void)memcached_get(memc, key, strlen(key),
+                      &string_length, &flags, &rc);
+  test_compare(MEMCACHED_SUCCESS, rc);
+
+  rc= memcached_touch(memc, key, strlen(key), (time_t)100);
+  test_true(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED);
+
+  (void)memcached_get(memc, key, strlen(key),
+                      &string_length, &flags, &rc);
+  test_compare(MEMCACHED_SUCCESS, rc);
+
+  rc= memcached_touch(memc, key, strlen(key), time(NULL) - 2);
+  test_true(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED);
+
+  (void)memcached_get(memc, key, strlen(key),
+                      &string_length, &flags, &rc);
+  test_compare(MEMCACHED_NOTFOUND, rc);
+
+  return TEST_SUCCESS;
+}
+
 static memcached_return_t  server_function(const memcached_st *ptr,
                                            const memcached_server_st *server,
                                            void *context)
@@ -6179,6 +6217,7 @@ test_st tests[] ={
   {"memcached_fetch_result(MEMCACHED_NOTFOUND)", true, (test_callback_fn*)memcached_fetch_result_NOT_FOUND },
   {"replace", true, (test_callback_fn*)replace_test },
   {"delete", true, (test_callback_fn*)delete_test },
+  {"touch", true, (test_callback_fn*)touch_test },
   {"get", true, (test_callback_fn*)get_test },
   {"get2", false, (test_callback_fn*)get_test2 },
   {"get3", false, (test_callback_fn*)get_test3 },
