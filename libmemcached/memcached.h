@@ -104,6 +104,7 @@
 #include <libmemcached/verbosity.h>
 #include <libmemcached/version.h>
 #include <libmemcached/sasl.h>
+#include <libmemcached/touch.h>
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
 #ifdef __linux__
 #include <linux/limits.h>

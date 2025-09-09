@@ -82,6 +82,7 @@ nobase_include_HEADERS+= \
 			 libmemcached/storage.h \
 			 libmemcached/strerror.h \
 			 libmemcached/string.h \
+			 libmemcached/touch.h
 			 libmemcached/types.h \
 			 libmemcached/verbosity.h \
 			 libmemcached/version.h \
@@ -134,6 +135,7 @@ libmemcached_libmemcached_la_SOURCES+= \
 				       libmemcached/storage.cc \
 				       libmemcached/strerror.cc \
 				       libmemcached/string.cc \
+					   libmemcached/touch.cc \
 				       libmemcached/verbosity.cc \
 				       libmemcached/version.cc \
 				       libmemcached/virtual_bucket.c
