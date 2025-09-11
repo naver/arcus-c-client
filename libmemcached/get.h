@@ -52,6 +52,14 @@ char *memcached_get(memcached_st *ptr,
                     memcached_return_t *error);
 
 LIBMEMCACHED_API
+char *memcached_gat(memcached_st *ptr,
+                    const char *key, size_t key_length,
+                    time_t expiration,
+                    size_t *value_length,
+                    uint32_t *flags,
+                    memcached_return_t *error);
+
+LIBMEMCACHED_API
 memcached_return_t memcached_mget(memcached_st *ptr,
                                   const char * const *keys,
                                   const size_t *key_length,

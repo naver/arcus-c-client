@@ -198,6 +198,76 @@ static memcached_return_t ascii_get_by_key(memcached_st *ptr,
   return rc;
 }
 
+static memcached_return_t ascii_gat_by_key(memcached_st *ptr,
+                                           const char *key,
+                                           const size_t key_length,
+                                           time_t expiration)
+{
+  memcached_return_t rc;
+  memcached_server_write_instance_st instance;
+  uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
+
+  instance= memcached_server_instance_fetch(ptr, server_key);
+
+  const char *command= (ptr->flags.support_cas ? "gats " : "gat ");
+
+  char expiration_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1];
+  int expiration_buffer_length= snprintf(expiration_buffer, sizeof(expiration_buffer), "%lld ",
+                                         (long long)expiration);
+  if (size_t(expiration_buffer_length) >= sizeof(expiration_buffer) or expiration_buffer_length < 0)
+  {
+    return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,
+                               memcached_literal_param("snprintf(MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH)"));
+  }
+
+  struct libmemcached_io_vector_st vector[]=
+  {
+    { strlen(command), command },
+    { (size_t)expiration_buffer_length, expiration_buffer },
+    { memcached_array_size(ptr->_namespace), memcached_array_string(ptr->_namespace) },
+    { key_length, key },
+    { 2, "\r\n" }
+  };
+
+#ifdef ENABLE_REPLICATION
+do_action:
+#endif
+
+  rc= memcached_vdo(instance, vector, 5, true);
+  if (rc != MEMCACHED_SUCCESS)
+  {
+    return rc;
+  }
+
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE + MEMCACHED_MAX_KEY];
+  rc= memcached_response(instance, buffer, sizeof(buffer), NULL);
+  if (rc == MEMCACHED_SUCCESS)
+  {
+    rc= memcached_response(instance, buffer, sizeof(buffer), NULL);
+    if (rc == MEMCACHED_END)
+    {
+      rc= MEMCACHED_SUCCESS;
+    }
+  }
+  else if (rc == MEMCACHED_END)
+  {
+    rc= MEMCACHED_NOTFOUND;
+  }
+#ifdef ENABLE_REPLICATION
+  else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true)
+    {
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
+  }
+#endif
+  return rc;
+}
+
 static memcached_return_t simple_binary_mget(memcached_st *ptr,
                                              uint32_t master_server_key,
                                              bool is_group_key_set,
@@ -624,6 +694,72 @@ char *memcached_get(memcached_st *ptr, const char *key,
 {
   return memcached_get_by_key(ptr, NULL, 0, key, key_length, value_length,
                               flags, error);
+}
+
+static char *memcached_gat_by_key(memcached_st *ptr,
+                                  const char *key, size_t key_length,
+                                  time_t expiration,
+                                  size_t *value_length,
+                                  uint32_t *flags,
+                                  memcached_return_t *error)
+{
+  arcus_server_check_for_update(ptr);
+
+  if (value_length)
+    *value_length= 0;
+
+  if (flags)
+    *flags= 0;
+
+  memcached_return_t unused;
+  if (error == NULL)
+    error= &unused;
+
+  *error= before_get_query(ptr, NULL, 0, (const char * const *)&key, &key_length, 1);
+  if (memcached_failed(*error))
+  {
+    if (memcached_has_current_error(*ptr)) // Find the most accurate error
+    {
+      *error= memcached_last_error(ptr);
+    }
+    return NULL;
+  }
+
+  /* Request the key */
+  if (ptr->flags.binary_protocol)
+  {
+    *error= MEMCACHED_NOT_SUPPORTED;
+  }
+  else
+  {
+    *error= ascii_gat_by_key(ptr, key, key_length, expiration);
+  }
+
+  if (*error != MEMCACHED_SUCCESS)
+  {
+    return NULL;
+  }
+
+  char *value= memcached_string_take_value(&ptr->result.value);
+  if (value_length)
+  {
+    *value_length= memcached_string_length(&ptr->result.value);
+  }
+  if (flags)
+  {
+    *flags= ptr->result.item_flags;
+  }
+
+  return value;
+}
+
+char *memcached_gat(memcached_st *ptr, const char *key,
+                    size_t key_length, time_t expiration,
+                    size_t *value_length, uint32_t *flags,
+                    memcached_return_t *error)
+{
+  return memcached_gat_by_key(ptr, key, key_length, expiration,
+                              value_length, flags, error);
 }
 
 memcached_return_t memcached_mget_by_key(memcached_st *ptr,
