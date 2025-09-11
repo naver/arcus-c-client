@@ -862,6 +862,50 @@ static test_return_t touch_test(memcached_st *memc)
   return TEST_SUCCESS;
 }
 
+static test_return_t gat_test(memcached_st *memc)
+{
+  memcached_return_t rc;
+  const char *key= "foo";
+  const char *value= "when we sanitize";
+  char *string;
+  size_t string_length;
+  uint32_t flags;
+
+  if (memc->flags.binary_protocol) {
+    return TEST_SUCCESS;
+  }
+
+  uint64_t query_id= memcached_query_id(memc);
+  rc= memcached_set(memc, key, strlen(key),
+                    value, strlen(value),
+                    (time_t)0, (uint32_t)0);
+  test_true(rc == MEMCACHED_SUCCESS || rc == MEMCACHED_BUFFERED);
+  test_compare(query_id +1, memcached_query_id(memc));
+
+  query_id= memcached_query_id(memc);
+  test_true(query_id);
+
+  string= memcached_gat(memc, key, strlen(key), time(NULL) - 2,
+                        &string_length, &flags, &rc);
+  test_compare(query_id +1, memcached_query_id(memc));
+
+  test_compare_got(MEMCACHED_SUCCESS, rc, memcached_strerror(NULL, rc));
+  test_true(string);
+  test_compare(strlen(value), string_length);
+  test_memcmp(value, string, string_length);
+
+  free(string);
+
+  string= memcached_gat(memc, key, strlen(key), (time_t)0,
+                        &string_length, &flags, &rc);
+
+  test_compare_got(MEMCACHED_NOTFOUND, rc, memcached_strerror(NULL, rc));
+  test_false(string_length);
+  test_false(string);
+
+  return TEST_SUCCESS;
+}
+
 static memcached_return_t  server_function(const memcached_st *ptr,
                                            const memcached_server_st *server,
                                            void *context)
@@ -6217,6 +6261,7 @@ test_st tests[] ={
   {"replace", true, (test_callback_fn*)replace_test },
   {"delete", true, (test_callback_fn*)delete_test },
   {"touch", true, (test_callback_fn*)touch_test },
+  {"gat", true, (test_callback_fn*)gat_test },
   {"get", true, (test_callback_fn*)get_test },
   {"get2", false, (test_callback_fn*)get_test2 },
   {"get3", false, (test_callback_fn*)get_test3 },
