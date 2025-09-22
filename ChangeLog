@@ -1,3 +1,16 @@
+2025-09-22 [version 1.15.0]
+## 🐣 New Features
+  - Add touch API.
+  - Add ascii sasl authentication.
+## ⚙️ Internal Changes
+  - Refactor memcached_key_test code.
+  - Extract hostname validation logic.
+## 🐛 Bug Fixes
+  - Unlock mutex before return if sasl startup fails.
+  - Correct invalid check logic for servername.
+## ✅ Testing
+  - Do not set CFLAGS when running configure.
+
 2025-06-02 [version 1.14.1]
 ## 🐣 New Features
   - Add a handler for the `INVALID` error.
