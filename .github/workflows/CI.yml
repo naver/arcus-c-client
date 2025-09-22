@@ -30,8 +30,8 @@ jobs:
            cd arcus-memcached
            ./deps/install.sh $HOME/arcus
            ./config/autorun.sh
-           CFLAGS="-Wno-error" ./configure --prefix=$HOME/arcus
-           make && make install
+           ./configure --prefix=$HOME/arcus
+           make CFLAGS+="-Wno-error" && make install
     - name: Build Arcus C Client
       run: |
            ./config/autorun.sh
