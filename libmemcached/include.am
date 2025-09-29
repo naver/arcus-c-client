@@ -82,7 +82,7 @@ nobase_include_HEADERS+= \
 			 libmemcached/storage.h \
 			 libmemcached/strerror.h \
 			 libmemcached/string.h \
-			 libmemcached/touch.h
+			 libmemcached/touch.h \
 			 libmemcached/types.h \
 			 libmemcached/verbosity.h \
 			 libmemcached/version.h \
