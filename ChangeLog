@@ -71,7 +71,8 @@
   - Call `arcus_server_check_for_update()` in `memcached_exist_by_key()`. #241
   - Check `mc->connect_timeout` instead of `mc->poll_timeout` in `connect_poll()`. #247
   - Remove a duplicate init macro in configure.ac. #267
-  - Return `hashkit_get_distribution_function()` instead of `hashkit_get_function()` in `memcached_behavior_get_distribution_hash()`.
+  - Return `hashkit_get_distribution_function()` instead of
+	  `hashkit_get_function()` in `memcached_behavior_get_distribution_hash()`.
 ## 📝 Documentation
   - Add unit test FAQ.
   - Fix inconsistencies between code and documentation.
