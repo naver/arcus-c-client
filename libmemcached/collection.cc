@@ -1931,7 +1931,6 @@ do_action:
         memcached_coll_result_reset(&ptr->collection_result);
         memcached_coll_fetch_result(ptr, &ptr->collection_result, &rc);
       }
-      memcached_set_last_response_code(ptr, rc);
 
       if (rc == MEMCACHED_END             or
           rc == MEMCACHED_TRIMMED         or
