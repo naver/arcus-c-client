@@ -349,6 +349,25 @@ ARCUS의 admin인 ZooKeeper에 의해 failed 캐시 노드로 감지되어 cache
 그리고, 정상적으로 연결되지 않은 캐시 노드로의 요청에 대해서는
 MEMCACHED_SERVER_TEMPORARILY_DISABLED (“SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY”) 오류가 발생한다.
 
+### SASL authentication
+
+캐시 서버가 SASL 인증을 요구하는 경우, 클라이언트에서 인증 기능을 사용할 수 있도록 설정해야 한다.
+
+1. cyrus-sasl 의존성 추가
+   - 시스템 경로에서 cyrus-sasl 라이브러리를 기본 탐색한다.
+   - 다른 경로에 설치된 라이브러리 사용 시 아래와 같이 configure 단계에서 경로를 지정한다.
+```sh
+./configure --with-libsasl2-prefix=PATH
+```
+
+2. 인증 정보 등록
+   - `memcached_set_sasl_auth_data()` 사용하여 인증에 사용할 username과 password를 설정한다.
+   - sasl auth data가 설정되어 있으면 캐시 서버와 연결 수립 직후 인증 과정을 수행한다.
+```c
+mc = memcached_create(NULL);
+memcached_set_sasl_auth_data(mc, "username", "password");
+```
+
 ### 캐시 API의 응답코드 확인
 
 캐시 명령을 실행한 후에 캐시 서버로부터 받은 응답 코드를 확인할 수 있다.
