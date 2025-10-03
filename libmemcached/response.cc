@@ -483,6 +483,17 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     }
     else if (memcmp(buffer, "ERROR", 5) == 0)
     {
+      /* If the server doesn't support SASL it will return PROTOCOL_ERROR.
+       * This error may also be returned for other errors, but let's assume
+       * that the server don't support SASL and treat it as success and
+       * let the client fail with the next operation if the error was
+       * caused by another problem....
+       */
+      if (ptr->root->sasl.in_sasl_mech)
+      {
+        return MEMCACHED_NOT_SUPPORTED;
+      }
+
       // Move past the basic error message and whitespace
       char *startptr= buffer + memcached_literal_param_size("ERROR");
       if (startptr[0] == ' ')
@@ -870,8 +881,17 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
       rc= MEMCACHED_AUTH_FAILURE;
       break;
 
-    case PROTOCOL_BINARY_RESPONSE_EINVAL:
     case PROTOCOL_BINARY_RESPONSE_UNKNOWN_COMMAND:
+      /* If the server doesn't support SASL it will return PROTOCOL_ERROR.
+       * This error may also be returned for other errors, but let's assume
+       * that the server don't support SASL and treat it as success and
+       * let the client fail with the next operation if the error was
+       * caused by another problem....
+       */
+      rc= ptr->root->sasl.in_sasl_mech ? MEMCACHED_NOT_SUPPORTED : MEMCACHED_PROTOCOL_ERROR;
+      break;
+
+    case PROTOCOL_BINARY_RESPONSE_EINVAL:
     default:
       /* @todo fix the error mappings */
       rc= MEMCACHED_PROTOCOL_ERROR;
