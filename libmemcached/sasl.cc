@@ -226,18 +226,16 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
    * as authenticated
  */
   char mech[MEMCACHED_MAX_BUFFER];
+  server->root->sasl.in_sasl_mech= true;
   memcached_return_t rc= server->root->flags.binary_protocol
     ? memcached_sasl_mech_binary(server, mech, sizeof(mech))
     : memcached_sasl_mech_ascii(server, mech, sizeof(mech));
+  server->root->sasl.in_sasl_mech= false;
   if (memcached_failed(rc))
   {
-    if (rc == MEMCACHED_PROTOCOL_ERROR || rc == MEMCACHED_NOT_SUPPORTED)
+    if (rc == MEMCACHED_NOT_SUPPORTED)
     {
-      /* If the server doesn't support SASL it will return PROTOCOL_ERROR.
-       * This error may also be returned for other errors, but let's assume
-       * that the server don't support SASL and treat it as success and
-       * let the client fail with the next operation if the error was
-       * caused by another problem....
+      /* If the server doesn't support SASL it will return MEMCACHED_NOT_SUPPORTED.
        */
       rc= MEMCACHED_SUCCESS;
     }

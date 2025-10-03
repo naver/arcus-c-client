@@ -160,6 +160,7 @@ static inline bool _memcached_init(memcached_st *self)
   self->callbacks= NULL;
   self->sasl.callbacks= NULL;
   self->sasl.is_allocated= false;
+  self->sasl.in_sasl_mech= false;
 
   self->error_messages= NULL;
 #ifdef REFACTORING_ERROR_PRINT
