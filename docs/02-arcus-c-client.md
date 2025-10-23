@@ -349,6 +349,17 @@ ARCUS의 admin인 ZooKeeper에 의해 failed 캐시 노드로 감지되어 cache
 그리고, 정상적으로 연결되지 않은 캐시 노드로의 요청에 대해서는
 MEMCACHED_SERVER_TEMPORARILY_DISABLED (“SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY”) 오류가 발생한다.
 
+### 캐시 명령에 대한 키 문자 검사
+
+캐시 명령을 보낼 때마다 키 문자열의 유효성을 검사하는 기능은 기본적으로 꺼져 있고, 이를 설정으로 활성화할 수 있다.
+이 기능을 활성화하면 키 문자열에 허용되지 않는 문자(공백, 제어문자 등)가 포함되어 있는지 클라이언트 측에서 사전에 검증하며,
+유효하지 않은 키를 사용하는 명령은 서버로 전송되지 않고 클라이언트에서 에러를 반환한다.
+
+``` c
+mc = memcached_create(NULL);
+memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_VERIFY_KEY, true);
+```
+
 ### SASL authentication
 
 캐시 서버가 SASL 인증을 요구하는 경우, 클라이언트에서 인증 기능을 사용할 수 있도록 설정해야 한다.
