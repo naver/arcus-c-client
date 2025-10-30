@@ -2544,22 +2544,16 @@ static memcached_return_t textual_read_one_coll_smget_response(memcached_server_
   case 'D':
     if (memcmp(buffer, "DUPLICATED", 10) == 0)
     {
-      if (memcmp(buffer + 10, "\r", 1) == 0)
-        return MEMCACHED_DUPLICATED;
-      else if (memcmp(buffer + 10, "_TRIMMED", 8) == 0)
-        return MEMCACHED_DUPLICATED_TRIMMED;
+      return MEMCACHED_DUPLICATED;
     }
     break;
 
   case 'T':
-    if (memcmp(buffer, "TRIMMED", 7) == 0)
+    if (memcmp(buffer, "TRIMMED_KEYS", 12) == 0)
     {
-      if (memcmp(buffer + 7, "_KEYS", 5) == 0) { /* TRIMMED_KEYS */
-        /* We add back in one because we will need to search for END */
-        memcached_server_response_increment(ptr);
-        return textual_coll_smget_trimmed_key_fetch(ptr, buffer, result);
-      }
-      return MEMCACHED_TRIMMED;
+      /* We add back in one because we will need to search for END */
+      memcached_server_response_increment(ptr);
+      return textual_coll_smget_trimmed_key_fetch(ptr, buffer, result);
     }
     else if (memcmp(buffer, "TYPE_MISMATCH", 13) == 0)
     {
@@ -2744,8 +2738,6 @@ memcached_return_t memcached_coll_smget_response(memcached_server_write_instance
               rc != MEMCACHED_SUCCESS            and
               rc != MEMCACHED_TYPE_MISMATCH      and
               rc != MEMCACHED_DUPLICATED         and
-              rc != MEMCACHED_DUPLICATED_TRIMMED and
-              rc != MEMCACHED_TRIMMED            and
               rc != MEMCACHED_ATTR_MISMATCH      and
               rc != MEMCACHED_BKEY_MISMATCH      and
               rc != MEMCACHED_OUT_OF_RANGE       and
