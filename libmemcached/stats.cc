@@ -330,6 +330,7 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
                                              struct local_context *check)
 {
   char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  memcached_return_t rc;
   protocol_binary_request_stats request= {}; // = {.bytes= {0}};
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
   request.message.header.request.opcode= PROTOCOL_BINARY_CMD_STAT;
@@ -347,23 +348,23 @@ static memcached_return_t binary_stats_fetch(memcached_stat_st *memc_stat,
       { len, args }
     };
 
-    memcached_return_t rc = memcached_vdo(instance, vector, 2, true);
-    if (rc != MEMCACHED_SUCCESS) {
-      return rc;
-    }
+    rc= memcached_vdo(instance, vector, 2, true);
   }
   else
   {
-    memcached_return_t rc = memcached_do(instance, request.bytes, sizeof(request.bytes), true);
-    if (rc != MEMCACHED_SUCCESS) {
-      return rc;
-    }
+    rc= memcached_do(instance, request.bytes, sizeof(request.bytes), true);
+  }
+
+  if (rc != MEMCACHED_SUCCESS)
+  {
+    return rc;
   }
 
   memcached_server_response_decrement(instance);
+
   do
   {
-    memcached_return_t rc= memcached_response(instance, result, sizeof(result), NULL);
+    rc= memcached_response(instance, result, sizeof(result), NULL);
 
     if (rc == MEMCACHED_END)
       break;
