@@ -85,30 +85,33 @@ static memcached_return_t ascii_exist(memcached_st *memc,
 
   uint32_t server_key= memcached_generate_hash_with_redistribution(memc, group_key, group_key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(memc, server_key);
+  memcached_return_t rc;
 
   /* Send command header */
 #ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-  memcached_return_t rc=  memcached_vdo(instance, vector, 4, true);
+  rc= memcached_vdo(instance, vector, 4, true);
 #else
-  memcached_return_t rc=  memcached_vdo(instance, vector, 8, true);
+  rc= memcached_vdo(instance, vector, 8, true);
 #endif
-  if (rc == MEMCACHED_SUCCESS)
+  if (rc != MEMCACHED_SUCCESS)
   {
-    char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
-#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
-    while ((rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_ATTR);
-    if (rc == MEMCACHED_END)
-      rc= MEMCACHED_SUCCESS;
-#else
-    rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-
-    if (rc == MEMCACHED_NOTSTORED)
-      rc= MEMCACHED_SUCCESS;
-
-    if (rc == MEMCACHED_STORED)
-      rc= MEMCACHED_NOTFOUND;
-#endif
+    return rc;
   }
+
+  char buffer[MEMCACHED_DEFAULT_COMMAND_SIZE];
+#ifdef LIBMEMCACHED_WITH_ZK_INTEGRATION
+  while ((rc= memcached_coll_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_ATTR);
+  if (rc == MEMCACHED_END)
+    rc= MEMCACHED_SUCCESS;
+#else
+  rc= memcached_response(instance, buffer, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+
+  if (rc == MEMCACHED_NOTSTORED)
+    rc= MEMCACHED_SUCCESS;
+
+  if (rc == MEMCACHED_STORED)
+    rc= MEMCACHED_NOTFOUND;
+#endif
 
   return rc;
 }
@@ -146,7 +149,8 @@ static memcached_return_t binary_exist(memcached_st *memc,
 
   /* write the header */
   memcached_return_t rc= memcached_vdo(instance, vector, 3, true);
-  if (rc != MEMCACHED_SUCCESS) {
+  if (rc != MEMCACHED_SUCCESS)
+  {
     return rc;
   }
 

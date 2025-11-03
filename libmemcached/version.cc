@@ -66,11 +66,11 @@ static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
   };
 
   uint32_t success= 0;
-  bool errors_happened= false;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+
   for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
   {
-    memcached_server_st *instance=
-      memcached_server_instance_fetch(ptr, x);
+    memcached_server_st *instance= memcached_server_instance_fetch(ptr, x);
 
     /* Optimization, we only fetch version once. */
     if (instance->major_version != UINT8_MAX)
@@ -81,7 +81,7 @@ static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
     memcached_return_t rrc= memcached_vdo(instance, vector, 1, true);
     if (rrc != MEMCACHED_SUCCESS)
     {
-      errors_happened= true;
+      rc= MEMCACHED_SOME_ERRORS;
       (void)memcached_set_error(*instance, rrc, MEMCACHED_AT);
       continue;
     }
@@ -98,12 +98,12 @@ static inline memcached_return_t memcached_version_textual(memcached_st *ptr)
       memcached_return_t rrc= memcached_response(instance, buffer, sizeof(buffer), NULL);
       if (rrc != MEMCACHED_SUCCESS)
       {
-        errors_happened= true;
+        rc= MEMCACHED_SOME_ERRORS;
       }
     }
   }
 
-  return errors_happened ? MEMCACHED_SOME_ERRORS : MEMCACHED_SUCCESS;
+  return rc;
 }
 
 static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
@@ -119,11 +119,11 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
   };
 
   uint32_t success= 0;
-  bool errors_happened= false;
+  memcached_return_t rc= MEMCACHED_SUCCESS;
+
   for (uint32_t x= 0; x < memcached_server_count(ptr); x++)
   {
-    memcached_server_st *instance=
-      memcached_server_instance_fetch(ptr, x);
+    memcached_server_st *instance= memcached_server_instance_fetch(ptr, x);
 
     /* Optimization, we only fetch version once. */
     if (instance->major_version != UINT8_MAX)
@@ -134,7 +134,7 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
     memcached_return_t rrc= memcached_vdo(instance, vector, 1, true);
     if (rrc != MEMCACHED_SUCCESS)
     {
-      errors_happened= true;
+      rc= MEMCACHED_SOME_ERRORS;
       (void)memcached_set_error(*instance, rrc, MEMCACHED_AT);
       continue;
     }
@@ -151,12 +151,12 @@ static inline memcached_return_t memcached_version_binary(memcached_st *ptr)
       memcached_return_t rrc= memcached_response(instance, buffer, sizeof(buffer), NULL);
       if (rrc != MEMCACHED_SUCCESS)
       {
-        errors_happened= true;
+        rc= MEMCACHED_SOME_ERRORS;
       }
     }
   }
 
-  return errors_happened ? MEMCACHED_SOME_ERRORS : MEMCACHED_SUCCESS;
+  return rc;
 }
 
 static inline memcached_return_t version_ascii_instance(memcached_server_st *instance)

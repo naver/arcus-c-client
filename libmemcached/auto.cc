@@ -210,7 +210,8 @@ static memcached_return_t binary_incr_decr(memcached_st *ptr, uint8_t cmd,
 do_action:
 #endif
   memcached_return_t rc= memcached_vdo(instance, vector, 3, true);
-  if (no_reply or rc != MEMCACHED_SUCCESS) {
+  if (no_reply or rc != MEMCACHED_SUCCESS)
+  {
     return rc;
   }
 
@@ -226,6 +227,7 @@ do_action:
     }
   }
 #endif
+
   return rc;
 }
 
