@@ -198,11 +198,11 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
                                                 uint64_t cas,
                                                 memcached_storage_action_t verb)
 {
-  bool flush;
+  bool flush= (ptr->flags.buffer_requests && verb == SET_OP) ? false : true;
+  bool noreply= ptr->flags.no_reply;
+
   protocol_binary_request_set request= {};
   size_t send_length= sizeof(request.bytes);
-
-  bool noreply= ptr->flags.no_reply;
 
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
   request.message.header.request.opcode= get_com_code(verb, noreply);
@@ -218,10 +218,8 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
     request.message.body.flags= htonl(flags);
     request.message.body.expiration= htonl((uint32_t)expiration);
   }
-
   request.message.header.request.bodylen= htonl((uint32_t) (key_length + memcached_array_size(ptr->_namespace) + value_length +
                                                             request.message.header.request.extlen));
-
   if (cas)
   {
     request.message.header.request.cas= memcached_htonll(cas);
@@ -235,7 +233,6 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
     { value_length, value }
   };
 
-  flush= (bool) ((ptr->flags.buffer_requests && verb == SET_OP) ? 0 : 1);
   memcached_server_write_instance_st server= memcached_server_instance_fetch(ptr, server_key);
 
 #ifdef ENABLE_REPLICATION
@@ -244,7 +241,7 @@ do_action:
   WATCHPOINT_SET(server->io_wait_count.read= 0);
   WATCHPOINT_SET(server->io_wait_count.write= 0);
 
-  if (ptr->flags.use_udp && ! flush)
+  if (ptr->flags.use_udp && !flush)
   {
     size_t cmd_size= send_length + key_length + value_length;
 
@@ -303,7 +300,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     server->hostname, server->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, server) == true) {
+      if (memcached_rgroup_switchover(ptr, server) == true)
+      {
         server= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -376,15 +374,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
     { 2, "\r\n" }
   };
 
-  bool to_write;
-  if (ptr->flags.buffer_requests && verb == SET_OP)
-  {
-    to_write= false;
-  }
-  else
-  {
-    to_write= true;
-  }
+  bool to_write= (ptr->flags.buffer_requests && verb == SET_OP) ? false : true;
 
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);;
 
@@ -437,7 +427,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }

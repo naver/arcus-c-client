@@ -65,7 +65,7 @@ static memcached_return_t ascii_touch(memcached_st *ptr,
   bool no_reply= (ptr->flags.no_reply);
 
   char expiration_buffer[MEMCACHED_MAXIMUM_INTEGER_DISPLAY_LENGTH + 1 + 1];
-  int expiration_buffer_length = snprintf(expiration_buffer, sizeof(expiration_buffer), " %lld",
+  int expiration_buffer_length= snprintf(expiration_buffer, sizeof(expiration_buffer), " %lld",
                                           (long long) expiration);
   if (size_t(expiration_buffer_length) >= sizeof(expiration_buffer)
       or expiration_buffer_length < 0)
@@ -128,7 +128,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }

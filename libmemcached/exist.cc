@@ -132,7 +132,6 @@ static memcached_return_t binary_exist(memcached_st *memc,
   request.message.header.request.extlen= 8;
   request.message.body.flags= 0;
   request.message.body.expiration= htonl(2678400);
-
   request.message.header.request.bodylen= htonl((uint32_t) (key_length
                                                             +memcached_array_size(memc->_namespace)
                                                             +request.message.header.request.extlen));
