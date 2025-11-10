@@ -740,7 +740,7 @@ memcached_return_t memcached_set_attrs(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -853,7 +853,7 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -883,77 +883,81 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
   char result[MEMCACHED_DEFAULT_COMMAND_SIZE]; // Uninitialized... valgrind would warn about this, but that would be okay.
   while ((rc= memcached_coll_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL)) == MEMCACHED_ATTR)
   {
-    int c = 0;
-    char seps[] = "=";
+    int c= 0;
+    char seps[]= "=";
 
     char attr_name[32];
 
-    char *word_result = NULL;
-    char *word = NULL;
+    char *word_result= NULL;
+    char *word= NULL;
 
     // <NAME>=<VALUE>\r\n
-    for (word = strtok_r(result+5, seps, &word_result); word;
-         word = strtok_r(NULL, seps, &word_result), c++) {
-      if (c == 0) {
+    for (word= strtok_r(result+5, seps, &word_result); word;
+         word= strtok_r(NULL, seps, &word_result), c++)
+    {
+      if (c == 0)
+      {
         /* NAME */
         snprintf(attr_name, sizeof(attr_name), "%s", word);
-      } else if (c == 1) {
+      }
+      else if (c == 1)
+      {
         /* VALUE */
-        char *e = strchr(word, '\n');
-        size_t word_length = (size_t)(e - word) + 1;
+        char *e= strchr(word, '\n');
+        size_t word_length= (size_t)(e - word) + 1;
         if (strncmp("flags", attr_name, sizeof(attr_name)) == 0)
         {
-          attrs->flags = (uint32_t)atoi(word);
+          attrs->flags= (uint32_t)atoi(word);
         }
         else if (strncmp("expiretime", attr_name, sizeof(attr_name)) == 0)
         {
-          attrs->expiretime = (int32_t)atoi(word);
+          attrs->expiretime= (int32_t)atoi(word);
         }
         else if (strncmp("type", attr_name, sizeof(attr_name)) == 0)
         {
-          word[word_length - 2] = '\0'; // \r
-          word[word_length - 1] = '\0'; // \n
-          attrs->type = str_to_type(word, strlen(word));
+          word[word_length - 2]= '\0'; // \r
+          word[word_length - 1]= '\0'; // \n
+          attrs->type= str_to_type(word, strlen(word));
         }
         else if (strncmp("count", attr_name, sizeof(attr_name)) == 0)
         {
-          attrs->count = (uint32_t)atoi(word);
+          attrs->count= (uint32_t)atoi(word);
         }
         else if (strncmp("maxcount", attr_name, sizeof(attr_name)) == 0)
         {
-          attrs->maxcount = (uint32_t)atoi(word);
+          attrs->maxcount= (uint32_t)atoi(word);
         }
         else if (strncmp("overflowaction", attr_name, sizeof(attr_name)) == 0)
         {
-          word[word_length - 2] = '\0'; // \r
-          word[word_length - 1] = '\0'; // \n
-          attrs->overflowaction = str_to_overflowaction(word, strlen(word));
+          word[word_length - 2]= '\0'; // \r
+          word[word_length - 1]= '\0'; // \n
+          attrs->overflowaction= str_to_overflowaction(word, strlen(word));
         }
         else if (strncmp("readable", attr_name, sizeof(attr_name)) == 0)
         {
-          attrs->readable = (word[0] == 'o' && word[1] == 'n');
+          attrs->readable= (word[0] == 'o' && word[1] == 'n');
         }
         else if (strncmp("minbkey", attr_name, sizeof(attr_name)) == 0)
         {
           if (word_length > 6 && word[0] == '0' && word[1] == 'x') // 0x00\r\n
           {
             // byte array bkey
-            rc = memcached_conv_str_to_hex(ptr, word+2, word_length-4, &attrs->minbkey.bkey_ext);
+            rc= memcached_conv_str_to_hex(ptr, word+2, word_length-4, &attrs->minbkey.bkey_ext);
             if (rc == MEMCACHED_SUCCESS)
             {
-              attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP_EXT;
+              attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP_EXT;
             }
             else
             {
-              attrs->minbkey.bkey = 0;
-              attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP;
+              attrs->minbkey.bkey= 0;
+              attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP;
             }
           }
           else
           {
             // long type bkey
-            attrs->minbkey.bkey = (uint64_t)strtoull(word, NULL, 10);
-            attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP;
+            attrs->minbkey.bkey= (uint64_t)strtoull(word, NULL, 10);
+            attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP;
           }
         }
         else if (strncmp("maxbkey", attr_name, sizeof(attr_name)) == 0)
@@ -961,22 +965,22 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
           if (word_length > 6 && word[0] == '0' && word[1] == 'x') // 0x00\r\n
           {
             // byte array bkey
-            rc = memcached_conv_str_to_hex(ptr, word+2, word_length-4, &attrs->maxbkey.bkey_ext);
+            rc= memcached_conv_str_to_hex(ptr, word+2, word_length-4, &attrs->maxbkey.bkey_ext);
             if (rc == MEMCACHED_SUCCESS)
             {
-              attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP_EXT;
+              attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP_EXT;
             }
             else
             {
-              attrs->maxbkey.bkey = 0;
-              attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP;
+              attrs->maxbkey.bkey= 0;
+              attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP;
             }
           }
           else
           {
             // long type bkey
-            attrs->maxbkey.bkey = (uint64_t)strtoull(word, NULL, 10);
-            attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP;
+            attrs->maxbkey.bkey= (uint64_t)strtoull(word, NULL, 10);
+            attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP;
           }
         }
         else if (strncmp("maxbkeyrange", attr_name, sizeof(attr_name)) == 0)
@@ -984,36 +988,39 @@ memcached_return_t memcached_get_attrs(memcached_st *ptr,
           if (word_length > 6 && word[0] == '0' && word[1] == 'x') // 0x00\r\n
           {
             // byte array bkey : attrs->maxbkeyrange.bkey_ext must be freed.
-            rc = memcached_conv_str_to_hex(ptr, word+2, word_length-4, &attrs->maxbkeyrange.bkey_ext);
+            rc= memcached_conv_str_to_hex(ptr, word+2, word_length-4, &attrs->maxbkeyrange.bkey_ext);
             if (rc == MEMCACHED_SUCCESS)
             {
-              attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP_EXT;
+              attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP_EXT;
             }
             else
             {
-              attrs->maxbkeyrange.bkey = 0;
-              attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP;
+              attrs->maxbkeyrange.bkey= 0;
+              attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP;
             }
           }
           else
           {
             // long type bkey
-            attrs->maxbkeyrange.bkey = (uint64_t)strtoull(word, NULL, 10);
-            attrs->options.subkey_type = MEMCACHED_COLL_QUERY_BOP;
+            attrs->maxbkeyrange.bkey= (uint64_t)strtoull(word, NULL, 10);
+            attrs->options.subkey_type= MEMCACHED_COLL_QUERY_BOP;
           }
         }
         else if (strncmp("trimmed", attr_name, sizeof(attr_name)) == 0)
         {
-          attrs->trimmed = (uint32_t)atoi(word);
+          attrs->trimmed= (uint32_t)atoi(word);
         }
-      } else {
+      }
+      else
+      {
         break;
       }
     }
   }
 
-  if (rc == MEMCACHED_END) {
-    rc = MEMCACHED_SUCCESS;
+  if (rc == MEMCACHED_END)
+  {
+    rc= MEMCACHED_SUCCESS;
   }
 
   return rc;
@@ -1028,7 +1035,7 @@ static memcached_return_t do_coll_create(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -1109,7 +1116,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -1165,7 +1173,7 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   }
   else if (verb == MOP_INSERT_OP)
   {
-    size_t mkey_length = query->sub_key.mkey.length;
+    size_t mkey_length= query->sub_key.mkey.length;
     if (mkey_length > MEMCACHED_COLL_MAX_MOP_MKEY_LENG)
     {
         return MEMCACHED_INVALID_ARGUMENTS;
@@ -1201,9 +1209,9 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
   if (attributes)
   {
     bool set_overflowaction= verb != SOP_INSERT_OP &&
-                             verb != MOP_INSERT_OP
-                                  && attributes->overflowaction
-                                  && attributes->overflowaction != OVERFLOWACTION_NONE;
+                             verb != MOP_INSERT_OP &&
+                             attributes->overflowaction &&
+                             attributes->overflowaction != OVERFLOWACTION_NONE;
 
     write_length+= snprintf(buffer+write_length, buffer_length-write_length,
                             " create %u %d %u%s%s%s",
@@ -1228,13 +1236,13 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
       ptr->pipe_buffer_pos + request_length < pipe_buffer_length)
   {
     /* buffering */
-    ptr->pipe_buffer_pos += snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
+    ptr->pipe_buffer_pos+= snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
                                      pipe_buffer_length-ptr->pipe_buffer_pos,
                                      "%s%s%s\r\n", command, key, buffer);
     memcpy(ptr->pipe_buffer+ptr->pipe_buffer_pos, query->value, query->value_length);
-    ptr->pipe_buffer_pos += query->value_length;
-    ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\r';
-    ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\n';
+    ptr->pipe_buffer_pos+= query->value_length;
+    ptr->pipe_buffer[ptr->pipe_buffer_pos++]= '\r';
+    ptr->pipe_buffer[ptr->pipe_buffer_pos++]= '\n';
     return MEMCACHED_SUCCESS;
   }
 
@@ -1257,7 +1265,7 @@ static memcached_return_t internal_coll_piped_insert(memcached_st *ptr,
     return rc;
   }
 
-  ptr->pipe_buffer_pos = 0; /* reset pipe_buffer_pos */
+  ptr->pipe_buffer_pos= 0; /* reset pipe_buffer_pos */
   return rc;
 }
 
@@ -1302,13 +1310,13 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
       ptr->pipe_buffer_pos + request_length < pipe_buffer_length)
   {
     /* buffering */
-    ptr->pipe_buffer_pos += snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
+    ptr->pipe_buffer_pos+= snprintf(ptr->pipe_buffer+ptr->pipe_buffer_pos,
                                      pipe_buffer_length-ptr->pipe_buffer_pos,
                                      "%s%s%s", command, key, buffer);
     memcpy(ptr->pipe_buffer+ptr->pipe_buffer_pos, value, value_length);
-    ptr->pipe_buffer_pos += value_length;
-    ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\r';
-    ptr->pipe_buffer[ptr->pipe_buffer_pos++] = '\n';
+    ptr->pipe_buffer_pos+= value_length;
+    ptr->pipe_buffer[ptr->pipe_buffer_pos++]= '\r';
+    ptr->pipe_buffer[ptr->pipe_buffer_pos++]= '\n';
     return MEMCACHED_SUCCESS;
   }
 
@@ -1330,7 +1338,7 @@ static memcached_return_t internal_coll_piped_exist(memcached_st *ptr,
     return rc;
   }
 
-  ptr->pipe_buffer_pos = 0; /* reset pipe_buffer_pos */
+  ptr->pipe_buffer_pos= 0; /* reset pipe_buffer_pos */
   return rc;
 }
 
@@ -1343,7 +1351,7 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -1369,7 +1377,7 @@ static memcached_return_t do_coll_insert(memcached_st *ptr,
   }
   else if (verb == MOP_INSERT_OP || verb == MOP_UPSERT_OP)
   {
-    size_t mkey_length = query->sub_key.mkey.length;
+    size_t mkey_length= query->sub_key.mkey.length;
     if (mkey_length > MEMCACHED_COLL_MAX_MOP_MKEY_LENG)
     {
         return MEMCACHED_INVALID_ARGUMENTS;
@@ -1467,7 +1475,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -1498,7 +1507,7 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -1537,7 +1546,7 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
   }
   else if (verb == MOP_DELETE_OP)
   {
-    size_t mkey_length = query->sub_key.mkey.length;
+    size_t mkey_length= query->sub_key.mkey.length;
     if (mkey_length > MEMCACHED_COLL_MAX_MOP_MKEY_LENG)
     {
         return MEMCACHED_INVALID_ARGUMENTS;
@@ -1562,7 +1571,7 @@ static memcached_return_t do_coll_delete(memcached_st *ptr,
     /* Filter */
     if (query->eflag_filter)
     {
-      int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
+      int str_length= memcached_coll_eflag_filter_to_str(query->eflag_filter,
                                                           buffer+write_length, buffer_length-write_length);
       if (str_length < 0)
       {
@@ -1668,7 +1677,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -1695,7 +1705,7 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -1759,7 +1769,7 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
   {
     if (MEMCACHED_COLL_QUERY_MOP == query->type)
     {
-      size_t mkey_length = query->sub_key.mkey.length;
+      size_t mkey_length= query->sub_key.mkey.length;
       if (mkey_length > MEMCACHED_COLL_MAX_MOP_MKEY_LENG)
       {
         return MEMCACHED_INVALID_ARGUMENTS;
@@ -1776,25 +1786,25 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     }
     else if (MEMCACHED_COLL_QUERY_MOP_RANGE == query->type)
     {
-      size_t length_of_mkeys = 0;
-      size_t number_of_mkeys = query->sub_key.mkey.number_of_mkeys;
+      size_t length_of_mkeys= 0;
+      size_t number_of_mkeys= query->sub_key.mkey.number_of_mkeys;
       for (size_t i= 0; i<number_of_mkeys; i++)
       {
-        size_t mkey_length = query->sub_key.mkey.length_array[i];
+        size_t mkey_length= query->sub_key.mkey.length_array[i];
         if (mkey_length > MEMCACHED_COLL_MAX_MOP_MKEY_LENG)
         {
           return MEMCACHED_INVALID_ARGUMENTS;
         }
-        length_of_mkeys += mkey_length;
+        length_of_mkeys+= mkey_length;
       }
-      length_of_mkeys += number_of_mkeys-1;
+      length_of_mkeys+= number_of_mkeys-1;
       write_length= snprintf(buffer, buffer_length, " %lu %lu", length_of_mkeys, number_of_mkeys);
 
       // mkeys
       size_t mkey_buffer_length= sizeof(char) * length_of_mkeys + 1;
       mkey_buffer= (char*)libmemcached_malloc(ptr, mkey_buffer_length);
       char field_delimeter= space_separated_keys_is_supported(instance) ? ' ' : ',';
-      for (size_t i=0; i<number_of_mkeys-1; i++)
+      for (size_t i= 0; i<number_of_mkeys-1; i++)
       {
         mkey_write_length+= snprintf(mkey_buffer+mkey_write_length,
                                      mkey_buffer_length-mkey_write_length, "%s%c",
@@ -1829,7 +1839,7 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
     /* Filter */
     if (query->eflag_filter)
     {
-      int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
+      int str_length= memcached_coll_eflag_filter_to_str(query->eflag_filter,
                                                           buffer+write_length, buffer_length-write_length);
       if (str_length < 0)
       {
@@ -1925,13 +1935,14 @@ do_action:
   else
   {
     /* Fetch results */
-    result = memcached_coll_fetch_result(ptr, result, &rc);
+    result= memcached_coll_fetch_result(ptr, result, &rc);
 #ifdef ENABLE_REPLICATION
     if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -2207,7 +2218,7 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -2255,7 +2266,7 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
-  rc = memcached_vdo(instance, vector, 4, to_write);
+  rc= memcached_vdo(instance, vector, 4, to_write);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -2295,7 +2306,7 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -2338,7 +2349,7 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
   /* Request */
   bool to_write= not ptr->flags.buffer_requests;
 
-  struct libmemcached_io_vector_st vector[] =
+  struct libmemcached_io_vector_st vector[]=
   {
     { command_length, command },
     { key_length, key },
@@ -2350,7 +2361,7 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
-  rc = memcached_vdo(instance, vector, 4, to_write);
+  rc= memcached_vdo(instance, vector, 4, to_write);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -2367,7 +2378,7 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
   else
   {
     /* Fetch results */
-    result = memcached_coll_fetch_result(ptr, result, &rc);
+    result= memcached_coll_fetch_result(ptr, result, &rc);
 
     /* Search for END or something */
     if (result)
@@ -2394,7 +2405,7 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -2447,7 +2458,7 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
   uint32_t server_key= memcached_generate_hash_with_redistribution(ptr, key, key_length);
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);
 
-  rc = memcached_vdo(instance, vector, 4, to_write);
+  rc= memcached_vdo(instance, vector, 4, to_write);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -2734,7 +2745,7 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -3227,7 +3238,7 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -3258,7 +3269,7 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   /* 1. sub key */
   if (verb == MOP_UPDATE_OP)
   {
-    size_t mkey_length = query->sub_key.mkey.length;
+    size_t mkey_length= query->sub_key.mkey.length;
     if (mkey_length > MEMCACHED_COLL_MAX_MOP_MKEY_LENG)
     {
         return MEMCACHED_INVALID_ARGUMENTS;
@@ -3277,7 +3288,7 @@ static memcached_return_t do_coll_update(memcached_st *ptr,
   /* 2. eflag update */
   if (eflag_update)
   {
-    int str_length = memcached_coll_eflag_update_to_str(eflag_update,
+    int str_length= memcached_coll_eflag_update_to_str(eflag_update,
                                                         buffer+write_length, buffer_length-write_length);
     if (str_length < 0)
     {
@@ -3354,7 +3365,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -3391,7 +3403,7 @@ static memcached_return_t do_coll_arithmetic(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -3489,7 +3501,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -3522,7 +3535,7 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
 {
   arcus_server_check_for_update(ptr);
 
-  memcached_return_t rc = before_query(ptr, &key, &key_length, 1);
+  memcached_return_t rc= before_query(ptr, &key, &key_length, 1);
   if (rc != MEMCACHED_SUCCESS)
     return rc;
 
@@ -3552,8 +3565,8 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   /* 2. filter */
   if (query->eflag_filter)
   {
-    int str_length = memcached_coll_eflag_filter_to_str(query->eflag_filter,
-                                                        buffer+write_length, buffer_length-write_length);
+    int str_length= memcached_coll_eflag_filter_to_str(query->eflag_filter,
+                                                       buffer+write_length, buffer_length-write_length);
     if (str_length < 0)
     {
       return memcached_set_error(*ptr, MEMCACHED_MEMORY_ALLOCATION_FAILURE, MEMCACHED_AT,

@@ -123,7 +123,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }
@@ -140,19 +141,12 @@ static inline memcached_return_t binary_delete(memcached_st *ptr,
                                                const char *key,
                                                size_t key_length)
 {
-  protocol_binary_request_delete request= {};
   bool to_write= (ptr->flags.buffer_requests) ? false : true;
   bool no_reply= (ptr->flags.no_reply);
 
+  protocol_binary_request_delete request= {};
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
-  if (no_reply)
-  {
-    request.message.header.request.opcode= PROTOCOL_BINARY_CMD_DELETEQ;
-  }
-  else
-  {
-    request.message.header.request.opcode= PROTOCOL_BINARY_CMD_DELETE;
-  }
+  request.message.header.request.opcode= no_reply ? PROTOCOL_BINARY_CMD_DELETEQ : PROTOCOL_BINARY_CMD_DELETE;
   request.message.header.request.keylen= htons((uint16_t)(key_length + memcached_array_size(ptr->_namespace)));
   request.message.header.request.datatype= PROTOCOL_BINARY_RAW_BYTES;
   request.message.header.request.bodylen= htonl((uint32_t)(key_length + memcached_array_size(ptr->_namespace)));
@@ -192,15 +186,14 @@ do_action:
 
     for (uint32_t x= 0; x < ptr->number_of_replicas; ++x)
     {
-      memcached_server_write_instance_st replica;
-
       ++server_key;
       if (server_key == memcached_server_count(ptr))
         server_key= 0;
 
+      memcached_server_write_instance_st replica;
       replica= memcached_server_instance_fetch(ptr, server_key);
-
-      if (memcached_vdo(replica, vector, 3, to_write) == MEMCACHED_SUCCESS) {
+      if (memcached_vdo(replica, vector, 3, to_write) == MEMCACHED_SUCCESS)
+      {
         memcached_server_response_decrement(replica);
       }
     }
@@ -223,7 +216,8 @@ do_action:
     {
       ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
                     instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true) {
+      if (memcached_rgroup_switchover(ptr, instance) == true)
+      {
         instance= memcached_server_instance_fetch(ptr, server_key);
         goto do_action;
       }

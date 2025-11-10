@@ -117,7 +117,7 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
     return rc;
   }
 
-  if ((ptr->root->flags.no_reply) == 0 and (ptr->root->flags.piped == false))
+  if ((ptr->root->flags.no_reply == false) and (ptr->root->flags.piped == false))
   {
     memcached_server_response_increment(ptr);
   }
