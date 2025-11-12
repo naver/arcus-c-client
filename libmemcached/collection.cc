@@ -814,11 +814,6 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
-  }
   else if (ptr->flags.no_reply)
   {
     return MEMCACHED_SUCCESS;
@@ -1091,11 +1086,6 @@ do_action:
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
-  }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
   }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
@@ -1447,11 +1437,6 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
-  }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
     return MEMCACHED_SUCCESS;
@@ -1644,11 +1629,6 @@ do_action:
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
-  }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
   }
   else if (ptr->flags.no_reply)
   {
@@ -1896,7 +1876,7 @@ static memcached_return_t do_coll_get(memcached_st *ptr,
 do_action:
 #endif
   rc= memcached_vdo(instance, vector, veclen, !ptr->flags.buffer_requests);
-  if (rc != MEMCACHED_SUCCESS)
+  if (rc != MEMCACHED_SUCCESS or ptr->flags.no_reply or ptr->flags.piped)
   {
     if (mkey_buffer)
     {
@@ -1906,45 +1886,34 @@ do_action:
     return rc;
   }
 
-  if (ptr->flags.buffer_requests)
+  /* Fetch results */
+  result= memcached_coll_fetch_result(ptr, result, &rc);
+#ifdef ENABLE_REPLICATION
+  if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
   {
-    rc= MEMCACHED_BUFFERED;
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                   instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true)
+    {
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
   }
-  else if (ptr->flags.no_reply or ptr->flags.piped)
+#endif
+  /* Search for END or something */
+  if (result)
+  {
+    memcached_coll_result_reset(&ptr->collection_result);
+    memcached_coll_fetch_result(ptr, &ptr->collection_result, &rc);
+  }
+  memcached_set_last_response_code(ptr, rc);
+
+  if (rc == MEMCACHED_END             or
+      rc == MEMCACHED_TRIMMED         or
+      rc == MEMCACHED_DELETED         or
+      rc == MEMCACHED_DELETED_DROPPED )
   {
     rc= MEMCACHED_SUCCESS;
-  }
-  else
-  {
-    /* Fetch results */
-    result= memcached_coll_fetch_result(ptr, result, &rc);
-#ifdef ENABLE_REPLICATION
-    if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
-    {
-      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true)
-      {
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
-      }
-    }
-#endif
-    /* Search for END or something */
-    if (result)
-    {
-      memcached_coll_result_reset(&ptr->collection_result);
-      memcached_coll_fetch_result(ptr, &ptr->collection_result, &rc);
-    }
-    memcached_set_last_response_code(ptr, rc);
-
-    if (rc == MEMCACHED_END             or
-        rc == MEMCACHED_TRIMMED         or
-        rc == MEMCACHED_DELETED         or
-        rc == MEMCACHED_DELETED_DROPPED )
-    {
-      rc= MEMCACHED_SUCCESS;
-    }
   }
 
   if (mkey_buffer)
@@ -2251,11 +2220,6 @@ static memcached_return_t do_bop_find_position(memcached_st *ptr,
   {
     return rc;
   }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
-  }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
     return MEMCACHED_SUCCESS;
@@ -2341,11 +2305,6 @@ static memcached_return_t do_bop_get_by_position(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
-  }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
   }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
@@ -2434,11 +2393,6 @@ static memcached_return_t do_bop_find_position_with_get(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
-  }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
   }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
@@ -2757,11 +2711,6 @@ static memcached_return_t do_coll_exist(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
-  }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
   }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
@@ -3311,11 +3260,6 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
-  }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
     return MEMCACHED_SUCCESS;
@@ -3444,11 +3388,6 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
-  }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
     return MEMCACHED_SUCCESS;
@@ -3557,11 +3496,6 @@ static memcached_return_t do_coll_count(memcached_st *ptr,
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
-  }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
   }
   else if (ptr->flags.no_reply or ptr->flags.piped)
   {
