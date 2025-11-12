@@ -61,15 +61,12 @@ static inline memcached_return_t ascii_delete(memcached_st *ptr,
                                               const char *key,
                                               const size_t key_length)
 {
-  bool to_write= (ptr->flags.buffer_requests) ? false : true;
-  bool no_reply= (ptr->flags.no_reply);
-
   struct libmemcached_io_vector_st vector[]=
   {
     { 7, "delete " },
     { memcached_array_size(ptr->_namespace), memcached_array_string(ptr->_namespace) },
     { key_length, key },
-    { (no_reply ? memcached_literal_param_size(" noreply") : 0), " noreply" },
+    { (ptr->flags.no_reply ? memcached_literal_param_size(" noreply") : 0), " noreply" },
     { 2, "\r\n" }
   };
 
@@ -79,7 +76,7 @@ static inline memcached_return_t ascii_delete(memcached_st *ptr,
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
-  if (ptr->flags.use_udp && to_write == false)
+  if (ptr->flags.use_udp && ptr->flags.buffer_requests)
   {
     size_t cmd_size= 0;
     for (uint32_t x= 0; x < 5; x++)
@@ -99,38 +96,40 @@ do_action:
   }
 
   /* Send command header */
-  memcached_return_t rc= memcached_vdo(instance, vector, 5, to_write);
+  memcached_return_t rc= memcached_vdo(instance, vector, 5, !ptr->flags.buffer_requests);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
   }
 
-  if (to_write == false)
+  if (ptr->flags.buffer_requests)
   {
-    rc= MEMCACHED_BUFFERED;
+    return MEMCACHED_BUFFERED;
   }
-  else if (no_reply == false)
+  else if (ptr->flags.no_reply)
   {
-    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-    rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+    return MEMCACHED_SUCCESS;
+  }
 
-    if (rc == MEMCACHED_DELETED)
-    {
-      rc= MEMCACHED_SUCCESS;
-    }
-#ifdef ENABLE_REPLICATION
-    else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
-    {
-      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true)
-      {
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
-      }
-    }
-#endif
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+
+  if (rc == MEMCACHED_DELETED)
+  {
+    rc= MEMCACHED_SUCCESS;
   }
+#ifdef ENABLE_REPLICATION
+  else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true)
+    {
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
+    }
+  }
+#endif
 
   return rc;
 }
@@ -141,12 +140,10 @@ static inline memcached_return_t binary_delete(memcached_st *ptr,
                                                const char *key,
                                                size_t key_length)
 {
-  bool to_write= (ptr->flags.buffer_requests) ? false : true;
-  bool no_reply= (ptr->flags.no_reply);
-
   protocol_binary_request_delete request= {};
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
-  request.message.header.request.opcode= no_reply ? PROTOCOL_BINARY_CMD_DELETEQ : PROTOCOL_BINARY_CMD_DELETE;
+  request.message.header.request.opcode= ptr->flags.no_reply ?
+                                         PROTOCOL_BINARY_CMD_DELETEQ : PROTOCOL_BINARY_CMD_DELETE;
   request.message.header.request.keylen= htons((uint16_t)(key_length + memcached_array_size(ptr->_namespace)));
   request.message.header.request.datatype= PROTOCOL_BINARY_RAW_BYTES;
   request.message.header.request.bodylen= htonl((uint32_t)(key_length + memcached_array_size(ptr->_namespace)));
@@ -164,7 +161,7 @@ static inline memcached_return_t binary_delete(memcached_st *ptr,
 #ifdef ENABLE_REPLICATION
 do_action:
 #endif
-  if (ptr->flags.use_udp && ! to_write)
+  if (ptr->flags.use_udp && ptr->flags.buffer_requests)
   {
     size_t cmd_size= sizeof(request.bytes) + key_length;
     if (cmd_size > MAX_UDP_DATAGRAM_LENGTH - UDP_DATAGRAM_HEADER_LENGTH)
@@ -174,7 +171,7 @@ do_action:
       memcached_io_write(instance, NULL, 0, true);
   }
 
-  memcached_return_t rc= memcached_vdo(instance, vector, 3, to_write);
+  memcached_return_t rc= memcached_vdo(instance, vector, 3, !ptr->flags.buffer_requests);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -192,38 +189,40 @@ do_action:
 
       memcached_server_write_instance_st replica;
       replica= memcached_server_instance_fetch(ptr, server_key);
-      if (memcached_vdo(replica, vector, 3, to_write) == MEMCACHED_SUCCESS)
+      if (memcached_vdo(replica, vector, 3, !ptr->flags.buffer_requests) == MEMCACHED_SUCCESS)
       {
         memcached_server_response_decrement(replica);
       }
     }
   }
 
-  if (to_write == false)
+  if (ptr->flags.buffer_requests)
   {
-    rc= MEMCACHED_BUFFERED;
+    return MEMCACHED_BUFFERED;
   }
-  else if (no_reply == false)
+  else if (ptr->flags.no_reply)
   {
-    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-    rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-    if (rc == MEMCACHED_DELETED)
-    {
-      rc= MEMCACHED_SUCCESS;
-    }
+    return MEMCACHED_SUCCESS;
+  }
+
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  if (rc == MEMCACHED_DELETED)
+  {
+    rc= MEMCACHED_SUCCESS;
+  }
 #ifdef ENABLE_REPLICATION
-    else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true)
     {
-      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true)
-      {
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
-      }
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
     }
-#endif
   }
+#endif
 
   return rc;
 }
