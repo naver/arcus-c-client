@@ -111,11 +111,6 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
-  }
   else if (ptr->flags.no_reply)
   {
     return MEMCACHED_SUCCESS;

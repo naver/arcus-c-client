@@ -121,5 +121,11 @@ memcached_return_t memcached_vdo(memcached_server_write_instance_st ptr,
   {
     memcached_server_response_increment(ptr);
   }
+
+  if (with_flush == false)
+  {
+    rc= MEMCACHED_BUFFERED;
+  }
+
   return rc;
 }

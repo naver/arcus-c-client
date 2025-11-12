@@ -112,8 +112,7 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.no_reply)
+  else if (ptr->flags.no_reply)
   {
     return MEMCACHED_SUCCESS;
   }
@@ -218,8 +217,7 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.no_reply)
+  else if (ptr->flags.no_reply)
   {
     return MEMCACHED_SUCCESS;
   }

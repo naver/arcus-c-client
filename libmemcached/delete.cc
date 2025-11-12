@@ -101,11 +101,6 @@ do_action:
   {
     return rc;
   }
-
-  if (ptr->flags.buffer_requests)
-  {
-    return MEMCACHED_BUFFERED;
-  }
   else if (ptr->flags.no_reply)
   {
     return MEMCACHED_SUCCESS;
@@ -172,7 +167,7 @@ do_action:
   }
 
   memcached_return_t rc= memcached_vdo(instance, vector, 3, !ptr->flags.buffer_requests);
-  if (rc != MEMCACHED_SUCCESS)
+  if (rc != MEMCACHED_SUCCESS and rc != MEMCACHED_BUFFERED)
   {
     return rc;
   }
@@ -189,7 +184,8 @@ do_action:
 
       memcached_server_write_instance_st replica;
       replica= memcached_server_instance_fetch(ptr, server_key);
-      if (memcached_vdo(replica, vector, 3, !ptr->flags.buffer_requests) == MEMCACHED_SUCCESS)
+      memcached_return_t rrc= memcached_vdo(replica, vector, 3, !ptr->flags.buffer_requests);
+      if (rrc == MEMCACHED_SUCCESS or rrc == MEMCACHED_BUFFERED)
       {
         memcached_server_response_decrement(replica);
       }
