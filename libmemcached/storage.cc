@@ -198,14 +198,11 @@ static memcached_return_t memcached_send_binary(memcached_st *ptr,
                                                 uint64_t cas,
                                                 memcached_storage_action_t verb)
 {
-  bool flush= (ptr->flags.buffer_requests && verb == SET_OP) ? false : true;
-  bool noreply= ptr->flags.no_reply;
-
   protocol_binary_request_set request= {};
   size_t send_length= sizeof(request.bytes);
 
   request.message.header.request.magic= PROTOCOL_BINARY_REQ;
-  request.message.header.request.opcode= get_com_code(verb, noreply);
+  request.message.header.request.opcode= get_com_code(verb, ptr->flags.no_reply);
   request.message.header.request.keylen= htons((uint16_t)(key_length + memcached_array_size(ptr->_namespace)));
   request.message.header.request.datatype= PROTOCOL_BINARY_RAW_BYTES;
   if (verb == APPEND_OP || verb == PREPEND_OP)
@@ -241,7 +238,9 @@ do_action:
   WATCHPOINT_SET(server->io_wait_count.read= 0);
   WATCHPOINT_SET(server->io_wait_count.write= 0);
 
-  if (ptr->flags.use_udp && !flush)
+  bool buffer_requests= (ptr->flags.buffer_requests && verb == SET_OP) ? true : false;
+
+  if (ptr->flags.use_udp && buffer_requests)
   {
     size_t cmd_size= send_length + key_length + value_length;
 
@@ -256,7 +255,7 @@ do_action:
   }
 
   /* write the header */
-  memcached_return_t rc= memcached_vdo(server, vector, 4, flush);
+  memcached_return_t rc= memcached_vdo(server, vector, 4, !buffer_requests);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
@@ -284,30 +283,28 @@ do_action:
     }
   }
 
-  if (flush == false)
+  if (buffer_requests)
   {
-    rc= MEMCACHED_BUFFERED;
+    return MEMCACHED_BUFFERED;
   }
-  else if (noreply or ptr->flags.multi_store)
+  else if (ptr->flags.no_reply or ptr->flags.multi_store)
   {
-    rc= MEMCACHED_SUCCESS;
+    return MEMCACHED_SUCCESS;
   }
-  else
-  {
-    rc= memcached_response(server, NULL, 0, NULL);
+
+  rc= memcached_response(server, NULL, 0, NULL);
 #ifdef ENABLE_REPLICATION
-    if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  server->hostname, server->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, server) == true)
     {
-      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                    server->hostname, server->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, server) == true)
-      {
-        server= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
-      }
+      server= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
     }
-#endif
   }
+#endif
 
   return rc;
 }
@@ -374,7 +371,7 @@ static memcached_return_t memcached_send_ascii(memcached_st *ptr,
     { 2, "\r\n" }
   };
 
-  bool to_write= (ptr->flags.buffer_requests && verb == SET_OP) ? false : true;
+  bool buffer_requests= (ptr->flags.buffer_requests && verb == SET_OP) ? true : false;
 
   memcached_server_write_instance_st instance= memcached_server_instance_fetch(ptr, server_key);;
 
@@ -400,41 +397,39 @@ do_action:
   }
 
   /* Send command header */
-  memcached_return_t rc= memcached_vdo(instance, vector, 11, to_write);
+  memcached_return_t rc= memcached_vdo(instance, vector, 11, !buffer_requests);
   if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
   }
 
-  if (to_write == false)
+  if (buffer_requests)
   {
-    rc= MEMCACHED_BUFFERED;
+    return MEMCACHED_BUFFERED;
   }
   else if (ptr->flags.no_reply or ptr->flags.multi_store)
   {
+    return MEMCACHED_SUCCESS;
+  }
+
+  char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
+  rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
+  if (rc == MEMCACHED_STORED)
+  {
     rc= MEMCACHED_SUCCESS;
   }
-  else
-  {
-    char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
-    rc= memcached_response(instance, result, MEMCACHED_DEFAULT_COMMAND_SIZE, NULL);
-    if (rc == MEMCACHED_STORED)
-    {
-      rc= MEMCACHED_SUCCESS;
-    }
 #ifdef ENABLE_REPLICATION
-    else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  else if (rc == MEMCACHED_SWITCHOVER or rc == MEMCACHED_REPL_SLAVE)
+  {
+    ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
+                  instance->hostname, instance->port, memcached_strerror(ptr, rc)));
+    if (memcached_rgroup_switchover(ptr, instance) == true)
     {
-      ZOO_LOG_INFO(("Switchover: hostname=%s port=%d error=%s",
-                    instance->hostname, instance->port, memcached_strerror(ptr, rc)));
-      if (memcached_rgroup_switchover(ptr, instance) == true)
-      {
-        instance= memcached_server_instance_fetch(ptr, server_key);
-        goto do_action;
-      }
+      instance= memcached_server_instance_fetch(ptr, server_key);
+      goto do_action;
     }
-#endif
   }
+#endif
 
   return rc;
 }

@@ -108,9 +108,14 @@ do_action:
 #endif
   /* Send command header */
   memcached_return_t rc= memcached_vdo(instance, vector, 7, true);
-  if (ptr->flags.no_reply or rc != MEMCACHED_SUCCESS)
+  if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
+  }
+
+  if (ptr->flags.no_reply)
+  {
+    return MEMCACHED_SUCCESS;
   }
 
   char result[MEMCACHED_DEFAULT_COMMAND_SIZE];
@@ -170,14 +175,12 @@ static memcached_return_t binary_incr_decr(memcached_st *ptr, uint8_t cmd,
                                            uint32_t expiration,
                                            uint64_t *value)
 {
-  bool no_reply= ptr->flags.no_reply;
-
   arcus_server_check_for_update(ptr);
 
   if (memcached_server_count(ptr) == 0)
     return memcached_set_error(*ptr, MEMCACHED_NO_SERVERS, MEMCACHED_AT);
 
-  if (no_reply)
+  if (ptr->flags.no_reply)
   {
     if(cmd == PROTOCOL_BINARY_CMD_DECREMENT)
       cmd= PROTOCOL_BINARY_CMD_DECREMENTQ;
@@ -211,9 +214,14 @@ static memcached_return_t binary_incr_decr(memcached_st *ptr, uint8_t cmd,
 do_action:
 #endif
   memcached_return_t rc= memcached_vdo(instance, vector, 3, true);
-  if (no_reply or rc != MEMCACHED_SUCCESS)
+  if (rc != MEMCACHED_SUCCESS)
   {
     return rc;
+  }
+
+  if (ptr->flags.no_reply)
+  {
+    return MEMCACHED_SUCCESS;
   }
 
   rc= memcached_response(instance, (char*)value, sizeof(*value), NULL);
