@@ -1,4 +1,4 @@
-# 8. Item Attributes API
+# 8. Item Attribute API
 
 Item attributes는 각 cache item의 메타데이터를 의미한다.
 Item attributes의 기본 설명은 [ARCUS cache server의 item attributes 부분](https://github.com/naver/arcus-memcached/blob/master/doc/ch03-item-attributes.md)을 참고하길 바란다.
