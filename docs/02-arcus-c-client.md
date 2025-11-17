@@ -1,4 +1,4 @@
-# ARCUS C Client
+# 2. ARCUS C Client 사용법 
 
 ARCUS client는 ARCUS admin과 ARCUS cache server군 들과의 연결을 유지하며 client로 들어온 명령을 처리하여 그 결과를 반환한다
 

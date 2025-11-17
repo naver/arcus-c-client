@@ -1,4 +1,4 @@
-# Key-Value Item
+# 3. Key-Value Item API
 
 Key-value item은 하나의 key에 대해 하나의 value만을 저장하는 item이다.
 
@@ -6,7 +6,7 @@ Key-value item은 하나의 key에 대해 하나의 value만을 저장하는 ite
 - Key의 최대 크기는 4000 character이다.
 - Cache item의 최대 크기는 1MB이다.
 
-Key-value item에 대해 수행 가능한 연산들은 아래와 같다.
+Key-value item에 대해 수행 가능한 API들은 아래와 같다.
 
 - [Key-Value Item 저장](03-key-value-API.md#key-value-item-%EC%A0%80%EC%9E%A5)
 - [Key-Value Item 조회](03-key-value-API.md#key-value-item-%EC%A1%B0%ED%9A%8C)
