@@ -538,6 +538,22 @@ memcached_return_t memcached_clone_sasl(memcached_st *clone, const  memcached_st
   return MEMCACHED_SUCCESS;
 }
 
+char *memcached_get_sasl_username(memcached_st *ptr)
+{
+  if (ptr->sasl.callbacks == NULL) {
+    return NULL;
+  }
+
+  sasl_callback_t *cb = ptr->sasl.callbacks;
+  while (cb->id != SASL_CB_LIST_END) {
+    if (cb->id == SASL_CB_USER) {
+      return (char*)cb->context;
+    }
+    cb++;
+  }
+
+  return NULL;
+}
 #else
 
 void memcached_set_sasl_callbacks(memcached_st *, const sasl_callback_t *)

@@ -559,7 +559,7 @@ static inline int do_arcus_cluster_validation_check(memcached_st *mc, arcus_st *
   return -1;
 }
 
-static inline int do_add_client_info(arcus_st *arcus)
+static inline int do_add_client_info(arcus_st *arcus, memcached_st *mc)
 {
   int result;
   char path[512];
@@ -578,7 +578,8 @@ static inline int do_add_client_info(arcus_st *arcus)
 
   /* create the ephemeral znode
    * "/arcus or arcus_repl/client_list/{service_code}/
-   *  {client hostname}_{ip address}_{pool count}_c_{client version}_{YYYYMMDDHHIISS}_{zk session id}"
+   *  {client hostname}_{ip address}_{pool count}_c_{client version}_{YYYYMMDDHHIISS}_{zk session id}
+   *  [_sasluser={username}]"
    * it means administrator has to create the {service_code} node before using.
    */
   char* client_info_znode = (char*)ARCUS_ZK_CLIENT_INFO_NODE;
@@ -587,15 +588,24 @@ static inline int do_add_client_info(arcus_st *arcus)
     client_info_znode = (char*)ARCUS_REPL_ZK_CLIENT_INFO_NODE;
   }
 #endif
-  snprintf(path, sizeof(path), "%s/%s/%.*s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx",
-                              client_info_znode,
-                              arcus->zk.svc_code,
-                              50, hostname,
-                              (host == NULL ? "NULL" : inet_ntoa(*((struct in_addr *)host->h_addr))),
-                              (unsigned int)get_memcached_pool_size(arcus->pool),
-                              ARCUS_VERSION_STRING,
-                              ti->tm_year+1900, ti->tm_mon+1, ti->tm_mday, ti->tm_hour, ti->tm_min, ti->tm_sec,
-                              (long long) zoo_client_id(arcus->zk.handle)->client_id);
+
+  int path_len = 0;
+  path_len += snprintf(path + path_len, sizeof(path) - path_len,
+                       "%s/%s/%.*s_%s_%u_c_%s_%d%02d%02d%02d%02d%02d_%llx",
+                       client_info_znode,
+                       arcus->zk.svc_code,
+                       50, hostname,
+                       (host == NULL ? "NULL" : inet_ntoa(*((struct in_addr *)host->h_addr))),
+                       (unsigned int)get_memcached_pool_size(arcus->pool),
+                       ARCUS_VERSION_STRING,
+                       ti->tm_year+1900, ti->tm_mon+1, ti->tm_mday, ti->tm_hour, ti->tm_min, ti->tm_sec,
+                       (long long) zoo_client_id(arcus->zk.handle)->client_id);
+
+  char *sasl_username = memcached_get_sasl_username(mc);
+  if (sasl_username) {
+    path_len += snprintf(path + path_len, sizeof(path) - path_len,
+                         "_sasluser=%s", sasl_username);
+  }
 
   result = zoo_exists(arcus->zk.handle, path, 0, NULL);
   if (result == ZNONODE) {
@@ -683,7 +693,7 @@ static inline arcus_return_t do_arcus_zk_connect(memcached_st *mc)
     }
     pthread_mutex_unlock(&lock_arcus);
 
-    if (do_add_client_info(arcus) < 0) {
+    if (do_add_client_info(arcus, mc) < 0) {
       rc= ARCUS_ERROR; break;
     }
   } while(0);
