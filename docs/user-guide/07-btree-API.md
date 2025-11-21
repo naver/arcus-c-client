@@ -1,4 +1,4 @@
-# B+Tree Item
+# 7. B+Tree Item API
 
 B+tree item은 하나의 key에 대해 b+tree 구조 기반으로 b+tree key(bkey)로 정렬된 data의 집합을 가진다.
 
@@ -1355,41 +1355,9 @@ int arcus_btree_element_mget(memcached_st *memc)
 이는 서로 다른 b+tree들이지만, 논리적으로 하나로 합쳐진 거대한 b+tree에 대해 element 조회 연산하는 것과
 동일한 효과를 낸다.
 
-smget 동작은 조회 범위와 어떤 b+tree의 trim 영역과 겹침에 대한 처리로,
-아래 두 가지 동작 모드가 있다.
-
-1) 기존 Sort-Merge 조회 (1.8.X 이하 버전에서 동작하던 방식)
-   - smget 조회 조건을 만족하는 첫 번째 element가 trim된 b+tree가 하나라도 존재하면 OUT_OF_RANGE 응답을 보낸다.
-     이 경우, 응용은 모든 key에 대해 백엔드 저장소인 DB에서 elements 조회한 후에
-     응용에서 sort-merge 작업을 수행하여야 한다.
-   - OUT_OF_RANGE가 없는 상황에서 smget을 수행하면서
-     조회 조건을 만족하는 두 번째 이후의 element가 trim된 b+tree를 만나게 되면,
-     그 지점까지 조회한 elements를 최종 elements 결과로 하고
-     smget 수행 상태는 TRIMMED로 하여 응답을 보낸다.
-     이 경우, 응용은 모든 key에 대해 백엔드 저장소인 DB에서 trim 영역의 elements를 조회하여
-     smget 결과에 반영하여야 한다.
-
-2) 신규 Sort-Merge 조회 (1.9.0 이후 버전에서 추가된 방식)
-   - 기존의 OUT_OF_RANGE에 해당하는 b+tree를 missed keys로 분류하고
-     나머지 b+tree들에 대해 smget을 계속 수행한다.
-     따라서, 응용에서는 missed keys에 한해서만
-     백엔드 저장소인 DB에서 elements를 조회하여 최종 smget 결과에 반영할 수 있다.
-   - smget 조회 조건을 만족하는 두 번째 이후의 element가 trim된 b+tree가 존재하더라도,
-     그 지점에서 smget을 중지하는 것이 아니라, 그러한 b+tree를 trimmed keys로 분류하고
-     원하는 개수의 elements를 찾을 때까지 smget을 계속 진행한다.
-     따라서, 응용에서는 trimmed keys에 한하여
-     백엔드 저장소인 DB에서 trim된 elements를 조회하여 최종 smget 결과에 반영할 수 있다.
    - bkey에 대한 unique 조회 기능을 지원한다.
      중복 bkey를 허용하여 조회하는 duplicate 조회 외에
      중복 bkey를 제거하고 unique bkey만을 조회하는 unique 조회를 지원한다.
-   - 조회 조건에 offset 기능을 제거한다.
-
-기존 smget 연산을 사용하더라도, offset 값은 항상 0으로 사용하길 권고한다.
-양수의 offset을 사용하는 smget에서 missed keys가 존재하고
-missed keys에 대한 DB 조회가 offset으로 skip된 element를 가지는 경우,
-응용에서 정확한 offset 처리가 불가능해지기 때문이다.
-이전의 조회 결과에 이어서 추가로 조회하고자 하는 경우,
-이전에 조회된 bkey 값을 바탕으로 bkey range를 재조정하여 사용할 수 있다.
 
 Sort-Merge 조회를 수행하는 함수는 아래와 같다.
 
@@ -1406,17 +1374,17 @@ memcached_bop_smget(memcached_st *ptr,
 - number_of_keys: key 개수
   - key array에 담을 수 있는 최대 key 개수는 2000 개로 제한된다.
 - query: 조회 조건을 가진 query 구조체
-  - query 구조체를 구성할 때 count는 1 이상의 값을 가져야 하며, offset + count가 1000을 초과해서는 아니 된다.
+  - query 구조체를 구성할 때 count는 1 이상 1000 이하의 값을 가져야 한다.
 - result: sort-merge 조회 결과는 담는 구조체
 
 Sort-Merge 조회 질의를 표현하는 memcached_bop_query_st 구조체 생성 방법은
-기존 sort-merge 조회와 신규 sort-merge 조회에 따라 다르다.
-기존 sort-merge 조회에서 memcached_bop_query_st 구조체 생성 방법은
-앞서 설명한 [B+Tree Query 구조체](07-btree-API.md#btree-query-구조체) 참고하기 바란다.
-신규 sort-merge 조회에서는 아래의 sort-merge 질의 생성하는 전용 API를 사용해
-bkey range, element flag, count 그리고 unique를 명시하여 query 구조체를 생성한다.
+아래의 sort-merge 질의 생성하는 전용 API를 사용해 bkey range, element flag, count
+그리고 unique를 명시하여 query 구조체를 생성한다.
 마지막 인자인 unique가 false이면 중복 bkey를 허용하여 조회하며,
 true이면 중복 bkey를 제거하여 unique bkey만을 조회한다.
+
+이전의 조회 결과에 이어서 추가로 조회하고자 하는 경우,
+이전에 조회된 bkey 값을 바탕으로 bkey range를 재조정하여 사용할 수 있다.
 
 ```c
 memcached_return_t
@@ -1437,15 +1405,7 @@ Response code는 아래와 같다.
 - MEMCACHED_SUCCESS
   - MEMCACHED_END: 여러 B+tree에서 정상적으로 element를 조회하였음.
   - MEMCACHED_DUPLICATED: 여러 B+tree에서 정상적으로 element를 조회하였으나 중복된 bkey가 존재함.
-  - MEMCACHED_TRIMMED (기존 sort-merge 조회에 한정)
-    - 정상적으로 element를 조회하였으나, 조회 범위가 특정 B+tree의 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음.
-    - 즉, 해당 B+tree 크기 제한으로 인해 삭제되어 조회되지 않은 element가 어딘가(DB)에 존재할 수도 있음을 뜻함.
-  - MEMCACHED_DUPLICATED_TRIMMED (기존 sort-merge 조회에 한정)
-    - MEMCACHED_DUPLICATED 상태와 MEMCACHED_TRIMMED 상태가 모두 존재.
 - not MEMCACHED_SUCCESS
-  - MEMCACHED_OUT_OF_RANGE (기존 sort-merge 조회에 한정)
-    - 주어진 조회 범위에 해당하는 element가 없으나, 조회 범위가 overflow 정책에 의해 삭제되는 영역에 걸쳐 있음.
-    - 즉, B+tree 크기 제한으로 인해 삭제되어 조회되지 않은 element가 어딘가(DB)에 존재할 수도 있음을 뜻함.
   - MEMCACHED_TYPE_MISMATCH: 주어진 key에 해당하는 자료구조가 B+tree가 아님.
   - MEMCACHED_BKEY_MISMATCH: 주어진 bkey 유형과 해당 B+tree의 bkey 유형이 다름.
   - MEMCACHED_ATTR_MISMATCH: smget에 참여하는 B+tree들의 attribute가 서로 다름.
