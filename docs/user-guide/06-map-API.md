@@ -70,7 +70,7 @@ int arcus_map_item_create(memcached_st *memc)
 }
 ```
 
-<a id="map-item-insert"></a>
+<a id="map-element-insert"></a>
 ## Map Element 삽입
 
 Map에 하나의 element를 삽입하는 함수이다.
@@ -133,7 +133,7 @@ int arcus_map_element_insert(memcached_st *memc)
 }
 ```
 
-<a id="map-item-upsert"></a>
+<a id="map-element-upsert"></a>
 ## Map Element Upsert
 
 Map에 하나의 element를 upsert한다.
@@ -198,7 +198,7 @@ int arcus_map_element_upsert(memcached_st *memc)
 }
 ```
 
-<a id="map-item-update"></a>
+<a id="map-element-update"></a>
 ## Map Element 변경
 
 Map에 하나의 element를 변경하는 함수이다. 주어진 mkey를 가진 element의 value를 변경한다.
@@ -247,7 +247,7 @@ int arcus_map_element_update(memcached_st *memc)
 }
 ```
 
-<a id="map-item-delete"></a>
+<a id="map-element-delete"></a>
 ## Map Element 삭제
 
 Map element를 삭제하는 함수는 두 가지가 있다.
@@ -310,7 +310,7 @@ int arcus_map_element_delete(memcached_st *memc)
 }
 ```
 
-<a id="map-item-get"></a>
+<a id="map-element-get"></a>
 ## Map Element 조회
 
 Map element를 조회하는 함수는 세 가지가 있다.
@@ -454,7 +454,7 @@ int arcus_map_element_get(memcached_st *memc)
 }
 ```
 
-<a id="map-item-piped-insert"></a>
+<a id="map-element-piped-insert"></a>
 ## Map Element 일괄 삽입
 
 Map에 여러 elements를 한번에 삽입하는 함수는 두 가지가 있다.

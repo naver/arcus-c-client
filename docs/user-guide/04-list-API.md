@@ -69,7 +69,7 @@ int arcus_list_item_create(memcached_st *memc)
 }
 ```
 
-<a id="list-item-insert"></a>
+<a id="list-element-insert"></a>
 ## List Element 삽입
 
 
@@ -135,7 +135,7 @@ int arcus_list_element_insert(memcached_st *memc)
 }
 ```
  
-<a id="list-item-delete"></a>
+<a id="list-element-delete"></a>
 ## List Element 삭제
 
 List element를 삭제하는 함수는 두 가지가 있다.
@@ -209,7 +209,7 @@ int arcus_list_element_delete(memcached_st *memc)
 }
 ```
 
-<a id="list-item-get"></a>
+<a id="list-element-get"></a>
 ## List Element 조회
 
 List element를 조회하는 함수는 두 가지가 있다.
@@ -339,7 +339,7 @@ int arcus_list_element_get(memcached_st *memc)
 }
 ```
 
-<a id="list-item-piped-insert"></a>
+<a id="list-element-piped-insert"></a>
 ## List Element 일괄 삽입
 
 List에 여러 elements를 한번에 삽입하는 함수는 두 가지가 있다.
