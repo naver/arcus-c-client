@@ -21,7 +21,7 @@ ARCUS cache server에서 제공하는 collection 기능 등을 추가로 지원�
 <a id="client-initialize"></a>
 ## Client 초기화
 
-서버 모델에 따른 초기화 메소드는 아래와 같다.
+응용 서버 모델에 따른 Client 초기화 메소드는 아래와 같다.
 
 - Single-Threaded
 
@@ -29,7 +29,7 @@ ARCUS cache server에서 제공하는 collection 기능 등을 추가로 지원�
   arcus_return_t arcus_connect(memcached_st *mc,
                                const char *ensemble_list, const char *svc_code)
   ```
-  싱글 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
+  - 싱글 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
 
 - Multi-Threaded
 
@@ -37,8 +37,7 @@ ARCUS cache server에서 제공하는 collection 기능 등을 추가로 지원�
   arcus_return_t arcus_pool_connect(memcached_pool_st *pool,
                                     const char *ensemble_list, const char *svc_code)
   ```
-
-  멀티 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
+  - 멀티 스레드 서버에서 ARCUS에 연결하기 위해 사용한다.
 
 - Multi-Process
 
@@ -48,19 +47,18 @@ ARCUS cache server에서 제공하는 collection 기능 등을 추가로 지원�
   arcus_return_t arcus_proxy_connect(memcached_st *mc,
                                      memcached_pool_st *pool, memcached_st *proxy)
   ```
+  - `arcus_proxy_create` 함수는
+    멀티 프로세스 서버의 부모 프로세스가 ARCUS에 연결한 뒤, 자식 프로세스들이 사용할 proxy를 생성하기 위해 사용한다.
+  - `arcus_proxy_connect` 함수는
+    멀티 프로세스 서버의 자식 프로세스에서 부모 프로세스가 생성한 proxy에 연결하기 위해 사용한다.
+    참고 사항으로, 멀티 프로세스 서버이지만 각 자식 프로세스가 멀티 쓰레드로 동작하는 경우에는
+    pool을 생성하여 사용할 수 있다.
 
-  `arcus_proxy_create` 함수는
-  멀티 프로세스 서버의 부모 프로세스가 ARCUS에 연결한 뒤, 자식 프로세스들이 사용할 proxy를 생성하기 위해 사용한다.
-  `arcus_proxy_connect` 함수는
-  멀티 프로세스 서버의 자식 프로세스에서 부모 프로세스가 생성한 proxy에 연결하기 위해 사용한다.
-  참고 사항으로, 멀티 프로세스 서버이지만 각 자식 프로세스가 멀티 쓰레드로 동작하는 경우에는
-  pool을 생성하여 사용할 수 있다.
-
-ARCUS C client는 서비스에서 채용한 서버 모델에 따라 다양한 초기화 API를 제공한다.
+ARCUS C client는 응용에서 채용한 서버 모델에 따라 다양한 초기화 API를 제공한다.
 초기화 API는 ARCUS admin에 접속하여 주어진 서비스코드에 해당하는 ARCUS cache server 리스트를 가져와서,
 consistent hashing을 위한 초기화 작업을 수행한다.
 
-초기화 API에서 공통적으로 사용되는 파라미터의 의미는 다음과 같다.
+Client 초기화 API에서 공통적으로 사용되는 파라미터의 의미는 다음과 같다.
 
 * ensemble_list : ARCUS admin의 주소.
 * svc_code : 부여 받은 서비스코드.

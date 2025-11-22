@@ -24,5 +24,5 @@ memcached_flush_by_prefix(memcached_st *ptr,
 - expiration: delayed flush할 시에 지연할 시간(단위: 초)를 나타낸다.
 
 **특정 prefix의 모든 items을 삭제하므로 그 사용에 주의하여야 한다.**
-**특히, prefix를 명시하지 않는 flush 함수는 cache node의 모든 items을 삭제하므로 공용으로 사용하는 cloud에선 각별히 주의해야 한다.**
+**특히, prefix를 명시하지 않는 flush 함수는 cache node의 모든 items을 삭제하므로 공용으로 사용하는 cache cluster에선 각별히 주의해야 한다.**
 

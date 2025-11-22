@@ -39,8 +39,8 @@ memcached_return_t
 memcached_coll_create_attrs_set_overflowaction(memcached_coll_create_attrs_st *attributes,
                                                memcached_coll_overflowaction_t overflowaction)
 memcached_return_t
-memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
-                                     bool is_unreadable)
+memcached_coll_create_attrs_set_unreadable(memcached_coll_create_attrs_st *attributes,
+                                           bool is_unreadable)
 ```
 
 - memcached_coll_create_attrs_set_flags : attributes에 flags 값을 설정한다.
@@ -50,13 +50,13 @@ memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
   - OVERFLOWACTION_ERROR : overflow가 발생하면 오류(MEMCACHED_OVERFLOWED)를 반환한다.
   - OVERFLOWACTION_HEAD_TRIM : list collection에서 overflow 발생 시, 가장 작은 index의 element를 삭제한다.
   - OVERFLOWACTION_TAIL_TRIM : list collection에서 overflow 발생 시, 가장 큰 index의 element를 삭제한다.
-  - OVERFLOWACTION_SMALLEST_TRIM : b+ree collection에서 overflow 발생 시, 가장 작은 bkey의 element를 삭제한다.
-  - OVERFLOWACTION_LARGEST_TRIM : b+ree collection에서 overflow 발생 시, 가장 큰 bkey의 element를 삭제한다.
+  - OVERFLOWACTION_SMALLEST_TRIM : b+tree collection에서 overflow 발생 시, 가장 작은 bkey의 element를 삭제한다.
+  - OVERFLOWACTION_LARGEST_TRIM : b+tree collection에서 overflow 발생 시, 가장 큰 bkey의 element를 삭제한다.
   - OVERFLOWACTION_SMALLEST_SILENT_TRIM : OVERFLOWACTION_SMALLEST_TRIM과 동일하게 동작하나 trim 발생 여부는 알려주지 않는다.
   - OVERFLOWACTION_LARGEST_SILENT_TRIM : OVERFLOWACTION_LARGEST_TRIM 동일하게 동작하나 trim 발생 여부는 알려주지 않는다.
-- memcached_coll_create_set_unreadable : 생성 시 unreadable 상태로 만들 것인지 설정한다.
+- memcached_coll_create_attrs_set_unreadable : 생성 시 unreadable 상태로 만들 것인지 설정한다.
   Unreadable 상태로 생성된 collection item은 readable 상태가 되기 전까지 조회할 수 없다.
-  이렇게 unreadable 상태로 생성된 item을 readable 상태로 만들기 위해서는 Attributes 변경 API를 사용해야 한다.
+  Unreadable collection item을 readable 상태로 변경할 경우 Attributes 변경 API를 사용해야 한다.
 
 <a id="attribute-set"></a>
 ## Attribute 변경
@@ -108,7 +108,7 @@ memcached_coll_attrs_set_readable(memcached_coll_attrs_st *attrs)
 - memcached_coll_attrs_set_maxcount : 변경할 maxcount 값을 설정한다.
 - memcached_coll_attrs_set_maxbkeyrange : 변경할 maxbkeyrange를 설정한다. (B+tree에만 적용 가능)
 - memcached_coll_attrs_set_maxbkeyrange_by_byte : 변경할 maxbkeyrange를 설정한다. (B+tree에만 적용 가능)
-- memcached_coll_attrs_set_readable : Attribute를 Readable 상태로 변경하도록 설정한다.
+- memcached_coll_attrs_set_readable : Attribute를 Readable 상태로 설정한다.
 
 <a id="attribute-get"></a>
 ## Attribute 조회

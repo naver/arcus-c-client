@@ -1,7 +1,7 @@
 # 1. ARCUS 기본 개념
 
 ARCUS는 확장된 key-value 데이터 모델을 제공한다.
-하나의 key는 하나의 데이터만을 가지는 simple key-value 유형 외에도
+하나의 key가 하나의 데이터를 가지는 simple key-value 유형 외에
 하나의 key가 여러 데이터를 구조화된 형태로 저장하는 collection 유형을 제공한다.
 
 ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가진다.
@@ -14,7 +14,7 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
   - Collection element가 저장하는 value의 최대 크기는 16KB이다.
 
 
-아래에서 ARCUS cluster를 이해하는 데 있어 기본 사항들을 기술한다.
+아래에서 ARCUS cluster를 이해하기 위한 기본 개념들을 기술한다.
 
 - [Service Code](01-arcus-cloud-basics.md#serice-code)
 - [ARCUS Admin](01-arcus-cloud-basics.md#arcus-admin)
@@ -27,11 +27,11 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
 
 ## Service Code
 
-서비스코드는 ARCUS에서 각 cache cluster를 구분하는 코드이다.
-ARCUS cache cluster 서비스를 응용들에게 제공한다는 의미에서 "서비스코드"라는 용어를 사용하게 되었다.
+서비스코드(service code)는 ARCUS에서 각 cache cluster를 구분하는 코드이다.
+응용들에게 ARCUS cache service를 제공한다는 의미에서 "서비스코드"라는 용어를 사용하게 되었다.
 
 하나의 응용에서 하나 이상의 ARCUS cache cluster를 구축하여 사용할 수 있다.
-ARCUS java client 객체는 하나의 ARCUS 서비스코드만을 가지며, 하나의 ARCUS cache cluster에만 접근할 수 있다.
+ARCUS java client 객체는 하나의 ARCUS 서비스코드로 하나의 ARCUS cache cluster에만 접근할 수 있다.
 해당 응용이 둘 이상의 ARCUS cache cluster에 접근해야 한다면,
 각 ARCUS cache cluster의 서비스코드를 가지는 ARCUS java client 객체를 따로 생성하여 사용하여야 한다.
 
@@ -39,24 +39,24 @@ ARCUS java client 객체는 하나의 ARCUS 서비스코드만을 가지며, 하
 
 ARCUS admin은 ZooKeeper를 이용하여 각 서비스 코드에 해당하는 ARCUS cache cluster를 관리한다.
 특정 서비스 코드에 대한 cache server list를 관리하며,
-cache server 추가 및 삭제에 대해 cache server list를 최신 상태로 유지하며,
-서비스 코드에 대한 cache server list 정보를 ARCUS client에게 전달한다.
+cache server 추가 및 삭제에 대해 cache server list를 최신 상태로 유지하면서
+최신의 cache server list 정보를 ARCUS client에게 전달한다.
 ARCUS admin은 highly available하여야 하므로,
 여러 ZooKeeper 서버들을 하나의 ZeeKeeper ensemble로 구성하여 사용한다.
 
 ## Cache Key
 
-Cache key는 ARCUS cache에 저장하는 cache item을 유일하게 식별한다. Cache key 형식은 아래와 같다.
+Cache key는 ARCUS cache에 저장된 cache item을 유일하게 식별하는 값이며, 그 형식은 아래와 같다.
 
 ```
   Cache Key : [<prefix>:]<subkey>
 ```
 
-- \<prefix\> - Cache key의 앞에 붙는 namespace이다.
+- \<prefix\> : Cache key의 앞에 붙는 namespace이다.
   - Prefix 단위로 cache server에 저장된 key들을 그룹화하여 flush하거나 통계 정보를 볼 수 있다.
   - Prefix를 생략할 수 있지만, 가급적 사용하길 권한다.
-- delimiter - Prefix와 subkey를 구분하는 문자로 default delimiter는 콜론(‘:’)이다.
-- \<subkey\> - 일반적으로 응용에서 사용하는 Key이다.
+- delimiter : Prefix와 subkey를 구분하는 문자로 default delimiter는 콜론(‘:’)이다.
+- \<subkey\> : 일반적으로 응용에서 사용하는 Key이다.
 
 Prefix와 subkey는 아래의 명명 규칙을 가진다.
 
@@ -70,23 +70,23 @@ ARCUS cache는 simple key-value item 외에 다양한 collection item 유형을 
 
 - simple key-value item - 기존 key-value item
 - collection item
-  - list item - 데이터들의 linked list을 가지는 item
-  - set item - 유일한 데이터들의 집합을 가지는 item
-  - map item - \<mkey, value\>쌍으로 구성된 데이터 집합을 가지는 item
-  - b+tree item - b+tree key 기반으로 정렬된 데이터 집합을 가지는 item
+  - list item : 데이터들의 linked list을 가지는 item
+  - set item : 유일한 데이터들의 집합을 가지는 item
+  - map item : \<mkey, value\>쌍으로 구성된 데이터 집합을 가지는 item
+  - b+tree item : b+tree key 기반으로 정렬된 데이터 집합을 가지는 item
 
 ## Expiration
 
 각 cache item은 expiration time 속성을 가지며, 자동으로 만료할 시간을 나타낸다.
-Expiration time은 다음과 같이 지정할 수 있다.
+Expiration time은 초 단위로 설정하며, 다음과 같이 지정할 수 있다.
 
 - expiration time = 0
   - 해당 아이템은 만료되지 않는다.
-- 0 < expiration time ≤ (30 * 24 * 60 * 60)초 /* 30일 */
+- expiration time ≤ (30 * 24 * 60 * 60)초 /* 30일 이하 */
   - 현재 시각으로부터 지정된 초만큼 뒤의 시각을 expiration time으로 설정한다.
-- expiration time > (30 * 24 * 60 * 60)초 /* 30일 */
+- expiration time > (30 * 24 * 60 * 60)초 /* 30일 초과 */
   - 주어진 값을 unix time으로 해석하여 expiration time을 설정한다.
-  - 만약 unix time이 현재 시각보다 이전이면 즉시 expire되므로 주의해야 한다.
+  - **주어진 unix time이 현재 시각보다 이전이면 즉시 expire되므로 주의해야 한다.**
 
 ## Eviction
 
