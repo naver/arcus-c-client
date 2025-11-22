@@ -160,7 +160,7 @@ Retrieved the element. value=helloworld
 
 ## API Documentation
 
-Please refer to [Arcus C Client User Guide](docs/arcus-c-client-user-guide.md)
+Please refer to [Arcus C Client User Guide](docs/user-guide/README.md)
 for the detailed usage of Arcus C client.
 
 The original libmemcached has man pages (see docs/man).  `make install` copies
