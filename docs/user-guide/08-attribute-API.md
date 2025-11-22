@@ -5,10 +5,11 @@ Item attributes의 기본 설명은 [ARCUS cache server의 item attributes 부�
 
 Item attributes를 변경하거나 조회하는 함수들을 설명한다.
 
-- [Attribute 생성](08-attribute-API.md#attribute-%EC%83%9D%EC%84%B1)
-- [Attribute 변경](08-attribute-API.md#attribute-%EB%B3%80%EA%B2%BD)
-- [Attribute 조회](08-attribute-API.md#attribute-%EC%A1%B0%ED%9A%8C)
+- [Attribute 생성](08-attribute-API.md#attribute-create)
+- [Attribute 변경](08-attribute-API.md#attribute-set)
+- [Attribute 조회](08-attribute-API.md#attribute-get)
 
+<a id="attribute-create"></a>
 ## Attribute 생성
 
 Key-value item 생성 시에는 exptime 같은 item 속성 정보를 생성 함수의 인자로 직접 전달한다.
@@ -57,6 +58,7 @@ memcached_coll_create_set_unreadable(memcached_coll_create_attrs_st *attributes,
   Unreadable 상태로 생성된 collection item은 readable 상태가 되기 전까지 조회할 수 없다.
   이렇게 unreadable 상태로 생성된 item을 readable 상태로 만들기 위해서는 Attributes 변경 API를 사용해야 한다.
 
+<a id="attribute-set"></a>
 ## Attribute 변경
 
 주어진 key의 attributes를 변경하는 함수이다.
@@ -108,6 +110,7 @@ memcached_coll_attrs_set_readable(memcached_coll_attrs_st *attrs)
 - memcached_coll_attrs_set_maxbkeyrange_by_byte : 변경할 maxbkeyrange를 설정한다. (B+tree에만 적용 가능)
 - memcached_coll_attrs_set_readable : Attribute를 Readable 상태로 변경하도록 설정한다.
 
+<a id="attribute-get"></a>
 ## Attribute 조회
 
 주어진 key의 attributes를 조회하는 함수이다.

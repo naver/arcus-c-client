@@ -10,16 +10,17 @@ List item은 하나의 key에 대해 여러 value들을 double linked list 구�
 
 List item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 
-- [List Item 생성](04-list-API.md#list-item-%EC%83%9D%EC%84%B1) (List Item 삭제는 key-value item 삭제 함수로 수행한다)
-- [List Element 삽입](04-list-API.md#list-element-%EC%82%BD%EC%9E%85)
-- [List Element 삭제](04-list-API.md#list-element-%EC%82%AD%EC%A0%9C)
-- [List Element 조회](04-list-API.md#list-element-%EC%A1%B0%ED%9A%8C)
+- [List Item 생성](04-list-API.md#list-item-create) (List Item 삭제는 key-value item 삭제 함수로 수행한다)
+- [List Element 삽입](04-list-API.md#list-element-insert)
+- [List Element 삭제](04-list-API.md#list-element-delete)
+- [List Element 조회](04-list-API.md#list-element-get)
 
 여러 list element들에 대해 한번에 일괄 수행하는 연산은 다음과 같다.
 
-- [List Element 일괄 삽입](04-list-API.md#list-element-%EC%9D%BC%EA%B4%84-%EC%82%BD%EC%9E%85)
+- [List Element 일괄 삽입](04-list-API.md#list-element-piped_insert)
 
 
+<a id="list-item-create"></a>
 ## List Item 생성
 
 새로운 empty list item을 생성한다.
@@ -32,7 +33,7 @@ memcached_lop_create(memcached_st *ptr,
 ```
 
 - key, key_length: list item의 key
-- attributes: list item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
+- attributes: list item의 속성 정보 [(링크)](08-attribute-API.md#attribute-create)
 
 Response code는 아래와 같다.
 
@@ -68,6 +69,7 @@ int arcus_list_item_create(memcached_st *memc)
 }
 ```
 
+<a id="list-item-insert"></a>
 ## List Element 삽입
 
 
@@ -132,7 +134,8 @@ int arcus_list_element_insert(memcached_st *memc)
   return 0;
 }
 ```
-
+ 
+<a id="list-item-delete"></a>
 ## List Element 삭제
 
 List element를 삭제하는 함수는 두 가지가 있다.
@@ -206,6 +209,7 @@ int arcus_list_element_delete(memcached_st *memc)
 }
 ```
 
+<a id="list-item-get"></a>
 ## List Element 조회
 
 List element를 조회하는 함수는 두 가지가 있다.
@@ -335,6 +339,7 @@ int arcus_list_element_get(memcached_st *memc)
 }
 ```
 
+<a id="list-item-piped-insert"></a>
 ## List Element 일괄 삽입
 
 List에 여러 elements를 한번에 삽입하는 함수는 두 가지가 있다.

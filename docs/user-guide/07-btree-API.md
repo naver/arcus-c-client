@@ -14,36 +14,37 @@ B+tree item 구조와 기본 특징은 [ARCUS Server Ascii Protocol 문서의 �
 
 B+tree item 연산의 설명에 앞서, b+tree 조회 및 변경에 사용하는 자료구조를 설명한다.
 
-- [Bkey(B+Tree Key)와 EFlag(Element Flag)](07-btree-API.md#bkeybtree-key%EC%99%80-eflagelement-flag)
-- [Element Flag Filter 구조체](07-btree-API.md#element-flag-filter-%EA%B5%AC%EC%A1%B0%EC%B2%B4)
-- [Element Flag Update 구조체](07-btree-API.md#element-flag-update-%EA%B5%AC%EC%A1%B0%EC%B2%B4)
-- [B+Tree Query 구조체](07-btree-API.md#btree-query-%EA%B5%AC%EC%A1%B0%EC%B2%B4)
+- [Bkey(B+Tree Key)와 EFlag(Element Flag)](07-btree-API.md#bkey-eflag)
+- [Element Flag Filter 구조체](07-btree-API.md#eflag-filter)
+- [Element Flag Update 구조체](07-btree-API.md#eflag-update)
+- [B+Tree Query 구조체](07-btree-API.md#btree-query)
 
 B+tree item에 대해 수행가능한 기본 연산들은 다음과 같다.
 
-- [B+Tree Item 생성](07-btree-API.md#btree-item-%EC%83%9D%EC%84%B1) (B+tree item 삭제는 key-value item 삭제 함수로 수행한다)
-- [B+Tree Element 삽입](07-btree-API.md#btree-element-%EC%82%BD%EC%9E%85)
+- [B+Tree Item 생성](07-btree-API.md#btree-item-create) (B+tree item 삭제는 key-value item 삭제 함수로 수행한다)
+- [B+Tree Element 삽입](07-btree-API.md#btree-element-insert)
 - [B+Tree Element Upsert](07-btree-API.md#btree-element-upsert)
-- [B+Tree Element 변경](07-btree-API.md#btree-element-%EB%B3%80%EA%B2%BD)
-- [B+Tree Element 삭제](07-btree-API.md#btree-element-%EC%82%AD%EC%A0%9C)
-- [B+Tree Element 값의 증감](07-btree-API.md#btree-element-%EA%B0%92%EC%9D%98-%EC%A6%9D%EA%B0%90)
-- [B+Tree Element 개수 확인](07-btree-API.md#btree-element-%EA%B0%9C%EC%88%98-%ED%99%95%EC%9D%B8)
-- [B+Tree Element 조회](07-btree-API.md#btree-element-%EC%A1%B0%ED%9A%8C)
+- [B+Tree Element 변경](07-btree-API.md#btree-element-update)
+- [B+Tree Element 삭제](07-btree-API.md#btree-element-delete)
+- [B+Tree Element 값의 증감](07-btree-API.md#btree-element-incr-decr)
+- [B+Tree Element 개수 확인](07-btree-API.md#btree-element-count)
+- [B+Tree Element 조회](07-btree-API.md#btree-element-get)
 
 여러 b+tree element들에 대해 한번에 일괄 수행하는 연산은 다음과 같다.
 
-- [B+Tree Element 일괄 삽입](07-btree-API.md#btree-element-%EC%9D%BC%EA%B4%84-%EC%82%BD%EC%9E%85)
-- [B+Tree Element 일괄 조회](07-btree-API.md#btree-element-%EC%9D%BC%EA%B4%84-%EC%A1%B0%ED%9A%8C)
+- [B+Tree Element 일괄 삽입](07-btree-API.md#btree-element-piped-insert)
+- [B+Tree Element 일괄 조회](07-btree-API.md#btree-element-mget)
 
 여러 b+tree element들에 대해 sort-merge 조회하는 연산을 제공한다.
 
-- [B+Tree Element Sort-Merge 조회](07-btree-API.md#btree-element-sort-merge-%EC%A1%B0%ED%9A%8C)
+- [B+Tree Element Sort-Merge 조회](07-btree-API.md#btree-element-smget)
 
 B+Tree내에서 element 순위(position)와 관련하여 아래 연산들을 제공한다.
-- [B+Tree Element 순위 조회](07-btree-API.md#btree-element-순위-조회)
-- [B+Tree 순위 기반의 Element 조회](07-btree-API.md#btree-순위-기반의-element-조회)
-- [B+Tree 순위와 Element 동시 조회](07-btree-API.md#btree-순위와-element-동시-조회)
+- [B+Tree Element 순위 조회](07-btree-API.md#btree-element-find-position)
+- [B+Tree 순위 기반의 Element 조회](07-btree-API.md#btree-element-get-by-position)
+- [B+Tree 순위와 Element 동시 조회](07-btree-API.md#btree-element-pwg)
 
+<a id="bkey-eflag"></a>
 ## BKey(B+Tree Key)와 EFlag(Element Flag)
 
 B+tree item에서 사용 가능한 bkey 데이터 타입은 아래 두 가지이다.
@@ -54,6 +55,7 @@ B+tree item에서 사용 가능한 bkey 데이터 타입은 아래 두 가지이
 eflag는 현재 b+tree element에만 존재하는 필드이다.
 eflag 데이터 타입은 최대 31 크기의 byte array 타입만 가능하다.
 
+<a id="eflag-filter"></a>
 ## Element Flag Filter 구조체
 
 B+tree의 element flag에 대한 filtering을 지정하기 위해선, `eflag_filter` 구조체를 사용해야 한다.
@@ -118,6 +120,7 @@ memcached_coll_eflag_filter_set_bitwise(memcached_coll_eflag_filter_st *ptr,
   - MEMCACHED_COLL_BITWISE_OR
   - MEMCACHED_COLL_BITWISE_XOR
 
+<a id="eflag-update"></a>
 ## Element Flag Update 구조체
 
 B+tree의 element flag를 변경하기 위해선 `eflag_update` 구조체를 사용해야 한다.
@@ -149,6 +152,7 @@ memcached_coll_eflag_update_set_bitwise(memcached_coll_eflag_update_st *ptr,
   - MEMCACHED_COLL_BITWISE_OR
   - MEMCACHED_COLL_BITWISE_XOR
 
+<a id="btree-query"></a>
 ## B+Tree Query 구조체
 
 memcached_bop_query_st 구조체는 B+tree 조회 조건을 추상화하고 있으며 다양한 API에 사용될 수 있다.
@@ -186,6 +190,7 @@ memcached_bop_ext_range_query_init (memcached_bop_query_st *ptr,
                                     size_t offset, size_t count)
 ```
 
+<a id="btree-item-create"></a>
 ## B+Tree Item 생성
 
 새로운 empty b+tree item을 생성한다.
@@ -198,7 +203,7 @@ memcached_bop_create(memcached_st *ptr,
 ```
 
 - key, key_length: b+tree item의 key
-- attributes: b+tree item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
+- attributes: b+tree item의 속성 정보 [(링크)](08-attribute-API.md#attribute-create)
 
 Response code는 아래와 같다.
 
@@ -234,6 +239,7 @@ int arcus_btree_item_create(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-insert"></a>
 ## B+Tree Element 삽입
 
 B+Tree에 하나의 element를 삽입한다.
@@ -318,6 +324,7 @@ int arcus_btree_element_insert(memcached_st *memc)
 
 하지만, C client에서는 이 기능을 아직 제공하지 않고 있다.
 
+<a id="btree-item-upsert"></a>
 ## B+Tree Element Upsert
 
 B+Tree에 하나의 element를 upsert하는 함수들이다.
@@ -400,6 +407,7 @@ int arcus_btree_element_upsert(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-update"></a>
 ## B+Tree Element 변경
 
 B+Tree에서 하나의 element를 변경하는 함수이다. Element의 eflag 그리고/또는 value를 변경한다.
@@ -472,6 +480,7 @@ int arcus_btree_element_update(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-delete"></a>
 ## B+Tree Element 삭제
 
 B+tree에서 element를 삭제하는 함수들은 두 유형이 있다.
@@ -573,6 +582,7 @@ int arcus_btree_element_delete_by_range(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-incr-decr"></a>
 ## B+Tree Element 값의 증감
 
 B+tree element의 값을 증가/감소시키는 함수는 아래와 같다.
@@ -649,6 +659,7 @@ int arcus_btree_element_arithmetic(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-count"></a>
 ## B+Tree Element 개수 확인
 
 B+tree element 개수를 확인하는 함수는 두 유형이 있다.
@@ -742,6 +753,7 @@ int arcus_btree_element_count_by_range(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-get"></a>
 ## B+Tree Element 조회
 
 B+tree element를 조회하는 함수는 세 유형이 있다.
@@ -986,6 +998,7 @@ int arcus_btree_element_get_by_query(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-piped-insert"></a>
 ## B+Tree Element 일괄 삽입
 
 B+tree에 여러 element를 한번에 삽입하는 함수는 두 유형이 있다.
@@ -1222,6 +1235,7 @@ int arcus_btree_element_piped_insert_bulk(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-mget"></a>
 ## B+tree Element 일괄 조회
 
 서로 다른 key로 분산되어 있는 b+tree들의 element들을 한 번의 요청으로 조회할 수 있는 기능이다.
@@ -1349,6 +1363,7 @@ int arcus_btree_element_mget(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-smget"></a>
 ## B+tree Element Sort-Merge 조회
 
 서로 다른 key로 분산되어 있는 b+Tree들의 element를 sort-merge 방식으로 조회하는 기능이다.
@@ -1576,6 +1591,7 @@ int arcus_btree_element_smget(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-find-position"></a>
 ## B+Tree Element 순위 조회
 
 B+Tree element 순위를 조회하는 함수는 아래와 같다.
@@ -1641,6 +1657,7 @@ int arcus_btree_find_position(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-get-by-position"></a>
 ## B+Tree 순위 기반의 Element 조회
 
 B+Tree에서 순위 범위로 element를 조회하는 함수는 아래와 같다.
@@ -1715,6 +1732,7 @@ int arcus_btree_get_by_position(memcached_st *memc)
 }
 ```
 
+<a id="btree-item-pwg"></a>
 ## B+Tree 순위와 Element 동시 조회
 
 B+Tree에서 주어진 bkey에 대한 순위를 조회하면서 그 bkey의 element를 포함하여

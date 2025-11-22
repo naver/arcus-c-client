@@ -9,18 +9,19 @@ Map item은 하나의 key에 대해 hash 구조 기반으로 mkey & value 쌍을
 
 Map item에 대해 수행 가능한 기본 연산들은 아래와 같다.
 
-- [Map Item 생성](06-map-API.md#map-item-생성) (Map Item 삭제는 key-value item 삭제 함수로 수행한다)
-- [Map Element 삽입](06-map-API.md#map-element-삽입)
+- [Map Item 생성](06-map-API.md#map-item-create) (Map Item 삭제는 key-value item 삭제 함수로 수행한다)
+- [Map Element 삽입](06-map-API.md#map-element-insert)
 - [Map Element Upsert](06-map-API.md#map-element-upsert)
-- [Map Element 변경](06-map-API.md#map-element-변경)
-- [Map Element 삭제](06-map-API.md#map-element-삭제)
-- [Map Element 조회](06-map-API.md#map-element-조회)
+- [Map Element 변경](06-map-API.md#map-element-update)
+- [Map Element 삭제](06-map-API.md#map-element-delete)
+- [Map Element 조회](06-map-API.md#map-element-get)
 
 여러 map element들에 대해 한번에 일괄 수행하는 연산은 다음과 같다.
 
-- [Map Element 일괄 삽입](06-map-API.md#map-element-일괄-삽입)
+- [Map Element 일괄 삽입](06-map-API.md#map-element-piped-insert)
 
 
+<a id="map-item-create"></a>
 ## Map Item 생성
 
 새로운 empty map item을 생성한다.
@@ -33,7 +34,7 @@ memcached_mop_create(memcached_st *ptr,
 ```
 
 - key, key_length: map item의 key
-- attributes: map item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
+- attributes: map item의 속성 정보 [(링크)](08-attribute-API.md#attribute-create)
 
 Response code는 아래와 같다.
 
@@ -69,6 +70,7 @@ int arcus_map_item_create(memcached_st *memc)
 }
 ```
 
+<a id="map-item-insert"></a>
 ## Map Element 삽입
 
 Map에 하나의 element를 삽입하는 함수이다.
@@ -131,6 +133,7 @@ int arcus_map_element_insert(memcached_st *memc)
 }
 ```
 
+<a id="map-item-upsert"></a>
 ## Map Element Upsert
 
 Map에 하나의 element를 upsert한다.
@@ -195,6 +198,7 @@ int arcus_map_element_upsert(memcached_st *memc)
 }
 ```
 
+<a id="map-item-update"></a>
 ## Map Element 변경
 
 Map에 하나의 element를 변경하는 함수이다. 주어진 mkey를 가진 element의 value를 변경한다.
@@ -243,6 +247,7 @@ int arcus_map_element_update(memcached_st *memc)
 }
 ```
 
+<a id="map-item-delete"></a>
 ## Map Element 삭제
 
 Map element를 삭제하는 함수는 두 가지가 있다.
@@ -305,6 +310,7 @@ int arcus_map_element_delete(memcached_st *memc)
 }
 ```
 
+<a id="map-item-get"></a>
 ## Map Element 조회
 
 Map element를 조회하는 함수는 세 가지가 있다.
@@ -448,6 +454,7 @@ int arcus_map_element_get(memcached_st *memc)
 }
 ```
 
+<a id="map-item-piped-insert"></a>
 ## Map Element 일괄 삽입
 
 Map에 여러 elements를 한번에 삽입하는 함수는 두 가지가 있다.

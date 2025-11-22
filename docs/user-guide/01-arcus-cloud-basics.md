@@ -14,9 +14,9 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
   - Collection element가 저장하는 value의 최대 크기는 16KB이다.
 
 
-아래에서 ARCUS cloud를 이해하는 데 있어 기본 사항들을 기술한다.
+아래에서 ARCUS cluster를 이해하는 데 있어 기본 사항들을 기술한다.
 
-- [서비스코드](01-arcus-cloud-basics.md#%EC%84%9C%EB%B9%84%EC%8A%A4%EC%BD%94%EB%93%9C)
+- [Service Code](01-arcus-cloud-basics.md#serice-code)
 - [ARCUS Admin](01-arcus-cloud-basics.md#arcus-admin)
 - [Cache Key](01-arcus-cloud-basics.md#cache-key)
 - [Cache Item](01-arcus-cloud-basics.md#cache-item)
@@ -25,19 +25,19 @@ ARCUS cache server의 key-value 모델은 아래의 기본 제약 사항을 가�
 - [Value Flags](01-arcus-cloud-basics.md#value-flags)
 
 
-## 서비스코드
+## Service Code
 
-서비스코드(service code)는 ARCUS에서 cache cloud를 구분하는 코드이다.
-ARCUS cache cloud 서비스를 응용들에게 제공한다는 의미에서 "서비스코드"라는 용어를 사용하게 되었다.
+서비스코드는 ARCUS에서 각 cache cluster를 구분하는 코드이다.
+ARCUS cache cluster 서비스를 응용들에게 제공한다는 의미에서 "서비스코드"라는 용어를 사용하게 되었다.
 
-하나의 응용에서 하나 이상의 ARCUS cache cloud를 구축하여 사용할 수 있다.
-ARCUS java client 객체는 하나의 ARCUS 서비스코드만을 가지며, 하나의 ARCUS cache cloud에만 접근할 수 있다.
-해당 응용이 둘 이상의 ARCUS cache cloud에 접근해야 한다면,
-각 ARCUS cache cloud의 서비스코드를 가지는 ARCUS java client 객체를 따로 생성하여 사용하여야 한다.
+하나의 응용에서 하나 이상의 ARCUS cache cluster를 구축하여 사용할 수 있다.
+ARCUS java client 객체는 하나의 ARCUS 서비스코드만을 가지며, 하나의 ARCUS cache cluster에만 접근할 수 있다.
+해당 응용이 둘 이상의 ARCUS cache cluster에 접근해야 한다면,
+각 ARCUS cache cluster의 서비스코드를 가지는 ARCUS java client 객체를 따로 생성하여 사용하여야 한다.
 
 ## ARCUS Admin
 
-ARCUS admin은 ZooKeeper를 이용하여 각 서비스 코드에 해당하는 ARCUS cache cloud를 관리한다.
+ARCUS admin은 ZooKeeper를 이용하여 각 서비스 코드에 해당하는 ARCUS cache cluster를 관리한다.
 특정 서비스 코드에 대한 cache server list를 관리하며,
 cache server 추가 및 삭제에 대해 cache server list를 최신 상태로 유지하며,
 서비스 코드에 대한 cache server list 정보를 ARCUS client에게 전달한다.

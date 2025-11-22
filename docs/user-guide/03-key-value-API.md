@@ -8,11 +8,13 @@ Key-value item은 하나의 key에 대해 하나의 value만을 저장하는 ite
 
 Key-value item에 대해 수행 가능한 API들은 아래와 같다.
 
-- [Key-Value Item 저장](03-key-value-API.md#key-value-item-%EC%A0%80%EC%9E%A5)
-- [Key-Value Item 조회](03-key-value-API.md#key-value-item-%EC%A1%B0%ED%9A%8C)
-- [Key-Value Item 값의 증감](03-key-value-API.md#key-value-item-%EA%B0%92%EC%9D%98-%EC%A6%9D%EA%B0%90)
-- [Key-Value Item 삭제](03-key-value-API.md#key-value-item-%EC%82%AD%EC%A0%9C)
+- [Key-Value Item 저장](03-key-value-API.md#key-value-item-storage)
+- [Key-Value Item 조회](03-key-value-API.md#key-value-item-retrieval)
+- [Key-Value Item 값의 CAS](03-key-value-API.md#key-value-item-cas)
+- [Key-Value Item 값의 증감](03-key-value-API.md#key-value-item-incr-decr)
+- [Key-Value Item 삭제](03-key-value-API.md#key-value-item-delete)
 
+<a id="key-value-item-storage"></a>
 ## Key-Value Item 저장
 
 key-value item을 저장하는 API로 set, add, replace, prepend/append가 있다.
@@ -103,6 +105,7 @@ int arcus_kv_attach(memcached_st *memc)
 }
 ```
 
+<a id="key-value-item-retrieval"></a>
 ## Key-Value Item 조회
 
 Key-value item을 조회하는 API는 두 가지가 있다.
@@ -218,6 +221,7 @@ int arcus_kv_mget(memcached_st *memc)
 }
 ```
 
+<a id="key-value-item-cas"></a>
 ## Key-Value Item 값의 CAS
 
 아이템을 조회한 후, 해당 아이템이 변경되지 않았다면 새로운 값을 저장하는 Compare and Set(CAS) API는 다음과 같다
@@ -276,6 +280,7 @@ int arcus_kv_compare_and_set(memcached_st *memc)
 }
 ```
 
+<a id="key-value-item-incr-decr"></a>
 ## Key-Value Item 값의 증감
 
 특정 key에 해당하는 item이 가진 숫자형 값을 증감 연산하는 API는 다음과 같다.
@@ -340,6 +345,7 @@ int arcus_kv_arithmetic(memcached_st *memc)
 }
 ```
 
+<a id="key-value-item-delete"></a>
 ## Key-Value Item 삭제
 
 주어진 key에 해당하는 item을 삭제하는 API는 다음과 같다.

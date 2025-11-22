@@ -9,18 +9,19 @@ Set item은 하나의 key에 대해 unique value의 집합을 저장한다. 주�
 
 Set item에 수행 가능한 기본 연산들은 다음과 같다.
 
-- [Set Item 생성](05-set-API.md#set-item-%EC%83%9D%EC%84%B1) (Set item 삭제는 key-value item 삭제 함수로 수행한다)
-- [Set Element 삽입](05-set-API.md#set-element-%EC%82%BD%EC%9E%85)
-- [Set Element 삭제](05-set-API.md#set-element-%EC%82%AD%EC%A0%9C)
-- [Set Element 존재 여부 확인](05-set-API.md#set-element-존재-여부-확인)
-- [Set Element 조회](05-set-API.md#set-element-%EC%A1%B0%ED%9A%8C)
+- [Set Item 생성](05-set-API.md#set-item-create) (Set item 삭제는 key-value item 삭제 함수로 수행한다)
+- [Set Element 삽입](05-set-API.md#set-element-insert)
+- [Set Element 삭제](05-set-API.md#set-element-delete)
+- [Set Element 존재 여부 확인](05-set-API.md#set-element-exist)
+- [Set Element 조회](05-set-API.md#set-element-get)
 
 여러 set element들에 대해 한번에 일괄 수행하는 연산은 다음과 같다.
 
-- [Set Element 일괄 삽입](05-set-API.md#set-element-%EC%9D%BC%EA%B4%84-%EC%82%BD%EC%9E%85)
-- [Set Element 일괄 존재 여부 확인](05-set-API.md#set-element-일괄-존재-여부-확인)
+- [Set Element 일괄 삽입](05-set-API.md#set-element-piped-insert)
+- [Set Element 일괄 존재 여부 확인](05-set-API.md#set-element-piped-exist)
 
 
+<a id="set-item-create"></a>
 ## Set Item 생성
 
 새로운 empty set item을 생성한다.
@@ -33,7 +34,7 @@ memcached_sop_create(memcached_st *ptr,
 ```
 
 - key, key_length: set item의 key
-- attributes: set item의 속성 정보 [(링크)](08-attribute-API.md#attribute-생성)
+- attributes: set item의 속성 정보 [(링크)](08-attribute-API.md#attribute-create)
 
 Response code는 아래와 같다.
 
@@ -69,6 +70,7 @@ int arcus_set_item_create(memcached_st *memc)
 }
 ```
 
+<a id="set-item-insert"></a>
 ## Set Element 삽입
 
 Set에 하나의 element를 삽입하는 함수이다.
@@ -127,6 +129,7 @@ int arcus_set_element_insert(memcached_st *memc)
 }
 ```
 
+<a id="set-item-delete"></a>
 ## Set Element 삭제
 
 Set에서 주어진 value를 가진 element를 삭제하는 함수이다.
@@ -179,6 +182,7 @@ int arcus_set_element_delete(memcached_st *memc)
 }
 ```
 
+<a id="set-item-exist"></a>
 ## Set Element 존재 여부 확인
 
 Set에서 주어진 value를 가진 element의 존재 여부를 확인한다.
@@ -229,6 +233,7 @@ int arcus_set_element_exist(memcached_st *memc)
 }
 ```
 
+<a id="set-item-get"></a>
 ## Set Element 조회
 
 Set element를 조회하는 함수이다. 이 함수는 임의의 count 개 elements를 조회한다.
@@ -330,6 +335,7 @@ int arcus_set_element_get(memcached_st *memc)
 }
 ```
 
+<a id="set-item-piped-insert"></a>
 ## Set Element 일괄 삽입
 
 Set에 여러 elements를 한번에 삽입하는 함수는 두 가지가 있다.
@@ -489,6 +495,7 @@ int arcus_set_element_piped_insert_bulk(memcached_st *memc)
 }
 ```
 
+<a id="set-item-piped-exist"></a>
 ## Set Element 일괄 존재 여부 확인
 
 Set에서 여러 elements의 존재 여부를 한번에 확인하는 함수이다.

@@ -1,24 +1,25 @@
 # 2. ARCUS C Client 사용법 
 
-ARCUS client는 ARCUS admin과 ARCUS cache server군 들과의 연결을 유지하며 client로 들어온 명령을 처리하여 그 결과를 반환한다
+ARCUS client는 ARCUS admin인 ZooKeeper에 연결하여 ARCUS 서버 목록을 가져와서 모든 ARCUS  서버들과 연결을 유지하며 client API 통해 들어온 응용의 요청을 ARCUS 서버 명령으로 변환하여 ARCUS 서버에 전달하여 처리하게 하고 그 결과를 받아 응용에게 반환한다.
 
 ARCUS C client는 C/C++ 개발환경에서 ARCUS를 사용하기 위한 라이브러리로서,
 대표적인 memcached C client인 [libmemcached](https://code.launchpad.net/libmemcached)를 기반으로 개발하였다.
 따라서 libmemcached의 기능을 대부분 사용할 수 있으며,
-ARCUS cache server에서 제공하는 failover 기능과 collection 기능 등을 추가로 지원한다.
+ARCUS cache server에서 제공하는 collection 기능 등을 추가로 지원한다.
 
 지원되는 추가 기능은 다음과 같다.
 
-* Cache Cluster-awareness: ARCUS admin 서버에 연결하여 자신이 사용하는 캐시 서버 클러스터의 변경사항을 자동으로 인식한다.
+* Cluster-awareness: ARCUS admin 서버에 연결하여 자신이 사용하는 캐시 서버 클러스터의 변경사항을 자동으로 인식한다.
 * Collection APIs: ARCUS cache server에서 지원하는 List, Set, B+tree 형태의 자료구조를 사용할 수 있다.
 * Prefix: 특정 prefix를 가지는 모든 item을 삭제할 수 있다.
 
 아래의 순서로 ARCUS C Client 사용법을 설명한다.
 
-- [서버 모델에 따른 초기화](02-arcus-c-client.md#%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8D%B8%EC%97%90-%EB%94%B0%EB%A5%B8-%EC%B4%88%EA%B8%B0%ED%99%94)
-- [Client 설정과 사용](02-arcus-c-client.md#client-%EC%84%A4%EC%A0%95%EA%B3%BC-%EC%82%AC%EC%9A%A9)
+- [Client 초기화](02-arcus-c-client.md#client-initialize)
+- [Client 설정과 사용](02-arcus-c-client.md#client-config-usage)
 
-## 서버 모델에 따른 초기화
+<a id="client-initialize"></a>
+## Client 초기화
 
 서버 모델에 따른 초기화 메소드는 아래와 같다.
 
@@ -256,6 +257,7 @@ RELEASE:
 자식 프로세스에서는 부모의 memcached_st 구조체를 이용하여 ARCUS admin과의 연결 없이 캐시 서버 리스트를 얻어 온다.
 특히, 각 자식 프로세스가 내부적으로 멀티 쓰레드로 동작하는 상황에서 pool을 사용하는 방법도 확인할 수 있다.
 
+<a id="client-config-usage"></a>
 ## Client 설정과 사용
 
 ### 로그 남기기
