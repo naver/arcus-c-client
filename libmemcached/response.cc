@@ -489,7 +489,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
        * let the client fail with the next operation if the error was
        * caused by another problem....
        */
-      if (ptr->root->sasl.in_sasl_mech)
+      if (ptr->in_sasl_mech)
       {
         return MEMCACHED_NOT_SUPPORTED;
       }
@@ -888,7 +888,7 @@ static memcached_return_t binary_read_one_response(memcached_server_write_instan
        * let the client fail with the next operation if the error was
        * caused by another problem....
        */
-      rc= ptr->root->sasl.in_sasl_mech ? MEMCACHED_NOT_SUPPORTED : MEMCACHED_PROTOCOL_ERROR;
+      rc= ptr->in_sasl_mech ? MEMCACHED_NOT_SUPPORTED : MEMCACHED_PROTOCOL_ERROR;
       break;
 
     case PROTOCOL_BINARY_RESPONSE_EINVAL:

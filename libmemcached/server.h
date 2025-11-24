@@ -90,6 +90,7 @@ struct memcached_server_st {
   uint8_t micro_version; // ditto
   bool is_enterprise;
   bool send_failed;
+  bool in_sasl_mech;
   memcached_connection_t type;
   char *read_ptr;
   size_t read_buffer_length;

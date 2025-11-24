@@ -88,7 +88,6 @@ struct memcached_sasl_st {
    ** supply that.
  */
   bool is_allocated;
-  bool in_sasl_mech;
 };
 
 #endif /* __LIBMEMCACHED_SASL_H__ */
