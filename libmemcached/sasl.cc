@@ -228,11 +228,11 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
    * as authenticated
  */
   char mech[MEMCACHED_MAX_BUFFER];
-  server->root->sasl.in_sasl_mech= true;
+  server->in_sasl_mech= true;
   memcached_return_t rc= server->root->flags.binary_protocol
     ? memcached_sasl_mech_binary(server, mech, sizeof(mech))
     : memcached_sasl_mech_ascii(server, mech, sizeof(mech));
-  server->root->sasl.in_sasl_mech= false;
+  server->in_sasl_mech= false;
   if (memcached_failed(rc))
   {
     if (rc == MEMCACHED_NOT_SUPPORTED)
