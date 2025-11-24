@@ -194,7 +194,7 @@ use --enable-zk-integration when running configure.
     ===================
     Tests completed
 
-If any problem exists in test cases, please refer to [test FAQ](/docs/test_faq.md).
+If any problem exists in test cases, please refer to [test FAQ](https://github.com/naver/arcus-c-client/wiki/Unit-test).
 
 ## Issues
 
