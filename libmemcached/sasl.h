@@ -48,9 +48,11 @@
 extern "C" {
 #endif
 
+/* TODO: Re-enable after verifying memcached_clone_sasl() implementation.
 LIBMEMCACHED_API
 void memcached_set_sasl_callbacks(memcached_st *ptr,
                                   const sasl_callback_t *callbacks);
+*/
 
 LIBMEMCACHED_API
 memcached_return_t  memcached_set_sasl_auth_data(memcached_st *ptr,
@@ -61,8 +63,10 @@ LIBMEMCACHED_API
 memcached_return_t memcached_destroy_sasl_auth_data(memcached_st *ptr);
 
 
+/* TODO: Re-enable after verifying memcached_clone_sasl() implementation.
 LIBMEMCACHED_API
 sasl_callback_t *memcached_get_sasl_callbacks(memcached_st *ptr);
+*/
 
 LIBMEMCACHED_API
 char *memcached_get_sasl_username(memcached_st *ptr);

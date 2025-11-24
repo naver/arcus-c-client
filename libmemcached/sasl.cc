@@ -46,6 +46,7 @@
 
 #define CAST_SASL_CB(cb) reinterpret_cast<int(*)()>(reinterpret_cast<intptr_t>(cb))
 
+/* TODO: Re-enable after verifying memcached_clone_sasl() implementation.
 void memcached_set_sasl_callbacks(memcached_st *ptr,
                                   const sasl_callback_t *callbacks)
 {
@@ -57,6 +58,7 @@ sasl_callback_t *memcached_get_sasl_callbacks(memcached_st *ptr)
 {
   return ptr->sasl.callbacks;
 }
+*/
 
 /**
  * Resolve the names for both ends of a connection
@@ -467,6 +469,10 @@ memcached_return_t memcached_clone_sasl(memcached_st *clone, const  memcached_st
    * into the list, but if we don't know the ID we don't know how to handle
    * the context...
  */
+
+  // TODO: Re-enable after verifying memcached_clone_sasl() implementation.
+  return MEMCACHED_NOT_SUPPORTED;
+
   size_t total= 0;
 
   while (source->sasl.callbacks[total].id != SASL_CB_LIST_END)
@@ -556,6 +562,7 @@ char *memcached_get_sasl_username(memcached_st *ptr)
 }
 #else
 
+/* TODO: Re-enable after verifying memcached_clone_sasl() implementation.
 void memcached_set_sasl_callbacks(memcached_st *, const sasl_callback_t *)
 {
 }
@@ -564,6 +571,7 @@ sasl_callback_t *memcached_get_sasl_callbacks(memcached_st *)
 {
   return NULL;
 }
+*/
 
 memcached_return_t memcached_set_sasl_auth_data(memcached_st *, const char *, const char *)
 {
