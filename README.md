@@ -76,7 +76,7 @@ arcus_proxy_create(proxy_mc, "localhost:2181", "test");
 
 ## Getting Started
 
-- [Getting Started Guide (in Korean)](docs/arcus-c-client-getting-started.md)
+- [Getting Started Guide (in Korean)](docs/getting-started-guide.md)
 
 ## API Documentation
 
