@@ -578,6 +578,11 @@ memcached_return_t memcached_set_sasl_auth_data(memcached_st *, const char *, co
   return MEMCACHED_NOT_SUPPORTED;
 }
 
+char *memcached_get_sasl_username(memcached_st *)
+{
+  return NULL;
+}
+
 memcached_return_t memcached_clone_sasl(memcached_st *, const  memcached_st *)
 {
   return MEMCACHED_NOT_SUPPORTED;
