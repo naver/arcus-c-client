@@ -220,6 +220,10 @@ memcached_return_t memcached_behavior_set(memcached_st *ptr,
     ptr->flags.hash_with_namespace= bool(data);
     break;
 
+  case MEMCACHED_BEHAVIOR_ENABLE_SHARD_KEY:
+    ptr->flags.enable_shard_key= bool(data);
+    break;
+
   case MEMCACHED_BEHAVIOR_NOREPLY:
     ptr->flags.no_reply= bool(data);
     break;
@@ -416,6 +420,9 @@ uint64_t memcached_behavior_get(memcached_st *ptr,
   case MEMCACHED_BEHAVIOR_HASH_WITH_PREFIX_KEY:
     return ptr->flags.hash_with_namespace;
 
+  case MEMCACHED_BEHAVIOR_ENABLE_SHARD_KEY:
+    return ptr->flags.enable_shard_key;
+
   case MEMCACHED_BEHAVIOR_NOREPLY:
     return ptr->flags.no_reply;
 
@@ -534,6 +541,7 @@ const char *libmemcached_string_behavior(const memcached_behavior_t flag)
   case MEMCACHED_BEHAVIOR_IO_BYTES_WATERMARK: return "MEMCACHED_BEHAVIOR_IO_BYTES_WATERMARK";
   case MEMCACHED_BEHAVIOR_IO_KEY_PREFETCH: return "MEMCACHED_BEHAVIOR_IO_KEY_PREFETCH";
   case MEMCACHED_BEHAVIOR_HASH_WITH_PREFIX_KEY: return "MEMCACHED_BEHAVIOR_HASH_WITH_PREFIX_KEY";
+  case MEMCACHED_BEHAVIOR_ENABLE_SHARD_KEY: return "MEMCACHED_BEHAVIOR_ENABLE_SHARD_KEY";
   case MEMCACHED_BEHAVIOR_NOREPLY: return "MEMCACHED_BEHAVIOR_NOREPLY";
   case MEMCACHED_BEHAVIOR_USE_UDP: return "MEMCACHED_BEHAVIOR_USE_UDP";
   case MEMCACHED_BEHAVIOR_AUTO_EJECT_HOSTS: return "MEMCACHED_BEHAVIOR_AUTO_EJECT_HOSTS";

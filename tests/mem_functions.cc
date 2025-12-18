@@ -344,6 +344,7 @@ static test_return_t clone_test(memcached_st *memc)
       test_true(memc_clone->ketama.weighted == memc->ketama.weighted);
       test_true(memc_clone->flags.binary_protocol == memc->flags.binary_protocol);
       test_true(memc_clone->flags.hash_with_namespace == memc->flags.hash_with_namespace);
+      test_true(memc_clone->flags.enable_shard_key == memc->flags.enable_shard_key);
       test_true(memc_clone->flags.no_reply == memc->flags.no_reply);
       test_true(memc_clone->flags.use_udp == memc->flags.use_udp);
       test_true(memc_clone->flags.auto_eject_hosts == memc->flags.auto_eject_hosts);
@@ -431,7 +432,7 @@ static test_return_t libmemcached_string_behavior_test(memcached_st *)
   {
     test_true(libmemcached_string_behavior(memcached_behavior_t(x)));
   }
-  test_compare(34, int(MEMCACHED_BEHAVIOR_MAX));
+  test_compare(35, int(MEMCACHED_BEHAVIOR_MAX));
 
   return TEST_SUCCESS;
 }

@@ -134,6 +134,7 @@ struct memcached_st {
     bool binary_protocol:1;
     bool buffer_requests:1;
     bool hash_with_namespace:1;
+    bool enable_shard_key:1;
     bool no_block:1; // Don't block
     bool no_reply:1;
     bool piped:1;
