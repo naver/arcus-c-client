@@ -42,6 +42,31 @@
 
 #include <libmemcached/virtual_bucket.h>
 
+static const char *get_shard_key(const char *key, uint32_t nkey, size_t *nshardkey)
+{
+  *nshardkey = nkey;
+
+  const char *left= (const char *)memchr(key, '{', nkey);
+  if (left == NULL)
+  {
+    return key;
+  }
+
+  const char *right= (const char *)memchr(left + 1, '}', nkey - (left - key) - 1);
+  if (right == NULL)
+  {
+    return key;
+  }
+
+  if (left + 1 == right)
+  {
+    return key;
+  }
+
+  *nshardkey= right - left - 1;
+  return left + 1;
+}
+
 uint32_t memcached_generate_hash_value(const char *key, size_t key_length, memcached_hash_t hash_algorithm)
 {
   return libhashkit_digest(key, key_length, (hashkit_hash_algorithm_t)hash_algorithm);
@@ -49,6 +74,10 @@ uint32_t memcached_generate_hash_value(const char *key, size_t key_length, memca
 
 static inline uint32_t generate_hash(const memcached_st *ptr, const char *key, size_t key_length)
 {
+  if (ptr->flags.enable_shard_key)
+  {
+    key= get_shard_key(key, key_length, &key_length);
+  }
   return hashkit_digest(&ptr->hashkit, key, key_length);
 }
 
@@ -111,7 +140,8 @@ static inline uint32_t _generate_hash_wrapper(const memcached_st *ptr, const cha
   if (memcached_server_count(ptr) == 1)
     return 0;
 
-  if (ptr->flags.hash_with_namespace)
+  // if (ptr->flags.hash_with_namespace)
+  if (memcached_array_size(ptr->_namespace) > 0) // hashing with namespace in ARCUS.
   {
     size_t temp_length= memcached_array_size(ptr->_namespace) + key_length;
     char temp[MEMCACHED_MAX_KEY];

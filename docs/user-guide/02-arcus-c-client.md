@@ -1,4 +1,4 @@
-# 2. ARCUS C Client 사용법 
+# 2. ARCUS C Client 사용법
 
 ARCUS client는 ARCUS admin인 ZooKeeper에 연결하여 ARCUS 서버 목록을 가져와서 모든 ARCUS  서버들과 연결을 유지하며 client API 통해 들어온 응용의 요청을 ARCUS 서버 명령으로 변환하여 ARCUS 서버에 전달하여 처리하게 하고 그 결과를 받아 응용에게 반환한다.
 
@@ -348,6 +348,18 @@ ARCUS의 admin인 ZooKeeper에 의해 failed 캐시 노드로 감지되어 cache
 
 그리고, 정상적으로 연결되지 않은 캐시 노드로의 요청에 대해서는
 MEMCACHED_SERVER_TEMPORARILY_DISABLED (“SERVER HAS FAILED AND IS DISABLED UNTIL TIMED RETRY”) 오류가 발생한다.
+
+### 키 일부를 기준으로 캐시 노드 지정
+
+캐시 클러스터에서 특정 데이터가 어느 노드에 저장될지는 기본적으로 키 전체를 해싱하여 결정한다.
+
+키의 일부만을 기준으로 해싱하고 싶다면, 아래와 같이 `MEMCACHED_BEHAVIOR_ENABLE_SHARD_KEY` 기능을 활성화하여야 하고,
+해싱 대상이 되는 키의 일부를 `{`와 `}` 문자로 감싸서 지정하면 된다. 만약 `{`와 `}`  문자로 키의 일부를 지정하지 않았다면, 기존대로 전체 키를 해싱한다.
+
+```c
+mc = memcached_create(NULL);
+memcached_behavior_set(mc, MEMCACHED_BEHAVIOR_ENABLE_SHARD_KEY, true);
+```
 
 ### 캐시 명령에 대한 키 문자 검사
 

@@ -88,6 +88,7 @@ static inline bool _memcached_init(memcached_st *self)
   self->flags.binary_protocol= false;
   self->flags.buffer_requests= false;
   self->flags.hash_with_namespace= false;
+  self->flags.enable_shard_key= false;
   self->flags.no_block= false;
   self->flags.no_reply= false;
   self->flags.randomize_replica_read= false;
