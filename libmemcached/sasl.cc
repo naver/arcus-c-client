@@ -239,6 +239,8 @@ memcached_return_t memcached_sasl_authenticate_connection(memcached_server_st *s
     {
       /* If the server doesn't support SASL it will return MEMCACHED_NOT_SUPPORTED.
        */
+      memcached_set_error(*server, rc, MEMCACHED_AT,
+                          memcached_literal_param("Authentication not supported by server, skipping auth flow"));
       rc= MEMCACHED_SUCCESS;
     }
 
