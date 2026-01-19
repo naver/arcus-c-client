@@ -865,6 +865,7 @@ static test_return_t touch_test(memcached_st *memc)
 
 static test_return_t gat_test(memcached_st *memc)
 {
+  test_skip(true, bool(libmemcached_util_version_check(memc, 1, 16, 0)));
   memcached_return_t rc;
   const char *key= "foo";
   const char *value= "when we sanitize";
