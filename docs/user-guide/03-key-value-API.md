@@ -13,6 +13,8 @@ Key-value item에 대해 수행 가능한 API들은 아래와 같다.
 - [Key-Value Item 값의 CAS](03-key-value-API.md#key-value-item-cas)
 - [Key-Value Item 값의 증감](03-key-value-API.md#key-value-item-incr-decr)
 - [Key-Value Item 삭제](03-key-value-API.md#key-value-item-delete)
+- [Key-Value Item 만료 시간 갱신](03-key-value-API.md#key-value-item-touch)
+- [Key-Value Item 만료 시간 갱신 및 조회](03-key-value-API.md#key-value-item-get-and-touch)
 
 <a id="key-value-item-storage"></a>
 ## Key-Value Item 저장
@@ -374,6 +376,84 @@ int arcus_kv_delete(memcached_st *memc)
   }
 
   assert(rc == MEMCACHED_SUCCESS);
+  return 0;
+}
+```
+
+<a id="key-value-item-touch"></a>
+## Key-Value Item 만료 시간 갱신
+
+주어진 key에 해당하는 item의 만료 시간을 갱신하는 API는 다음과 같다.
+
+만료 시간은 현재 시점으로부터 expiration초 이후로 설정되며, expiration 값이 Unix time인 경우에는 해당 시각으로 갱신된다.
+
+```c
+memcached_return_t
+memcached_touch(memcached_st *ptr,
+                const char *key, size_t key_length,
+                time_t expiration);
+```
+
+특정 key를 가진 item의 만료 시간을 갱신하는 예시는 다음과 같다.
+
+```c
+int arcus_kv_touch(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  time_t exptime= 600;
+  memcached_return_t rc;
+
+  rc= memcached_touch(memc, key, strlen(key), exptime);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_touch: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  return 0;
+}
+```
+
+<a id="key-value-item-get-and-touch"></a>
+## Key-Value Item 만료 시간 갱신 및 조회
+
+주어진 key에 대한 item의 만료 시간을 갱신하고 값을 조회하는 API는 다음과 같다.
+
+```c
+char *
+memcached_gat(memcached_st *ptr,
+              const char *key, size_t key_length,
+              time_t expiration,
+              size_t *value_length, uint32_t *flags,
+              memcached_return_t *error);
+```
+
+특정 key를 가진 item의 만료 시간을 갱신하고 값을 조회하는 예시는 다음과 같다.
+
+```c
+int arcus_kv_gat(memcached_st *memc)
+{
+  const char *key= "item:a_key";
+  time_t exptime= 600;
+  const char *value;
+  size_t value_length;
+  uint32_t flags;
+  memcached_return_t rc;
+
+  value= memcached_gat(memc, key, strlen(key), exptime, &value_length, &flags, &rc);
+  if (memcached_failed(rc)) {
+    fprintf(stderr, "Failed to memcached_gat: %d(%s)\n",
+            rc, memcached_strerror(memc, rc));
+    return -1;
+  }
+
+  assert(rc == MEMCACHED_SUCCESS);
+  if (value != NULL) {
+    fprintf(stdout, "memcached_gat: %s=%s\n", key, value);
+  } else {
+    fprintf(stdout, "memcached_gat: %s=<empty value>\n", key);
+  }
   return 0;
 }
 ```
