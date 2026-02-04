@@ -1,3 +1,25 @@
+2026-02-04 [version 1.16.0]
+## 🐣 New Features
+  - Remove the old smget API.
+  - Add gat API.
+  - Add shard key support.
+## ⚙️ Internal Changes
+  - Pass authentication when `NOT_SUPPORTED` or `PROTOCOL_ERROR`.
+  - Subroutine buffer_request check into `memcached_vdo()`.
+  - Add sasluser to client_list.
+  - Disable `memcached_set_sasl_callbacks()`.
+## 🐛 Bug Fixes
+  - Unlock mutex before return if sasl startup fails.
+  - Correct invalid check logic for servername.
+## 📝 Documentation
+  - Add sasl guide docs.
+  - Add verify_key guide docs.
+  - Update document structure.
+  - Add initial user guide.
+  - Add touch and gat documentations.
+## ✅ Testing
+  - Do not set CFLAGS when running configure.
+
 2025-09-22 [version 1.15.0]
 ## 🐣 New Features
   - Add touch API.
