@@ -54,93 +54,78 @@
 #include <libmemcached/common.h>
 #include <libmemcached/string.hpp>
 
+static size_t tokenize(char *buffer, size_t length, char **tokens, size_t max_tokens)
+{
+  if (buffer[length - 2] != '\r' || buffer[length - 1] != '\n')
+    return 0;
+  memset(buffer + length - 2, 0, 2);
+
+  char *saveptr;
+  char *token= strtok_r(buffer, " ", &saveptr);
+  size_t ntoken= 0;
+  while (token != NULL)
+  {
+    if (ntoken >= max_tokens) return max_tokens + 1;
+    tokens[ntoken++]= token;
+    token= strtok_r(NULL, " ", &saveptr);
+  }
+  return ntoken;
+}
+
+static bool safe_strtoui(char *str, void *out, uintmax_t max_num)
+{
+  /* string to unsinged integer */
+  errno= 0;
+  char *endptr;
+  *(uintmax_t *)out= 0;
+  uintmax_t num= strtoull(str, &endptr, 10);
+  if (errno == ERANGE || *endptr != '\0' || num > max_num)
+    return false;
+  *(uintmax_t *)out= num;
+  return true;
+}
+
 static memcached_return_t textual_value_fetch(memcached_server_write_instance_st ptr,
                                               char *buffer, size_t buffer_length,
                                               memcached_result_st *result)
 {
   char *string_ptr;
-  char *end_ptr;
-  char *next_ptr;
-  size_t value_length;
-  size_t to_read;
-  ssize_t read_length= 0;
+  ssize_t value_length;
+  ssize_t read_length;
 
   if (ptr->root->flags.use_udp)
     return memcached_set_error(*ptr, MEMCACHED_NOT_SUPPORTED, MEMCACHED_AT);
 
   WATCHPOINT_ASSERT(ptr->root);
-  end_ptr= buffer + buffer_length;
 
   memcached_result_reset(result);
 
-  string_ptr= buffer;
-  string_ptr+= 6; /* "VALUE " */
+  string_ptr= buffer + 6; /* "VALUE " */
+
+  char *tokens[4]= {NULL, };
+  size_t ntoken= tokenize(string_ptr, buffer_length - 6, tokens, 4);
+  if (ntoken < 3 || ntoken > 4)
+    return MEMCACHED_PARTIAL_READ;
 
   /* We load the key */
   {
-    char *key= result->item_key;
-    size_t key_length= 0;
-
-    string_ptr += memcached_array_size(ptr->root->_namespace); /* prefix length */
-
-    while (!iscntrl(*string_ptr) && !isspace(*string_ptr)) {
-      if (key_length < MEMCACHED_MAX_KEY) {
-        key[key_length]= *string_ptr;
-      }
-      key_length++;
-      string_ptr++;
-    }
-
-    if (key_length < MEMCACHED_MAX_KEY) {
-      key[key_length]= 0;
-      result->key_length= key_length;
-    } else {
-      snprintf(key + MEMCACHED_MAX_KEY - 4, 4, "...");
-      result->key_length= MEMCACHED_MAX_KEY - 1;
+    char *key= tokens[0] + memcached_array_size(ptr->root->_namespace);
+    int key_length= snprintf(result->item_key, MEMCACHED_MAX_KEY, "%s", key);
+    if (key_length >= MEMCACHED_MAX_KEY)
+    {
+      snprintf(result->item_key + MEMCACHED_MAX_KEY - 4, 4, "...");
+      key_length= MEMCACHED_MAX_KEY - 1;
       memcached_set_error(*ptr, MEMCACHED_KEY_TOO_BIG, MEMCACHED_AT);
     }
+    result->key_length= (size_t)key_length;
   }
 
-  if (end_ptr == string_ptr)
-    goto read_error;
-
-  /* Flags fetch move past space */
-  string_ptr++;
-  if (end_ptr == string_ptr)
-    goto read_error;
-
-  for (next_ptr= string_ptr; isdigit(*string_ptr); string_ptr++) {};
-  result->item_flags= (uint32_t) strtoul(next_ptr, &string_ptr, 10);
-
-  if (end_ptr == string_ptr)
-    goto read_error;
-
-  /* Length fetch move past space*/
-  string_ptr++;
-  if (end_ptr == string_ptr)
-    goto read_error;
-
-  for (next_ptr= string_ptr; isdigit(*string_ptr); string_ptr++) {};
-  value_length= (size_t)strtoull(next_ptr, &string_ptr, 10);
-
-  if (end_ptr == string_ptr)
-    goto read_error;
-
-  /* Skip spaces */
-  if (*string_ptr == '\r')
+  if (!safe_strtoui(tokens[1], (void *)&result->item_flags, UINT32_MAX) ||
+      !safe_strtoui(tokens[2], (void *)&value_length, SSIZE_MAX) ||
+      (ntoken == 4 && !safe_strtoui(tokens[3], (void *)&result->item_cas, ULLONG_MAX)))
   {
-    /* Skip past the \r\n */
-    string_ptr+= 2;
+    return MEMCACHED_PROTOCOL_ERROR;
   }
-  else
-  {
-    string_ptr++;
-    for (next_ptr= string_ptr; isdigit(*string_ptr); string_ptr++) {};
-    result->item_cas= strtoull(next_ptr, &string_ptr, 10);
-  }
-
-  if (end_ptr < string_ptr)
-    goto read_error;
 
   /* We add two bytes so that we can walk the \r\n */
   if (memcached_failed(memcached_string_check(&result->value, value_length +2)))
@@ -157,7 +142,7 @@ static memcached_return_t textual_value_fetch(memcached_server_write_instance_st
       We are null terminating through, which will most likely make
       some people lazy about using the return length.
     */
-    to_read= (value_length) + 2;
+    size_t to_read= (value_length) + 2;
     memcached_return_t rrc= memcached_io_read(ptr, value_ptr, to_read, &read_length);
     if (memcached_failed(rrc))
     {
@@ -167,26 +152,18 @@ static memcached_return_t textual_value_fetch(memcached_server_write_instance_st
       }
       return rrc;
     }
-  }
 
-  if (read_length != (ssize_t)(value_length + 2))
-  {
-    goto read_error;
-  }
+    if (read_length != value_length + 2)
+    {
+      return MEMCACHED_PARTIAL_READ;
+    }
 
-  /* This next bit blows the API, but this is internal....*/
-  {
-    char *char_ptr;
-    char_ptr= memcached_string_value_mutable(&result->value);;
-    char_ptr[value_length]= 0;
-    char_ptr[value_length +1]= 0;
+    /* Replace the last "\r\n" characters with '\0' */
+    memset(value_ptr + value_length, 0, 2);
     memcached_string_set_length(&result->value, value_length);
   }
 
   return MEMCACHED_SUCCESS;
-
-read_error:
-  return MEMCACHED_PARTIAL_READ;
 }
 
 static memcached_return_t textual_version_fetch(memcached_server_write_instance_st instance, char *buffer)
@@ -359,7 +336,7 @@ static memcached_return_t textual_read_one_response(memcached_server_write_insta
     {
       /* We add back in one because we will need to search for END */
       memcached_server_response_increment(ptr);
-      return textual_value_fetch(ptr, buffer, buffer_length, result);
+      return textual_value_fetch(ptr, buffer, total_read, result);
     }
     else if (memcmp(buffer, "VERSION", 7) == 0)
     {
