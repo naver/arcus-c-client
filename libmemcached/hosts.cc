@@ -85,6 +85,29 @@ static int compare_servers(const void *p1, const void *p2)
   return return_value;
 }
 
+#ifdef KETAMA_HASH_COLLISION
+static int compare_server_hostport(const void *p1, const void *p2)
+{
+  int return_value;
+  memcached_server_instance_st a= (memcached_server_instance_st)p1;
+  memcached_server_instance_st b= (memcached_server_instance_st)p2;
+
+  return_value= strcmp(a->hostname, b->hostname);
+  if (return_value == 0) {
+    return strcmp(a->str_port, b->str_port);
+  }
+  if (strlen(a->hostname) != strlen(b->hostname)) {
+    /* must match the server's ordering of duplicate hash points */
+    char hostport1[MEMCACHED_NI_MAXHOST + MEMCACHED_NI_MAXSERV];
+    char hostport2[MEMCACHED_NI_MAXHOST + MEMCACHED_NI_MAXSERV];
+    snprintf(hostport1, sizeof(hostport1), "%s:%s", a->hostname, a->str_port);
+    snprintf(hostport2, sizeof(hostport2), "%s:%s", b->hostname, b->str_port);
+    return strcmp(hostport1, hostport2);
+  }
+  return return_value;
+}
+#endif
+
 static void sort_hosts(memcached_st *ptr)
 {
   if (memcached_server_count(ptr))
@@ -208,14 +231,13 @@ static int continuum_item_cmp(const void *t1, const void *t2)
 #ifdef KETAMA_HASH_COLLISION
 #ifdef ENABLE_REPLICATION
     if (cmp_rgroups != NULL) {
-      return strcmp(cmp_rgroups[ct1->index].groupname, cmp_rgroups[ct2->index].groupname);
+      return strcmp(cmp_rgroups[ct1->index].groupname,
+                    cmp_rgroups[ct2->index].groupname);
     }
 #endif
     if (cmp_servers != NULL) {
-      int return_value= strcmp(cmp_servers[ct1->index].hostname, cmp_servers[ct2->index].hostname);
-      if (return_value == 0)
-        return_value= strcmp(cmp_servers[ct1->index].str_port, cmp_servers[ct2->index].str_port);
-      return return_value;
+      return compare_server_hostport(&cmp_servers[ct1->index],
+                                     &cmp_servers[ct2->index]);
     }
 #endif
     return 0;
