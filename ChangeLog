@@ -1,3 +1,7 @@
+2026-10-16 [version 1.16.1]
+## 🐛 Bug Fixes
+  - Match ketama hash collision ordering with the server.
+
 2026-02-04 [version 1.16.0]
 ## 🐣 New Features
   - Remove the old smget API.
